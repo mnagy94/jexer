@@ -2,111 +2,112 @@
 
    Jexer - Java Text User Interface - Ant build
 
-   $Id$
+   The MIT License (MIT)
 
-   This program is licensed under the GNU Lesser General Public License
-   Version 3.  Please see the file "COPYING" in this directory for more
-   information about the GNU Lesser General Public License Version 3.
+   Copyright (C) 2016 Kevin Lamonte
 
-       Copyright (C) 2015  Kevin Lamonte
+   Permission is hereby granted, free of charge, to any person
+   obtaining a copy of this software and associated documentation
+   files (the "Software"), to deal in the Software without
+   restriction, including without limitation the rights to use, copy,
+   modify, merge, publish, distribute, sublicense, and/or sell copies
+   of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
 
-   This library is free software; you can redistribute it and/or modify
-   it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
-   License, or (at your option) any later version.
+   The above copyright notice and this permission notice shall be
+   included in all copies or substantial portions of the Software.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
-
-   You should have received a copy of the GNU Lesser General Public
-   License along with this program; if not, see
-   http://www.gnu.org/licenses/, or write to the Free Software
-   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
-   USA
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+   BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+   ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
 
 -->
 
 <project name="jexer" basedir="." default="jar">
 
-    <property name="src.dir"       value="src"/>
-    <property name="resources.dir" value="resources"/>
-    <property name="build.dir"     value="build"/>
-    <property name="classes.dir"   value="${build.dir}/classes"/>
-    <property name="jar.dir"       value="${build.dir}/jar"/>
-    <property name="apidocs.dir"   value="docs/api"/>
+  <property name="build.compiler" value="gcj"/>
 
-    <target name="clean">
-	<delete dir="${build.dir}"/>
-	<delete dir="${apidocs.dir}"/>
-    </target>
+  <property name="src.dir"       value="src"/>
+  <property name="resources.dir" value="resources"/>
+  <property name="build.dir"     value="build"/>
+  <property name="classes.dir"   value="${build.dir}/classes"/>
+  <property name="jar.dir"       value="${build.dir}/jar"/>
+  <property name="apidocs.dir"   value="docs/api"/>
 
-    <target name="compile">
-	<mkdir dir="${classes.dir}"/>
-	<javac srcdir="${src.dir}" destdir="${classes.dir}"
-	       includeantruntime="false"
-	       debug="on"
-	       debuglevel="lines,vars,source"
-	       />
-    </target>
+  <target name="clean">
+    <delete dir="${build.dir}"/>
+    <delete dir="${apidocs.dir}"/>
+  </target>
 
-    <target name="jar" depends="compile">
-	<mkdir dir="${jar.dir}"/>
-	<jar destfile="${jar.dir}/${ant.project.name}.jar"
-	     basedir="${classes.dir}">
-	  <fileset dir="${resources.dir}"/>
-	  <!-- By including Jexer's source, the LGPL terms are
-	       automatically satisfied. -->
-	  <fileset dir="${src.dir}"/>
-	  <manifest>
-	    <attribute name="Main-Class" value="jexer.demos.Demo1"/>
-	  </manifest>
-	</jar>
-    </target>
+  <target name="compile">
+    <mkdir dir="${classes.dir}"/>
+    <javac srcdir="${src.dir}" destdir="${classes.dir}"
+	   includeantruntime="false"
+	   debug="on"
+	   debuglevel="lines,vars,source"
+	   />
+  </target>
 
-    <target name="run" depends="jar">
-      <java jar="${jar.dir}/${ant.project.name}.jar" fork="true">
-	<arg value="-Djexer.Swing=true"/>
-      </java>
-    </target>
+  <target name="jar" depends="compile">
+    <mkdir dir="${jar.dir}"/>
+    <jar destfile="${jar.dir}/${ant.project.name}.jar"
+	 basedir="${classes.dir}">
+      <fileset dir="${resources.dir}"/>
+      <!-- Include source by default. -->
+      <fileset dir="${src.dir}"/>
+      <manifest>
+	<attribute name="Main-Class" value="jexer.demos.Demo1"/>
+      </manifest>
+    </jar>
+  </target>
 
-    <target name="clean-build" depends="clean,jar"/>
+  <target name="run" depends="jar">
+    <java jar="${jar.dir}/${ant.project.name}.jar" fork="true">
+      <arg value="-Djexer.Swing=true"/>
+    </java>
+  </target>
 
-    <target name="build" depends="jar"/>
+  <target name="clean-build" depends="clean,jar"/>
 
-    <target name="doc" depends="docs"/>
+  <target name="build" depends="jar"/>
 
-    <target name="docs" depends="jar">
-      <javadoc
-	  destdir="${apidocs.dir}"
-	  author="true"
-	  version="true"
-	  use="true"
-	  access="protected"
-	  failonwarning="true"
-	  windowtitle="Jexer - Java Text User Interface - API docs">
+  <target name="doc" depends="docs"/>
 
-	<fileset dir="${src.dir}" defaultexcludes="yes">
-	  <include name="jexer/**"/>
-	</fileset>
+  <target name="docs" depends="jar">
+    <javadoc
+	destdir="${apidocs.dir}"
+	author="true"
+	version="true"
+	use="true"
+	access="protected"
+	failonwarning="true"
+	windowtitle="Jexer - Java Text User Interface - API docs">
 
-	<doctitle>
-	  <![CDATA[<h1>Jexer - Java Text User Interface Library</h1>]]>
-	</doctitle>
-	<bottom>
-	  <![CDATA[<i>Copyright &#169; 2015 Kevin Lamonte. Licensed LGPLv3+</i>]]>
-	</bottom>
-	<!--
-	    <tag name="todo" scope="all" description="To do:"/>
-	    <group title="Group 1 Packages" packages="com.dummy.test.a*"/>
-	    <group title="Group 2 Packages" packages="com.dummy.test.b*:com.dummy.test.c*"/>
-	    <link offline="true"
-	    href="http://docs.oracle.com/javase/7/docs/api/"
-	    packagelistLoc="C:\tmp"/>
-	    <link href="http://docs.oracle.com/javase/7/docs/api/"/>
-	-->
-      </javadoc>
-    </target>
+      <fileset dir="${src.dir}" defaultexcludes="yes">
+	<include name="jexer/**"/>
+      </fileset>
+
+      <doctitle>
+	<![CDATA[<h1>Jexer - Java Text User Interface Library</h1>]]>
+      </doctitle>
+      <bottom>
+	<![CDATA[<i>Copyright &#169; 2016 Kevin Lamonte. Licensed MIT.</i>]]>
+      </bottom>
+      <!--
+	  <tag name="todo" scope="all" description="To do:"/>
+	  <group title="Group 1 Packages" packages="com.dummy.test.a*"/>
+	  <group title="Group 2 Packages" packages="com.dummy.test.b*:com.dummy.test.c*"/>
+	  <link offline="true"
+	  href="http://docs.oracle.com/javase/7/docs/api/"
+	  packagelistLoc="C:\tmp"/>
+	  <link href="http://docs.oracle.com/javase/7/docs/api/"/>
+      -->
+    </javadoc>
+  </target>
 
 </project>
