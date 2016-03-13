@@ -57,6 +57,9 @@ public class Demo2 {
                 System.out.printf("New connection: %s\n", socket);
                 DemoApplication app = new DemoApplication(socket.getInputStream(),
                     socket.getOutputStream());
+                System.out.printf("   language: %s\n",
+                    ((jexer.net.TelnetInputStream) socket.getInputStream()).
+                        getLanguage());
                 (new Thread(app)).start();
             }
         } catch (Exception e) {

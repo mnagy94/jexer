@@ -114,7 +114,7 @@ public final class TelnetSocket extends Socket {
      * If true, request the New Environment option to obtain the client
      * LOGNAME, USER, and LANG variables.
      */
-    boolean doEnvironment;
+    boolean doEnvironment = true;
 
     /**
      * The terminal type reported by the client.

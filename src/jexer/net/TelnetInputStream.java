@@ -727,15 +727,23 @@ public final class TelnetInputStream extends InputStream
      * fails to handle ESC as defined in RFC 1572.
      */
     private void handleNewEnvironment() {
-        Map<StringBuilder, StringBuilder> newEnv =
-                new TreeMap<StringBuilder, StringBuilder>();
+        Map<String, String> newEnv = new TreeMap<String, String>();
 
         EnvState state = EnvState.INIT;
         StringBuilder name = new StringBuilder();
         StringBuilder value = new StringBuilder();
 
-        for (int i = 0; i < subnegBuffer.size(); i++) {
+        /*
+        System.err.printf("handleNewEnvironment() %d bytes\n",
+            subnegBuffer.size());
+         */
+
+        for (int i = 1; i < subnegBuffer.size(); i++) {
             Byte b = subnegBuffer.get(i);
+            /*
+            System.err.printf("   b: %c %d 0x%02x\n", (char)b.byteValue(),
+                b, b);
+             */
 
             switch (state) {
 
@@ -784,14 +792,22 @@ public final class TelnetInputStream extends InputStream
                     // VAR
                     state = EnvState.NAME;
                     if (value.length() > 0) {
-                        newEnv.put(name, value);
+                        /*
+                        System.err.printf("NAME: '%s' VALUE: '%s'\n",
+                            name, value);
+                         */
+                        newEnv.put(name.toString(), value.toString());
                     }
                     name = new StringBuilder();
                 } else if (b == 3) {
                     // USERVAR
                     state = EnvState.NAME;
                     if (value.length() > 0) {
-                        newEnv.put(name, value);
+                        /*
+                        System.err.printf("NAME: '%s' VALUE: '%s'\n",
+                            name, value);
+                         */
+                        newEnv.put(name.toString(), value.toString());
                     }
                     name = new StringBuilder();
                 } else {
@@ -807,18 +823,21 @@ public final class TelnetInputStream extends InputStream
         }
 
         if ((name.length() > 0) && (value.length() > 0)) {
-            newEnv.put(name, value);
+            /*
+            System.err.printf("NAME: '%s' VALUE: '%s'\n", name, value);
+             */
+            newEnv.put(name.toString(), value.toString());
         }
 
-        for (StringBuilder key: newEnv.keySet()) {
+        for (String key: newEnv.keySet()) {
             if (key.equals("LANG")) {
-                language = newEnv.get(key).toString();
+                language = newEnv.get(key);
             }
             if (key.equals("LOGNAME")) {
-                username = newEnv.get(key).toString();
+                username = newEnv.get(key);
             }
             if (key.equals("USER")) {
-                username = newEnv.get(key).toString();
+                username = newEnv.get(key);
             }
         }
     }
@@ -855,6 +874,10 @@ public final class TelnetInputStream extends InputStream
                         get(i).byteValue());
                 }
                 master.terminalType = terminalString.toString();
+                /*
+                System.err.printf("terminal type: '%s'\n",
+                    master.terminalType);
+                 */
             }
             break;
 
@@ -871,6 +894,10 @@ public final class TelnetInputStream extends InputStream
                     speedString.append((char)subnegBuffer.get(i).byteValue());
                 }
                 master.terminalSpeed = speedString.toString();
+                /*
+                System.err.printf("terminal speed: '%s'\n",
+                    master.terminalSpeed);
+                 */
             }
             break;
 
