@@ -3257,9 +3257,41 @@ public class ECMA48 implements Runnable {
                 currentState.attr.setForeColor(Color.WHITE);
                 break;
             case 38:
-                // Underscore on, default foreground color
-                currentState.attr.setUnderline(true);
-                currentState.attr.setForeColor(Color.WHITE);
+                if (type == DeviceType.XTERM) {
+                    /*
+                     * Xterm supports T.416 / ISO-8613-3 codes to select
+                     * either an indexed color or an RGB value.  (It also
+                     * permits these ISO-8613-3 SGR sequences to be separated
+                     * by colons rather than semicolons.)
+                     *
+                     * We will not support any of these additional color
+                     * codes at this time:
+                     *
+                     * 1. http://invisible-island.net/ncurses/ncurses.faq.html#xterm_16MegaColors
+                     *    has a detailed discussion of the current state of
+                     *    RGB in various terminals, the point of which is
+                     *    that none of them really do the same thing despite
+                     *    all appearing to be "xterm".
+                     *
+                     * 2. As seen in
+                     *    https://bugs.kde.org/show_bug.cgi?id=107487#c3,
+                     *    even supporting just the "indexed mode" of these
+                     *    sequences (which could align easily with existing
+                     *    SGR colors) is assumed to mean full support of
+                     *    24-bit RGB.  So it is all or nothing.
+                     *
+                     * Finally, these sequences break the assumptions of
+                     * standard ECMA-48 style parsers as pointed out at
+                     * https://bugs.kde.org/show_bug.cgi?id=107487#c11 .
+                     * Therefore in order to keep a clean display, we cannot
+                     * parse anything else in this sequence.
+                     */
+                    return;
+                } else {
+                    // Underscore on, default foreground color
+                    currentState.attr.setUnderline(true);
+                    currentState.attr.setForeColor(Color.WHITE);
+                }
                 break;
             case 39:
                 // Underscore off, default foreground color
@@ -3297,6 +3329,21 @@ public class ECMA48 implements Runnable {
             case 47:
                 // Set white background
                 currentState.attr.setBackColor(Color.WHITE);
+                break;
+            case 48:
+                if (type == DeviceType.XTERM) {
+                    /*
+                     * Xterm supports T.416 / ISO-8613-3 codes to select
+                     * either an indexed color or an RGB value.  (It also
+                     * permits these ISO-8613-3 SGR sequences to be separated
+                     * by colons rather than semicolons.)
+                     *
+                     * We will not support this at this time.  Also, in order
+                     * to keep a clean display, we cannot parse anything else
+                     * in this sequence.
+                     */
+                    return;
+                }
                 break;
             case 49:
                 // Default background
