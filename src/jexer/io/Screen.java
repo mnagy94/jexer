@@ -251,8 +251,8 @@ public abstract class Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      * @param clip if true, honor clipping/offset
      */
-    public final void putAttrXY(final int x, final int y
-        , final CellAttributes attr, final boolean clip) {
+    public final void putAttrXY(final int x, final int y,
+        final CellAttributes attr, final boolean clip) {
 
         int X = x;
         int Y = y;
