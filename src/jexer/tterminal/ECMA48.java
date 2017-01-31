@@ -1256,6 +1256,46 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Build one of the complex xterm keystroke sequences, storing the result in
+     * xterm_keystroke_buffer.
+     *
+     * @param ss3 the prefix to use based on VT100 state.
+     * @param first the first character, usually a number.
+     * @param first the last character, one of the following: ~ A B C D F H
+     * @param ctrl whether or not ctrl is down
+     * @param alt whether or not alt is down
+     * @param shift whether or not shift is down
+     * @return the buffer with the full key sequence
+     */
+    private String xtermBuildKeySequence(final String ss3, final char first,
+        final char last, boolean ctrl, boolean alt, boolean shift) {
+
+        StringBuilder sb = new StringBuilder(ss3);
+        if ((last == '~') || (ctrl == true) || (alt == true)
+            || (shift == true)
+        ) {
+            sb.append(first);
+            if (       (ctrl == false) && (alt == false) && (shift == true)) {
+                sb.append(";2");
+            } else if ((ctrl == false) && (alt == true) && (shift == false)) {
+                sb.append(";3");
+            } else if ((ctrl == false) && (alt == true) && (shift == true)) {
+                sb.append(";4");
+            } else if ((ctrl == true) && (alt == false) && (shift == false)) {
+                sb.append(";5");
+            } else if ((ctrl == true) && (alt == false) && (shift == true)) {
+                sb.append(";6");
+            } else if ((ctrl == true) && (alt == true) && (shift == false)) {
+                sb.append(";7");
+            } else if ((ctrl == true) && (alt == true) && (shift == true)) {
+                sb.append(";8");
+            }
+        }
+        sb.append(last);
+        return sb.toString();
+    }
+
+    /**
      * Translate the keyboard press to a VT100, VT220, or XTERM sequence.
      *
      * @param keypress keypress received from the local user
@@ -1311,69 +1351,177 @@ public class ECMA48 implements Runnable {
             }
         }
 
-        if (keypress.equals(kbLeft)) {
-            switch (arrowKeyMode) {
-            case ANSI:
-                return "\033[D";
-            case VT52:
-                return "\033D";
-            case VT100:
-                return "\033OD";
+        if (keypress.equalsWithoutModifiers(kbLeft)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '1', 'D',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '1', 'D',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '1', 'D',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return "\033[D";
+                case VT52:
+                    return "\033D";
+                case VT100:
+                    return "\033OD";
+                }
             }
         }
 
-        if (keypress.equals(kbRight)) {
-            switch (arrowKeyMode) {
-            case ANSI:
-                return "\033[C";
-            case VT52:
-                return "\033C";
-            case VT100:
-                return "\033OC";
+        if (keypress.equalsWithoutModifiers(kbRight)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '1', 'C',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '1', 'C',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '1', 'C',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return "\033[C";
+                case VT52:
+                    return "\033C";
+                case VT100:
+                    return "\033OC";
+                }
             }
         }
 
-        if (keypress.equals(kbUp)) {
-            switch (arrowKeyMode) {
-            case ANSI:
-                return "\033[A";
-            case VT52:
-                return "\033A";
-            case VT100:
-                return "\033OA";
+        if (keypress.equalsWithoutModifiers(kbUp)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '1', 'A',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '1', 'A',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '1', 'A',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return "\033[A";
+                case VT52:
+                    return "\033A";
+                case VT100:
+                    return "\033OA";
+                }
             }
         }
 
-        if (keypress.equals(kbDown)) {
-            switch (arrowKeyMode) {
-            case ANSI:
-                return "\033[B";
-            case VT52:
-                return "\033B";
-            case VT100:
-                return "\033OB";
+        if (keypress.equalsWithoutModifiers(kbDown)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '1', 'B',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '1', 'B',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '1', 'B',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return "\033[B";
+                case VT52:
+                    return "\033B";
+                case VT100:
+                    return "\033OB";
+                }
             }
         }
 
-        if (keypress.equals(kbHome)) {
-            switch (arrowKeyMode) {
-            case ANSI:
-                return "\033[H";
-            case VT52:
-                return "\033H";
-            case VT100:
-                return "\033OH";
+        if (keypress.equalsWithoutModifiers(kbHome)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '1', 'H',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '1', 'H',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '1', 'H',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return "\033[H";
+                case VT52:
+                    return "\033H";
+                case VT100:
+                    return "\033OH";
+                }
             }
         }
 
-        if (keypress.equals(kbEnd)) {
-            switch (arrowKeyMode) {
-            case ANSI:
-                return "\033[F";
-            case VT52:
-                return "\033F";
-            case VT100:
-                return "\033OF";
+        if (keypress.equalsWithoutModifiers(kbEnd)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '1', 'F',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '1', 'F',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '1', 'F',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return "\033[F";
+                case VT52:
+                    return "\033F";
+                case VT100:
+                    return "\033OF";
+                }
             }
         }
 
@@ -1500,6 +1648,9 @@ public class ECMA48 implements Runnable {
             if (vt52Mode) {
                 return "\0332P";
             }
+            if (type == DeviceType.XTERM) {
+                return "\0331;2P";
+            }
             return "\033O2P";
         }
 
@@ -1507,6 +1658,9 @@ public class ECMA48 implements Runnable {
             // Shifted PF2
             if (vt52Mode) {
                 return "\0332Q";
+            }
+            if (type == DeviceType.XTERM) {
+                return "\0331;2Q";
             }
             return "\033O2Q";
         }
@@ -1516,6 +1670,9 @@ public class ECMA48 implements Runnable {
             if (vt52Mode) {
                 return "\0332R";
             }
+            if (type == DeviceType.XTERM) {
+                return "\0331;2R";
+            }
             return "\033O2R";
         }
 
@@ -1523,6 +1680,9 @@ public class ECMA48 implements Runnable {
             // Shifted PF4
             if (vt52Mode) {
                 return "\0332S";
+            }
+            if (type == DeviceType.XTERM) {
+                return "\0331;2S";
             }
             return "\033O2S";
         }
@@ -1572,6 +1732,9 @@ public class ECMA48 implements Runnable {
             if (vt52Mode) {
                 return "\0335P";
             }
+            if (type == DeviceType.XTERM) {
+                return "\0331;5P";
+            }
             return "\033O5P";
         }
 
@@ -1579,6 +1742,9 @@ public class ECMA48 implements Runnable {
             // Control PF2
             if (vt52Mode) {
                 return "\0335Q";
+            }
+            if (type == DeviceType.XTERM) {
+                return "\0331;5Q";
             }
             return "\033O5Q";
         }
@@ -1588,6 +1754,9 @@ public class ECMA48 implements Runnable {
             if (vt52Mode) {
                 return "\0335R";
             }
+            if (type == DeviceType.XTERM) {
+                return "\0331;5R";
+            }
             return "\033O5R";
         }
 
@@ -1595,6 +1764,9 @@ public class ECMA48 implements Runnable {
             // Control PF4
             if (vt52Mode) {
                 return "\0335S";
+            }
+            if (type == DeviceType.XTERM) {
+                return "\0331;5S";
             }
             return "\033O5S";
         }
@@ -1639,39 +1811,93 @@ public class ECMA48 implements Runnable {
             return "\033[24;5~";
         }
 
-        if (keypress.equals(kbPgUp)) {
-            // Page Up
-            return "\033[5~";
+        if (keypress.equalsWithoutModifiers(kbPgUp)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '5', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '5', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '5', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                return "\033[5~";
+            }
         }
 
-        if (keypress.equals(kbPgDn)) {
-            // Page Down
-            return "\033[6~";
+        if (keypress.equalsWithoutModifiers(kbPgDn)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '6', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '6', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '6', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                return "\033[6~";
+            }
         }
 
-        if (keypress.equals(kbIns)) {
-            // Ins
-            return "\033[2~";
+        if (keypress.equalsWithoutModifiers(kbIns)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '2', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '2', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '2', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                return "\033[2~";
+            }
         }
 
-        if (keypress.equals(kbShiftIns)) {
-            // This is what xterm sends for SHIFT-INS
-            return "\033[2;2~";
-            // This is what xterm sends for CTRL-INS
-            // return "\033[2;5~";
-        }
-
-        if (keypress.equals(kbShiftDel)) {
-            // This is what xterm sends for SHIFT-DEL
-            return "\033[3;2~";
-            // This is what xterm sends for CTRL-DEL
-            // return "\033[3;5~";
-        }
-
-        if (keypress.equals(kbDel)) {
-            // Delete sends real delete for VTxxx
-            return "\177";
-            // return "\033[3~";
+        if (keypress.equalsWithoutModifiers(kbDel)) {
+            switch (type) {
+            case XTERM:
+                switch (arrowKeyMode) {
+                case ANSI:
+                    return xtermBuildKeySequence("\033[", '3', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT52:
+                    return xtermBuildKeySequence("\033", '3', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                case VT100:
+                    return xtermBuildKeySequence("\033O", '3', '~',
+                        keypress.isCtrl(), keypress.isAlt(),
+                        keypress.isShift());
+                }
+            default:
+                // Delete sends real delete for VTxxx
+                return "\177";
+            }
         }
 
         if (keypress.equals(kbEnter)) {

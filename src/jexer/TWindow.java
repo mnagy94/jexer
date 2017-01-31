@@ -736,8 +736,8 @@ public class TWindow extends TWidget {
 
         if (inKeyboardResize) {
 
-            // ESC - Exit size/move
-            if (keypress.equals(kbEsc)) {
+            // ESC or ENTER - Exit size/move
+            if (keypress.equals(kbEsc) || keypress.equals(kbEnter)) {
                 inKeyboardResize = false;
             }
 

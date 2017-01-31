@@ -297,6 +297,23 @@ public final class TKeypress {
     }
 
     /**
+     * Comparison check, omitting the ctrl/alt/shift flags.
+     *
+     * @param rhs another TKeypress instance
+     * @return true if all fields (except for ctrl/alt/shift) are equal
+     */
+    public boolean equalsWithoutModifiers(final Object rhs) {
+        if (!(rhs instanceof TKeypress)) {
+            return false;
+        }
+
+        TKeypress that = (TKeypress) rhs;
+        return ((isFunctionKey == that.isFunctionKey)
+                && (keyCode == that.keyCode)
+                && (ch == that.ch));
+    }
+
+    /**
      * Hashcode uses all fields in equals().
      *
      * @return the hash

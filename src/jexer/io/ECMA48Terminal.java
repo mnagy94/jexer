@@ -104,7 +104,6 @@ public final class ECMA48Terminal implements Runnable {
         ESCAPE_INTERMEDIATE,
         CSI_ENTRY,
         CSI_PARAM,
-        // CSI_INTERMEDIATE,
         MOUSE,
         MOUSE_SGR,
     }
@@ -442,36 +441,16 @@ public final class ECMA48Terminal implements Runnable {
      */
     private TInputEvent csiFnKey() {
         int key = 0;
-        int modifier = 0;
         if (params.size() > 0) {
             key = Integer.parseInt(params.get(0));
-        }
-        if (params.size() > 1) {
-            modifier = Integer.parseInt(params.get(1));
         }
         boolean alt = false;
         boolean ctrl = false;
         boolean shift = false;
-
-        switch (modifier) {
-        case 0:
-            // No modifier
-            break;
-        case 2:
-            // Shift
-            shift = true;
-            break;
-        case 3:
-            // Alt
-            alt = true;
-            break;
-        case 5:
-            // Ctrl
-            ctrl = true;
-            break;
-        default:
-            // Unknown modifier, bail out
-            return null;
+        if (params.size() > 1) {
+            shift = csiIsShift(params.get(1));
+            alt = csiIsAlt(params.get(1));
+            ctrl = csiIsCtrl(params.get(1));
         }
 
         switch (key) {
@@ -778,6 +757,51 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
+     * Returns true if the CSI parameter for a keyboard command means that
+     * shift was down.
+     */
+    private boolean csiIsShift(final String x) {
+        if ((x.equals("2"))
+            || (x.equals("4"))
+            || (x.equals("6"))
+            || (x.equals("8"))
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the CSI parameter for a keyboard command means that
+     * alt was down.
+     */
+    private boolean csiIsAlt(final String x) {
+        if ((x.equals("3"))
+            || (x.equals("4"))
+            || (x.equals("7"))
+            || (x.equals("8"))
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the CSI parameter for a keyboard command means that
+     * ctrl was down.
+     */
+    private boolean csiIsCtrl(final String x) {
+        if ((x.equals("5"))
+            || (x.equals("6"))
+            || (x.equals("7"))
+            || (x.equals("8"))
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Parses the next character of input to see if an InputEvent is
      * fully here.
      *
@@ -904,65 +928,21 @@ public final class ECMA48Terminal implements Runnable {
                 switch (ch) {
                 case 'A':
                     // Up
-                    if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
-                    }
                     events.add(new TKeypressEvent(kbUp, alt, ctrl, shift));
                     reset();
                     return;
                 case 'B':
                     // Down
-                    if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
-                    }
                     events.add(new TKeypressEvent(kbDown, alt, ctrl, shift));
                     reset();
                     return;
                 case 'C':
                     // Right
-                    if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
-                    }
                     events.add(new TKeypressEvent(kbRight, alt, ctrl, shift));
                     reset();
                     return;
                 case 'D':
                     // Left
-                    if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
-                    }
                     events.add(new TKeypressEvent(kbLeft, alt, ctrl, shift));
                     reset();
                     return;
@@ -1061,15 +1041,9 @@ public final class ECMA48Terminal implements Runnable {
                 case 'A':
                     // Up
                     if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
+                        shift = csiIsShift(params.get(1));
+                        alt = csiIsAlt(params.get(1));
+                        ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbUp, alt, ctrl, shift));
                     reset();
@@ -1077,15 +1051,9 @@ public final class ECMA48Terminal implements Runnable {
                 case 'B':
                     // Down
                     if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
+                        shift = csiIsShift(params.get(1));
+                        alt = csiIsAlt(params.get(1));
+                        ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbDown, alt, ctrl, shift));
                     reset();
@@ -1093,15 +1061,9 @@ public final class ECMA48Terminal implements Runnable {
                 case 'C':
                     // Right
                     if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
+                        shift = csiIsShift(params.get(1));
+                        alt = csiIsAlt(params.get(1));
+                        ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbRight, alt, ctrl, shift));
                     reset();
@@ -1109,17 +1071,31 @@ public final class ECMA48Terminal implements Runnable {
                 case 'D':
                     // Left
                     if (params.size() > 1) {
-                        if (params.get(1).equals("2")) {
-                            shift = true;
-                        }
-                        if (params.get(1).equals("5")) {
-                            ctrl = true;
-                        }
-                        if (params.get(1).equals("3")) {
-                            alt = true;
-                        }
+                        shift = csiIsShift(params.get(1));
+                        alt = csiIsAlt(params.get(1));
+                        ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbLeft, alt, ctrl, shift));
+                    reset();
+                    return;
+                case 'H':
+                    // Home
+                    if (params.size() > 1) {
+                        shift = csiIsShift(params.get(1));
+                        alt = csiIsAlt(params.get(1));
+                        ctrl = csiIsCtrl(params.get(1));
+                    }
+                    events.add(new TKeypressEvent(kbHome, alt, ctrl, shift));
+                    reset();
+                    return;
+                case 'F':
+                    // End
+                    if (params.size() > 1) {
+                        shift = csiIsShift(params.get(1));
+                        alt = csiIsAlt(params.get(1));
+                        ctrl = csiIsCtrl(params.get(1));
+                    }
+                    events.add(new TKeypressEvent(kbEnd, alt, ctrl, shift));
                     reset();
                     return;
                 default:
@@ -1404,9 +1380,9 @@ public final class ECMA48Terminal implements Runnable {
      */
     private String mouse(final boolean on) {
         if (on) {
-            return "\033[?1003;1005;1006h\033[?1049h";
+            return "\033[?1002;1003;1005;1006h\033[?1049h";
         }
-        return "\033[?1003;1006;1005l\033[?1049l";
+        return "\033[?1002;1003;1006;1005l\033[?1049l";
     }
 
     /**
