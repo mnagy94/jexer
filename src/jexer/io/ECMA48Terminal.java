@@ -389,7 +389,12 @@ public final class ECMA48Terminal implements Runnable {
             sessionInfo = (SessionInfo) input;
         }
         if (sessionInfo == null) {
-            sessionInfo = new TSessionInfo();
+            if (setRawMode == true) {
+                // Reading right off the tty
+                sessionInfo = new TTYSessionInfo();
+            } else {
+                sessionInfo = new TSessionInfo();
+            }
         }
 
         this.output = writer;

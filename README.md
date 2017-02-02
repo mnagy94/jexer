@@ -17,9 +17,10 @@ Jexer currently supports three backends:
   backend on non-Windows platforms.
 
 * The same command-line ECMA-48 / ANSI X3.64 type terminal as above,
-  but to any general InputStream/OutputStream.  See the file
-  jexer.demos.Demo2 for an example of running the demo over a TCP
-  socket.
+  but to any general InputStream/OutputStream or Reader/Writer.  See
+  the file jexer.demos.Demo2 for an example of running the demo over a
+  TCP socket.  jexer.demos.Demo3 demonstrates how one might use a
+  character encoding than the default UTF-8.
 
 * Java Swing UI.  This backend can be selected by setting
   jexer.Swing=true.  The default window size for Swing is 132x40,
