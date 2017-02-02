@@ -342,6 +342,90 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
+     * Constructor sets up state for getEvent().
+     *
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @param setRawMode if true, set System.in into raw mode with stty.
+     * This should in general not be used.  It is here solely for Demo3,
+     * which uses System.in.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public ECMA48Terminal(final Object listener, final InputStream input,
+        final Reader reader, final PrintWriter writer,
+        final boolean setRawMode) {
+
+        if (input == null) {
+            throw new IllegalArgumentException("InputStream must be specified");
+        }
+        if (reader == null) {
+            throw new IllegalArgumentException("Reader must be specified");
+        }
+        if (writer == null) {
+            throw new IllegalArgumentException("Writer must be specified");
+        }
+        reset();
+        mouse1           = false;
+        mouse2           = false;
+        mouse3           = false;
+        stopReaderThread = false;
+        this.listener    = listener;
+
+        inputStream = input;
+        this.input = reader;
+
+        if (setRawMode == true) {
+            sttyRaw();
+        }
+        this.setRawMode = setRawMode;
+
+        if (input instanceof SessionInfo) {
+            // This is a TelnetInputStream that exposes window size and
+            // environment variables from the telnet layer.
+            sessionInfo = (SessionInfo) input;
+        }
+        if (sessionInfo == null) {
+            sessionInfo = new TSessionInfo();
+        }
+
+        this.output = writer;
+
+        // Enable mouse reporting and metaSendsEscape
+        this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
+        this.output.flush();
+
+        // Hang onto the window size
+        windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
+            sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
+
+        // Spin up the input reader
+        eventQueue = new LinkedList<TInputEvent>();
+        readerThread = new Thread(this);
+        readerThread.start();
+    }
+
+    /**
+     * Constructor sets up state for getEvent().
+     *
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public ECMA48Terminal(final Object listener, final InputStream input,
+        final Reader reader, final PrintWriter writer) {
+
+        this(listener, input, reader, writer, false);
+    }
+
+    /**
      * Restore terminal to normal state.
      */
     public void shutdown() {

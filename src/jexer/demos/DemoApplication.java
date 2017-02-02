@@ -96,6 +96,39 @@ public class DemoApplication extends TApplication {
     }
 
     /**
+     * Public constructor.
+     *
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @param setRawMode if true, set System.in into raw mode with stty.
+     * This should in general not be used.  It is here solely for Demo3,
+     * which uses System.in.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public DemoApplication(final InputStream input, final Reader reader,
+        final PrintWriter writer, final boolean setRawMode) {
+        super(input, reader, writer, setRawMode);
+        addAllWidgets();
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public DemoApplication(final InputStream input, final Reader reader,
+        final PrintWriter writer) {
+
+        this(input, reader, writer, false);
+    }
+
+    /**
      * Handle menu events.
      *
      * @param menu menu event

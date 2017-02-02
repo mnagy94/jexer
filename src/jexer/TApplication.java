@@ -31,6 +31,8 @@ package jexer;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Date;
@@ -542,6 +544,40 @@ public class TApplication implements Runnable {
 
         backend = new ECMA48Backend(this, input, output);
         TApplicationImpl();
+    }
+
+    /**
+     * Public constructor.  The backend type will be BackendType.ECMA48.
+     *
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @param setRawMode if true, set System.in into raw mode with stty.
+     * This should in general not be used.  It is here solely for Demo3,
+     * which uses System.in.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public TApplication(final InputStream input, final Reader reader,
+        final PrintWriter writer, final boolean setRawMode) {
+
+        backend = new ECMA48Backend(this, input, reader, writer, setRawMode);
+        TApplicationImpl();
+    }
+
+    /**
+     * Public constructor.  The backend type will be BackendType.ECMA48.
+     *
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public TApplication(final InputStream input, final Reader reader,
+        final PrintWriter writer) {
+
+        this(input, reader, writer, false);
     }
 
     /**

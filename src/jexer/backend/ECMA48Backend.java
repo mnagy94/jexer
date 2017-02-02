@@ -30,6 +30,8 @@ package jexer.backend;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
 
@@ -78,6 +80,56 @@ public final class ECMA48Backend extends Backend {
         // Clear the screen
         terminal.getOutput().write(terminal.clearAll());
         terminal.flush();
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @param setRawMode if true, set System.in into raw mode with stty.
+     * This should in general not be used.  It is here solely for Demo3,
+     * which uses System.in.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public ECMA48Backend(final Object listener, final InputStream input,
+        final Reader reader, final PrintWriter writer,
+        final boolean setRawMode) {
+
+        // Create a terminal and explicitly set stdin into raw mode
+        terminal = new ECMA48Terminal(listener, input, reader, writer,
+            setRawMode);
+
+        // Keep the terminal's sessionInfo so that TApplication can see it
+        sessionInfo = terminal.getSessionInfo();
+
+        // Create a screen
+        screen = new ECMA48Screen(terminal);
+
+        // Clear the screen
+        terminal.getOutput().write(terminal.clearAll());
+        terminal.flush();
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param input the InputStream underlying 'reader'.  Its available()
+     * method is used to determine if reader.read() will block or not.
+     * @param reader a Reader connected to the remote user.
+     * @param writer a PrintWriter connected to the remote user.
+     * @throws IllegalArgumentException if input, reader, or writer are null.
+     */
+    public ECMA48Backend(final Object listener, final InputStream input,
+        final Reader reader, final PrintWriter writer) {
+
+        this(listener, input, reader, writer, false);
     }
 
     /**
