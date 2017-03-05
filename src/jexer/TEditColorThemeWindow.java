@@ -202,41 +202,40 @@ public final class TEditColorThemeWindow extends TWindow {
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
             attr.reset();
-            attr.setReverse(true);
             attr.setForeColor(Color.BLACK);
-            putStringXY(1, 1, "   ", attr);
+            putStringXY(1, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.BLUE);
-            putStringXY(4, 1, "   ", attr);
+            putStringXY(4, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.GREEN);
-            putStringXY(7, 1, "   ", attr);
+            putStringXY(7, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.CYAN);
-            putStringXY(10, 1, "   ", attr);
+            putStringXY(10, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.RED);
-            putStringXY(1, 2, "   ", attr);
+            putStringXY(1, 2, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.MAGENTA);
-            putStringXY(4, 2, "   ", attr);
+            putStringXY(4, 2, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.YELLOW);
-            putStringXY(7, 2, "   ", attr);
+            putStringXY(7, 2, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.WHITE);
-            putStringXY(10, 2, "   ", attr);
+            putStringXY(10, 2, "\u2588\u2588\u2588", attr);
 
             attr.setBold(true);
             attr.setForeColor(Color.BLACK);
-            putStringXY(1, 3, "   ", attr);
+            putStringXY(1, 3, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.BLUE);
-            putStringXY(4, 3, "   ", attr);
+            putStringXY(4, 3, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.GREEN);
-            putStringXY(7, 3, "   ", attr);
+            putStringXY(7, 3, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.CYAN);
-            putStringXY(10, 3, "   ", attr);
+            putStringXY(10, 3, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.RED);
-            putStringXY(1, 4, "   ", attr);
+            putStringXY(1, 4, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.MAGENTA);
-            putStringXY(4, 4, "   ", attr);
+            putStringXY(4, 4, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.YELLOW);
-            putStringXY(7, 4, "   ", attr);
+            putStringXY(7, 4, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.WHITE);
-            putStringXY(10, 4, "   ", attr);
+            putStringXY(10, 4, "\u2588\u2588\u2588", attr);
 
             // Draw the dot
             int dotX = getXColorPosition(color);
@@ -248,7 +247,9 @@ public final class TEditColorThemeWindow extends TWindow {
                 getScreen().putCharXY(dotX, dotY, GraphicsChars.CP437[0x07],
                     attr);
             } else {
-                getScreen().putCharXY(dotX, dotY, GraphicsChars.CP437[0x07]);
+                attr.setForeColor(color);
+                attr.setBold(bold);
+                getScreen().putCharXY(dotX, dotY, '\u25D8', attr);
             }
         }
 
@@ -474,23 +475,22 @@ public final class TEditColorThemeWindow extends TWindow {
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
             attr.reset();
-            attr.setReverse(true);
             attr.setForeColor(Color.BLACK);
-            putStringXY(1, 1, "   ", attr);
+            putStringXY(1, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.BLUE);
-            putStringXY(4, 1, "   ", attr);
+            putStringXY(4, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.GREEN);
-            putStringXY(7, 1, "   ", attr);
+            putStringXY(7, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.CYAN);
-            putStringXY(10, 1, "   ", attr);
+            putStringXY(10, 1, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.RED);
-            putStringXY(1, 2, "   ", attr);
+            putStringXY(1, 2, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.MAGENTA);
-            putStringXY(4, 2, "   ", attr);
+            putStringXY(4, 2, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.YELLOW);
-            putStringXY(7, 2, "   ", attr);
+            putStringXY(7, 2, "\u2588\u2588\u2588", attr);
             attr.setForeColor(Color.WHITE);
-            putStringXY(10, 2, "   ", attr);
+            putStringXY(10, 2, "\u2588\u2588\u2588", attr);
 
             // Draw the dot
             int dotX = getXColorPosition(color);
@@ -502,7 +502,8 @@ public final class TEditColorThemeWindow extends TWindow {
                 getScreen().putCharXY(dotX, dotY, GraphicsChars.CP437[0x07],
                     attr);
             } else {
-                getScreen().putCharXY(dotX, dotY, GraphicsChars.CP437[0x07]);
+                attr.setForeColor(color);
+                getScreen().putCharXY(dotX, dotY, '\u25D8', attr);
             }
 
         }
