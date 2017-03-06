@@ -44,10 +44,6 @@ public class Demo3 {
      */
     public static void main(final String [] args) {
         try {
-            if (args.length == 0) {
-                System.err.printf("USAGE: java -cp jexer.jar jexer.demos.Demo3\n");
-                return;
-            }
             DemoApplication app = new DemoApplication(System.in,
                 new InputStreamReader(System.in, "UTF-8"),
                 new PrintWriter(new OutputStreamWriter(System.out, "UTF-8")),

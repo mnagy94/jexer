@@ -698,7 +698,7 @@ public class ECMA48 implements Runnable {
                 return columns132;
         }
 
-        /**
+    /**
      * true = reverse video.  Set by DECSCNM.
      */
     private boolean reverseVideo = false;
@@ -1914,6 +1914,17 @@ public class ECMA48 implements Runnable {
 
         if (keypress.equals(kbTab)) {
             return "\011";
+        }
+
+        if ((keypress.equalsWithoutModifiers(kbBackTab)) ||
+            (keypress.equals(kbShiftTab))
+        ) {
+            switch (type) {
+            case XTERM:
+                return "\033[Z";
+            default:
+                return "\011";
+            }
         }
 
         // Non-alt, non-ctrl characters
