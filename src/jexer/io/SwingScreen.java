@@ -55,9 +55,9 @@ import jexer.session.SwingSessionInfo;
 public final class SwingScreen extends Screen {
 
     /**
-     * If true, use double buffering thread.
+     * If true, use triple buffering thread.
      */
-    private static final boolean doubleBuffer = true;
+    private static final boolean tripleBuffer = true;
 
     /**
      * Cursor style to draw.
@@ -142,7 +142,7 @@ public final class SwingScreen extends Screen {
         private static final String FONTFILE = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
 
         /**
-         * The BufferStrategy object needed for double-buffering.
+         * The BufferStrategy object needed for triple-buffering.
          */
         private BufferStrategy bufferStrategy;
 
@@ -336,10 +336,10 @@ public final class SwingScreen extends Screen {
             // Save the text cell width/height
             getFontDimensions();
 
-            // Setup double-buffering
-            if (SwingScreen.doubleBuffer) {
+            // Setup triple-buffering
+            if (SwingScreen.tripleBuffer) {
                 setIgnoreRepaint(true);
-                createBufferStrategy(2);
+                createBufferStrategy(3);
                 bufferStrategy = getBufferStrategy();
             }
         }
@@ -597,17 +597,24 @@ public final class SwingScreen extends Screen {
     @Override
     public void flushPhysical() {
 
-        if (reallyCleared) {
-            // Really refreshed, do it all
-            if (SwingScreen.doubleBuffer) {
-                Graphics gr = frame.bufferStrategy.getDrawGraphics();
-                frame.paint(gr);
-                gr.dispose();
-                frame.bufferStrategy.show();
-                Toolkit.getDefaultToolkit().sync();
-            } else {
-                frame.repaint();
-            }
+        /*
+        System.err.printf("flushPhysical(): reallyCleared %s dirty %s\n",
+            reallyCleared, dirty);
+         */
+
+        // If reallyCleared is set, we have to draw everything.
+        if ((frame.bufferStrategy != null) && (reallyCleared == true)) {
+            // Triple-buffering: we have to redraw everything on this thread.
+            Graphics gr = frame.bufferStrategy.getDrawGraphics();
+            frame.paint(gr);
+            gr.dispose();
+            frame.bufferStrategy.show();
+            // sync() doesn't seem to help the tearing for me.
+            // Toolkit.getDefaultToolkit().sync();
+            return;
+        } else if ((frame.bufferStrategy == null) && (reallyCleared == true)) {
+            // Repaint everything on the Swing thread.
+            frame.repaint();
             return;
         }
 
@@ -664,9 +671,11 @@ public final class SwingScreen extends Screen {
         }
 
         // Repaint the desired area
-        // System.err.printf("REPAINT X %d %d Y %d %d\n", xMin, xMax,
-        //     yMin, yMax);
-        if (SwingScreen.doubleBuffer) {
+        /*
+        System.err.printf("REPAINT X %d %d Y %d %d\n", xMin, xMax,
+            yMin, yMax);
+         */
+        if (frame.bufferStrategy != null) {
             Graphics gr = frame.bufferStrategy.getDrawGraphics();
             Rectangle bounds = new Rectangle(xMin, yMin, xMax - xMin,
                 yMax - yMin);
@@ -674,7 +683,8 @@ public final class SwingScreen extends Screen {
             frame.paint(gr);
             gr.dispose();
             frame.bufferStrategy.show();
-            Toolkit.getDefaultToolkit().sync();
+            // sync() doesn't seem to help the tearing for me.
+            // Toolkit.getDefaultToolkit().sync();
         } else {
             frame.repaint(xMin, yMin, xMax - xMin, yMax - yMin);
         }

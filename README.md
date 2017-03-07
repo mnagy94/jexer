@@ -225,7 +225,7 @@ Many tasks remain before calling this version 1.0:
 
 0.0.5: BUG HUNT
 
-- Swing performance.  Even with double buffering it isn't great.
+- Swing performance is better, triple-buffering appears to have helped.
 
 0.1.0: BETA RELEASE
 

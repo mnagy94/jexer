@@ -618,12 +618,13 @@ public class TApplication implements Runnable {
      * @param y row position
      */
     private void invertCell(final int x, final int y) {
-        synchronized (getScreen()) {
-            CellAttributes attr = getScreen().getAttrXY(x, y);
-            attr.setForeColor(attr.getForeColor().invert());
-            attr.setBackColor(attr.getBackColor().invert());
-            getScreen().putAttrXY(x, y, attr, false);
+        if (debugThreads) {
+            System.err.printf("invertCell() %d %d\n", x, y);
         }
+        CellAttributes attr = getScreen().getAttrXY(x, y);
+        attr.setForeColor(attr.getForeColor().invert());
+        attr.setBackColor(attr.getBackColor().invert());
+        getScreen().putAttrXY(x, y, attr, false);
     }
 
     /**
@@ -635,18 +636,23 @@ public class TApplication implements Runnable {
         }
 
         if (!repaint) {
-            if ((oldMouseX != mouseX) || (oldMouseY != mouseY)) {
-                // The only thing that has happened is the mouse moved.
-                // Clear the old position and draw the new position.
-                invertCell(oldMouseX, oldMouseY);
-                invertCell(mouseX, mouseY);
-                oldMouseX = mouseX;
-                oldMouseY = mouseY;
+            if (debugThreads) {
+                System.err.printf("drawAll() !repaint\n");
             }
-            if (getScreen().isDirty()) {
-                backend.flushScreen();
+            synchronized (getScreen()) {
+                if ((oldMouseX != mouseX) || (oldMouseY != mouseY)) {
+                    // The only thing that has happened is the mouse moved.
+                    // Clear the old position and draw the new position.
+                    invertCell(oldMouseX, oldMouseY);
+                    invertCell(mouseX, mouseY);
+                    oldMouseX = mouseX;
+                    oldMouseY = mouseY;
+                }
+                if (getScreen().isDirty()) {
+                    backend.flushScreen();
+                }
+                return;
             }
-            return;
         }
 
         if (debugThreads) {
@@ -712,6 +718,8 @@ public class TApplication implements Runnable {
 
         // Draw the mouse pointer
         invertCell(mouseX, mouseY);
+        oldMouseX = mouseX;
+        oldMouseY = mouseY;
 
         // Place the cursor if it is visible
         TWidget activeWidget = null;
@@ -730,7 +738,9 @@ public class TApplication implements Runnable {
         }
 
         // Flush the screen contents
-        backend.flushScreen();
+        if (getScreen().isDirty()) {
+            backend.flushScreen();
+        }
 
         repaint = false;
     }
