@@ -772,6 +772,9 @@ public class TApplication implements Runnable {
                 // wait until either the backend or the consumer threads have
                 // something to do.
                 try {
+                    if (debugThreads) {
+                        System.err.println("sleep " + timeout + " millis");
+                    }
                     synchronized (this) {
                         this.wait(timeout);
                     }

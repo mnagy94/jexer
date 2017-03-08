@@ -101,8 +101,11 @@ public final class Cell extends CellAttributes {
         }
 
         Cell that = (Cell) rhs;
-        return (super.equals(rhs)
-            && (ch == that.ch));
+
+        if (ch == that.ch) {
+            return super.equals(rhs);
+        }
+        return false;
     }
 
     /**

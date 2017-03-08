@@ -451,10 +451,12 @@ public final class SwingScreen extends Screen {
             // Prevent updates to the screen's data from the TApplication
             // threads.
             synchronized (screen) {
+
                 /*
                 System.err.printf("bounds %s X %d %d Y %d %d\n",
                     bounds, xCellMin, xCellMax, yCellMin, yCellMax);
                  */
+                Cell lCellColor = new Cell();
 
                 for (int y = yCellMin; y < yCellMax; y++) {
                     for (int x = xCellMin; x < xCellMax; x++) {
@@ -469,7 +471,6 @@ public final class SwingScreen extends Screen {
                             || lCell.isBlink()
                             || reallyCleared) {
 
-                            Cell lCellColor = new Cell();
                             lCellColor.setTo(lCell);
 
                             // Check for reverse

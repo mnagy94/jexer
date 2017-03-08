@@ -231,13 +231,13 @@ public class CellAttributes {
         }
 
         CellAttributes that = (CellAttributes) rhs;
-        return ((bold == that.bold)
-            && (blink == that.blink)
+        return ((foreColor == that.foreColor)
+            && (backColor == that.backColor)
+            && (bold == that.bold)
             && (reverse == that.reverse)
             && (underline == that.underline)
-            && (protect == that.protect)
-            && (foreColor == that.foreColor)
-            && (backColor == that.backColor));
+            && (blink == that.blink)
+            && (protect == that.protect));
     }
 
     /**
