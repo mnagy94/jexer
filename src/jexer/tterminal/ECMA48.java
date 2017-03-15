@@ -129,15 +129,13 @@ public class ECMA48 implements Runnable {
             return "\033[?6c";
 
         case VT220:
+        case XTERM:
             // "I am a VT220" - 7 bit version
             if (!s8c1t) {
                 return "\033[?62;1;6c";
             }
             // "I am a VT220" - 8 bit version
             return "\u009b?62;1;6c";
-        case XTERM:
-            // "I am a VT100 with advanced video option" (often VT102)
-            return "\033[?1;2c";
         default:
             throw new IllegalArgumentException("Invalid device type: " + type);
         }
@@ -3760,6 +3758,7 @@ public class ECMA48 implements Runnable {
      */
     private void dsr() {
         boolean decPrivateModeFlag = false;
+        int row = currentState.cursorY;
 
         for (int i = 0; i < collectBuffer.length(); i++) {
             if (collectBuffer.charAt(i) == '?') {
@@ -3787,15 +3786,18 @@ public class ECMA48 implements Runnable {
 
         case 6:
             // Request cursor position.  Respond with current position.
+            if (currentState.originMode == true) {
+                row -= scrollRegionTop;
+            }
             String str = "";
             if (((type == DeviceType.VT220) || (type == DeviceType.XTERM))
                 && (s8c1t == true)
             ) {
-                str = String.format("\u009b%d;%dR",
-                    currentState.cursorY + 1, currentState.cursorX + 1);
+                str = String.format("\u009b%d;%dR", row + 1,
+                    currentState.cursorX + 1);
             } else {
-                str = String.format("\033[%d;%dR",
-                    currentState.cursorY + 1, currentState.cursorX + 1);
+                str = String.format("\033[%d;%dR", row + 1,
+                    currentState.cursorX + 1);
             }
 
             // Send string directly to remote side
