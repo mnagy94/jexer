@@ -255,7 +255,7 @@ public class TMenuItem extends TWidget {
     public void dispatch() {
         assert (isEnabled());
 
-        getApplication().addMenuEvent(new TMenuEvent(id));
+        getApplication().postMenuEvent(new TMenuEvent(id));
         if (checkable) {
             checked = !checked;
         }

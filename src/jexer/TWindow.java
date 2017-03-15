@@ -28,6 +28,8 @@
  */
 package jexer;
 
+import java.util.HashSet;
+
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
@@ -135,6 +137,48 @@ public class TWindow extends TWidget {
      */
     public final void setZ(final int z) {
         this.z = z;
+    }
+
+    /**
+     * Window's keyboard shortcuts.  Any key in this set will be passed to
+     * the window directly rather than processed through the menu
+     * accelerators.
+     */
+    private HashSet<TKeypress> keyboardShortcuts = new HashSet<TKeypress>();
+
+    /**
+     * Add a keypress to be overridden for this window.
+     *
+     * @param key the key to start taking control of
+     */
+    protected void addShortcutKeypress(final TKeypress key) {
+        keyboardShortcuts.add(key);
+    }
+
+    /**
+     * Remove a keypress to be overridden for this window.
+     *
+     * @param key the key to stop taking control of
+     */
+    protected void removeShortcutKeypress(final TKeypress key) {
+        keyboardShortcuts.remove(key);
+    }
+
+    /**
+     * Remove all keypresses to be overridden for this window.
+     */
+    protected void clearShortcutKeypresses() {
+        keyboardShortcuts.clear();
+    }
+
+    /**
+     * Determine if a keypress is overridden for this window.
+     *
+     * @param key the key to check
+     * @return true if this window wants to process this key on its own
+     */
+    public boolean isShortcutKeypress(final TKeypress key) {
+        return keyboardShortcuts.contains(key);
     }
 
     /**

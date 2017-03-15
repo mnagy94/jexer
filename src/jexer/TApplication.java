@@ -965,20 +965,35 @@ public class TApplication implements Runnable {
         if (event instanceof TKeypressEvent) {
             TKeypressEvent keypress = (TKeypressEvent) event;
 
-            // See if this key matches an accelerator, and if so dispatch the
-            // menu event.
-            TKeypress keypressLowercase = keypress.getKey().toLowerCase();
-            TMenuItem item = null;
-            synchronized (accelerators) {
-                item = accelerators.get(keypressLowercase);
-            }
-            if (item != null) {
-                if (item.isEnabled()) {
-                    // Let the menu item dispatch
-                    item.dispatch();
-                    return;
+            // See if this key matches an accelerator, and is not being
+            // shortcutted by the active window, and if so dispatch the menu
+            // event.
+            boolean windowWillShortcut = false;
+            for (TWindow window: windows) {
+                if (window.isActive()) {
+                    if (window.isShortcutKeypress(keypress.getKey())) {
+                        // We do not process this key, it will be passed to
+                        // the window instead.
+                        windowWillShortcut = true;
+                    }
                 }
             }
+
+            if (!windowWillShortcut) {
+                TKeypress keypressLowercase = keypress.getKey().toLowerCase();
+                TMenuItem item = null;
+                synchronized (accelerators) {
+                    item = accelerators.get(keypressLowercase);
+                }
+                if (item != null) {
+                    if (item.isEnabled()) {
+                        // Let the menu item dispatch
+                        item.dispatch();
+                        return;
+                    }
+                }
+            }
+
             // Handle the keypress
             if (onKeypress(keypress)) {
                 return;
@@ -1659,7 +1674,7 @@ public class TApplication implements Runnable {
      *
      * @param event new event to add to the queue
      */
-    public final void addMenuEvent(final TInputEvent event) {
+    public final void postMenuEvent(final TInputEvent event) {
         synchronized (fillEventQueue) {
             fillEventQueue.add(event);
         }
@@ -1745,11 +1760,8 @@ public class TApplication implements Runnable {
         if (activeMenu != null) {
             return;
         }
-
-        synchronized (windows) {
-            for (TWindow window: windows) {
-                closeWindow(window);
-            }
+        while (windows.size() > 0) {
+            closeWindow(windows.get(0));
         }
     }
 

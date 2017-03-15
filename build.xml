@@ -30,7 +30,7 @@
 
 <project name="jexer" basedir="." default="jar">
 
-  <property name="build.compiler" value="gcj"/>
+  <!-- <property name="build.compiler" value="gcj"/> -->
 
   <property name="src.dir"       value="src"/>
   <property name="resources.dir" value="resources"/>

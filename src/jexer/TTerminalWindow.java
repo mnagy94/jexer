@@ -66,6 +66,76 @@ public class TTerminalWindow extends TWindow {
     private TVScroller vScroller;
 
     /**
+     * Claim the keystrokes the emulator will need.
+     */
+    private void addShortcutKeys() {
+        addShortcutKeypress(kbCtrlA);
+        addShortcutKeypress(kbCtrlB);
+        addShortcutKeypress(kbCtrlC);
+        addShortcutKeypress(kbCtrlD);
+        addShortcutKeypress(kbCtrlE);
+        addShortcutKeypress(kbCtrlF);
+        addShortcutKeypress(kbCtrlG);
+        addShortcutKeypress(kbCtrlH);
+        addShortcutKeypress(kbCtrlU);
+        addShortcutKeypress(kbCtrlJ);
+        addShortcutKeypress(kbCtrlK);
+        addShortcutKeypress(kbCtrlL);
+        addShortcutKeypress(kbCtrlM);
+        addShortcutKeypress(kbCtrlN);
+        addShortcutKeypress(kbCtrlO);
+        addShortcutKeypress(kbCtrlP);
+        addShortcutKeypress(kbCtrlQ);
+        addShortcutKeypress(kbCtrlR);
+        addShortcutKeypress(kbCtrlS);
+        addShortcutKeypress(kbCtrlT);
+        addShortcutKeypress(kbCtrlU);
+        addShortcutKeypress(kbCtrlV);
+        addShortcutKeypress(kbCtrlW);
+        addShortcutKeypress(kbCtrlX);
+        addShortcutKeypress(kbCtrlY);
+        addShortcutKeypress(kbCtrlZ);
+        addShortcutKeypress(kbF1);
+        addShortcutKeypress(kbF2);
+        addShortcutKeypress(kbF3);
+        addShortcutKeypress(kbF4);
+        addShortcutKeypress(kbF5);
+        addShortcutKeypress(kbF6);
+        addShortcutKeypress(kbF7);
+        addShortcutKeypress(kbF8);
+        addShortcutKeypress(kbF9);
+        addShortcutKeypress(kbF10);
+        addShortcutKeypress(kbF11);
+        addShortcutKeypress(kbF12);
+        addShortcutKeypress(kbAltA);
+        addShortcutKeypress(kbAltB);
+        addShortcutKeypress(kbAltC);
+        addShortcutKeypress(kbAltD);
+        addShortcutKeypress(kbAltE);
+        addShortcutKeypress(kbAltF);
+        addShortcutKeypress(kbAltG);
+        addShortcutKeypress(kbAltH);
+        addShortcutKeypress(kbAltU);
+        addShortcutKeypress(kbAltJ);
+        addShortcutKeypress(kbAltK);
+        addShortcutKeypress(kbAltL);
+        addShortcutKeypress(kbAltM);
+        addShortcutKeypress(kbAltN);
+        addShortcutKeypress(kbAltO);
+        addShortcutKeypress(kbAltP);
+        addShortcutKeypress(kbAltQ);
+        addShortcutKeypress(kbAltR);
+        addShortcutKeypress(kbAltS);
+        addShortcutKeypress(kbAltT);
+        addShortcutKeypress(kbAltU);
+        addShortcutKeypress(kbAltV);
+        addShortcutKeypress(kbAltW);
+        addShortcutKeypress(kbAltX);
+        addShortcutKeypress(kbAltY);
+        addShortcutKeypress(kbAltZ);
+    }
+
+    /**
      * Public constructor spawns a shell.
      *
      * @param application TApplication that manages this window
@@ -116,6 +186,9 @@ public class TTerminalWindow extends TWindow {
         // Setup the scroll bars
         onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
+
+        // Claim the keystrokes the emulator will need.
+        addShortcutKeys();
     }
 
     /**
@@ -144,6 +217,8 @@ public class TTerminalWindow extends TWindow {
         onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
 
+        // Claim the keystrokes the emulator will need.
+        addShortcutKeys();
     }
 
     /**
@@ -240,11 +315,11 @@ public class TTerminalWindow extends TWindow {
      * Handle window close.
      */
     @Override public void onClose() {
+        emulator.close();
         if (shell != null) {
+            // System.err.println("shell.destroy()");
             shell.destroy();
             shell = null;
-        } else {
-            emulator.close();
         }
     }
 
@@ -286,6 +361,7 @@ public class TTerminalWindow extends TWindow {
                             getTitle(), rc));
                     shell = null;
                     emulator.close();
+                    clearShortcutKeypresses();
                 } catch (IllegalThreadStateException e) {
                     // The emulator thread has exited, but the shell Process
                     // hasn't figured that out yet.  Do nothing, we will see
@@ -300,6 +376,7 @@ public class TTerminalWindow extends TWindow {
                             getTitle(), rc));
                     shell = null;
                     emulator.close();
+                    clearShortcutKeypresses();
                 } catch (IllegalThreadStateException e) {
                     // The shell is still running, do nothing.
                 }

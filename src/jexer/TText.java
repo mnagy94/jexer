@@ -88,8 +88,7 @@ public final class TText extends TWidget {
     /**
      * Convenience method used by TWindowLoggerOutput.
      *
-     * @param line
-     *            new line to add
+     * @param line new line to add
      */
     public void addLine(final String line) {
         if (text.length() == 0) {
@@ -134,10 +133,8 @@ public final class TText extends TWidget {
      * the final string with a newline. Note that interior newlines are
      * converted to spaces.
      *
-     * @param str
-     *            the string
-     * @param n
-     *            the maximum number of characters in a line
+     * @param str the string
+     * @param n the maximum number of characters in a line
      * @return the wrapped string
      */
     private String wrap(final String str, final int n) {
@@ -221,18 +218,12 @@ public final class TText extends TWidget {
     /**
      * Public constructor.
      *
-     * @param parent
-     *            parent widget
-     * @param text
-     *            text on the screen
-     * @param x
-     *            column relative to parent
-     * @param y
-     *            row relative to parent
-     * @param width
-     *            width of text area
-     * @param height
-     *            height of text area
+     * @param parent parent widget
+     * @param text text on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
      */
     public TText(final TWidget parent, final String text, final int x,
             final int y, final int width, final int height) {
@@ -243,21 +234,14 @@ public final class TText extends TWidget {
     /**
      * Public constructor.
      *
-     * @param parent
-     *            parent widget
-     * @param text
-     *            text on the screen
-     * @param x
-     *            column relative to parent
-     * @param y
-     *            row relative to parent
-     * @param width
-     *            width of text area
-     * @param height
-     *            height of text area
-     * @param colorKey
-     *            ColorTheme key color to use for foreground text. Default is
-     *            "ttext"
+     * @param parent parent widget
+     * @param text text on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param colorKey ColorTheme key color to use for foreground
+     * text. Default is "ttext".
      */
     public TText(final TWidget parent, final String text, final int x,
             final int y, final int width, final int height,
@@ -311,8 +295,7 @@ public final class TText extends TWidget {
     /**
      * Handle mouse press events.
      *
-     * @param mouse
-     *            mouse button press event
+     * @param mouse mouse button press event
      */
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
@@ -332,8 +315,7 @@ public final class TText extends TWidget {
     /**
      * Handle keystrokes.
      *
-     * @param keypress
-     *            keystroke event
+     * @param keypress keystroke event
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {

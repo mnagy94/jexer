@@ -46,6 +46,8 @@ import jexer.event.TMouseEvent;
 import jexer.bits.Color;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.io.ReadTimeoutException;
+import jexer.io.TimeoutInputStream;
 import static jexer.TKeypress.*;
 
 /**
@@ -250,75 +252,53 @@ public class ECMA48 implements Runnable {
      */
     public final void close() {
 
-        // Synchronize so we don't stomp on the reader thread.
-        synchronized (this) {
-
-            // Close the input stream
-            switch (type) {
-            case VT100:
-            case VT102:
-            case VT220:
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        // SQUASH
-                    }
-                    inputStream = null;
-                }
-                break;
-            case XTERM:
-                if (input != null) {
-                    try {
-                        input.close();
-                    } catch (IOException e) {
-                        // SQUASH
-                    }
-                    input = null;
-                    inputStream = null;
-                }
-                break;
+        // Tell the reader thread to stop looking at input.  It will close
+        // the input streams.
+        if (stopReaderThread == false) {
+            stopReaderThread = true;
+            try {
+                readerThread.join(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+        }
 
-            // Tell the reader thread to stop looking at input.
-            if (stopReaderThread == false) {
-                stopReaderThread = true;
+        // Now close the output stream.
+        switch (type) {
+        case VT100:
+        case VT102:
+        case VT220:
+            if (outputStream != null) {
                 try {
-                    readerThread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    outputStream.close();
+                } catch (IOException e) {
+                    // SQUASH
                 }
+                outputStream = null;
             }
-
-            // Close the output stream.
-            switch (type) {
-            case VT100:
-            case VT102:
-            case VT220:
-                if (outputStream != null) {
-                    try {
-                        outputStream.close();
-                    } catch (IOException e) {
-                        // SQUASH
-                    }
-                    outputStream = null;
+            break;
+        case XTERM:
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    // SQUASH
                 }
-                break;
-            case XTERM:
-                if (output != null) {
-                    try {
-                        output.close();
-                    } catch (IOException e) {
-                        // SQUASH
-                    }
-                    output = null;
-                }
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid device type: "
-                    + type);
+                outputStream = null;
             }
-        } // synchronized (this)
+            if (output != null) {
+                try {
+                    output.close();
+                } catch (IOException e) {
+                    // SQUASH
+                }
+                output = null;
+            }
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid device type: " +
+                type);
+        }
     }
 
     /**
@@ -393,7 +373,7 @@ public class ECMA48 implements Runnable {
     /**
      * The terminal's raw InputStream.  This is used for type != XTERM.
      */
-    private volatile InputStream inputStream;
+    private volatile TimeoutInputStream inputStream;
 
     /**
      * The terminal's output.  For type == XTERM, this wraps an
@@ -918,9 +898,13 @@ public class ECMA48 implements Runnable {
         display           = new LinkedList<DisplayLine>();
 
         this.type         = type;
-        this.inputStream  = inputStream;
+        if (inputStream instanceof TimeoutInputStream) {
+            this.inputStream  = (TimeoutInputStream)inputStream;
+        } else {
+            this.inputStream  = new TimeoutInputStream(inputStream, 2000);
+        }
         if (type == DeviceType.XTERM) {
-            this.input    = new InputStreamReader(inputStream, "UTF-8");
+            this.input    = new InputStreamReader(this.inputStream, "UTF-8");
             this.output   = new OutputStreamWriter(outputStream, "UTF-8");
             this.outputStream = null;
         } else {
@@ -6025,11 +6009,13 @@ public class ECMA48 implements Runnable {
         while (!done && !stopReaderThread) {
             try {
                 int n = inputStream.available();
+
                 // System.err.printf("available() %d\n", n); System.err.flush();
                 if (utf8) {
                     if (readBufferUTF8.length < n) {
                         // The buffer wasn't big enough, make it huger
-                        int newSizeHalf = Math.max(readBufferUTF8.length, n);
+                        int newSizeHalf = Math.max(readBufferUTF8.length,
+                            n);
 
                         readBufferUTF8 = new char[newSizeHalf * 2];
                     }
@@ -6040,15 +6026,28 @@ public class ECMA48 implements Runnable {
                         readBuffer = new byte[newSizeHalf * 2];
                     }
                 }
+                if (n == 0) {
+                    try {
+                        Thread.sleep(2);
+                    } catch (InterruptedException e) {
+                        // SQUASH
+                    }
+                    continue;
+                }
 
                 int rc = -1;
-                if (utf8) {
-                    rc = input.read(readBufferUTF8, 0,
-                        readBufferUTF8.length);
-                } else {
-                    rc = inputStream.read(readBuffer, 0,
-                        readBuffer.length);
+                try {
+                    if (utf8) {
+                        rc = input.read(readBufferUTF8, 0,
+                            readBufferUTF8.length);
+                    } else {
+                        rc = inputStream.read(readBuffer, 0,
+                            readBuffer.length);
+                    }
+                } catch (ReadTimeoutException e) {
+                    rc = 0;
                 }
+
                 // System.err.printf("read() %d\n", rc); System.err.flush();
                 if (rc == -1) {
                     // This is EOF
@@ -6061,8 +6060,9 @@ public class ECMA48 implements Runnable {
                         } else {
                             ch = readBuffer[i];
                         }
-                        // Don't step on UI events
+
                         synchronized (this) {
+                            // Don't step on UI events
                             consume((char)ch);
                         }
                     }
@@ -6072,10 +6072,25 @@ public class ECMA48 implements Runnable {
                 e.printStackTrace();
                 done = true;
             }
+
         } // while ((done == false) && (stopReaderThread == false))
 
         // Let the rest of the world know that I am done.
         stopReaderThread = true;
+
+        try {
+            inputStream.cancelRead();
+            inputStream.close();
+            inputStream = null;
+        } catch (IOException e) {
+            // SQUASH
+        }
+        try {
+            input.close();
+            input = null;
+        } catch (IOException e) {
+            // SQUASH
+        }
 
         // System.err.println("*** run() exiting..."); System.err.flush();
     }

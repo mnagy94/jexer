@@ -118,7 +118,7 @@ public final class ECMA48Screen extends Screen {
 
                     for (int i = x; i < width; i++) {
                         assert (logical[i][y].isBlank());
-                        // Physical is always updatesd
+                        // Physical is always updated
                         physical[i][y].reset();
                     }
 

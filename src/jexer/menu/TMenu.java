@@ -436,7 +436,7 @@ public final class TMenu extends TWindow {
             break;
         case MID_WINDOW_CLOSE:
             label = "&Close";
-            // key = kbCtrlW;
+            key = kbCtrlW;
             break;
 
         default:

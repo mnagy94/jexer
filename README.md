@@ -172,12 +172,6 @@ Some arbitrary design decisions had to be made when either the
 obviously expected behavior did not happen or when a specification was
 ambiguous.  This section describes such issues.
 
-  - TTerminalWindow will hang on input from the remote if the
-    TApplication is exited before the TTerminalWindow's process has
-    closed on its own.  This is due to a Java limitation/interaction
-    between blocking reads (which is necessary to get UTF8 translation
-    correct) and file streams.
-
   - See jexer.tterminal.ECMA48 for more specifics of terminal
     emulation limitations.
 
@@ -190,6 +184,9 @@ ambiguous.  This section describes such issues.
     platforms.  This is a workaround for the C library behavior of
     checking for a tty: script launches $SHELL in a pseudo-tty.  This
     works on Linux but might not on other Posix-y platforms.
+
+  - Closing a TTerminalWindow without exiting the process inside it
+    may result in a zombie 'script' process.
 
   - Java's InputStreamReader as used by the ECMA48 backend requires a
     valid UTF-8 stream.  The default X10 encoding for mouse
