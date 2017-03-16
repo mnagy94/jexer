@@ -161,7 +161,8 @@ public final class DisplayLine {
      */
     public void insert(final int idx, final Cell newCell) {
         System.arraycopy(chars, idx, chars, idx + 1, chars.length - idx - 1);
-        chars[idx] = newCell;
+        chars[idx] = new Cell();
+        chars[idx].setTo(newCell);
     }
 
     /**
@@ -214,7 +215,8 @@ public final class DisplayLine {
      */
     public void delete(final int idx, final Cell newCell) {
         System.arraycopy(chars, idx + 1, chars, idx, chars.length - idx - 1);
-        chars[chars.length - 1] = newCell;
+        chars[chars.length - 1] = new Cell();
+        chars[chars.length - 1].setTo(newCell);
     }
 
 }
