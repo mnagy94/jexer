@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -158,17 +159,27 @@ public class TTerminalWindow extends TWindow {
 
             // You cannot run a login shell in a bare Process interactively,
             // due to libc's behavior of buffering when stdin/stdout aren't a
-            // tty.  Use 'script' instead to run a shell in a pty.
-            String [] cmdShell = {
+            // tty.  Use 'script' instead to run a shell in a pty.  And
+            // because BSD and GNU differ on the '-f' vs '-F' flags, we need
+            // two different commands.  Lovely.
+            String [] cmdShellGNU = {
                 "script", "-fqe", "/dev/null"
+            };
+            String [] cmdShellBSD = {
+                "script", "-qe", "-F", "/dev/null"
             };
             // Spawn a shell and pass its I/O to the other constructor.
 
             ProcessBuilder pb;
             if (System.getProperty("os.name").startsWith("Windows")) {
                 pb = new ProcessBuilder(cmdShellWindows);
+            } else if (System.getProperty("os.name").startsWith("Mac")) {
+                pb = new ProcessBuilder(cmdShellBSD);
+            } else if (System.getProperty("os.name").startsWith("Linux")) {
+                pb = new ProcessBuilder(cmdShellGNU);
             } else {
-                pb = new ProcessBuilder(cmdShell);
+                // When all else fails, assume GNU.
+                pb = new ProcessBuilder(cmdShellGNU);
             }
             Map<String, String> env = pb.environment();
             env.put("TERM", ECMA48.deviceTypeTerm(deviceType));
@@ -189,6 +200,39 @@ public class TTerminalWindow extends TWindow {
 
         // Claim the keystrokes the emulator will need.
         addShortcutKeys();
+    }
+
+    /**
+     * Terminate the child of the 'script' process used on POSIX.  This may
+     * or may not work.
+     */
+    private void terminateShellChildProcess() {
+        int pid = -1;
+        if (shell.getClass().getName().equals("java.lang.UNIXProcess")) {
+            /* get the PID on unix/linux systems */
+            try {
+                Field field = shell.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                pid = field.getInt(shell);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return;
+            }
+        }
+        if (pid != -1) {
+            // shell.destroy() works successfully at killing this side of
+            // 'script'.  But we need to make sure the other side (child
+            // process) is also killed.
+            String [] cmdKillIt = {
+                "pkill", "-P", Integer.toString(pid)
+            };
+            try {
+                Runtime.getRuntime().exec(cmdKillIt);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return;
+            }
+        }
     }
 
     /**
@@ -317,7 +361,7 @@ public class TTerminalWindow extends TWindow {
     @Override public void onClose() {
         emulator.close();
         if (shell != null) {
-            // System.err.println("shell.destroy()");
+            terminateShellChildProcess();
             shell.destroy();
             shell = null;
         }

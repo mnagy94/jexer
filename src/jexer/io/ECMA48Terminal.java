@@ -1229,6 +1229,17 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
+     * Create an xterm OSC sequence to change the window title.  Note package
+     * private access.
+     *
+     * @param title the new title
+     * @return the string to emit to xterm
+     */
+    String setTitle(final String title) {
+        return "\033]2;" + title + "\007";
+    }
+
+    /**
      * Create a SGR parameter sequence for a single color change.  Note
      * package private access.
      *

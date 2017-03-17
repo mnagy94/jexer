@@ -371,6 +371,15 @@ public class TApplication implements Runnable {
     private Backend backend;
 
     /**
+     * Get the Backend.
+     *
+     * @return the Backend
+     */
+    public final Backend getBackend() {
+        return backend;
+    }
+
+    /**
      * Get the Screen.
      *
      * @return the Screen
@@ -1515,6 +1524,15 @@ public class TApplication implements Runnable {
     }
 
     /**
+     * Display the about dialog.
+     */
+    protected void showAboutDialog() {
+        messageBox("About", "Jexer Version " +
+            this.getClass().getPackage().getImplementationVersion(),
+            TMessageBox.Type.OK);
+    }
+
+    /**
      * Method that TApplication subclasses can override to handle menu
      * events.
      *
@@ -1547,6 +1565,10 @@ public class TApplication implements Runnable {
         }
         if (menu.getId() == TMenu.MID_CLOSE_ALL) {
             closeAllWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_ABOUT) {
+            showAboutDialog();
             return true;
         }
         return false;
@@ -1750,6 +1772,24 @@ public class TApplication implements Runnable {
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_PREVIOUS);
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_CLOSE);
         return windowMenu;
+    }
+
+    /**
+     * Convenience function to add a default "Help" menu.
+     *
+     * @return the new menu
+     */
+    public final TMenu addHelpMenu() {
+        TMenu helpMenu = addMenu("&Help");
+        helpMenu.addDefaultItem(TMenu.MID_HELP_CONTENTS);
+        helpMenu.addDefaultItem(TMenu.MID_HELP_INDEX);
+        helpMenu.addDefaultItem(TMenu.MID_HELP_SEARCH);
+        helpMenu.addDefaultItem(TMenu.MID_HELP_PREVIOUS);
+        helpMenu.addDefaultItem(TMenu.MID_HELP_HELP);
+        helpMenu.addDefaultItem(TMenu.MID_HELP_ACTIVE_FILE);
+        helpMenu.addSeparator();
+        helpMenu.addDefaultItem(TMenu.MID_ABOUT);
+        return helpMenu;
     }
 
     /**

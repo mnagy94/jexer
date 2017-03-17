@@ -160,4 +160,14 @@ public final class ECMA48Backend extends Backend {
         terminal.shutdown();
     }
 
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    @Override
+    public void setTitle(final String title) {
+        ((ECMA48Screen) screen).setTitle(title);
+    }
+
 }

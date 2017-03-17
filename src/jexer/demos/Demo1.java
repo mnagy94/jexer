@@ -48,6 +48,9 @@ public class Demo1 {
             if (System.getProperty("os.name").startsWith("Windows")) {
                 backendType = TApplication.BackendType.SWING;
             }
+            if (System.getProperty("os.name").startsWith("Mac")) {
+                backendType = TApplication.BackendType.SWING;
+            }
             if (System.getProperty("jexer.Swing") != null) {
                 if (System.getProperty("jexer.Swing", "false").equals("true")) {
                     backendType = TApplication.BackendType.SWING;

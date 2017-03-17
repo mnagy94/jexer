@@ -88,6 +88,15 @@ public final class TMenu extends TWindow {
     public static final int MID_WINDOW_PREVIOUS = 26;
     public static final int MID_WINDOW_CLOSE    = 27;
 
+    // Help menu
+    public static final int MID_HELP_CONTENTS           = 40;
+    public static final int MID_HELP_INDEX              = 41;
+    public static final int MID_HELP_SEARCH             = 42;
+    public static final int MID_HELP_PREVIOUS           = 43;
+    public static final int MID_HELP_HELP               = 44;
+    public static final int MID_HELP_ACTIVE_FILE        = 45;
+    public static final int MID_ABOUT                   = 46;
+
     /**
      * Public constructor.
      *
@@ -437,6 +446,31 @@ public final class TMenu extends TWindow {
         case MID_WINDOW_CLOSE:
             label = "&Close";
             key = kbCtrlW;
+            break;
+
+        case MID_HELP_CONTENTS:
+            label = "&Contents";
+            break;
+        case MID_HELP_INDEX:
+            label = "&Index";
+            key = kbShiftF1;
+            break;
+        case MID_HELP_SEARCH:
+            label = "&Topic search";
+            key = kbCtrlF1;
+            break;
+        case MID_HELP_PREVIOUS:
+            label = "&Previous topic";
+            key = kbAltF1;
+            break;
+        case MID_HELP_HELP:
+            label = "&Help on help";
+            break;
+        case MID_HELP_ACTIVE_FILE:
+            label = "Active &file...";
+            break;
+        case MID_ABOUT:
+            label = "&About...";
             break;
 
         default:

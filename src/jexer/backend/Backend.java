@@ -89,4 +89,11 @@ public abstract class Backend {
      */
     public abstract void shutdown();
 
+    /**
+     * Subclasses must provide an implementation that sets the window title.
+     *
+     * @param title the new title
+     */
+    public abstract void setTitle(final String title);
+
 }

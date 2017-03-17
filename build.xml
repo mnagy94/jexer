@@ -32,6 +32,7 @@
 
   <!-- <property name="build.compiler" value="gcj"/> -->
 
+  <property name="version"       value="0.0.4"/>
   <property name="src.dir"       value="src"/>
   <property name="resources.dir" value="resources"/>
   <property name="build.dir"     value="build"/>
@@ -62,6 +63,7 @@
       <fileset dir="${src.dir}"/>
       <manifest>
 	<attribute name="Main-Class" value="jexer.demos.Demo1"/>
+	<attribute name="Implementation-Version" value="${version}"/>
       </manifest>
     </jar>
   </target>

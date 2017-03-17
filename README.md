@@ -211,34 +211,5 @@ ambiguous.  This section describes such issues.
 Roadmap
 -------
 
-Many tasks remain before calling this version 1.0:
-
-0.0.4
-
-- TStatusBar
-- TEditor
-- TWindow
-  - "Smart placement" for new windows
-
-0.0.5: BUG HUNT
-
-- Swing performance is better, triple-buffering appears to have helped.
-
-0.1.0: BETA RELEASE
-
-- TSpinner
-- TComboBox
-- TCalendar
-
-Wishlist features (2.0):
-
-- TTerminal
-  - Handle resize events (pass to child process)
-- Screen
-  - Allow complex characters in putCharXY() and detect them in putStringXY().
-- Drag and drop
-  - TEditor
-  - TField
-  - TText
-  - TTerminal
-  - TComboBox
+Many tasks remain before calling this version 1.0.  See docs/TODO.md
+for the complete list of tasks.

@@ -74,6 +74,7 @@ public class DemoApplication extends TApplication {
         item = subMenu.addItem(2002, "&Normal (sub)");
 
         addWindowMenu();
+        addHelpMenu();
     }
 
     /**
@@ -93,6 +94,8 @@ public class DemoApplication extends TApplication {
         final OutputStream output) throws UnsupportedEncodingException {
         super(input, output);
         addAllWidgets();
+
+        getBackend().setTitle("Jexer Demo Application");
     }
 
     /**
@@ -111,6 +114,8 @@ public class DemoApplication extends TApplication {
         final PrintWriter writer, final boolean setRawMode) {
         super(input, reader, writer, setRawMode);
         addAllWidgets();
+
+        getBackend().setTitle("Jexer Demo Application");
     }
 
     /**
@@ -183,5 +188,6 @@ public class DemoApplication extends TApplication {
     public DemoApplication(final BackendType backendType) throws Exception {
         super(backendType);
         addAllWidgets();
+        getBackend().setTitle("Jexer Demo Application");
     }
 }

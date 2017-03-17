@@ -91,4 +91,14 @@ public final class SwingBackend extends Backend {
         ((SwingScreen) screen).shutdown();
     }
 
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    @Override
+    public void setTitle(final String title) {
+        ((SwingScreen) screen).setTitle(title);
+    }
+
 }

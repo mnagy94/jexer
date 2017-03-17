@@ -166,6 +166,11 @@ public final class SwingScreen extends Screen {
         SwingScreen screen;
 
         /**
+         * If true, we were successful getting Terminus.
+         */
+        private boolean gotTerminus = false;
+
+        /**
          * Width of a character cell.
          */
         private int textWidth = 1;
@@ -329,8 +334,9 @@ public final class SwingScreen extends Screen {
                         getContextClassLoader();
                 InputStream in = loader.getResourceAsStream(FONTFILE);
                 Font terminusRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-                Font terminus = terminusRoot.deriveFont(Font.PLAIN, 22);
+                Font terminus = terminusRoot.deriveFont(Font.PLAIN, 20);
                 setFont(terminus);
+                gotTerminus = true;
             } catch (Exception e) {
                 e.printStackTrace();
                 // setFont(new Font("Liberation Mono", Font.PLAIN, 24));
@@ -375,12 +381,21 @@ public final class SwingScreen extends Screen {
             Rectangle2D bounds = fm.getMaxCharBounds(gr);
             int leading = fm.getLeading();
             textWidth = (int)Math.round(bounds.getWidth());
-            textHeight = (int)Math.round(bounds.getHeight()) - maxDescent;
-            // This also produces the same number, but works better for ugly
+            // textHeight = (int)Math.round(bounds.getHeight()) - maxDescent;
+
+            // This produces the same number, but works better for ugly
             // monospace.
             textHeight = fm.getMaxAscent() + maxDescent - leading;
 
+            if (gotTerminus == true) {
+                textHeight++;
+            }
+
             if (System.getProperty("os.name").startsWith("Windows")) {
+                textAdjustY = -1;
+                textAdjustX = 0;
+            }
+            if (System.getProperty("os.name").startsWith("Mac")) {
                 textAdjustY = -1;
                 textAdjustX = 0;
             }
@@ -855,6 +870,15 @@ public final class SwingScreen extends Screen {
      */
     public int textRow(final int y) {
         return ((y - frame.top) / frame.textHeight);
+    }
+
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    public void setTitle(final String title) {
+        frame.setTitle(title);
     }
 
 }

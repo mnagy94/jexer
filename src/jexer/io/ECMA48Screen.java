@@ -282,4 +282,15 @@ public final class ECMA48Screen extends Screen {
         terminal.getOutput().write(result);
         terminal.flush();
     }
+
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    public void setTitle(final String title) {
+        terminal.getOutput().write(terminal.setTitle(title));
+        terminal.flush();
+    }
+
 }
