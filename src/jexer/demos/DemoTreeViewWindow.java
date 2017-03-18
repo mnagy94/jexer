@@ -32,6 +32,8 @@ import java.io.IOException;
 
 import jexer.*;
 import jexer.event.*;
+import static jexer.TCommand.*;
+import static jexer.TKeypress.*;
 
 /**
  * This window demonstates the TTreeView widget.
@@ -55,6 +57,12 @@ public class DemoTreeViewWindow extends TWindow {
         // Load the treeview with "stuff"
         treeView = addTreeView(1, 1, 40, 12);
         new TDirectoryTreeItem(treeView, ".", true);
+
+        statusBar = newStatusBar("Treeview demonstration");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
+        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
+        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
 
     /**

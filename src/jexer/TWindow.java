@@ -48,30 +48,33 @@ import static jexer.TKeypress.*;
  */
 public class TWindow extends TWidget {
 
-    /**
-     * Window's parent TApplication.
-     */
-    private TApplication application;
+    // ------------------------------------------------------------------------
+    // Public constants -------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
-     * Get this TWindow's parent TApplication.
-     *
-     * @return this TWindow's parent TApplication
+     * Window is resizable (default yes).
      */
-    @Override
-    public final TApplication getApplication() {
-        return application;
-    }
+    public static final int RESIZABLE   = 0x01;
 
     /**
-     * Get the Screen.
-     *
-     * @return the Screen
+     * Window is modal (default no).
      */
-    @Override
-    public final Screen getScreen() {
-        return application.getScreen();
-    }
+    public static final int MODAL       = 0x02;
+
+    /**
+     * Window is centered (default no).
+     */
+    public static final int CENTERED    = 0x04;
+
+    // ------------------------------------------------------------------------
+    // Common window attributes -----------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Window flags.  Note package private access.
+     */
+    int flags = RESIZABLE;
 
     /**
      * Window title.
@@ -96,25 +99,34 @@ public class TWindow extends TWidget {
         this.title = title;
     }
 
-    /**
-     * Window is resizable (default yes).
-     */
-    public static final int RESIZABLE   = 0x01;
+    // ------------------------------------------------------------------------
+    // TApplication integration -----------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
-     * Window is modal (default no).
+     * Window's parent TApplication.
      */
-    public static final int MODAL       = 0x02;
+    private TApplication application;
 
     /**
-     * Window is centered (default no).
+     * Get this TWindow's parent TApplication.
+     *
+     * @return this TWindow's parent TApplication
      */
-    public static final int CENTERED    = 0x04;
+    @Override
+    public final TApplication getApplication() {
+        return application;
+    }
 
     /**
-     * Window flags.
+     * Get the Screen.
+     *
+     * @return the Screen
      */
-    private int flags = RESIZABLE;
+    @Override
+    public final Screen getScreen() {
+        return application.getScreen();
+    }
 
     /**
      * Z order.  Lower number means more in-front.
@@ -182,6 +194,37 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * A window may have a status bar associated with it.  TApplication will
+     * draw this status bar last, and will also route events to it first
+     * before the window.
+     */
+    protected TStatusBar statusBar = null;
+
+    /**
+     * Get the window's status bar, or null if it does not have one.
+     *
+     * @return the status bar, or null
+     */
+    public TStatusBar getStatusBar() {
+        return statusBar;
+    }
+
+    /**
+     * Set the window's status bar to a new one.
+     *
+     * @param text the status bar text
+     * @return the status bar
+     */
+    public TStatusBar newStatusBar(final String text) {
+        statusBar = new TStatusBar(this, text);
+        return statusBar;
+    }
+
+    // ------------------------------------------------------------------------
+    // Window movement/resizing support ---------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
      * If true, then the user clicked on the title bar and is moving the
      * window.
      */
@@ -237,6 +280,55 @@ public class TWindow extends TWidget {
     public final void setMaximumWindowWidth(final int maximumWindowWidth) {
         this.maximumWindowWidth = maximumWindowWidth;
     }
+
+    /**
+     * Recenter the window on-screen.
+     */
+    public final void center() {
+        if ((flags & CENTERED) != 0) {
+            if (getWidth() < getScreen().getWidth()) {
+                setX((getScreen().getWidth() - getWidth()) / 2);
+            } else {
+                setX(0);
+            }
+            setY(((application.getDesktopBottom()
+                    - application.getDesktopTop()) - getHeight()) / 2);
+            if (getY() < 0) {
+                setY(0);
+            }
+            setY(getY() + application.getDesktopTop());
+        }
+    }
+
+    /**
+     * Maximize window.
+     */
+    private void maximize() {
+        restoreWindowWidth = getWidth();
+        restoreWindowHeight = getHeight();
+        restoreWindowX = getX();
+        restoreWindowY = getY();
+        setWidth(getScreen().getWidth());
+        setHeight(application.getDesktopBottom() - 1);
+        setX(0);
+        setY(1);
+        maximized = true;
+    }
+
+    /**
+     * Restote (unmaximize) window.
+     */
+    private void restore() {
+        setWidth(restoreWindowWidth);
+        setHeight(restoreWindowHeight);
+        setX(restoreWindowX);
+        setY(restoreWindowY);
+        maximized = false;
+    }
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  Window will be located at (0, 0).
@@ -325,24 +417,9 @@ public class TWindow extends TWidget {
         application.addWindow(this);
     }
 
-    /**
-     * Recenter the window on-screen.
-     */
-    public final void center() {
-        if ((flags & CENTERED) != 0) {
-            if (getWidth() < getScreen().getWidth()) {
-                setX((getScreen().getWidth() - getWidth()) / 2);
-            } else {
-                setX(0);
-            }
-            setY(((application.getDesktopBottom()
-                    - application.getDesktopTop()) - getHeight()) / 2);
-            if (getY() < 0) {
-                setY(0);
-            }
-            setY(getY() + application.getDesktopTop());
-        }
-    }
+    // ------------------------------------------------------------------------
+    // General behavior -------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Returns true if this window is modal.
@@ -354,57 +431,6 @@ public class TWindow extends TWidget {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Returns true if the mouse is currently on the close button.
-     *
-     * @return true if mouse is currently on the close button
-     */
-    private boolean mouseOnClose() {
-        if ((mouse != null)
-            && (mouse.getAbsoluteY() == getY())
-            && (mouse.getAbsoluteX() == getX() + 3)
-        ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if the mouse is currently on the maximize/restore button.
-     *
-     * @return true if the mouse is currently on the maximize/restore button
-     */
-    private boolean mouseOnMaximize() {
-        if ((mouse != null)
-            && !isModal()
-            && (mouse.getAbsoluteY() == getY())
-            && (mouse.getAbsoluteX() == getX() + getWidth() - 4)
-        ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if the mouse is currently on the resizable lower right
-     * corner.
-     *
-     * @return true if the mouse is currently on the resizable lower right
-     * corner
-     */
-    private boolean mouseOnResize() {
-        if (((flags & RESIZABLE) != 0)
-            && !isModal()
-            && (mouse != null)
-            && (mouse.getAbsoluteY() == getY() + getHeight() - 1)
-            && ((mouse.getAbsoluteX() == getX() + getWidth() - 1)
-                || (mouse.getAbsoluteX() == getX() + getWidth() - 2))
-        ) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -492,30 +518,6 @@ public class TWindow extends TWidget {
     }
 
     /**
-     * Subclasses should override this method to cleanup resources.  This is
-     * called by application.closeWindow().
-     */
-    public void onClose() {
-        // Default: do nothing
-    }
-
-    /**
-     * Called by application.switchWindow() when this window gets the
-     * focus, and also by application.addWindow().
-     */
-    public void onFocus() {
-        // Default: do nothing
-    }
-
-    /**
-     * Called by application.switchWindow() when another window gets the
-     * focus.
-     */
-    public void onUnfocus() {
-        // Default: do nothing
-    }
-
-    /**
      * Called by TApplication.drawChildren() to render on screen.
      */
     @Override
@@ -582,6 +584,85 @@ public class TWindow extends TWidget {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Returns true if the mouse is currently on the close button.
+     *
+     * @return true if mouse is currently on the close button
+     */
+    private boolean mouseOnClose() {
+        if ((mouse != null)
+            && (mouse.getAbsoluteY() == getY())
+            && (mouse.getAbsoluteX() == getX() + 3)
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the mouse is currently on the maximize/restore button.
+     *
+     * @return true if the mouse is currently on the maximize/restore button
+     */
+    private boolean mouseOnMaximize() {
+        if ((mouse != null)
+            && !isModal()
+            && (mouse.getAbsoluteY() == getY())
+            && (mouse.getAbsoluteX() == getX() + getWidth() - 4)
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the mouse is currently on the resizable lower right
+     * corner.
+     *
+     * @return true if the mouse is currently on the resizable lower right
+     * corner
+     */
+    private boolean mouseOnResize() {
+        if (((flags & RESIZABLE) != 0)
+            && !isModal()
+            && (mouse != null)
+            && (mouse.getAbsoluteY() == getY() + getHeight() - 1)
+            && ((mouse.getAbsoluteX() == getX() + getWidth() - 1)
+                || (mouse.getAbsoluteX() == getX() + getWidth() - 2))
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Subclasses should override this method to cleanup resources.  This is
+     * called by application.closeWindow().
+     */
+    public void onClose() {
+        // Default: do nothing
+    }
+
+    /**
+     * Called by application.switchWindow() when this window gets the
+     * focus, and also by application.addWindow().
+     */
+    public void onFocus() {
+        // Default: do nothing
+    }
+
+    /**
+     * Called by application.switchWindow() when another window gets the
+     * focus.
+     */
+    public void onUnfocus() {
+        // Default: do nothing
+    }
+
     /**
      * Handle mouse button presses.
      *
@@ -624,34 +705,15 @@ public class TWindow extends TWidget {
             return;
         }
 
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            if (statusBar.statusBarMouseDown(mouse)) {
+                return;
+            }
+        }
+
         // I didn't take it, pass it on to my children
         super.onMouseDown(mouse);
-    }
-
-    /**
-     * Maximize window.
-     */
-    private void maximize() {
-        restoreWindowWidth = getWidth();
-        restoreWindowHeight = getHeight();
-        restoreWindowX = getX();
-        restoreWindowY = getY();
-        setWidth(getScreen().getWidth());
-        setHeight(application.getDesktopBottom() - 1);
-        setX(0);
-        setY(1);
-        maximized = true;
-    }
-
-    /**
-     * Restote (unmaximize) window.
-     */
-    private void restore() {
-        setWidth(restoreWindowWidth);
-        setHeight(restoreWindowHeight);
-        setX(restoreWindowX);
-        setY(restoreWindowY);
-        maximized = false;
     }
 
     /**
@@ -697,6 +759,13 @@ public class TWindow extends TWidget {
             return;
         }
 
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            if (statusBar.statusBarMouseUp(mouse)) {
+                return;
+            }
+        }
+
         // I didn't take it, pass it on to my children
         super.onMouseUp(mouse);
     }
@@ -717,6 +786,10 @@ public class TWindow extends TWidget {
             // Don't cover up the menu bar
             if (getY() < application.getDesktopTop()) {
                 setY(application.getDesktopTop());
+            }
+            // Don't go below the status bar
+            if (getY() >= application.getDesktopBottom()) {
+                setY(application.getDesktopBottom() - 1);
             }
             return;
         }
@@ -764,6 +837,11 @@ public class TWindow extends TWidget {
             onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                     getWidth(), getHeight()));
             return;
+        }
+
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            statusBar.statusBarMouseMotion(mouse);
         }
 
         // I didn't take it, pass it on to my children
@@ -839,6 +917,13 @@ public class TWindow extends TWidget {
                     getWidth(), getHeight()));
 
             return;
+        }
+
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            if (statusBar.statusBarKeypress(keypress)) {
+                return;
+            }
         }
 
         // These keystrokes will typically not be seen unless a subclass

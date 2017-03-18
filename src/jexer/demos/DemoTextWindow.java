@@ -31,6 +31,8 @@ package jexer.demos;
 import jexer.*;
 import jexer.event.*;
 import jexer.menu.*;
+import static jexer.TCommand.*;
+import static jexer.TKeypress.*;
 
 /**
  * This window demonstates the TText, THScroller, and TVScroller widgets.
@@ -54,6 +56,12 @@ public class DemoTextWindow extends TWindow {
 
         super(parent, title, 0, 0, 44, 20, RESIZABLE);
         textField = addText(text, 1, 1, 40, 16);
+
+        statusBar = newStatusBar("Reflowable text window");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
+        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
+        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
 
     /**

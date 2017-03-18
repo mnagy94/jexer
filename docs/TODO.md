@@ -7,11 +7,6 @@ Roadmap
 
 0.0.4
 
-- TStatusBar
-  - TMenu version
-  - TWindow version
-  - Click mouse
-
 - TWindow
   - "Smart placement" for new windows
 

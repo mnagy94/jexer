@@ -29,6 +29,8 @@
 package jexer.demos;
 
 import jexer.*;
+import static jexer.TCommand.*;
+import static jexer.TKeypress.*;
 
 /**
  * This window demonstates the TMessageBox and TInputBox widgets.
@@ -53,7 +55,7 @@ public class DemoMsgBoxWindow extends TWindow {
     DemoMsgBoxWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it
         // will be centered on screen.
-        super(parent, "Message Boxes", 0, 0, 60, 15, flags);
+        super(parent, "Message Boxes", 0, 0, 60, 16, flags);
 
         int row = 1;
 
@@ -154,6 +156,11 @@ public class DemoMsgBoxWindow extends TWindow {
                 }
             }
         );
+
+        statusBar = newStatusBar("Message boxes");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
+        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
+        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
 }
-

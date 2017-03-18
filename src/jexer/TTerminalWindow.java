@@ -166,7 +166,7 @@ public class TTerminalWindow extends TWindow {
                 "script", "-fqe", "/dev/null"
             };
             String [] cmdShellBSD = {
-                "script", "-qe", "-F", "/dev/null"
+                "script", "-q", "-F", "/dev/null"
             };
             // Spawn a shell and pass its I/O to the other constructor.
 
@@ -200,6 +200,9 @@ public class TTerminalWindow extends TWindow {
 
         // Claim the keystrokes the emulator will need.
         addShortcutKeys();
+
+        // Add shortcut text
+        newStatusBar("Terminal session executing...");
     }
 
     /**
@@ -263,6 +266,9 @@ public class TTerminalWindow extends TWindow {
 
         // Claim the keystrokes the emulator will need.
         addShortcutKeys();
+
+        // Add shortcut text
+        newStatusBar("Terminal session executing...");
     }
 
     /**
@@ -358,7 +364,8 @@ public class TTerminalWindow extends TWindow {
     /**
      * Handle window close.
      */
-    @Override public void onClose() {
+    @Override
+    public void onClose() {
         emulator.close();
         if (shell != null) {
             terminateShellChildProcess();
@@ -406,6 +413,8 @@ public class TTerminalWindow extends TWindow {
                     shell = null;
                     emulator.close();
                     clearShortcutKeypresses();
+                    statusBar.setText("Terminal session completed, exit " +
+                        "code " + rc + ".");
                 } catch (IllegalThreadStateException e) {
                     // The emulator thread has exited, but the shell Process
                     // hasn't figured that out yet.  Do nothing, we will see
@@ -421,6 +430,8 @@ public class TTerminalWindow extends TWindow {
                     shell = null;
                     emulator.close();
                     clearShortcutKeypresses();
+                    statusBar.setText("Terminal session completed, exit " +
+                        "code " + rc + ".");
                 } catch (IllegalThreadStateException e) {
                     // The shell is still running, do nothing.
                 }

@@ -437,6 +437,23 @@ public final class ColorTheme {
         color.setBold(true);
         colors.put("tlist.inactive", color);
 
+        // TStatusBar
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("tstatusbar.text", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.RED);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("tstatusbar.button", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(false);
+        colors.put("tstatusbar.selected", color);
+
         // TEditor
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);

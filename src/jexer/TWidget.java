@@ -30,7 +30,7 @@ package jexer;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 import jexer.bits.ColorTheme;
 import jexer.event.TCommandEvent;
@@ -49,6 +49,10 @@ import static jexer.TKeypress.*;
  */
 public abstract class TWidget implements Comparable<TWidget> {
 
+    // ------------------------------------------------------------------------
+    // Common widget attributes -----------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Every widget has a parent widget that it may be "contained" in.  For
      * example, a TWindow might contain several TTextFields, or a TComboBox
@@ -63,44 +67,6 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public final TWidget getParent() {
         return parent;
-    }
-
-    /**
-     * Backdoor access for TWindow's constructor.  ONLY TWindow USES THIS.
-     *
-     * @param window the top-level window
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param width width of window
-     * @param height height of window
-     */
-    protected final void setupForTWindow(final TWindow window,
-        final int x, final int y, final int width, final int height) {
-
-        this.parent = window;
-        this.window = window;
-        this.x      = x;
-        this.y      = y;
-        this.width  = width;
-        this.height = height;
-    }
-
-    /**
-     * Get this TWidget's parent TApplication.
-     *
-     * @return the parent TApplication
-     */
-    public TApplication getApplication() {
-        return window.getApplication();
-    }
-
-    /**
-     * Get the Screen.
-     *
-     * @return the Screen
-     */
-    public Screen getScreen() {
-        return window.getScreen();
     }
 
     /**
@@ -368,6 +334,28 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.cursorY = cursorY;
     }
 
+    // ------------------------------------------------------------------------
+    // TApplication integration -----------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get this TWidget's parent TApplication.
+     *
+     * @return the parent TApplication
+     */
+    public TApplication getApplication() {
+        return window.getApplication();
+    }
+
+    /**
+     * Get the Screen.
+     *
+     * @return the Screen
+     */
+    public Screen getScreen() {
+        return window.getScreen();
+    }
+
     /**
      * Comparison operator.  For various subclasses it sorts on:
      * <ul>
@@ -492,6 +480,12 @@ public abstract class TWidget implements Comparable<TWidget> {
         assert (getScreen() != null);
         Screen screen = getScreen();
 
+        // Special case: TStatusBar is drawn by TApplication, not anything
+        // else.
+        if (this instanceof TStatusBar) {
+            return;
+        }
+
         screen.setClipRight(width);
         screen.setClipBottom(height);
 
@@ -533,11 +527,15 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Default constructor for subclasses.
      */
     protected TWidget() {
-        children = new LinkedList<TWidget>();
+        children = new ArrayList<TWidget>();
     }
 
     /**
@@ -574,7 +572,7 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.enabled = enabled;
         this.parent = parent;
         this.window = parent.window;
-        children = new LinkedList<TWidget>();
+        children = new ArrayList<TWidget>();
         parent.addChild(this);
     }
 
@@ -594,7 +592,7 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.enabled = enabled;
         this.parent = parent;
         this.window = parent.window;
-        children = new LinkedList<TWidget>();
+        children = new ArrayList<TWidget>();
         parent.addChild(this);
 
         this.x = x;
@@ -602,6 +600,30 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.width = width;
         this.height = height;
     }
+
+    /**
+     * Backdoor access for TWindow's constructor.  ONLY TWindow USES THIS.
+     *
+     * @param window the top-level window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of window
+     * @param height height of window
+     */
+    protected final void setupForTWindow(final TWindow window,
+        final int x, final int y, final int width, final int height) {
+
+        this.parent = window;
+        this.window = window;
+        this.x      = x;
+        this.y      = y;
+        this.width  = width;
+        this.height = height;
+    }
+
+    // ------------------------------------------------------------------------
+    // General behavior -------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Add a child widget to my list of children.  We set its tabOrder to 0
@@ -750,6 +772,33 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         // No active children, return me
         return this;
+    }
+
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if a mouse press/release event coordinate is contained in this
+     * widget.
+     *
+     * @param mouse a mouse-based event
+     * @return whether or not a mouse click would be sent to this widget
+     */
+    public final boolean mouseWouldHit(final TMouseEvent mouse) {
+
+        if (!enabled) {
+            return false;
+        }
+
+        if ((mouse.getAbsoluteX() >= getAbsoluteX())
+            && (mouse.getAbsoluteX() <  getAbsoluteX() + width)
+            && (mouse.getAbsoluteY() >= getAbsoluteY())
+            && (mouse.getAbsoluteY() <  getAbsoluteY() + height)
+        ) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -971,28 +1020,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         return;
     }
 
-    /**
-     * Check if a mouse press/release event coordinate is contained in this
-     * widget.
-     *
-     * @param mouse a mouse-based event
-     * @return whether or not a mouse click would be sent to this widget
-     */
-    public final boolean mouseWouldHit(final TMouseEvent mouse) {
-
-        if (!enabled) {
-            return false;
-        }
-
-        if ((mouse.getAbsoluteX() >= getAbsoluteX())
-            && (mouse.getAbsoluteX() <  getAbsoluteX() + width)
-            && (mouse.getAbsoluteY() >= getAbsoluteY())
-            && (mouse.getAbsoluteY() <  getAbsoluteY() + height)
-        ) {
-            return true;
-        }
-        return false;
-    }
+    // ------------------------------------------------------------------------
+    // Other TWidget constructors ---------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Convenience function to add a label to this container/window.

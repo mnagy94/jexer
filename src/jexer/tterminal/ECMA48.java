@@ -51,7 +51,7 @@ import jexer.io.TimeoutInputStream;
 import static jexer.TKeypress.*;
 
 /**
- * This implements a complex ANSI ECMA-48/ISO 6429/ANSI X3.64 type consoles,
+ * This implements a complex ECMA-48/ISO 6429/ANSI X3.64 type console,
  * including a scrollback buffer.
  *
  * <p>

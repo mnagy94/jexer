@@ -33,18 +33,17 @@ import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
- * This window demonstates the TRadioGroup, TRadioButton, and TCheckbox
- * widgets.
+ * This window demonstates the TField and TPasswordField widgets.
  */
-public class DemoCheckboxWindow extends TWindow {
+public class DemoTextFieldWindow extends TWindow {
 
     /**
      * Constructor.
      *
      * @param parent the main application
      */
-    DemoCheckboxWindow(final TApplication parent) {
-        this(parent, CENTERED | RESIZABLE);
+    DemoTextFieldWindow(final TApplication parent) {
+        this(parent, TWindow.CENTERED | TWindow.RESIZABLE);
     }
 
     /**
@@ -53,39 +52,35 @@ public class DemoCheckboxWindow extends TWindow {
      * @param parent the main application
      * @param flags bitmask of MODAL, CENTERED, or RESIZABLE
      */
-    DemoCheckboxWindow(final TApplication parent, final int flags) {
-        // Construct a demo window.  X and Y don't matter because it will be
-        // centered on screen.
-        super(parent, "Radiobuttons and Checkboxes", 0, 0, 60, 15, flags);
+    DemoTextFieldWindow(final TApplication parent, final int flags) {
+        // Construct a demo window.  X and Y don't matter because it
+        // will be centered on screen.
+        super(parent, "Text Fields", 0, 0, 60, 10, flags);
 
         int row = 1;
 
-        // Add some widgets
-        addLabel("Check box example 1", 1, row);
-        addCheckbox(35, row++, "Checkbox 1", false);
-        addLabel("Check box example 2", 1, row);
-        addCheckbox(35, row++, "Checkbox 2", true);
-        row += 2;
-
-        TRadioGroup group = addRadioGroup(1, row, "Group 1");
-        group.addRadioButton("Radio option 1");
-        group.addRadioButton("Radio option 2");
-        group.addRadioButton("Radio option 3");
+        addLabel("Variable-width text field:", 1, row);
+        addField(35, row++, 15, false, "Field text");
+        addLabel("Fixed-width text field:", 1, row);
+        addField(35, row++, 15, true);
+        addLabel("Variable-width password:", 1, row);
+        addPasswordField(35, row++, 15, false);
+        addLabel("Fixed-width password:", 1, row);
+        addPasswordField(35, row++, 15, true, "hunter2");
+        row += 1;
 
         addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
             new TAction() {
                 public void DO() {
-                    DemoCheckboxWindow.this.getApplication()
-                        .closeWindow(DemoCheckboxWindow.this);
+                    getApplication().closeWindow(DemoTextFieldWindow.this);
                 }
             }
         );
 
-        statusBar = newStatusBar("Radiobuttons and checkboxes");
+        statusBar = newStatusBar("Text fields");
         statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
         statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
         statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
         statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
-
 }

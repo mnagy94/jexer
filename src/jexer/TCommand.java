@@ -39,82 +39,87 @@ public class TCommand {
      * Immediately abort the application (e.g. remote side closed
      * connection).
      */
-    public static final int ABORT       = 1;
+    public static final int ABORT               = 1;
 
     /**
      * File open dialog.
      */
-    public static final int OPEN        = 2;
+    public static final int OPEN                = 2;
 
     /**
      * Exit application.
      */
-    public static final int EXIT        = 3;
+    public static final int EXIT                = 3;
 
     /**
      * Spawn OS shell window.
      */
-    public static final int SHELL       = 4;
+    public static final int SHELL               = 4;
 
     /**
      * Cut selected text and copy to the clipboard.
      */
-    public static final int CUT         = 5;
+    public static final int CUT                 = 5;
 
     /**
      * Copy selected text to clipboard.
      */
-    public static final int COPY        = 6;
+    public static final int COPY                = 6;
 
     /**
      * Paste from clipboard.
      */
-    public static final int PASTE       = 7;
+    public static final int PASTE               = 7;
 
     /**
      * Clear selected text without copying it to the clipboard.
      */
-    public static final int CLEAR       = 8;
+    public static final int CLEAR               = 8;
 
     /**
      * Tile windows.
      */
-    public static final int TILE        = 9;
+    public static final int TILE                = 9;
 
     /**
      * Cascade windows.
      */
-    public static final int CASCADE     = 10;
+    public static final int CASCADE             = 10;
 
     /**
      * Close all windows.
      */
-    public static final int CLOSE_ALL   = 11;
+    public static final int CLOSE_ALL           = 11;
 
     /**
      * Move (move/resize) window.
      */
-    public static final int WINDOW_MOVE = 12;
+    public static final int WINDOW_MOVE         = 12;
 
     /**
      * Zoom (maximize/restore) window.
      */
-    public static final int WINDOW_ZOOM = 13;
+    public static final int WINDOW_ZOOM         = 13;
 
     /**
      * Next window (like Alt-TAB).
      */
-    public static final int WINDOW_NEXT = 14;
+    public static final int WINDOW_NEXT         = 14;
 
     /**
      * Previous window (like Shift-Alt-TAB).
      */
-    public static final int WINDOW_PREVIOUS = 15;
+    public static final int WINDOW_PREVIOUS     = 15;
 
     /**
      * Close window.
      */
-    public static final int WINDOW_CLOSE = 16;
+    public static final int WINDOW_CLOSE        = 16;
+
+    /**
+     * Enter help system.
+     */
+    public static final int HELP                = 20;
 
     /**
      * Type of command, one of EXIT, CASCADE, etc.
@@ -166,22 +171,23 @@ public class TCommand {
         return type;
     }
 
-    public static final TCommand cmAbort      = new TCommand(ABORT);
-    public static final TCommand cmExit       = new TCommand(EXIT);
-    public static final TCommand cmQuit       = new TCommand(EXIT);
-    public static final TCommand cmOpen       = new TCommand(OPEN);
-    public static final TCommand cmShell      = new TCommand(SHELL);
-    public static final TCommand cmCut        = new TCommand(CUT);
-    public static final TCommand cmCopy       = new TCommand(COPY);
-    public static final TCommand cmPaste      = new TCommand(PASTE);
-    public static final TCommand cmClear      = new TCommand(CLEAR);
-    public static final TCommand cmTile       = new TCommand(TILE);
-    public static final TCommand cmCascade    = new TCommand(CASCADE);
-    public static final TCommand cmCloseAll   = new TCommand(CLOSE_ALL);
-    public static final TCommand cmWindowMove = new TCommand(WINDOW_MOVE);
-    public static final TCommand cmWindowZoom = new TCommand(WINDOW_ZOOM);
-    public static final TCommand cmWindowNext = new TCommand(WINDOW_NEXT);
+    public static final TCommand cmAbort        = new TCommand(ABORT);
+    public static final TCommand cmExit         = new TCommand(EXIT);
+    public static final TCommand cmQuit         = new TCommand(EXIT);
+    public static final TCommand cmOpen         = new TCommand(OPEN);
+    public static final TCommand cmShell        = new TCommand(SHELL);
+    public static final TCommand cmCut          = new TCommand(CUT);
+    public static final TCommand cmCopy         = new TCommand(COPY);
+    public static final TCommand cmPaste        = new TCommand(PASTE);
+    public static final TCommand cmClear        = new TCommand(CLEAR);
+    public static final TCommand cmTile         = new TCommand(TILE);
+    public static final TCommand cmCascade      = new TCommand(CASCADE);
+    public static final TCommand cmCloseAll     = new TCommand(CLOSE_ALL);
+    public static final TCommand cmWindowMove   = new TCommand(WINDOW_MOVE);
+    public static final TCommand cmWindowZoom   = new TCommand(WINDOW_ZOOM);
+    public static final TCommand cmWindowNext   = new TCommand(WINDOW_NEXT);
     public static final TCommand cmWindowPrevious = new TCommand(WINDOW_PREVIOUS);
-    public static final TCommand cmWindowClose = new TCommand(WINDOW_CLOSE);
+    public static final TCommand cmWindowClose  = new TCommand(WINDOW_CLOSE);
+    public static final TCommand cmHelp         = new TCommand(HELP);
 
 }

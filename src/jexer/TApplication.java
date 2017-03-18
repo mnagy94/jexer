@@ -58,11 +58,16 @@ import jexer.io.Screen;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
 import static jexer.TCommand.*;
+import static jexer.TKeypress.*;
 
 /**
  * TApplication sets up a full Text User Interface application.
  */
 public class TApplication implements Runnable {
+
+    // ------------------------------------------------------------------------
+    // Public constants -------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * If true, emit thread stuff to System.err.
@@ -93,6 +98,10 @@ public class TApplication implements Runnable {
          */
         XTERM
     }
+
+    // ------------------------------------------------------------------------
+    // Primary/secondary event handlers ---------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -365,6 +374,10 @@ public class TApplication implements Runnable {
         lockoutHandleEvent = false;
     }
 
+    // ------------------------------------------------------------------------
+    // TApplication attributes ------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Access to the physical screen, keyboard, and mouse.
      */
@@ -508,6 +521,23 @@ public class TApplication implements Runnable {
         return desktopBottom;
     }
 
+    // ------------------------------------------------------------------------
+    // General behavior -------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Display the about dialog.
+     */
+    protected void showAboutDialog() {
+        messageBox("About", "Jexer Version " +
+            this.getClass().getPackage().getImplementationVersion(),
+            TMessageBox.Type.OK);
+    }
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Public constructor.
      *
@@ -620,6 +650,10 @@ public class TApplication implements Runnable {
         (new Thread(primaryEventHandler)).start();
     }
 
+    // ------------------------------------------------------------------------
+    // Screen refresh loop ----------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Invert the cell color at a position.  This is used to track the mouse.
      *
@@ -681,6 +715,7 @@ public class TApplication implements Runnable {
         // Draw each window in reverse Z order
         List<TWindow> sorted = new LinkedList<TWindow>(windows);
         Collections.sort(sorted);
+        TWindow topLevel = sorted.get(0);
         Collections.reverse(sorted);
         for (TWindow window: sorted) {
             window.drawChildren();
@@ -699,6 +734,7 @@ public class TApplication implements Runnable {
             if (menu.isActive()) {
                 menuColor = theme.getColor("tmenu.highlighted");
                 menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
+                topLevel = menu;
             } else {
                 menuColor = theme.getColor("tmenu");
                 menuMnemonicColor = theme.getColor("tmenu.mnemonic");
@@ -723,6 +759,20 @@ public class TApplication implements Runnable {
             // Reset the screen clipping so we can draw the next sub-menu.
             getScreen().resetClipping();
             menu.drawChildren();
+        }
+
+        // Draw the status bar of the top-level window
+        TStatusBar statusBar = topLevel.getStatusBar();
+        if (statusBar != null) {
+            getScreen().resetClipping();
+            statusBar.setWidth(getScreen().getWidth());
+            statusBar.setY(getScreen().getHeight() - topLevel.getY());
+            statusBar.draw();
+        } else {
+            CellAttributes barColor = new CellAttributes();
+            barColor.setTo(getTheme().getColor("tstatusbar.text"));
+            getScreen().hLineXY(0, desktopBottom, getScreen().getWidth(), ' ',
+                barColor);
         }
 
         // Draw the mouse pointer
@@ -753,6 +803,10 @@ public class TApplication implements Runnable {
 
         repaint = false;
     }
+
+    // ------------------------------------------------------------------------
+    // Main loop --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Run this application until it exits.
@@ -988,7 +1042,7 @@ public class TApplication implements Runnable {
                 }
             }
 
-            if (!windowWillShortcut) {
+            if (!windowWillShortcut && !modalWindowActive()) {
                 TKeypress keypressLowercase = keypress.getKey().toLowerCase();
                 TMenuItem item = null;
                 synchronized (accelerators) {
@@ -1001,11 +1055,11 @@ public class TApplication implements Runnable {
                         return;
                     }
                 }
-            }
 
-            // Handle the keypress
-            if (onKeypress(keypress)) {
-                return;
+                // Handle the keypress
+                if (onKeypress(keypress)) {
+                    return;
+                }
             }
         }
 
@@ -1120,31 +1174,9 @@ public class TApplication implements Runnable {
         }
     }
 
-    /**
-     * Get the amount of time I can sleep before missing a Timer tick.
-     *
-     * @param timeout = initial (maximum) timeout in millis
-     * @return number of milliseconds between now and the next timer event
-     */
-    private long getSleepTime(final long timeout) {
-        Date now = new Date();
-        long nowTime = now.getTime();
-        long sleepTime = timeout;
-        for (TTimer timer: timers) {
-            long nextTickTime = timer.getNextTick().getTime();
-            if (nextTickTime < nowTime) {
-                return 0;
-            }
-
-            long timeDifference = nextTickTime - nowTime;
-            if (timeDifference < sleepTime) {
-                sleepTime = timeDifference;
-            }
-        }
-        assert (sleepTime >= 0);
-        assert (sleepTime <= timeout);
-        return sleepTime;
-    }
+    // ------------------------------------------------------------------------
+    // TWindow management -----------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Close window.  Note that the window's destructor is NOT called by this
@@ -1254,9 +1286,11 @@ public class TApplication implements Runnable {
      */
     public final void addWindow(final TWindow window) {
         synchronized (windows) {
-            // Do not allow a modal window to spawn a non-modal window
-            if ((windows.size() > 0) && (windows.get(0).isModal())) {
-                assert (window.isModal());
+            // Do not allow a modal window to spawn a non-modal window.  If a
+            // modal window is active, then this window will become modal
+            // too.
+            if (modalWindowActive()) {
+                window.flags |= TWindow.MODAL;
             }
             for (TWindow w: windows) {
                 if (w.isActive()) {
@@ -1281,8 +1315,118 @@ public class TApplication implements Runnable {
         if (windows.size() == 0) {
             return false;
         }
-        return windows.get(windows.size() - 1).isModal();
+
+        for (TWindow w: windows) {
+            if (w.isModal()) {
+                return true;
+            }
+        }
+
+        return false;
     }
+
+    /**
+     * Close all open windows.
+     */
+    private void closeAllWindows() {
+        // Don't do anything if we are in the menu
+        if (activeMenu != null) {
+            return;
+        }
+        while (windows.size() > 0) {
+            closeWindow(windows.get(0));
+        }
+    }
+
+    /**
+     * Re-layout the open windows as non-overlapping tiles.  This produces
+     * almost the same results as Turbo Pascal 7.0's IDE.
+     */
+    private void tileWindows() {
+        synchronized (windows) {
+            // Don't do anything if we are in the menu
+            if (activeMenu != null) {
+                return;
+            }
+            int z = windows.size();
+            if (z == 0) {
+                return;
+            }
+            int a = 0;
+            int b = 0;
+            a = (int)(Math.sqrt(z));
+            int c = 0;
+            while (c < a) {
+                b = (z - c) / a;
+                if (((a * b) + c) == z) {
+                    break;
+                }
+                c++;
+            }
+            assert (a > 0);
+            assert (b > 0);
+            assert (c < a);
+            int newWidth = (getScreen().getWidth() / a);
+            int newHeight1 = ((getScreen().getHeight() - 1) / b);
+            int newHeight2 = ((getScreen().getHeight() - 1) / (b + c));
+
+            List<TWindow> sorted = new LinkedList<TWindow>(windows);
+            Collections.sort(sorted);
+            Collections.reverse(sorted);
+            for (int i = 0; i < sorted.size(); i++) {
+                int logicalX = i / b;
+                int logicalY = i % b;
+                if (i >= ((a - 1) * b)) {
+                    logicalX = a - 1;
+                    logicalY = i - ((a - 1) * b);
+                }
+
+                TWindow w = sorted.get(i);
+                w.setX(logicalX * newWidth);
+                w.setWidth(newWidth);
+                if (i >= ((a - 1) * b)) {
+                    w.setY((logicalY * newHeight2) + 1);
+                    w.setHeight(newHeight2);
+                } else {
+                    w.setY((logicalY * newHeight1) + 1);
+                    w.setHeight(newHeight1);
+                }
+            }
+        }
+    }
+
+    /**
+     * Re-layout the open windows as overlapping cascaded windows.
+     */
+    private void cascadeWindows() {
+        synchronized (windows) {
+            // Don't do anything if we are in the menu
+            if (activeMenu != null) {
+                return;
+            }
+            int x = 0;
+            int y = 1;
+            List<TWindow> sorted = new LinkedList<TWindow>(windows);
+            Collections.sort(sorted);
+            Collections.reverse(sorted);
+            for (TWindow window: sorted) {
+                window.setX(x);
+                window.setY(y);
+                x++;
+                y++;
+                if (x > getScreen().getWidth()) {
+                    x = 0;
+                }
+                if (y >= getScreen().getHeight()) {
+                    y = 1;
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TMenu management -------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Check if a mouse event would hit either the active menu or any open
@@ -1486,127 +1630,6 @@ public class TApplication implements Runnable {
     }
 
     /**
-     * Method that TApplication subclasses can override to handle menu or
-     * posted command events.
-     *
-     * @param command command event
-     * @return if true, this event was consumed
-     */
-    protected boolean onCommand(final TCommandEvent command) {
-        // Default: handle cmExit
-        if (command.equals(cmExit)) {
-            if (messageBox("Confirmation", "Exit application?",
-                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
-                quit = true;
-            }
-            return true;
-        }
-
-        if (command.equals(cmShell)) {
-            openTerminal(0, 0, TWindow.RESIZABLE);
-            return true;
-        }
-
-        if (command.equals(cmTile)) {
-            tileWindows();
-            return true;
-        }
-        if (command.equals(cmCascade)) {
-            cascadeWindows();
-            return true;
-        }
-        if (command.equals(cmCloseAll)) {
-            closeAllWindows();
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
-     * Display the about dialog.
-     */
-    protected void showAboutDialog() {
-        messageBox("About", "Jexer Version " +
-            this.getClass().getPackage().getImplementationVersion(),
-            TMessageBox.Type.OK);
-    }
-
-    /**
-     * Method that TApplication subclasses can override to handle menu
-     * events.
-     *
-     * @param menu menu event
-     * @return if true, this event was consumed
-     */
-    protected boolean onMenu(final TMenuEvent menu) {
-
-        // Default: handle MID_EXIT
-        if (menu.getId() == TMenu.MID_EXIT) {
-            if (messageBox("Confirmation", "Exit application?",
-                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
-                quit = true;
-            }
-            return true;
-        }
-
-        if (menu.getId() == TMenu.MID_SHELL) {
-            openTerminal(0, 0, TWindow.RESIZABLE);
-            return true;
-        }
-
-        if (menu.getId() == TMenu.MID_TILE) {
-            tileWindows();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_CASCADE) {
-            cascadeWindows();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_CLOSE_ALL) {
-            closeAllWindows();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_ABOUT) {
-            showAboutDialog();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Method that TApplication subclasses can override to handle keystrokes.
-     *
-     * @param keypress keystroke event
-     * @return if true, this event was consumed
-     */
-    protected boolean onKeypress(final TKeypressEvent keypress) {
-        // Default: only menu shortcuts
-
-        // Process Alt-F, Alt-E, etc. menu shortcut keys
-        if (!keypress.getKey().isFnKey()
-            && keypress.getKey().isAlt()
-            && !keypress.getKey().isCtrl()
-            && (activeMenu == null)
-        ) {
-
-            assert (subMenus.size() == 0);
-
-            for (TMenu menu: menus) {
-                if (Character.toLowerCase(menu.getMnemonic().getShortcut())
-                    == Character.toLowerCase(keypress.getKey().getChar())
-                ) {
-                    activeMenu = menu;
-                    menu.setActive(true);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Add a menu item to the global list.  If it has a keyboard accelerator,
      * that will be added the global hash.
      *
@@ -1738,6 +1761,9 @@ public class TApplication implements Runnable {
         fileMenu.addSeparator();
         fileMenu.addDefaultItem(TMenu.MID_SHELL);
         fileMenu.addDefaultItem(TMenu.MID_EXIT);
+        TStatusBar statusBar = fileMenu.newStatusBar("File-management " +
+            "commands (Open, Save, Print, etc.)");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
         return fileMenu;
     }
 
@@ -1752,6 +1778,9 @@ public class TApplication implements Runnable {
         editMenu.addDefaultItem(TMenu.MID_COPY);
         editMenu.addDefaultItem(TMenu.MID_PASTE);
         editMenu.addDefaultItem(TMenu.MID_CLEAR);
+        TStatusBar statusBar = editMenu.newStatusBar("Editor operations, " +
+            "undo, and Clipboard access");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
         return editMenu;
     }
 
@@ -1771,6 +1800,9 @@ public class TApplication implements Runnable {
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_NEXT);
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_PREVIOUS);
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_CLOSE);
+        TStatusBar statusBar = windowMenu.newStatusBar("Open, arrange, and " +
+            "list windows");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
         return windowMenu;
     }
 
@@ -1789,106 +1821,156 @@ public class TApplication implements Runnable {
         helpMenu.addDefaultItem(TMenu.MID_HELP_ACTIVE_FILE);
         helpMenu.addSeparator();
         helpMenu.addDefaultItem(TMenu.MID_ABOUT);
+        TStatusBar statusBar = helpMenu.newStatusBar("Access online help");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
         return helpMenu;
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
-     * Close all open windows.
+     * Method that TApplication subclasses can override to handle menu or
+     * posted command events.
+     *
+     * @param command command event
+     * @return if true, this event was consumed
      */
-    private void closeAllWindows() {
-        // Don't do anything if we are in the menu
-        if (activeMenu != null) {
-            return;
+    protected boolean onCommand(final TCommandEvent command) {
+        // Default: handle cmExit
+        if (command.equals(cmExit)) {
+            if (messageBox("Confirmation", "Exit application?",
+                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
+                quit = true;
+            }
+            return true;
         }
-        while (windows.size() > 0) {
-            closeWindow(windows.get(0));
+
+        if (command.equals(cmShell)) {
+            openTerminal(0, 0, TWindow.RESIZABLE);
+            return true;
         }
+
+        if (command.equals(cmTile)) {
+            tileWindows();
+            return true;
+        }
+        if (command.equals(cmCascade)) {
+            cascadeWindows();
+            return true;
+        }
+        if (command.equals(cmCloseAll)) {
+            closeAllWindows();
+            return true;
+        }
+
+        return false;
     }
 
     /**
-     * Re-layout the open windows as non-overlapping tiles.  This produces
-     * almost the same results as Turbo Pascal 7.0's IDE.
+     * Method that TApplication subclasses can override to handle menu
+     * events.
+     *
+     * @param menu menu event
+     * @return if true, this event was consumed
      */
-    private void tileWindows() {
-        synchronized (windows) {
-            // Don't do anything if we are in the menu
-            if (activeMenu != null) {
-                return;
-            }
-            int z = windows.size();
-            if (z == 0) {
-                return;
-            }
-            int a = 0;
-            int b = 0;
-            a = (int)(Math.sqrt(z));
-            int c = 0;
-            while (c < a) {
-                b = (z - c) / a;
-                if (((a * b) + c) == z) {
-                    break;
-                }
-                c++;
-            }
-            assert (a > 0);
-            assert (b > 0);
-            assert (c < a);
-            int newWidth = (getScreen().getWidth() / a);
-            int newHeight1 = ((getScreen().getHeight() - 1) / b);
-            int newHeight2 = ((getScreen().getHeight() - 1) / (b + c));
+    protected boolean onMenu(final TMenuEvent menu) {
 
-            List<TWindow> sorted = new LinkedList<TWindow>(windows);
-            Collections.sort(sorted);
-            Collections.reverse(sorted);
-            for (int i = 0; i < sorted.size(); i++) {
-                int logicalX = i / b;
-                int logicalY = i % b;
-                if (i >= ((a - 1) * b)) {
-                    logicalX = a - 1;
-                    logicalY = i - ((a - 1) * b);
-                }
-
-                TWindow w = sorted.get(i);
-                w.setX(logicalX * newWidth);
-                w.setWidth(newWidth);
-                if (i >= ((a - 1) * b)) {
-                    w.setY((logicalY * newHeight2) + 1);
-                    w.setHeight(newHeight2);
-                } else {
-                    w.setY((logicalY * newHeight1) + 1);
-                    w.setHeight(newHeight1);
-                }
+        // Default: handle MID_EXIT
+        if (menu.getId() == TMenu.MID_EXIT) {
+            if (messageBox("Confirmation", "Exit application?",
+                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
+                quit = true;
             }
+            return true;
         }
+
+        if (menu.getId() == TMenu.MID_SHELL) {
+            openTerminal(0, 0, TWindow.RESIZABLE);
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_TILE) {
+            tileWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_CASCADE) {
+            cascadeWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_CLOSE_ALL) {
+            closeAllWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_ABOUT) {
+            showAboutDialog();
+            return true;
+        }
+        return false;
     }
 
     /**
-     * Re-layout the open windows as overlapping cascaded windows.
+     * Method that TApplication subclasses can override to handle keystrokes.
+     *
+     * @param keypress keystroke event
+     * @return if true, this event was consumed
      */
-    private void cascadeWindows() {
-        synchronized (windows) {
-            // Don't do anything if we are in the menu
-            if (activeMenu != null) {
-                return;
-            }
-            int x = 0;
-            int y = 1;
-            List<TWindow> sorted = new LinkedList<TWindow>(windows);
-            Collections.sort(sorted);
-            Collections.reverse(sorted);
-            for (TWindow window: sorted) {
-                window.setX(x);
-                window.setY(y);
-                x++;
-                y++;
-                if (x > getScreen().getWidth()) {
-                    x = 0;
-                }
-                if (y >= getScreen().getHeight()) {
-                    y = 1;
+    protected boolean onKeypress(final TKeypressEvent keypress) {
+        // Default: only menu shortcuts
+
+        // Process Alt-F, Alt-E, etc. menu shortcut keys
+        if (!keypress.getKey().isFnKey()
+            && keypress.getKey().isAlt()
+            && !keypress.getKey().isCtrl()
+            && (activeMenu == null)
+            && !modalWindowActive()
+        ) {
+
+            assert (subMenus.size() == 0);
+
+            for (TMenu menu: menus) {
+                if (Character.toLowerCase(menu.getMnemonic().getShortcut())
+                    == Character.toLowerCase(keypress.getKey().getChar())
+                ) {
+                    activeMenu = menu;
+                    menu.setActive(true);
+                    return true;
                 }
             }
         }
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+    // TTimer management ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the amount of time I can sleep before missing a Timer tick.
+     *
+     * @param timeout = initial (maximum) timeout in millis
+     * @return number of milliseconds between now and the next timer event
+     */
+    private long getSleepTime(final long timeout) {
+        Date now = new Date();
+        long nowTime = now.getTime();
+        long sleepTime = timeout;
+        for (TTimer timer: timers) {
+            long nextTickTime = timer.getNextTick().getTime();
+            if (nextTickTime < nowTime) {
+                return 0;
+            }
+
+            long timeDifference = nextTickTime - nowTime;
+            if (timeDifference < sleepTime) {
+                sleepTime = timeDifference;
+            }
+        }
+        assert (sleepTime >= 0);
+        assert (sleepTime <= timeout);
+        return sleepTime;
     }
 
     /**
@@ -1919,6 +2001,10 @@ public class TApplication implements Runnable {
             timers.remove(timer);
         }
     }
+
+    // ------------------------------------------------------------------------
+    // Other TWindow constructors ---------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Convenience function to spawn a message box.

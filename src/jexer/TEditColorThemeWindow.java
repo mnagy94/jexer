@@ -707,6 +707,8 @@ public final class TEditColorThemeWindow extends TWindow {
         // Default to the color list
         activate(colorNames);
 
+        // Add shortcut text
+        newStatusBar("Select Colors");
     }
 
     /**

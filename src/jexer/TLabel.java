@@ -99,7 +99,8 @@ public final class TLabel extends TWidget {
     /**
      * Draw a static label.
      */
-    @Override public void draw() {
+    @Override
+    public void draw() {
         // Setup my color
         CellAttributes color = new CellAttributes();
         color.setTo(getTheme().getColor(colorKey));

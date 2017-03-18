@@ -29,6 +29,8 @@
 package jexer.demos;
 
 import jexer.*;
+import static jexer.TCommand.*;
+import static jexer.TKeypress.*;
 
 /**
  * This is the main "demo" application window.  It makes use of the TTimer,
@@ -75,21 +77,19 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, "Demo Window", 0, 0, 60, 24, flags);
+        super(parent, "Demo Window", 0, 0, 60, 22, flags);
 
         int row = 1;
 
         // Add some widgets
-        if (!isModal()) {
-            addLabel("Message Boxes", 1, row);
-            addButton("&MessageBoxes", 35, row,
-                new TAction() {
-                    public void DO() {
-                        new DemoMsgBoxWindow(getApplication());
-                    }
+        addLabel("Message Boxes", 1, row);
+        addButton("&MessageBoxes", 35, row,
+            new TAction() {
+                public void DO() {
+                    new DemoMsgBoxWindow(getApplication());
                 }
-            );
-        }
+            }
+        );
         row += 2;
 
         addLabel("Open me as modal", 1, row);
@@ -100,29 +100,26 @@ public class DemoMainWindow extends TWindow {
                 }
             }
         );
-
         row += 2;
 
-        addLabel("Variable-width text field:", 1, row);
-        addField(35, row++, 15, false, "Field text");
-        addLabel("Fixed-width text field:", 1, row);
-        addField(35, row++, 15, true);
-        addLabel("Variable-width password:", 1, row);
-        addPasswordField(35, row++, 15, false);
-        addLabel("Fixed-width password:", 1, row);
-        addPasswordField(35, row++, 15, true, "hunter2");
-        row += 1;
-
-        if (!isModal()) {
-            addLabel("Radio buttons and checkboxes", 1, row);
-            addButton("&Checkboxes", 35, row,
-                new TAction() {
-                    public void DO() {
-                        new DemoCheckboxWindow(getApplication());
-                    }
+        addLabel("Text fields", 1, row);
+        addButton("Field&s", 35, row,
+            new TAction() {
+                public void DO() {
+                    new DemoTextFieldWindow(getApplication());
                 }
-            );
-        }
+            }
+        );
+        row += 2;
+
+        addLabel("Radio buttons and checkboxes", 1, row);
+        addButton("&Checkboxes", 35, row,
+            new TAction() {
+                public void DO() {
+                    new DemoCheckboxWindow(getApplication());
+                }
+            }
+        );
         row += 2;
 
         /*
@@ -137,56 +134,48 @@ public class DemoMainWindow extends TWindow {
         row += 2;
          */
 
-        if (!isModal()) {
-            addLabel("Text areas", 1, row);
-            addButton("&Text", 35, row,
-                new TAction() {
-                    public void DO() {
-                        new DemoTextWindow(getApplication());
-                    }
+        addLabel("Text areas", 1, row);
+        addButton("&Text", 35, row,
+            new TAction() {
+                public void DO() {
+                    new DemoTextWindow(getApplication());
                 }
-            );
-        }
+            }
+        );
         row += 2;
 
-        if (!isModal()) {
-            addLabel("Tree views", 1, row);
-            addButton("Tree&View", 35, row,
-                new TAction() {
-                    public void DO() {
-                        try {
-                            new DemoTreeViewWindow(getApplication());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+        addLabel("Tree views", 1, row);
+        addButton("Tree&View", 35, row,
+            new TAction() {
+                public void DO() {
+                    try {
+                        new DemoTreeViewWindow(getApplication());
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
-            );
-        }
+            }
+        );
         row += 2;
 
-        if (!isModal()) {
-            addLabel("Terminal", 1, row);
-            addButton("Termi&nal", 35, row,
-                new TAction() {
-                    public void DO() {
-                        getApplication().openTerminal(0, 0);
-                    }
+        addLabel("Terminal", 1, row);
+        addButton("Termi&nal", 35, row,
+            new TAction() {
+                public void DO() {
+                    getApplication().openTerminal(0, 0);
                 }
-            );
-        }
+            }
+        );
         row += 2;
 
-        if (!isModal()) {
-            addLabel("Color editor", 1, row);
-            addButton("Co&lors", 35, row,
-                new TAction() {
-                    public void DO() {
-                        new TEditColorThemeWindow(getApplication());
-                    }
+        addLabel("Color editor", 1, row);
+        addButton("Co&lors", 35, row,
+            new TAction() {
+                public void DO() {
+                    new TEditColorThemeWindow(getApplication());
                 }
-            );
-        }
+            }
+        );
         row += 2;
 
         progressBar = addProgressBar(1, row, 22, 0);
@@ -205,5 +194,11 @@ public class DemoMainWindow extends TWindow {
                 }
             }
         );
+
+        statusBar = newStatusBar("Demo Main Window");
+        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
+        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
+        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
 }
