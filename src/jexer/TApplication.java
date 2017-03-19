@@ -80,6 +80,12 @@ public class TApplication implements Runnable {
     private static final boolean debugEvents = false;
 
     /**
+     * If true, do "smart placement" on new windows that are not specified to
+     * be centered.
+     */
+    private static final boolean smartWindowPlacement = true;
+
+    /**
      * Two backend types are available.
      */
     public static enum BackendType {
@@ -1285,12 +1291,19 @@ public class TApplication implements Runnable {
      * @param window new window to add
      */
     public final void addWindow(final TWindow window) {
+
+        // Do not add menu windows to the window list.
+        if (window instanceof TMenu) {
+            return;
+        }
+
         synchronized (windows) {
             // Do not allow a modal window to spawn a non-modal window.  If a
             // modal window is active, then this window will become modal
             // too.
             if (modalWindowActive()) {
                 window.flags |= TWindow.MODAL;
+                window.flags |= TWindow.CENTERED;
             }
             for (TWindow w: windows) {
                 if (w.isActive()) {
@@ -1303,6 +1316,12 @@ public class TApplication implements Runnable {
             window.setZ(0);
             window.setActive(true);
             window.onFocus();
+
+            if (((window.flags & TWindow.CENTERED) == 0)
+                && smartWindowPlacement) {
+
+                doSmartPlacement(window);
+            }
         }
     }
 
@@ -1422,6 +1441,131 @@ public class TApplication implements Runnable {
                 }
             }
         }
+    }
+
+    /**
+     * Place a window to minimize its overlap with other windows.
+     *
+     * @param window the window to place
+     */
+    public final void doSmartPlacement(final TWindow window) {
+        // This is a pretty dumb algorithm, but seems to work.  The hardest
+        // part is computing these "overlap" values seeking a minimum average
+        // overlap.
+        int xMin = 0;
+        int yMin = desktopTop;
+        int xMax = getScreen().getWidth() - window.getWidth() + 1;
+        int yMax = desktopBottom  - window.getHeight() + 1;
+        if (xMax < xMin) {
+            xMax = xMin;
+        }
+        if (yMax < yMin) {
+            yMax = yMin;
+        }
+
+        if ((xMin == xMax) && (yMin == yMax)) {
+            // No work to do, bail out.
+            return;
+        }
+
+        // Compute the overlap matrix without the new window.
+        int width = getScreen().getWidth();
+        int height = getScreen().getHeight();
+        int overlapMatrix[][] = new int[width][height];
+        for (TWindow w: windows) {
+            if (window == w) {
+                continue;
+            }
+            for (int x = w.getX(); x < w.getX() + w.getWidth(); x++) {
+                if (x == width) {
+                    continue;
+                }
+                for (int y = w.getY(); y < w.getY() + w.getHeight(); y++) {
+                    if (y == height) {
+                        continue;
+                    }
+                    overlapMatrix[x][y]++;
+                }
+            }
+        }
+
+        long oldOverlapTotal = 0;
+        long oldOverlapN = 0;
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                oldOverlapTotal += overlapMatrix[x][y];
+                if (overlapMatrix[x][y] > 0) {
+                    oldOverlapN++;
+                }
+            }
+        }
+
+
+        double oldOverlapAvg = (double) oldOverlapTotal / (double) oldOverlapN;
+        boolean first = true;
+        int windowX = window.getX();
+        int windowY = window.getY();
+
+        // For each possible (x, y) position for the new window, compute a
+        // new overlap matrix.
+        for (int x = xMin; x < xMax; x++) {
+            for (int y = yMin; y < yMax; y++) {
+
+                // Start with the matrix minus this window.
+                int newMatrix[][] = new int[width][height];
+                for (int mx = 0; mx < width; mx++) {
+                    for (int my = 0; my < height; my++) {
+                        newMatrix[mx][my] = overlapMatrix[mx][my];
+                    }
+                }
+
+                // Add this window's values to the new overlap matrix.
+                long newOverlapTotal = 0;
+                long newOverlapN = 0;
+                // Start by adding each new cell.
+                for (int wx = x; wx < x + window.getWidth(); wx++) {
+                    if (wx == width) {
+                        continue;
+                    }
+                    for (int wy = y; wy < y + window.getHeight(); wy++) {
+                        if (wy == height) {
+                            continue;
+                        }
+                        newMatrix[wx][wy]++;
+                    }
+                }
+                // Now figure out the new value for total coverage.
+                for (int mx = 0; mx < width; mx++) {
+                    for (int my = 0; my < height; my++) {
+                        newOverlapTotal += newMatrix[x][y];
+                        if (newMatrix[mx][my] > 0) {
+                            newOverlapN++;
+                        }
+                    }
+                }
+                double newOverlapAvg = (double) newOverlapTotal / (double) newOverlapN;
+
+                if (first) {
+                    // First time: just record what we got.
+                    oldOverlapAvg = newOverlapAvg;
+                    first = false;
+                } else {
+                    // All other times: pick a new best (x, y) and save the
+                    // overlap value.
+                    if (newOverlapAvg < oldOverlapAvg) {
+                        windowX = x;
+                        windowY = y;
+                        oldOverlapAvg = newOverlapAvg;
+                    }
+                }
+
+            } // for (int x = xMin; x < xMax; x++)
+
+        } // for (int y = yMin; y < yMax; y++)
+
+        // Finally, set the window's new coordinates.
+        window.setX(windowX);
+        window.setY(windowY);
     }
 
     // ------------------------------------------------------------------------

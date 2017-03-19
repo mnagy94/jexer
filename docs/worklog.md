@@ -1,6 +1,17 @@
 Jexer Work Log
 ==============
 
+March 18, 2017
+
+TStatusBar is working, as is "smart" window placement.  Overall this
+is looking quite nice.  Found a lot of other small paper cut items and
+fixed them.  It looks absolutely gorgeous on Mac now.
+
+Tomorrow I will get to the public wifi and get this uploaded.
+
+Time to call this 0.0.4 now though.  We are up to 32,123 lines of
+code.
+
 March 17, 2017
 
 Jexer is coming back to active development status.  I had a lot of

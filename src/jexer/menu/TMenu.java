@@ -113,9 +113,6 @@ public final class TMenu extends TWindow {
         super(parent, label, x, y, parent.getScreen().getWidth(),
             parent.getScreen().getHeight());
 
-        // My parent constructor added me as a window, get rid of that
-        parent.closeWindow(this);
-
         // Setup the menu shortcut
         mnemonic = new MnemonicString(label);
         setTitle(mnemonic.getRawLabel());

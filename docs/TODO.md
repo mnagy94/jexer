@@ -5,11 +5,6 @@ Jexer TODO List
 Roadmap
 -------
 
-0.0.4
-
-- TWindow
-  - "Smart placement" for new windows
-
 0.0.5
 
 - TEditor
