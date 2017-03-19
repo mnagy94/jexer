@@ -31,6 +31,10 @@ Additional backends can be created by subclassing
 jexer.backend.Backend and passing it into the TApplication
 constructor.
 
+The Jexer homepage, which includes additional information and binary
+release downloads, is at: https://jexer.sourceforge.io .  The Jexer
+source code is hosted at: https://github.com/klamonte/jexer .
+
 
 
 License
