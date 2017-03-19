@@ -4,7 +4,7 @@
 
    The MIT License (MIT)
 
-   Copyright (C) 2016 Kevin Lamonte
+   Copyright (C) 2017 Kevin Lamonte
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -98,7 +98,7 @@
 	<![CDATA[<h1>Jexer - Java Text User Interface Library</h1>]]>
       </doctitle>
       <bottom>
-	<![CDATA[<i>Copyright &#169; 2016 Kevin Lamonte. Licensed MIT.</i>]]>
+	<![CDATA[<i>Copyright &#169; 2017 Kevin Lamonte. Licensed MIT.</i>]]>
       </bottom>
       <!--
 	  <tag name="todo" scope="all" description="To do:"/>

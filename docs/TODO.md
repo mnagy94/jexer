@@ -21,6 +21,10 @@ Roadmap
   - TText + clickable links
   - Index
 
+0.0.8
+
+- Undo / Redo support
+
 0.1.0: BETA RELEASE and BUG HUNT
 
 - Verify vttest in multiple tterminals.
