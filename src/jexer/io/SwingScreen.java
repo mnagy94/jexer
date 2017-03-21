@@ -325,10 +325,12 @@ public final class SwingScreen extends Screen {
                 cursorStyle = CursorStyle.BLOCK;
             }
 
-            if (System.getProperty("jexer.Swing.tripleBuffer").
-                equals("false")) {
+            if (System.getProperty("jexer.Swing.tripleBuffer") != null) {
+                if (System.getProperty("jexer.Swing.tripleBuffer").
+                    equals("false")) {
 
-                SwingScreen.tripleBuffer = false;
+                    SwingScreen.tripleBuffer = false;
+                }
             }
 
             setTitle("Jexer Application");
