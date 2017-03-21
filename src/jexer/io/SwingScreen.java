@@ -59,7 +59,7 @@ public final class SwingScreen extends Screen {
     /**
      * If true, use triple buffering thread.
      */
-    private static final boolean tripleBuffer = true;
+    private static boolean tripleBuffer = true;
 
     /**
      * Cursor style to draw.
@@ -325,6 +325,12 @@ public final class SwingScreen extends Screen {
                 cursorStyle = CursorStyle.BLOCK;
             }
 
+            if (System.getProperty("jexer.Swing.tripleBuffer").
+                equals("false")) {
+
+                SwingScreen.tripleBuffer = false;
+            }
+
             setTitle("Jexer Application");
             setBackground(Color.black);
 
@@ -452,11 +458,19 @@ public final class SwingScreen extends Screen {
             }
 
             // Generate glyph and draw it.
-
-            image = new BufferedImage(textWidth, textHeight,
-                BufferedImage.TYPE_INT_ARGB);
-            Graphics2D gr2 = image.createGraphics();
-            gr2.setFont(getFont());
+            Graphics2D gr2 = null;
+            int gr2x = xPixel;
+            int gr2y = yPixel;
+            if (tripleBuffer) {
+                image = new BufferedImage(textWidth, textHeight,
+                    BufferedImage.TYPE_INT_ARGB);
+                gr2 = image.createGraphics();
+                gr2.setFont(getFont());
+                gr2x = 0;
+                gr2y = 0;
+            } else {
+                gr2 = (Graphics2D) gr;
+            }
 
             Cell cellColor = new Cell();
             cellColor.setTo(cell);
@@ -469,7 +483,7 @@ public final class SwingScreen extends Screen {
 
             // Draw the background rectangle, then the foreground character.
             gr2.setColor(attrToBackgroundColor(cellColor));
-            gr2.fillRect(0, 0, textWidth, textHeight);
+            gr2.fillRect(gr2x, gr2y, textWidth, textHeight);
 
             // Handle blink and underline
             if (!cell.isBlink()
@@ -478,25 +492,30 @@ public final class SwingScreen extends Screen {
                 gr2.setColor(attrToForegroundColor(cellColor));
                 char [] chars = new char[1];
                 chars[0] = cell.getChar();
-                gr2.drawChars(chars, 0, 1, 0 + textAdjustX,
-                    0 + textHeight - maxDescent + textAdjustY);
+                gr2.drawChars(chars, 0, 1, gr2x + textAdjustX,
+                    gr2y + textHeight - maxDescent + textAdjustY);
 
                 if (cell.isUnderline()) {
-                    gr2.fillRect(0, 0 + textHeight - 2, textWidth, 2);
+                    gr2.fillRect(gr2x, gr2y + textHeight - 2, textWidth, 2);
                 }
             }
-            gr2.dispose();
 
-            // We need a new key that will not be mutated by invertCell().
-            Cell key = new Cell();
-            key.setTo(cell);
-            if (cell.isBlink() && !cursorBlinkVisible) {
-                glyphCacheBlink.put(key, image);
-            } else {
-                glyphCache.put(key, image);
+            if (tripleBuffer) {
+                gr2.dispose();
+
+                // We need a new key that will not be mutated by
+                // invertCell().
+                Cell key = new Cell();
+                key.setTo(cell);
+                if (cell.isBlink() && !cursorBlinkVisible) {
+                    glyphCacheBlink.put(key, image);
+                } else {
+                    glyphCache.put(key, image);
+                }
+
+                gr.drawImage(image, xPixel, yPixel, this);
             }
 
-            gr.drawImage(image, xPixel, yPixel, this);
         }
 
         /**

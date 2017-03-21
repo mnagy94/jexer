@@ -1,6 +1,31 @@
 Jexer Work Log
 ==============
 
+March 21, 2017
+
+I am starting to gear up for making Jexer a serious project now.  I've
+created its SourceForge project, linked it back to GitHub, have most
+of its web page set up (looks like Qodem's), and released 0.0.4.  And
+then this morning saw an out-of-bounds exception if you kill the main
+demo window.  Glad I marked it Alpha on SourceForge...
+
+Yesterday I was digging around the other Turbo Vision derived projects
+while populating the about page, and made a sad/happy-ish realization:
+Embarcadero could probably get all of them shut down if it really
+wanted to, including Free Vision.  I uncovered some hidden history in
+Free Vision, such that it appears that Graphics Vision had some
+licensed Borland code in it, so there might be enough mud in the air
+that Free Vision could be shut down the same way RHTVision was.  But
+even worse is the SCOTUS ruling on Oracle vs Google: if APIs are
+copyrighted (regardless of their thoughts on fair use), then any
+software that matches the API of a proprietary project might find
+itself subject to an infringement case.  So that too could shut down
+the other API-compatible TV clones.
+
+Fortunately, Jexer (and D-TUI) is completely new, and has no API
+compatibility with Turbo Vision.  Jexer could be a new root to a whole
+generation of TUI applications.
+
 March 18, 2017
 
 TStatusBar is working, as is "smart" window placement.  Overall this

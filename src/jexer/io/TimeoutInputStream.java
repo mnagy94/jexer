@@ -130,7 +130,7 @@ public class TimeoutInputStream extends InputStream {
             try {
                 // How long do we sleep for, eh?  For now we will go with 2
                 // millis.
-                Thread.currentThread().sleep(2);
+                Thread.sleep(2);
             } catch (InterruptedException e) {
                 // SQUASH
             }
@@ -189,7 +189,7 @@ public class TimeoutInputStream extends InputStream {
                 try {
                     // How long do we sleep for, eh?  For now we will go with
                     // 2 millis.
-                    Thread.currentThread().sleep(2);
+                    Thread.sleep(2);
                 } catch (InterruptedException e) {
                     // SQUASH
                 }
@@ -264,7 +264,7 @@ public class TimeoutInputStream extends InputStream {
                 try {
                     // How long do we sleep for, eh?  For now we will go with
                     // 2 millis.
-                    Thread.currentThread().sleep(2);
+                    Thread.sleep(2);
                 } catch (InterruptedException e) {
                     // SQUASH
                 }

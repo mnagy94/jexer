@@ -4,8 +4,10 @@ Jexer - Java Text User Interface library
 This library implements a text-based windowing system reminiscient of
 Borland's [Turbo Vision](http://en.wikipedia.org/wiki/Turbo_Vision)
 system.  (For those wishing to use the actual C++ Turbo Vision
-library, see [Sergio Sigala's C++ version based on the public domain
-sources released by Borland.](http://tvision.sourceforge.net/) )
+library, see [Sergio Sigala's C++ version based on the sources
+released by Borland,](http://tvision.sourceforge.net/) or consider
+Free Pascal's [Free Vision
+library.](http://wiki.freepascal.org/Free_Vision))
 
 Jexer currently supports three backends:
 
@@ -166,6 +168,13 @@ The following properties control features of Jexer:
 
   Used by jexer.io.SwingScreen.  Selects the cursor style to draw.
   Valid values are: underline, block, outline.  Default: underline.
+
+  jexer.Swing.tripleBuffer
+  ------------------------
+
+  Used by jexer.io.SwingScreen.  If false, use naive Swing thread
+  drawing.  This may be faster on slower systems, but will also be
+  more likely to have screen tearing.  Default: true.
 
 
 

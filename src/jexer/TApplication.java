@@ -721,7 +721,10 @@ public class TApplication implements Runnable {
         // Draw each window in reverse Z order
         List<TWindow> sorted = new LinkedList<TWindow>(windows);
         Collections.sort(sorted);
-        TWindow topLevel = sorted.get(0);
+        TWindow topLevel = null;
+        if (sorted.size() > 0) {
+            topLevel = sorted.get(0);
+        }
         Collections.reverse(sorted);
         for (TWindow window: sorted) {
             window.drawChildren();
@@ -768,7 +771,10 @@ public class TApplication implements Runnable {
         }
 
         // Draw the status bar of the top-level window
-        TStatusBar statusBar = topLevel.getStatusBar();
+        TStatusBar statusBar = null;
+        if (topLevel != null) {
+            statusBar = topLevel.getStatusBar();
+        }
         if (statusBar != null) {
             getScreen().resetClipping();
             statusBar.setWidth(getScreen().getWidth());

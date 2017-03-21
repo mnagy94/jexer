@@ -37,6 +37,11 @@ import java.io.IOException;
 public class ReadTimeoutException extends IOException {
 
     /**
+     * Serializable version.
+     */
+    private static final long serialVersionUID = 1;
+
+    /**
      * Construct an instance with a message.
      *
      * @param msg exception text

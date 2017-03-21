@@ -8,6 +8,7 @@ Roadmap
 0.0.5
 
 - TEditor
+- Eliminate all Eclipse warnings
 
 0.0.6
 
@@ -16,6 +17,12 @@ Roadmap
 - TCalendar
 
 0.0.7
+
+- Refactor SwingBackend to be embeddable
+  - jexer.Swing.blockMousePointer: false = do not invert cell, true
+    (default) is current behavior
+  - Make Demo4 with two separate Swing demos in a single JFrame.
+  - Make Demo5 mixing Swing and Jexer components
 
 - THelpWindow
   - TText + clickable links
@@ -31,6 +38,7 @@ Roadmap
 
 1.0.0
 
+- Maven artifact.
 
 
 1.1.0 Wishlist
@@ -63,6 +71,8 @@ Regression Checklist
 
 Release Checklist √
 -------------------
+
+Eliminate all Eclipse warnings
 
 Fix all marked TODOs in code
 

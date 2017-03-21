@@ -30,9 +30,12 @@
 
 <project name="jexer" basedir="." default="jar">
 
-  <!-- <property name="build.compiler" value="gcj"/> -->
+  <!--
+      I am using GCJ deliberately to test against Java 1.5 features.
+  -->
+  <property name="build.compiler" value="gcj"/>
 
-  <property name="version"       value="0.0.4"/>
+  <property name="version"       value="0.0.5"/>
   <property name="src.dir"       value="src"/>
   <property name="resources.dir" value="resources"/>
   <property name="build.dir"     value="build"/>
