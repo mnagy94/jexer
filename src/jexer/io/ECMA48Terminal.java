@@ -1294,19 +1294,19 @@ public final class ECMA48Terminal implements Runnable {
             // Bold implies foreground only
             sb.append("38;2;");
             if (color.equals(Color.BLACK)) {
-                sb.append("116;116;116");
+                sb.append("84;84;84");
             } else if (color.equals(Color.RED)) {
-                sb.append("252;116;116");
+                sb.append("252;84;84");
             } else if (color.equals(Color.GREEN)) {
-                sb.append("116;252;116");
+                sb.append("84;252;84");
             } else if (color.equals(Color.YELLOW)) {
-                sb.append("252;252;116");
+                sb.append("252;252;84");
             } else if (color.equals(Color.BLUE)) {
-                sb.append("116;116;252");
+                sb.append("84;84;252");
             } else if (color.equals(Color.MAGENTA)) {
-                sb.append("252;116;252");
+                sb.append("252;84;252");
             } else if (color.equals(Color.CYAN)) {
-                sb.append("116;252;252");
+                sb.append("84;252;252");
             } else if (color.equals(Color.WHITE)) {
                 sb.append("252;252;252");
             }
@@ -1323,7 +1323,7 @@ public final class ECMA48Terminal implements Runnable {
             } else if (color.equals(Color.GREEN)) {
                 sb.append("0;168;0");
             } else if (color.equals(Color.YELLOW)) {
-                sb.append("168;116;0");
+                sb.append("168;84;0");
             } else if (color.equals(Color.BLUE)) {
                 sb.append("0;0;168");
             } else if (color.equals(Color.MAGENTA)) {

@@ -380,6 +380,87 @@ public final class SwingScreen extends Screen {
         }
 
         /**
+         * Figure out what textAdjustX and textAdjustY should be, based on
+         * the location of a vertical bar (to find textAdjustY) and a
+         * horizontal bar (to find textAdjustX).
+         *
+         * @return true if textAdjustX and textAdjustY were guessed at
+         * correctly
+         */
+        private boolean getFontAdjustments() {
+            BufferedImage image = null;
+
+            // What SHOULD happen is that the topmost/leftmost white pixel is
+            // at position (gr2x, gr2y).  But it might also be off by a pixel
+            // in either direction.
+
+            Graphics2D gr2 = null;
+            int gr2x = 3;
+            int gr2y = 3;
+            image = new BufferedImage(textWidth * 2, textHeight * 2,
+                BufferedImage.TYPE_INT_ARGB);
+
+            gr2 = image.createGraphics();
+            gr2.setFont(getFont());
+            gr2.setColor(java.awt.Color.BLACK);
+            gr2.fillRect(0, 0, textWidth * 2, textHeight * 2);
+            gr2.setColor(java.awt.Color.WHITE);
+            char [] chars = new char[1];
+            chars[0] = jexer.bits.GraphicsChars.VERTICAL_BAR;
+            gr2.drawChars(chars, 0, 1, gr2x, gr2y + textHeight - maxDescent);
+            gr2.dispose();
+
+            for (int x = 0; x < textWidth; x++) {
+                for (int y = 0; y < textHeight; y++) {
+
+                    /*
+                    System.err.println("X: " + x + " Y: " + y + " " +
+                        image.getRGB(x, y));
+                     */
+
+                    if ((image.getRGB(x, y) & 0xFFFFFF) != 0) {
+                        textAdjustY = (gr2y - y);
+
+                        // System.err.println("textAdjustY: " + textAdjustY);
+                        x = textWidth;
+                        break;
+                    }
+                }
+            }
+
+            gr2 = image.createGraphics();
+            gr2.setFont(getFont());
+            gr2.setColor(java.awt.Color.BLACK);
+            gr2.fillRect(0, 0, textWidth * 2, textHeight * 2);
+            gr2.setColor(java.awt.Color.WHITE);
+            chars[0] = jexer.bits.GraphicsChars.SINGLE_BAR;
+            gr2.drawChars(chars, 0, 1, gr2x, gr2y + textHeight - maxDescent);
+            gr2.dispose();
+
+            for (int x = 0; x < textWidth; x++) {
+                for (int y = 0; y < textHeight; y++) {
+
+                    /*
+                    System.err.println("X: " + x + " Y: " + y + " " +
+                        image.getRGB(x, y));
+                     */
+
+                    if ((image.getRGB(x, y) & 0xFFFFFF) != 0) {
+                        textAdjustX = (gr2x - x);
+
+                        // System.err.println("textAdjustX: " + textAdjustX);
+                        return true;
+                    }
+                }
+            }
+
+            // Something weird happened, don't rely on this function.
+            // System.err.println("getFontAdjustments: false");
+            return false;
+        }
+
+
+        /**
          * Figure out my font dimensions.
          */
         private void getFontDimensions() {
@@ -399,13 +480,18 @@ public final class SwingScreen extends Screen {
                 textHeight++;
             }
 
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                textAdjustY = -1;
-                textAdjustX = 0;
-            }
-            if (System.getProperty("os.name").startsWith("Mac")) {
-                textAdjustY = -1;
-                textAdjustX = 0;
+            if (getFontAdjustments() == false) {
+                // We were unable to programmatically determine textAdjustX
+                // and textAdjustY, so try some guesses based on operating
+                // system.
+                if (System.getProperty("os.name").startsWith("Windows")) {
+                    textAdjustY = -1;
+                    textAdjustX = 0;
+                }
+                if (System.getProperty("os.name").startsWith("Mac")) {
+                    textAdjustY = -1;
+                    textAdjustX = 0;
+                }
             }
         }
 
