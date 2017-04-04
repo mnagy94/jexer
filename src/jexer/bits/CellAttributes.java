@@ -219,6 +219,16 @@ public class CellAttributes {
     }
 
     /**
+     * Public constructor makes a copy from another instance.
+     *
+     * @param that another CellAttributes instance
+     * @see #reset()
+     */
+    public CellAttributes(final CellAttributes that) {
+        setTo(that);
+    }
+
+    /**
      * Comparison check.  All fields must match to return true.
      *
      * @param rhs another CellAttributes instance

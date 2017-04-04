@@ -61,6 +61,12 @@ import static jexer.TKeypress.*;
 public final class ECMA48Terminal implements Runnable {
 
     /**
+     * If true, emit T.416-style RGB colors.  This is a) expensive in
+     * bandwidth, and b) potentially terrible looking for non-xterms.
+     */
+    private static boolean doRgbColor = false;
+
+    /**
      * The session information.
      */
     private SessionInfo sessionInfo;
@@ -335,6 +341,13 @@ public final class ECMA48Terminal implements Runnable {
         windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
+        // Permit RGB colors only if externally requested
+        if (System.getProperty("jexer.ECMA48.rgbColor") != null) {
+            if (System.getProperty("jexer.ECMA48.rgbColor").equals("true")) {
+                doRgbColor = true;
+            }
+        }
+
         // Spin up the input reader
         eventQueue = new LinkedList<TInputEvent>();
         readerThread = new Thread(this);
@@ -406,6 +419,13 @@ public final class ECMA48Terminal implements Runnable {
         // Hang onto the window size
         windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
+
+        // Permit RGB colors only if externally requested
+        if (System.getProperty("jexer.ECMA48.rgbColor") != null) {
+            if (System.getProperty("jexer.ECMA48.rgbColor").equals("true")) {
+                doRgbColor = true;
+            }
+        }
 
         // Spin up the input reader
         eventQueue = new LinkedList<TInputEvent>();
@@ -1243,13 +1263,99 @@ public final class ECMA48Terminal implements Runnable {
      * Create a SGR parameter sequence for a single color change.  Note
      * package private access.
      *
+     * @param bold if true, set bold
      * @param color one of the Color.WHITE, Color.BLUE, etc. constants
      * @param foreground if true, this is a foreground color
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[42m"
      */
-    String color(final Color color, final boolean foreground) {
-        return color(color, foreground, true);
+    String color(final boolean bold, final Color color,
+        final boolean foreground) {
+        return color(color, foreground, true) +
+                rgbColor(bold, color, foreground);
+    }
+
+    /**
+     * Create a T.416 RGB parameter sequence for a single color change.
+     *
+     * @param bold if true, set bold
+     * @param color one of the Color.WHITE, Color.BLUE, etc. constants
+     * @param foreground if true, this is a foreground color
+     * @return the string to emit to an xterm terminal with RGB support,
+     * e.g. "\033[38;2;RR;GG;BBm"
+     */
+    private String rgbColor(final boolean bold, final Color color,
+        final boolean foreground) {
+        if (doRgbColor == false) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder("\033[");
+        if (bold) {
+            // Bold implies foreground only
+            sb.append("38;2;");
+            if (color.equals(Color.BLACK)) {
+                sb.append("116;116;116");
+            } else if (color.equals(Color.RED)) {
+                sb.append("252;116;116");
+            } else if (color.equals(Color.GREEN)) {
+                sb.append("116;252;116");
+            } else if (color.equals(Color.YELLOW)) {
+                sb.append("252;252;116");
+            } else if (color.equals(Color.BLUE)) {
+                sb.append("116;116;252");
+            } else if (color.equals(Color.MAGENTA)) {
+                sb.append("252;116;252");
+            } else if (color.equals(Color.CYAN)) {
+                sb.append("116;252;252");
+            } else if (color.equals(Color.WHITE)) {
+                sb.append("252;252;252");
+            }
+        } else {
+            if (foreground) {
+                sb.append("38;2;");
+            } else {
+                sb.append("48;2;");
+            }
+            if (color.equals(Color.BLACK)) {
+                sb.append("0;0;0");
+            } else if (color.equals(Color.RED)) {
+                sb.append("168;0;0");
+            } else if (color.equals(Color.GREEN)) {
+                sb.append("0;168;0");
+            } else if (color.equals(Color.YELLOW)) {
+                sb.append("168;116;0");
+            } else if (color.equals(Color.BLUE)) {
+                sb.append("0;0;168");
+            } else if (color.equals(Color.MAGENTA)) {
+                sb.append("168;0;168");
+            } else if (color.equals(Color.CYAN)) {
+                sb.append("0;168;168");
+            } else if (color.equals(Color.WHITE)) {
+                sb.append("168;168;168");
+            }
+        }
+        sb.append("m");
+        return sb.toString();
+    }
+
+    /**
+     * Create a T.416 RGB parameter sequence for both foreground and
+     * background color change.
+     *
+     * @param bold if true, set bold
+     * @param foreColor one of the Color.WHITE, Color.BLUE, etc. constants
+     * @param backColor one of the Color.WHITE, Color.BLUE, etc. constants
+     * @return the string to emit to an xterm terminal with RGB support,
+     * e.g. "\033[38;2;RR;GG;BB;48;2;RR;GG;BBm"
+     */
+    private String rgbColor(final boolean bold, final Color foreColor,
+        final Color backColor) {
+        if (doRgbColor == false) {
+            return "";
+        }
+
+        return rgbColor(bold, foreColor, true) +
+                rgbColor(false, backColor, false);
     }
 
     /**
@@ -1285,13 +1391,16 @@ public final class ECMA48Terminal implements Runnable {
      * Create a SGR parameter sequence for both foreground and background
      * color change.  Note package private access.
      *
+     * @param bold if true, set bold
      * @param foreColor one of the Color.WHITE, Color.BLUE, etc. constants
      * @param backColor one of the Color.WHITE, Color.BLUE, etc. constants
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[31;42m"
      */
-    String color(final Color foreColor, final Color backColor) {
-        return color(foreColor, backColor, true);
+    String color(final boolean bold, final Color foreColor,
+        final Color backColor) {
+        return color(foreColor, backColor, true) +
+                rgbColor(bold, foreColor, backColor);
     }
 
     /**
@@ -1384,7 +1493,7 @@ public final class ECMA48Terminal implements Runnable {
             sb.append("\033[0;");
         }
         sb.append(String.format("%d;%dm", ecmaForeColor, ecmaBackColor));
-        return sb.toString();
+        return sb.toString() + rgbColor(bold, foreColor, backColor);
     }
 
     /**

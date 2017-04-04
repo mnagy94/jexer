@@ -137,8 +137,8 @@ public final class ECMA48Screen extends Screen {
                     && (lCell.isBlink() == lastAttr.isBlink())
                 ) {
                     // Both colors changed, attributes the same
-                    sb.append(terminal.color(lCell.getForeColor(),
-                            lCell.getBackColor()));
+                    sb.append(terminal.color(lCell.isBold(),
+                            lCell.getForeColor(), lCell.getBackColor()));
 
                     if (debugToStderr) {
                         System.err.printf("1 Change only fore/back colors\n");
@@ -169,7 +169,8 @@ public final class ECMA48Screen extends Screen {
                 ) {
 
                     // Attributes same, foreColor different
-                    sb.append(terminal.color(lCell.getForeColor(), true));
+                    sb.append(terminal.color(lCell.isBold(),
+                            lCell.getForeColor(), true));
 
                     if (debugToStderr) {
                         System.err.printf("3 Change foreColor\n");
@@ -182,7 +183,8 @@ public final class ECMA48Screen extends Screen {
                     && (lCell.isBlink() == lastAttr.isBlink())
                 ) {
                     // Attributes same, backColor different
-                    sb.append(terminal.color(lCell.getBackColor(), false));
+                    sb.append(terminal.color(lCell.isBold(),
+                            lCell.getBackColor(), false));
 
                     if (debugToStderr) {
                         System.err.printf("4 Change backColor\n");
