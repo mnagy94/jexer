@@ -40,7 +40,7 @@ public final class ECMA48Screen extends Screen {
     /**
      * Emit debugging to stderr.
      */
-    private boolean debugToStderr;
+    private boolean debugToStderr = false;
 
     /**
      * We call terminal.cursor() so need the instance.
@@ -53,8 +53,6 @@ public final class ECMA48Screen extends Screen {
      * @param terminal ECMA48Terminal to use
      */
     public ECMA48Screen(final ECMA48Terminal terminal) {
-        debugToStderr = false;
-
         this.terminal = terminal;
 
         // Query the screen size

@@ -178,7 +178,7 @@ public final class Cell extends CellAttributes {
      */
     @Override
     public String toString() {
-        return String.format("fore: %d back: %d bold: %s blink: %s ch %c",
+        return String.format("fore: %s back: %s bold: %s blink: %s ch %c",
             getForeColor(), getBackColor(), isBold(), isBlink(), ch);
     }
 }

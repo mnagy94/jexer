@@ -1493,7 +1493,8 @@ public final class ECMA48Terminal implements Runnable {
             sb.append("\033[0;");
         }
         sb.append(String.format("%d;%dm", ecmaForeColor, ecmaBackColor));
-        return sb.toString() + rgbColor(bold, foreColor, backColor);
+        sb.append(rgbColor(bold, foreColor, backColor));
+        return sb.toString();
     }
 
     /**
@@ -1504,7 +1505,7 @@ public final class ECMA48Terminal implements Runnable {
      * e.g. "\033[0m"
      */
     String normal() {
-        return normal(true);
+        return normal(true) + rgbColor(false, Color.WHITE, Color.BLACK);
     }
 
     /**
