@@ -482,13 +482,9 @@ public final class SwingScreen extends Screen {
 
             if (getFontAdjustments() == false) {
                 // We were unable to programmatically determine textAdjustX
-                // and textAdjustY, so try some guesses based on operating
-                // system.
-                if (System.getProperty("os.name").startsWith("Windows")) {
-                    textAdjustY = -1;
-                    textAdjustX = 0;
-                }
-                if (System.getProperty("os.name").startsWith("Mac")) {
+                // and textAdjustY, so try some guesses based on VM vendor.
+                String runtime = System.getProperty("java.runtime.name");
+                if ((runtime != null) && (runtime.contains("Java(TM)"))) {
                     textAdjustY = -1;
                     textAdjustX = 0;
                 }
