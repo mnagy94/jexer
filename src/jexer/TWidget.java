@@ -868,8 +868,8 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public void onMouseDown(final TMouseEvent mouse) {
         // Default: do nothing, pass to children instead
-    	for (int i = children.size() - 1 ; i >= 0 ; i--) {
-    		TWidget widget = children.get(i);
+        for (int i = children.size() - 1 ; i >= 0 ; i--) {
+            TWidget widget = children.get(i);
             if (widget.mouseWouldHit(mouse)) {
                 // Dispatch to this child, also activate it
                 activate(widget);
@@ -890,8 +890,8 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public void onMouseUp(final TMouseEvent mouse) {
         // Default: do nothing, pass to children instead
-    	for (int i = children.size() - 1 ; i >= 0 ; i--) {
-    		TWidget widget = children.get(i);
+        for (int i = children.size() - 1 ; i >= 0 ; i--) {
+            TWidget widget = children.get(i);
             if (widget.mouseWouldHit(mouse)) {
                 // Dispatch to this child, also activate it
                 activate(widget);
