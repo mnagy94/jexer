@@ -51,6 +51,36 @@ import jexer.event.TMouseEvent;
 public final class TText extends TWidget {
 
     /**
+     * Available text justifications.
+     */
+    public enum Justification {
+        /**
+         * Left-justified text.
+         */
+        LEFT,
+
+        /**
+         * Centered text.
+         */
+        CENTER,
+
+        /**
+         * Right-justified text.
+         */
+        RIGHT,
+
+        /**
+         * Fully-justified text.
+         */
+        FULL,
+    }
+
+    /**
+     * How to justify the text.
+     */
+    private Justification justification = Justification.LEFT;
+
+    /**
      * Text to display.
      */
     private String text;
@@ -129,46 +159,45 @@ public final class TText extends TWidget {
     }
 
     /**
-     * Insert newlines into a string to wrap it to a maximum column. Terminate
-     * the final string with a newline. Note that interior newlines are
-     * converted to spaces.
+     * Set justification.
      *
-     * @param str the string
-     * @param n the maximum number of characters in a line
-     * @return the wrapped string
+     * @param justification LEFT, CENTER, RIGHT, or FULL
      */
-    private String wrap(final String str, final int n) {
-        assert (n > 0);
+    public void setJustification(final Justification justification) {
+        this.justification = justification;
+        reflow();
+    }
 
-        StringBuilder sb = new StringBuilder();
-        StringBuilder word = new StringBuilder();
-        int col = 0;
-        for (int i = 0; i < str.length(); i++) {
-            char ch = str.charAt(i);
-            if (ch == '\n') {
-                ch = ' ';
-            }
-            if (ch == ' ') {
-                sb.append(word.toString());
-                sb.append(ch);
-                if (word.length() >= (n - 1)) {
-                    sb.append('\n');
-                    col = 0;
-                }
-                word = new StringBuilder();
-            } else {
-                word.append(ch);
-            }
+    /**
+     * Left-justify the text.
+     */
+    public void leftJustify() {
+        justification = Justification.LEFT;
+        reflow();
+    }
 
-            col++;
-            if (col >= (n - 1)) {
-                sb.append('\n');
-                col = 0;
-            }
-        }
-        sb.append(word.toString());
-        sb.append('\n');
-        return sb.toString();
+    /**
+     * Center-justify the text.
+     */
+    public void centerJustify() {
+        justification = Justification.CENTER;
+        reflow();
+    }
+
+    /**
+     * Right-justify the text.
+     */
+    public void rightJustify() {
+        justification = Justification.RIGHT;
+        reflow();
+    }
+
+    /**
+     * Fully-justify the text.
+     */
+    public void fullJustify() {
+        justification = Justification.FULL;
+        reflow();
     }
 
     /**
@@ -181,10 +210,25 @@ public final class TText extends TWidget {
         // Break up text into paragraphs
         String[] paragraphs = text.split("\n\n");
         for (String p : paragraphs) {
-            String paragraph = wrap(p, getWidth() - 1);
-            for (String line : paragraph.split("\n")) {
-                lines.add(line);
+            switch (justification) {
+            case LEFT:
+                lines.addAll(jexer.bits.StringJustifier.left(p,
+                        getWidth() - 1));
+                break;
+            case CENTER:
+                lines.addAll(jexer.bits.StringJustifier.center(p,
+                        getWidth() - 1));
+                break;
+            case RIGHT:
+                lines.addAll(jexer.bits.StringJustifier.right(p,
+                        getWidth() - 1));
+                break;
+            case FULL:
+                lines.addAll(jexer.bits.StringJustifier.full(p,
+                        getWidth() - 1));
+                break;
             }
+
             for (int i = 0; i < lineSpacing; i++) {
                 lines.add("");
             }

@@ -316,7 +316,7 @@ public class TWindow extends TWidget {
     }
 
     /**
-     * Restote (unmaximize) window.
+     * Restore (unmaximize) window.
      */
     private void restore() {
         setWidth(restoreWindowWidth);

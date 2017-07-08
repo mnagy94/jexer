@@ -18,7 +18,6 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
     - Expose toTop()/toLeft()/...
 
 - TText:
-  - Justification (left, right, center, proportional) (#10)
   - Scrollbars adjust automatically
     - Expose toTop()/toLeft()/...
 
