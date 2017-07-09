@@ -1,0 +1,149 @@
+/*
+ * Jexer - Java Text User Interface
+ *
+ * The MIT License (MIT)
+ *
+ * Copyright (C) 2017 Kevin Lamonte
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ *
+ * @author Kevin Lamonte [kevin.lamonte@gmail.com]
+ * @version 1
+ */
+package jexer;
+
+import jexer.bits.CellAttributes;
+import jexer.bits.GraphicsChars;
+import jexer.event.TKeypressEvent;
+import jexer.event.TMenuEvent;
+import jexer.event.TMouseEvent;
+import jexer.event.TResizeEvent;
+
+/**
+ * TDesktop is a special-class window that is drawn underneath everything
+ * else.
+ */
+public class TDesktop extends TWindow {
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent application
+     */
+    public TDesktop(final TApplication parent) {
+
+        super(parent, "", 0, 0, parent.getScreen().getWidth(),
+            parent.getScreen().getHeight() - 1);
+
+        setActive(false);
+    }
+
+    /**
+     * The default TDesktop draws a hatch character across everything.
+     */
+    @Override
+    public void draw() {
+        CellAttributes background = getTheme().getColor("tdesktop.background");
+        putAll(GraphicsChars.HATCH, background);
+    }
+
+    /**
+     * Handle mouse button presses.
+     *
+     * @param mouse mouse button event
+     */
+    @Override
+    public void onMouseDown(final TMouseEvent mouse) {
+        this.mouse = mouse;
+
+        // Pass to children
+        for (TWidget widget: getChildren()) {
+            if (widget.mouseWouldHit(mouse)) {
+                // Dispatch to this child, also activate it
+                activate(widget);
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+                widget.handleEvent(mouse);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Handle mouse button releases.
+     *
+     * @param mouse mouse button release event
+     */
+    @Override
+    public void onMouseUp(final TMouseEvent mouse) {
+        this.mouse = mouse;
+
+        // Pass to children
+        for (TWidget widget: getChildren()) {
+            if (widget.mouseWouldHit(mouse)) {
+                // Dispatch to this child, also activate it
+                activate(widget);
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+                widget.handleEvent(mouse);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Handle mouse movements.
+     *
+     * @param mouse mouse motion event
+     */
+    @Override
+    public void onMouseMotion(final TMouseEvent mouse) {
+        this.mouse = mouse;
+
+        // Default: do nothing, pass to children instead
+        super.onMouseMotion(mouse);
+    }
+
+    /**
+     * Handle keystrokes.
+     *
+     * @param keypress keystroke event
+     */
+    @Override
+    public void onKeypress(final TKeypressEvent keypress) {
+        // Default: do nothing, pass to children instead
+        super.onKeypress(keypress);
+    }
+
+    /**
+     * Handle posted menu events.
+     *
+     * @param menu menu event
+     */
+    @Override
+    public void onMenu(final TMenuEvent menu) {
+        // Default: do nothing, pass to children instead
+        super.onMenu(menu);
+    }
+
+}

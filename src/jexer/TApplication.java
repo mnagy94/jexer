@@ -527,6 +527,34 @@ public class TApplication implements Runnable {
         return desktopBottom;
     }
 
+    /**
+     * An optional TDesktop background window that is drawn underneath
+     * everything else.
+     */
+    private TDesktop desktop;
+
+    /**
+     * Set the TDesktop instance.
+     *
+     * @param desktop a TDesktop instance, or null to remove the one that is
+     * set
+     */
+    public final void setDesktop(final TDesktop desktop) {
+        if (this.desktop != null) {
+            this.desktop.onClose();
+        }
+        this.desktop = desktop;
+    }
+
+    /**
+     * Get the TDesktop instance.
+     *
+     * @return the desktop, or null if it is not set
+     */
+    public final TDesktop getDesktop() {
+        return desktop;
+    }
+
     // ------------------------------------------------------------------------
     // General behavior -------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -650,6 +678,7 @@ public class TApplication implements Runnable {
         timers          = new LinkedList<TTimer>();
         accelerators    = new HashMap<TKeypress, TMenuItem>();
         menuItems       = new ArrayList<TMenuItem>();
+        desktop         = new TDesktop(this);
 
         // Setup the main consumer thread
         primaryEventHandler = new WidgetEventHandler(this, true);
@@ -714,9 +743,10 @@ public class TApplication implements Runnable {
         // Start with a clean screen
         getScreen().clear();
 
-        // Draw the background
-        CellAttributes background = theme.getColor("tapplication.background");
-        getScreen().putAll(GraphicsChars.HATCH, background);
+        // Draw the desktop
+        if (desktop != null) {
+            desktop.drawChildren();
+        }
 
         // Draw each window in reverse Z order
         List<TWindow> sorted = new LinkedList<TWindow>(windows);
@@ -957,6 +987,10 @@ public class TApplication implements Runnable {
                 oldMouseX = 0;
                 oldMouseY = 0;
             }
+            if (desktop != null) {
+                desktop.setDimensions(0, 0, resize.getWidth(),
+                    resize.getHeight() - 1);
+            }
             return;
         }
 
@@ -1088,6 +1122,7 @@ public class TApplication implements Runnable {
         }
 
         // Dispatch events to the active window -------------------------------
+        boolean dispatchToDesktop = true;
         for (TWindow window: windows) {
             if (window.isActive()) {
                 if (event instanceof TMouseEvent) {
@@ -1097,7 +1132,14 @@ public class TApplication implements Runnable {
                     assert (mouse.getY() == mouse.getAbsoluteY());
                     mouse.setX(mouse.getX() - window.getX());
                     mouse.setY(mouse.getY() - window.getY());
+
+                    if (window.mouseWouldHit(mouse)) {
+                        dispatchToDesktop = false;
+                    }
+                } else if (event instanceof TKeypressEvent) {
+                    dispatchToDesktop = false;
                 }
+
                 if (debugEvents) {
                     System.err.printf("TApplication dispatch event: %s\n",
                         event);
@@ -1106,7 +1148,14 @@ public class TApplication implements Runnable {
                 break;
             }
         }
+        if (dispatchToDesktop) {
+            // This event is fair game for the desktop to process.
+            if (desktop != null) {
+                desktop.handleEvent(event);
+            }
+        }
     }
+
     /**
      * Dispatch one event to the appropriate widget or application-level
      * event handler.  This is the secondary event handler used by certain
@@ -1300,6 +1349,11 @@ public class TApplication implements Runnable {
 
         // Do not add menu windows to the window list.
         if (window instanceof TMenu) {
+            return;
+        }
+
+        // Do not add the desktop to the window list.
+        if (window instanceof TDesktop) {
             return;
         }
 

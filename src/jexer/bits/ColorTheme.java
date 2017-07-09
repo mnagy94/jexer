@@ -240,12 +240,12 @@ public final class ColorTheme {
         color.setBold(false);
         colors.put("twindow.background.windowmove", color);
 
-        // TApplication background
+        // TDesktop background
         color = new CellAttributes();
         color.setForeColor(Color.BLUE);
         color.setBackColor(Color.WHITE);
         color.setBold(false);
-        colors.put("tapplication.background", color);
+        colors.put("tdesktop.background", color);
 
         // TButton text
         color = new CellAttributes();

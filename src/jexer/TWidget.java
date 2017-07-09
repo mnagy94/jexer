@@ -218,6 +218,23 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Change the dimensions.
+     *
+     * @param x absolute X position of the top-left corner
+     * @param y absolute Y position of the top-left corner
+     * @param width new widget width
+     * @param height new widget height
+     */
+    public final void setDimensions(final int x, final int y, final int width,
+        final int height) {
+
+        setX(x);
+        setY(y);
+        setWidth(width);
+        setHeight(height);
+    }
+
+    /**
      * My tab order inside a window or containing widget.
      */
     private int tabOrder = 0;
@@ -427,7 +444,10 @@ public abstract class TWidget implements Comparable<TWidget> {
         if (parent == this) {
             return x;
         }
-        if ((parent instanceof TWindow) && !(parent instanceof TMenu)) {
+        if ((parent instanceof TWindow)
+            && !(parent instanceof TMenu)
+            && !(parent instanceof TDesktop)
+        ) {
             // Widgets on a TWindow have (0,0) as their top-left, but this is
             // actually the TWindow's (1,1).
             return parent.getAbsoluteX() + x + 1;
@@ -446,7 +466,10 @@ public abstract class TWidget implements Comparable<TWidget> {
         if (parent == this) {
             return y;
         }
-        if ((parent instanceof TWindow) && !(parent instanceof TMenu)) {
+        if ((parent instanceof TWindow)
+            && !(parent instanceof TMenu)
+            && !(parent instanceof TDesktop)
+        ) {
             // Widgets on a TWindow have (0,0) as their top-left, but this is
             // actually the TWindow's (1,1).
             return parent.getAbsoluteY() + y + 1;
