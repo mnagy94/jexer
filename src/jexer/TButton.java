@@ -74,12 +74,26 @@ public final class TButton extends TWidget {
     private TAction action;
 
     /**
+     * The time at which dispatch() was called.
+     */
+    private long dispatchTime;
+
+    /**
+     * How long to animate dispatch of the event in millis.
+     */
+    private static final long DISPATCH_TIME = 75;
+
+    /**
      * Act as though the button was pressed.  This is useful for other UI
      * elements to get the same action as if the user clicked the button.
      */
     public void dispatch() {
         if (action != null) {
-            action.DO();
+            long now = System.currentTimeMillis();
+            if (now - dispatchTime > DISPATCH_TIME) {
+                action.DO();
+                dispatchTime = now;
+            }
         }
     }
 
@@ -153,6 +167,12 @@ public final class TButton extends TWidget {
         shadowColor.setForeColor(Color.BLACK);
         shadowColor.setBold(false);
 
+        long now = System.currentTimeMillis();
+        boolean inDispatch = false;
+        if (now - dispatchTime < DISPATCH_TIME) {
+            inDispatch = true;
+        }
+
         if (!isEnabled()) {
             buttonColor = getTheme().getColor("tbutton.disabled");
             menuMnemonicColor = getTheme().getColor("tbutton.disabled");
@@ -164,7 +184,7 @@ public final class TButton extends TWidget {
             menuMnemonicColor = getTheme().getColor("tbutton.mnemonic");
         }
 
-        if (inButtonPress) {
+        if (inButtonPress || inDispatch) {
             getScreen().putCharXY(1, 0, ' ', buttonColor);
             getScreen().putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
             getScreen().putCharXY(getWidth() - 1, 0, ' ', buttonColor);
@@ -179,7 +199,7 @@ public final class TButton extends TWidget {
                 GraphicsChars.CP437[0xDF], shadowColor);
         }
         if (mnemonic.getShortcutIdx() >= 0) {
-            if (inButtonPress) {
+            if (inButtonPress || inDispatch) {
                 getScreen().putCharXY(2 + mnemonic.getShortcutIdx(), 0,
                     mnemonic.getShortcut(), menuMnemonicColor);
             } else {
@@ -217,9 +237,7 @@ public final class TButton extends TWidget {
         if (inButtonPress && mouse.isMouse1()) {
             inButtonPress = false;
             // Dispatch the event
-            if (action != null) {
-                action.DO();
-            }
+            dispatch();
         }
 
     }
@@ -249,9 +267,7 @@ public final class TButton extends TWidget {
             || keypress.equals(kbSpace)
         ) {
             // Dispatch
-            if (action != null) {
-                action.DO();
-            }
+            dispatch();
             return;
         }
 
