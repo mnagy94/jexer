@@ -24,10 +24,11 @@ Jexer currently supports three backends:
   TCP socket.  jexer.demos.Demo3 demonstrates how one might use a
   character encoding than the default UTF-8.
 
-* Java Swing UI.  This backend can be selected by setting
-  jexer.Swing=true.  The default window size for Swing is 80x25, which
-  is set in jexer.session.SwingSession.  For the demo application,
-  this is the default backend on Windows and Mac platforms.
+* Java Swing UI.  The default window size for Swing is 80x25, which is
+  set in jexer.session.SwingSession.  For the demo applications, this
+  is the default backend on Windows and Mac platforms.  This backend
+  can be explicitly selected for the demo applications by setting
+  jexer.Swing=true.
 
 Additional backends can be created by subclassing
 jexer.backend.Backend and passing it into the TApplication
@@ -125,12 +126,12 @@ it and you'll see an application like this:
 ![The Example Code Above](/screenshots/readme_application.png?raw=true "The application in the text of README.md")
 
 See the files in jexer.demos for many more detailed examples showing
-all of the existing UI controls.  The demo can be run in three
-different ways:
+all of the existing UI controls.  The available demos can be run as
+follows:
 
   * 'java -jar jexer.jar' .  This will use System.in/out with
-    xterm-like sequences on non-Windows platforms.  On Windows it will
-    use a Swing JFrame.
+    xterm-like sequences on non-Windows non-Mac platforms.  On Windows
+    and Mac it will use a Swing JFrame.
 
   * 'java -Djexer.Swing=true -jar jexer.jar' .  This will always use
     Swing on any platform.
@@ -139,6 +140,14 @@ different ways:
     number to run the TCP daemon on).  This will use the telnet
     protocol to establish an 8-bit clean channel and be aware of
     screen size changes.
+
+  * 'java -cp jexer.jar jexer.demos.Demo3' .  This will use
+    System.in/out with xterm-like sequences.  One can see in the code
+    how to pass a different InputReader and OutputReader to
+    TApplication, permitting a different encoding than UTF-8.
+
+  * 'java -cp jexer.jar jexer.demos.Demo4' .  This demonstrates hidden
+    windows and a custom TDesktop.
 
 
 
@@ -159,9 +168,10 @@ The following properties control features of Jexer:
   jexer.Swing
   -----------
 
-  Used only by jexer.demos.Demo1.  If true, use the Swing interface
-  for the demo application.  Default: true on Windows platforms
-  (os.name starts with "Windows"), false on non-Windows platforms.
+  Used only by jexer.demos.Demo1 and jexer.demos.Demo4.  If true, use
+  the Swing interface for the demo application.  Default: true on
+  Windows (os.name starts with "Windows") and Mac (os.name starts with
+  "Mac"), false on non-Windows and non-Mac platforms.
 
   jexer.Swing.cursorStyle
   -----------------------
@@ -172,9 +182,11 @@ The following properties control features of Jexer:
   jexer.Swing.tripleBuffer
   ------------------------
 
-  Used by jexer.io.SwingScreen.  If false, use naive Swing thread
-  drawing.  This may be faster on slower systems, but will also be
-  more likely to have screen tearing.  Default: true.
+  Used by jexer.io.SwingScreen.  If true, use triple-buffering which
+  reduces screen tearing but may also be slower to draw on slower
+  systems.  If false, use naive Swing thread drawing, which may be
+  faster on slower systems but also more likely to have screen
+  tearing.  Default: true.
 
 
 
@@ -218,7 +230,7 @@ ambiguous.  This section describes such issues.
 
   - jexer.io.ECMA48Terminal calls 'stty' to perform the equivalent of
     cfmakeraw() when using System.in/out.  System.out is also
-    (blindly!)  put in 'stty sane cooked' mode when exiting.
+    (blindly!) put in 'stty sane cooked' mode when exiting.
 
 
 

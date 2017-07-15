@@ -68,6 +68,68 @@ public class DesktopDemoApplication extends TApplication {
                 }
             }
         );
+
+        final TWindow windowA = addWindow("Window A", 20, 14);
+        final TWindow windowB = addWindow("Window B", 20, 14);
+        windowA.addButton("&Show Window B", 2, 2,
+            new TAction() {
+                public void DO() {
+                    windowB.show();
+                }
+            }
+        );
+        windowA.addButton("H&ide Window B", 2, 4,
+            new TAction() {
+                public void DO() {
+                    windowB.hide();
+                }
+            }
+        );
+        windowB.addButton("&Show Window A", 2, 2,
+            new TAction() {
+                public void DO() {
+                    windowA.show();
+                }
+            }
+        );
+        windowB.addButton("H&ide Window A", 2, 4,
+            new TAction() {
+                public void DO() {
+                    windowA.hide();
+                }
+            }
+        );
+
+        desktop.addButton("&Show Window B", 25, 2,
+            new TAction() {
+                public void DO() {
+                    windowB.show();
+                }
+            }
+        );
+        desktop.addButton("H&ide Window B", 25, 5,
+            new TAction() {
+                public void DO() {
+                    windowB.hide();
+                }
+            }
+        );
+        desktop.addButton("Sh&ow Window A", 25, 8,
+            new TAction() {
+                public void DO() {
+                    windowA.show();
+                }
+            }
+        );
+        desktop.addButton("Hid&e Window A", 25, 11,
+            new TAction() {
+                public void DO() {
+                    windowA.hide();
+                }
+            }
+        );
+
+
     }
 
     /**

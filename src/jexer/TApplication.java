@@ -449,7 +449,7 @@ public class TApplication implements Runnable {
     private List<TMenu> subMenus;
 
     /**
-     * The currently acive menu.
+     * The currently active menu.
      */
     private TMenu activeMenu = null;
 
@@ -481,6 +481,11 @@ public class TApplication implements Runnable {
      * The top-level windows (but not menus).
      */
     private List<TWindow> windows;
+
+    /**
+     * The currently acive window.
+     */
+    private TWindow activeWindow = null;
 
     /**
      * Timers that are being ticked.
@@ -553,6 +558,26 @@ public class TApplication implements Runnable {
      */
     public final TDesktop getDesktop() {
         return desktop;
+    }
+
+    /**
+     * Get the current active window.
+     *
+     * @return the active window, or null if it is not set
+     */
+    public final TWindow getActiveWindow() {
+        return activeWindow;
+    }
+
+    /**
+     * Get the list of windows.
+     *
+     * @return a copy of the list of windows for this application
+     */
+    public final List<TWindow> getAllWindows() {
+        List<TWindow> result = new LinkedList<TWindow>();
+        result.addAll(windows);
+        return result;
     }
 
     // ------------------------------------------------------------------------
@@ -757,7 +782,9 @@ public class TApplication implements Runnable {
         }
         Collections.reverse(sorted);
         for (TWindow window: sorted) {
-            window.drawChildren();
+            if (window.isShown()) {
+                window.drawChildren();
+            }
         }
 
         // Draw the blank menubar line - reset the screen clipping first so
@@ -857,7 +884,7 @@ public class TApplication implements Runnable {
         while (!quit) {
             // Timeout is in milliseconds, so default timeout after 1 second
             // of inactivity.
-            long timeout = 0;
+            long timeout = 1000;
 
             // If I've got no updates to render, wait for something from the
             // backend or a timer.
@@ -1078,13 +1105,12 @@ public class TApplication implements Runnable {
             // shortcutted by the active window, and if so dispatch the menu
             // event.
             boolean windowWillShortcut = false;
-            for (TWindow window: windows) {
-                if (window.isActive()) {
-                    if (window.isShortcutKeypress(keypress.getKey())) {
-                        // We do not process this key, it will be passed to
-                        // the window instead.
-                        windowWillShortcut = true;
-                    }
+            if (activeWindow != null) {
+                assert (activeWindow.isShown());
+                if (activeWindow.isShortcutKeypress(keypress.getKey())) {
+                    // We do not process this key, it will be passed to the
+                    // window instead.
+                    windowWillShortcut = true;
                 }
             }
 
@@ -1123,30 +1149,30 @@ public class TApplication implements Runnable {
 
         // Dispatch events to the active window -------------------------------
         boolean dispatchToDesktop = true;
-        for (TWindow window: windows) {
-            if (window.isActive()) {
-                if (event instanceof TMouseEvent) {
-                    TMouseEvent mouse = (TMouseEvent) event;
-                    // Convert the mouse relative x/y to window coordinates
-                    assert (mouse.getX() == mouse.getAbsoluteX());
-                    assert (mouse.getY() == mouse.getAbsoluteY());
-                    mouse.setX(mouse.getX() - window.getX());
-                    mouse.setY(mouse.getY() - window.getY());
+        TWindow window = activeWindow;
+        if (window != null) {
+            assert (window.isActive());
+            assert (window.isShown());
+            if (event instanceof TMouseEvent) {
+                TMouseEvent mouse = (TMouseEvent) event;
+                // Convert the mouse relative x/y to window coordinates
+                assert (mouse.getX() == mouse.getAbsoluteX());
+                assert (mouse.getY() == mouse.getAbsoluteY());
+                mouse.setX(mouse.getX() - window.getX());
+                mouse.setY(mouse.getY() - window.getY());
 
-                    if (window.mouseWouldHit(mouse)) {
-                        dispatchToDesktop = false;
-                    }
-                } else if (event instanceof TKeypressEvent) {
+                if (window.mouseWouldHit(mouse)) {
                     dispatchToDesktop = false;
                 }
-
-                if (debugEvents) {
-                    System.err.printf("TApplication dispatch event: %s\n",
-                        event);
-                }
-                window.handleEvent(event);
-                break;
+            } else if (event instanceof TKeypressEvent) {
+                dispatchToDesktop = false;
             }
+
+            if (debugEvents) {
+                System.err.printf("TApplication dispatch event: %s\n",
+                    event);
+            }
+            window.handleEvent(event);
         }
         if (dispatchToDesktop) {
             // This event is fair game for the desktop to process.
@@ -1233,11 +1259,169 @@ public class TApplication implements Runnable {
         for (TWindow window: windows) {
             window.onIdle();
         }
+        if (desktop != null) {
+            desktop.onIdle();
+        }
     }
 
     // ------------------------------------------------------------------------
     // TWindow management -----------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Return the total number of windows.
+     *
+     * @return the total number of windows
+     */
+    public final int windowCount() {
+        return windows.size();
+    }
+
+    /**
+     * Return the number of windows that are visible.
+     *
+     * @return the number of windows that are visible
+     */
+    public final int shownWindowCount() {
+        int n = 0;
+        for (TWindow w: windows) {
+            if (w.isShown()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Check if a window instance is in this application's window list.
+     *
+     * @param window window to look for
+     * @return true if this window is in the list
+     */
+    public final boolean hasWindow(final TWindow window) {
+        if (windows.size() == 0) {
+            return false;
+        }
+        for (TWindow w: windows) {
+            if (w == window) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Activate a window: bring it to the top and have it receive events.
+     *
+     * @param window the window to become the new active window
+     */
+    public void activateWindow(final TWindow window) {
+        if (hasWindow(window) == false) {
+            /*
+             * Someone has a handle to a window I don't have.  Ignore this
+             * request.
+             */
+            return;
+        }
+
+        assert (windows.size() > 0);
+
+        if (window.isHidden()) {
+            // Unhiding will also activate.
+            showWindow(window);
+            return;
+        }
+        assert (window.isShown());
+
+        if (windows.size() == 1) {
+            assert (window == windows.get(0));
+            if (activeWindow == null) {
+                activeWindow = window;
+                window.setZ(0);
+                activeWindow.setActive(true);
+                activeWindow.onFocus();
+            }
+
+            assert (window.isActive());
+            assert (activeWindow == window);
+            return;
+        }
+
+        if (activeWindow == window) {
+            assert (window.isActive());
+
+            // Window is already active, do nothing.
+            return;
+        }
+
+        assert (!window.isActive());
+        if (activeWindow != null) {
+            assert (activeWindow.getZ() == 0);
+
+            activeWindow.onUnfocus();
+            activeWindow.setActive(false);
+            activeWindow.setZ(window.getZ());
+        }
+        activeWindow = window;
+        activeWindow.setZ(0);
+        activeWindow.setActive(true);
+        activeWindow.onFocus();
+        return;
+    }
+
+    /**
+     * Hide a window.
+     *
+     * @param window the window to hide
+     */
+    public void hideWindow(final TWindow window) {
+        if (hasWindow(window) == false) {
+            /*
+             * Someone has a handle to a window I don't have.  Ignore this
+             * request.
+             */
+            return;
+        }
+
+        assert (windows.size() > 0);
+
+        if (!window.hidden) {
+            if (window == activeWindow) {
+                if (shownWindowCount() > 1) {
+                    switchWindow(true);
+                } else {
+                    activeWindow = null;
+                    window.setActive(false);
+                    window.onUnfocus();
+                }
+            }
+            window.hidden = true;
+            window.onHide();
+        }
+    }
+
+    /**
+     * Show a window.
+     *
+     * @param window the window to show
+     */
+    public void showWindow(final TWindow window) {
+        if (hasWindow(window) == false) {
+            /*
+             * Someone has a handle to a window I don't have.  Ignore this
+             * request.
+             */
+            return;
+        }
+
+        assert (windows.size() > 0);
+
+        if (window.hidden) {
+            window.hidden = false;
+            window.onShow();
+            activateWindow(window);
+        }
+    }
 
     /**
      * Close window.  Note that the window's destructor is NOT called by this
@@ -1246,13 +1430,21 @@ public class TApplication implements Runnable {
      * @param window the window to remove
      */
     public final void closeWindow(final TWindow window) {
+        if (hasWindow(window) == false) {
+            /*
+             * Someone has a handle to a window I don't have.  Ignore this
+             * request.
+             */
+            return;
+        }
+
         synchronized (windows) {
             int z = window.getZ();
             window.setZ(-1);
             window.onUnfocus();
             Collections.sort(windows);
             windows.remove(0);
-            TWindow activeWindow = null;
+            activeWindow = null;
             for (TWindow w: windows) {
                 if (w.getZ() > z) {
                     w.setZ(w.getZ() - 1);
@@ -1288,6 +1480,13 @@ public class TApplication implements Runnable {
                 secondaryEventHandler.notify();
             }
         }
+
+        // Permit desktop to be active if it is the only thing left.
+        if (desktop != null) {
+            if (windows.size() == 0) {
+                desktop.setActive(true);
+            }
+        }
     }
 
     /**
@@ -1301,21 +1500,25 @@ public class TApplication implements Runnable {
         if (windows.size() < 2) {
             return;
         }
+        assert (activeWindow != null);
 
         synchronized (windows) {
 
             // Swap z/active between active window and the next in the list
             int activeWindowI = -1;
             for (int i = 0; i < windows.size(); i++) {
-                if (windows.get(i).isActive()) {
+                if (windows.get(i) == activeWindow) {
+                    assert (activeWindow.isActive());
                     activeWindowI = i;
                     break;
+                } else {
+                    assert (!windows.get(0).isActive());
                 }
             }
             assert (activeWindowI >= 0);
 
             // Do not switch if a window is modal
-            if (windows.get(activeWindowI).isModal()) {
+            if (activeWindow.isModal()) {
                 return;
             }
 
@@ -1329,13 +1532,8 @@ public class TApplication implements Runnable {
                     nextWindowI = activeWindowI - 1;
                 }
             }
-            windows.get(activeWindowI).setActive(false);
-            windows.get(activeWindowI).setZ(windows.get(nextWindowI).getZ());
-            windows.get(activeWindowI).onUnfocus();
-            windows.get(nextWindowI).setZ(0);
-            windows.get(nextWindowI).setActive(true);
-            windows.get(nextWindowI).onFocus();
 
+            activateWindow(windows.get(nextWindowI));
         } // synchronized (windows)
 
     }
@@ -1364,24 +1562,35 @@ public class TApplication implements Runnable {
             if (modalWindowActive()) {
                 window.flags |= TWindow.MODAL;
                 window.flags |= TWindow.CENTERED;
+                window.hidden = false;
             }
-            for (TWindow w: windows) {
-                if (w.isActive()) {
-                    w.setActive(false);
-                    w.onUnfocus();
+            if (window.isShown()) {
+                for (TWindow w: windows) {
+                    if (w.isActive()) {
+                        w.setActive(false);
+                        w.onUnfocus();
+                    }
+                    w.setZ(w.getZ() + 1);
                 }
-                w.setZ(w.getZ() + 1);
             }
             windows.add(window);
-            window.setZ(0);
-            window.setActive(true);
-            window.onFocus();
+            if (window.isShown()) {
+                activeWindow = window;
+                activeWindow.setZ(0);
+                activeWindow.setActive(true);
+                activeWindow.onFocus();
+            }
 
             if (((window.flags & TWindow.CENTERED) == 0)
                 && smartWindowPlacement) {
 
                 doSmartPlacement(window);
             }
+        }
+
+        // Desktop cannot be active over any other window.
+        if (desktop != null) {
+            desktop.setActive(false);
         }
     }
 
@@ -1751,18 +1960,27 @@ public class TApplication implements Runnable {
 
             for (TWindow window: windows) {
                 assert (!window.isModal());
+
+                if (window.isHidden()) {
+                    assert (!window.isActive());
+                    continue;
+                }
+
                 if (window.mouseWouldHit(mouse)) {
                     if (window == windows.get(0)) {
                         // Clicked on the same window, nothing to do
+                        assert (window.isActive());
                         return;
                     }
 
                     // We will be switching to another window
                     assert (windows.get(0).isActive());
+                    assert (windows.get(0) == activeWindow);
                     assert (!window.isActive());
-                    windows.get(0).onUnfocus();
-                    windows.get(0).setActive(false);
-                    windows.get(0).setZ(window.getZ());
+                    activeWindow.onUnfocus();
+                    activeWindow.setActive(false);
+                    activeWindow.setZ(window.getZ());
+                    activeWindow = window;
                     window.setZ(0);
                     window.setActive(true);
                     window.onFocus();
@@ -2319,6 +2537,71 @@ public class TApplication implements Runnable {
 
         TFileOpenBox box = new TFileOpenBox(this, path, type);
         return box.getFilename();
+    }
+
+    /**
+     * Convenience function to create a new window and make it active.
+     * Window will be located at (0, 0).
+     *
+     * @param title window title, will be centered along the top border
+     * @param width width of window
+     * @param height height of window
+     */
+    public final TWindow addWindow(final String title, final int width,
+        final int height) {
+
+        TWindow window = new TWindow(this, title, 0, 0, width, height);
+        return window;
+    }
+    /**
+     * Convenience function to create a new window and make it active.
+     * Window will be located at (0, 0).
+     *
+     * @param title window title, will be centered along the top border
+     * @param width width of window
+     * @param height height of window
+     * @param flags bitmask of RESIZABLE, CENTERED, or MODAL
+     */
+    public final TWindow addWindow(final String title,
+        final int width, final int height, final int flags) {
+
+        TWindow window = new TWindow(this, title, 0, 0, width, height, flags);
+        return window;
+    }
+
+    /**
+     * Convenience function to create a new window and make it active.
+     *
+     * @param title window title, will be centered along the top border
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of window
+     * @param height height of window
+     */
+    public final TWindow addWindow(final String title,
+        final int x, final int y, final int width, final int height) {
+
+        TWindow window = new TWindow(this, title, x, y, width, height);
+        return window;
+    }
+
+    /**
+     * Convenience function to create a new window and make it active.
+     *
+     * @param application TApplication that manages this window
+     * @param title window title, will be centered along the top border
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of window
+     * @param height height of window
+     * @param flags mask of RESIZABLE, CENTERED, or MODAL
+     */
+    public final TWindow addWindow(final String title,
+        final int x, final int y, final int width, final int height,
+        final int flags) {
+
+        TWindow window = new TWindow(this, title, x, y, width, height, flags);
+        return window;
     }
 
 }

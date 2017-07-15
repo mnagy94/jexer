@@ -37,7 +37,18 @@ import jexer.event.TResizeEvent;
 
 /**
  * TDesktop is a special-class window that is drawn underneath everything
- * else.
+ * else.  Like a TWindow, it can contain widgets and perform "background"
+ * processing via onIdle().  But unlike a TWindow, it cannot be hidden,
+ * moved, or resized.
+ *
+ * <p>
+ * Events are passed to TDesktop as follows:
+ * <ul>
+ * <li>Mouse events are seen if they do not cover any other windows.</li>
+ * <li>Keypress events are seen if no other windows are open.</li>
+ * <li>Menu events are seen if no other windows are open.</li>
+ * <li>Command events are seen if no other windows are open.</li>
+ * <ul>
  */
 public class TDesktop extends TWindow {
 
@@ -61,6 +72,62 @@ public class TDesktop extends TWindow {
     public void draw() {
         CellAttributes background = getTheme().getColor("tdesktop.background");
         putAll(GraphicsChars.HATCH, background);
+    }
+
+    /**
+     * Hide window.  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void hide() {}
+
+    /**
+     * Show window.  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void show() {}
+
+    /**
+     * Called by hide().  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void onHide() {}
+
+    /**
+     * Called by show().  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void onShow() {}
+
+    /**
+     * Returns true if the mouse is currently on the close button.
+     *
+     * @return true if mouse is currently on the close button
+     */
+    @Override
+    protected final boolean mouseOnClose() {
+        return false;
+    }
+
+    /**
+     * Returns true if the mouse is currently on the maximize/restore button.
+     *
+     * @return true if the mouse is currently on the maximize/restore button
+     */
+    @Override
+    protected final boolean mouseOnMaximize() {
+        return false;
+    }
+
+    /**
+     * Returns true if the mouse is currently on the resizable lower right
+     * corner.
+     *
+     * @return true if the mouse is currently on the resizable lower right
+     * corner
+     */
+    @Override
+    protected final boolean mouseOnResize() {
+        return false;
     }
 
     /**

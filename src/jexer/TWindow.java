@@ -303,7 +303,11 @@ public class TWindow extends TWidget {
     /**
      * Maximize window.
      */
-    private void maximize() {
+    public void maximize() {
+        if (maximized) {
+            return;
+        }
+
         restoreWindowWidth = getWidth();
         restoreWindowHeight = getHeight();
         restoreWindowX = getX();
@@ -318,12 +322,69 @@ public class TWindow extends TWidget {
     /**
      * Restore (unmaximize) window.
      */
-    private void restore() {
+    public void restore() {
+        if (!maximized) {
+            return;
+        }
+
         setWidth(restoreWindowWidth);
         setHeight(restoreWindowHeight);
         setX(restoreWindowX);
         setY(restoreWindowY);
         maximized = false;
+    }
+
+    // ------------------------------------------------------------------------
+    // Window visibility ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Hidden flag.  A hidden window will still have its onIdle() called, and
+     * will also have onClose() called at application exit.  Note package
+     * private access: TApplication will force hidden false if a modal window
+     * is active.
+     */
+    boolean hidden = false;
+
+    /**
+     * Returns true if this window is hidden.
+     *
+     * @return true if this window is hidden, false if the window is shown
+     */
+    public final boolean isHidden() {
+        return hidden;
+    }
+
+    /**
+     * Returns true if this window is shown.
+     *
+     * @return true if this window is shown, false if the window is hidden
+     */
+    public final boolean isShown() {
+        return !hidden;
+    }
+
+    /**
+     * Hide window.  A hidden window will still have its onIdle() called, and
+     * will also have onClose() called at application exit.  Hidden windows
+     * will not receive any other events.
+     */
+    public void hide() {
+        application.hideWindow(this);
+    }
+
+    /**
+     * Show window.
+     */
+    public void show() {
+        application.showWindow(this);
+    }
+
+    /**
+     * Activate window (bring to top and receive events).
+     */
+    public void activate() {
+        application.activateWindow(this);
     }
 
     // ------------------------------------------------------------------------
@@ -593,7 +654,7 @@ public class TWindow extends TWidget {
      *
      * @return true if mouse is currently on the close button
      */
-    private boolean mouseOnClose() {
+    protected boolean mouseOnClose() {
         if ((mouse != null)
             && (mouse.getAbsoluteY() == getY())
             && (mouse.getAbsoluteX() == getX() + 3)
@@ -608,7 +669,7 @@ public class TWindow extends TWidget {
      *
      * @return true if the mouse is currently on the maximize/restore button
      */
-    private boolean mouseOnMaximize() {
+    protected boolean mouseOnMaximize() {
         if ((mouse != null)
             && !isModal()
             && (mouse.getAbsoluteY() == getY())
@@ -626,7 +687,7 @@ public class TWindow extends TWidget {
      * @return true if the mouse is currently on the resizable lower right
      * corner
      */
-    private boolean mouseOnResize() {
+    protected boolean mouseOnResize() {
         if (((flags & RESIZABLE) != 0)
             && !isModal()
             && (mouse != null)
@@ -660,6 +721,20 @@ public class TWindow extends TWidget {
      * focus.
      */
     public void onUnfocus() {
+        // Default: do nothing
+    }
+
+    /**
+     * Called by application.hideWindow().
+     */
+    public void onHide() {
+        // Default: do nothing
+    }
+
+    /**
+     * Called by application.showWindow().
+     */
+    public void onShow() {
         // Default: do nothing
     }
 
@@ -930,37 +1005,41 @@ public class TWindow extends TWidget {
         // overrides onMenu() due to how TApplication dispatches
         // accelerators.
 
-        // Ctrl-W - close window
-        if (keypress.equals(kbCtrlW)) {
-            application.closeWindow(this);
-            return;
-        }
+        if (!(this instanceof TDesktop)) {
 
-        // F6 - behave like Alt-TAB
-        if (keypress.equals(kbF6)) {
-            application.switchWindow(true);
-            return;
-        }
-
-        // Shift-F6 - behave like Shift-Alt-TAB
-        if (keypress.equals(kbShiftF6)) {
-            application.switchWindow(false);
-            return;
-        }
-
-        // F5 - zoom
-        if (keypress.equals(kbF5)) {
-            if (maximized) {
-                restore();
-            } else {
-                maximize();
+            // Ctrl-W - close window
+            if (keypress.equals(kbCtrlW)) {
+                application.closeWindow(this);
+                return;
             }
-        }
 
-        // Ctrl-F5 - size/move
-        if (keypress.equals(kbCtrlF5)) {
-            inKeyboardResize = !inKeyboardResize;
-        }
+            // F6 - behave like Alt-TAB
+            if (keypress.equals(kbF6)) {
+                application.switchWindow(true);
+                return;
+            }
+
+            // Shift-F6 - behave like Shift-Alt-TAB
+            if (keypress.equals(kbShiftF6)) {
+                application.switchWindow(false);
+                return;
+            }
+
+            // F5 - zoom
+            if (keypress.equals(kbF5)) {
+                if (maximized) {
+                    restore();
+                } else {
+                    maximize();
+                }
+            }
+
+            // Ctrl-F5 - size/move
+            if (keypress.equals(kbCtrlF5)) {
+                inKeyboardResize = !inKeyboardResize;
+            }
+
+        } // if (!(this instanceof TDesktop))
 
         // I didn't take it, pass it on to my children
         super.onKeypress(keypress);
@@ -978,33 +1057,37 @@ public class TWindow extends TWidget {
         // overrides onMenu() due to how TApplication dispatches
         // accelerators.
 
-        if (command.equals(cmWindowClose)) {
-            application.closeWindow(this);
-            return;
-        }
+        if (!(this instanceof TDesktop)) {
 
-        if (command.equals(cmWindowNext)) {
-            application.switchWindow(true);
-            return;
-        }
-
-        if (command.equals(cmWindowPrevious)) {
-            application.switchWindow(false);
-            return;
-        }
-
-        if (command.equals(cmWindowMove)) {
-            inKeyboardResize = true;
-            return;
-        }
-
-        if (command.equals(cmWindowZoom)) {
-            if (maximized) {
-                restore();
-            } else {
-                maximize();
+            if (command.equals(cmWindowClose)) {
+                application.closeWindow(this);
+                return;
             }
-        }
+
+            if (command.equals(cmWindowNext)) {
+                application.switchWindow(true);
+                return;
+            }
+
+            if (command.equals(cmWindowPrevious)) {
+                application.switchWindow(false);
+                return;
+            }
+
+            if (command.equals(cmWindowMove)) {
+                inKeyboardResize = true;
+                return;
+            }
+
+            if (command.equals(cmWindowZoom)) {
+                if (maximized) {
+                    restore();
+                } else {
+                    maximize();
+                }
+            }
+
+        } // if (!(this instanceof TDesktop))
 
         // I didn't take it, pass it on to my children
         super.onCommand(command);
@@ -1017,34 +1100,39 @@ public class TWindow extends TWidget {
      */
     @Override
     public void onMenu(final TMenuEvent menu) {
-        if (menu.getId() == TMenu.MID_WINDOW_CLOSE) {
-            application.closeWindow(this);
-            return;
-        }
 
-        if (menu.getId() == TMenu.MID_WINDOW_NEXT) {
-            application.switchWindow(true);
-            return;
-        }
+        if (!(this instanceof TDesktop)) {
 
-        if (menu.getId() == TMenu.MID_WINDOW_PREVIOUS) {
-            application.switchWindow(false);
-            return;
-        }
-
-        if (menu.getId() == TMenu.MID_WINDOW_MOVE) {
-            inKeyboardResize = true;
-            return;
-        }
-
-        if (menu.getId() == TMenu.MID_WINDOW_ZOOM) {
-            if (maximized) {
-                restore();
-            } else {
-                maximize();
+            if (menu.getId() == TMenu.MID_WINDOW_CLOSE) {
+                application.closeWindow(this);
+                return;
             }
-            return;
-        }
+
+            if (menu.getId() == TMenu.MID_WINDOW_NEXT) {
+                application.switchWindow(true);
+                return;
+            }
+
+            if (menu.getId() == TMenu.MID_WINDOW_PREVIOUS) {
+                application.switchWindow(false);
+                return;
+            }
+
+            if (menu.getId() == TMenu.MID_WINDOW_MOVE) {
+                inKeyboardResize = true;
+                return;
+            }
+
+            if (menu.getId() == TMenu.MID_WINDOW_ZOOM) {
+                if (maximized) {
+                    restore();
+                } else {
+                    maximize();
+                }
+                return;
+            }
+
+        } // if (!(this instanceof TDesktop))
 
         // I didn't take it, pass it on to my children
         super.onMenu(menu);
