@@ -1,6 +1,40 @@
 Jexer Work Log
 ==============
 
+July 15, 2017
+
+I think I have cleaned up most of the window show/hide/activate mess
+in TApplication.  Demo4 has some cool interactions between a
+background TDesktop and several foreground TWindows, which helped
+expose bugs.
+
+July 9, 2017
+
+While working on TWindow.hide/show I decided that I am sick of
+TApplication's active window handling.  TApplication makes lots of
+assumptions, things are too fragile between modal and not, and one
+cannot easily say window.activate().  So I will also be changing that
+too. ... Code is still a bit of a mess, but hooks are in place at
+least for show/hide/activate.
+
+July 8, 2017
+
+Qodem 1.0.0 released last month, I had a vacation, and a Jexer user
+(nikiroo) started opening up pull requests. :-) So back unto the
+breach we go!
+
+TButton is now animated so that there is some feedback when selected
+via keyboard.  StringJustifier was written which permits TText's to
+have left/centered/right and full justification.  TDesktop is now in
+too which can act as a permanent max-sized window without borders.
+
+Next up is Viewport, an interface to collect scrollbar API, and then a
+cleaner API for scrollable widgets and windows.  After that is more
+window API: hide/show/maximize/restore, and unclosable windows.  I am
+cherry-picking bits from @nikiroo's PRs, which will likely break them
+before it fixes things, but I will find some way to get Niki credited
+with those pieces.
+
 March 21, 2017
 
 I am starting to gear up for making Jexer a serious project now.  I've

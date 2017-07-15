@@ -1278,14 +1278,29 @@ public class TApplication implements Runnable {
     }
 
     /**
-     * Return the number of windows that are visible.
+     * Return the number of windows that are showing.
      *
-     * @return the number of windows that are visible
+     * @return the number of windows that are showing on screen
      */
     public final int shownWindowCount() {
         int n = 0;
         for (TWindow w: windows) {
             if (w.isShown()) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Return the number of windows that are hidden.
+     *
+     * @return the number of windows that are hidden
+     */
+    public final int hiddenWindowCount() {
+        int n = 0;
+        for (TWindow w: windows) {
+            if (w.isHidden()) {
                 n++;
             }
         }
@@ -1304,6 +1319,7 @@ public class TApplication implements Runnable {
         }
         for (TWindow w: windows) {
             if (w == window) {
+                assert (window.getApplication() == this);
                 return true;
             }
         }
@@ -1496,8 +1512,8 @@ public class TApplication implements Runnable {
      * otherwise switch to the previous window in the list
      */
     public final void switchWindow(final boolean forward) {
-        // Only switch if there are multiple windows
-        if (windows.size() < 2) {
+        // Only switch if there are multiple visible windows
+        if (shownWindowCount() < 2) {
             return;
         }
         assert (activeWindow != null);
@@ -1522,18 +1538,23 @@ public class TApplication implements Runnable {
                 return;
             }
 
-            int nextWindowI;
-            if (forward) {
-                nextWindowI = (activeWindowI + 1) % windows.size();
-            } else {
-                if (activeWindowI == 0) {
-                    nextWindowI = windows.size() - 1;
+            int nextWindowI = activeWindowI;
+            for (;;) {
+                if (forward) {
+                    nextWindowI++;
+                    nextWindowI %= windows.size();
                 } else {
-                    nextWindowI = activeWindowI - 1;
+                    nextWindowI--;
+                    if (nextWindowI < 0) {
+                        nextWindowI = windows.size() - 1;
+                    }
+                }
+
+                if (windows.get(nextWindowI).isShown()) {
+                    activateWindow(windows.get(nextWindowI));
+                    break;
                 }
             }
-
-            activateWindow(windows.get(nextWindowI));
         } // synchronized (windows)
 
     }
@@ -1746,11 +1767,11 @@ public class TApplication implements Runnable {
                 continue;
             }
             for (int x = w.getX(); x < w.getX() + w.getWidth(); x++) {
-                if (x == width) {
+                if (x >= width) {
                     continue;
                 }
                 for (int y = w.getY(); y < w.getY() + w.getHeight(); y++) {
-                    if (y == height) {
+                    if (y >= height) {
                         continue;
                     }
                     overlapMatrix[x][y]++;
@@ -1793,11 +1814,11 @@ public class TApplication implements Runnable {
                 long newOverlapN = 0;
                 // Start by adding each new cell.
                 for (int wx = x; wx < x + window.getWidth(); wx++) {
-                    if (wx == width) {
+                    if (wx >= width) {
                         continue;
                     }
                     for (int wy = y; wy < y + window.getHeight(); wy++) {
-                        if (wy == height) {
+                        if (wy >= height) {
                             continue;
                         }
                         newMatrix[wx][wy]++;

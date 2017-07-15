@@ -10,7 +10,14 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 
 0.0.5
 
-- TDesktop (#14)
+
+- Scrollable:
+  - TTreeView
+  - TText
+  - TList
+  - TTerminalWindow
+  - TScrollableWindow
+
 
 - TWindow:
   - UNCLOSABLE (#8)
@@ -35,8 +42,8 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 - Refactor SwingBackend to be embeddable
   - jexer.Swing.blockMousePointer: false = do not invert cell, true
     (default) is current behavior
-  - Make Demo4 with two separate Swing demos in a single JFrame.
-  - Make Demo5 mixing Swing and Jexer components
+  - Make Demo5 with two separate Swing demos in a single JFrame.
+  - Make Demo6 mixing Swing and Jexer components
 
 - THelpWindow
   - TText + clickable links

@@ -69,8 +69,8 @@ public class DesktopDemoApplication extends TApplication {
             }
         );
 
-        final TWindow windowA = addWindow("Window A", 20, 14);
-        final TWindow windowB = addWindow("Window B", 20, 14);
+        final TWindow windowA = addWindow("Window A", 25, 14);
+        final TWindow windowB = addWindow("Window B", 25, 14);
         windowA.addButton("&Show Window B", 2, 2,
             new TAction() {
                 public void DO() {
@@ -82,6 +82,20 @@ public class DesktopDemoApplication extends TApplication {
             new TAction() {
                 public void DO() {
                     windowB.hide();
+                }
+            }
+        );
+        windowA.addButton("&Maximize Window B", 2, 6,
+            new TAction() {
+                public void DO() {
+                    windowB.maximize();
+                }
+            }
+        );
+        windowA.addButton("&Restore Window B", 2, 8,
+            new TAction() {
+                public void DO() {
+                    windowB.restore();
                 }
             }
         );
@@ -99,8 +113,22 @@ public class DesktopDemoApplication extends TApplication {
                 }
             }
         );
+        windowB.addButton("&Maximize Window A", 2, 6,
+            new TAction() {
+                public void DO() {
+                    windowA.maximize();
+                }
+            }
+        );
+        windowB.addButton("&Restore Window A", 2, 8,
+            new TAction() {
+                public void DO() {
+                    windowA.restore();
+                }
+            }
+        );
 
-        desktop.addButton("&Show Window B", 25, 2,
+        desktop.addButton("S&how Window B", 25, 2,
             new TAction() {
                 public void DO() {
                     windowB.show();
@@ -125,6 +153,14 @@ public class DesktopDemoApplication extends TApplication {
             new TAction() {
                 public void DO() {
                     windowA.hide();
+                }
+            }
+        );
+        desktop.addButton("&Create Window C", 25, 15,
+            new TAction() {
+                public void DO() {
+                    desktop.getApplication().addWindow("Window C",
+                        30, 20);
                 }
             }
         );
