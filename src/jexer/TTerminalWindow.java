@@ -49,7 +49,7 @@ import static jexer.TKeypress.*;
 /**
  * TTerminalWindow exposes a ECMA-48 / ANSI X3.64 style terminal in a window.
  */
-public class TTerminalWindow extends TWindow {
+public class TTerminalWindow extends TScrollableWindow {
 
     /**
      * The emulator.
@@ -60,11 +60,6 @@ public class TTerminalWindow extends TWindow {
      * The Process created by the shell spawning constructor.
      */
     private Process shell;
-
-    /**
-     * Vertical scrollbar.
-     */
-    private TVScroller vScroller;
 
     /**
      * Claim the keystrokes the emulator will need.
@@ -148,6 +143,9 @@ public class TTerminalWindow extends TWindow {
         final int y, final int flags) {
 
         super(application, "Terminal", x, y, 80 + 2, 24 + 2, flags);
+
+        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
+        setBottomValue(0);
 
         // Assume XTERM
         ECMA48.DeviceType deviceType = ECMA48.DeviceType.XTERM;
@@ -281,7 +279,7 @@ public class TTerminalWindow extends TWindow {
         synchronized (emulator) {
 
             // Update the scroll bars
-            reflow();
+            reflowData();
 
             // Draw the box using my superclass
             super.draw();
@@ -292,7 +290,7 @@ public class TTerminalWindow extends TWindow {
             // Put together the visible rows
             int visibleHeight = getHeight() - 2;
             int visibleBottom = scrollback.size() + display.size()
-                + vScroller.getValue();
+                + getVerticalValue();
             assert (visibleBottom >= 0);
 
             List<DisplayLine> preceedingBlankLines = new LinkedList<DisplayLine>();
@@ -385,10 +383,8 @@ public class TTerminalWindow extends TWindow {
 
             setCursorX(emulator.getCursorX() + 1);
             setCursorY(emulator.getCursorY() + 1
-                + (getHeight() - 2 - emulator.getHeight()));
-            if (vScroller != null) {
-                setCursorY(getCursorY() - vScroller.getValue());
-            }
+                + (getHeight() - 2 - emulator.getHeight())
+                - getVerticalValue());
             setCursorVisible(emulator.isCursorVisible());
             if (getCursorX() > getWidth() - 2) {
                 setCursorVisible(false);
@@ -454,10 +450,11 @@ public class TTerminalWindow extends TWindow {
 
             if (resize.getType() == TResizeEvent.Type.WIDGET) {
                 // Resize the scroll bars
-                reflow();
+                reflowData();
+                placeScrollbars();
 
                 // Get out of scrollback
-                vScroller.setValue(0);
+                setVerticalValue(0);
             }
             return;
 
@@ -467,7 +464,8 @@ public class TTerminalWindow extends TWindow {
     /**
      * Resize scrollbars for a new width/height.
      */
-    private void reflow() {
+    @Override
+    public void reflowData() {
 
         // Synchronize against the emulator so we don't stomp on its reader
         // thread.
@@ -477,19 +475,10 @@ public class TTerminalWindow extends TWindow {
             readEmulatorState();
 
             // Vertical scrollbar
-            if (vScroller == null) {
-                vScroller = new TVScroller(this, getWidth() - 2, 0,
-                    getHeight() - 2);
-                vScroller.setBottomValue(0);
-                vScroller.setValue(0);
-            } else {
-                vScroller.setX(getWidth() - 2);
-                vScroller.setHeight(getHeight() - 2);
-            }
-            vScroller.setTopValue(getHeight() - 2
+            setTopValue(getHeight() - 2
                 - (emulator.getScrollbackBuffer().size()
                     + emulator.getDisplayBuffer().size()));
-            vScroller.setBigChange(getHeight() - 2);
+            setVerticalBigChange(getHeight() - 2);
 
         } // synchronized (emulator)
     }
@@ -532,14 +521,14 @@ public class TTerminalWindow extends TWindow {
             || keypress.equals(kbCtrlPgUp)
             || keypress.equals(kbAltPgUp)
         ) {
-            vScroller.bigDecrement();
+            bigVerticalDecrement();
             return;
         }
         if (keypress.equals(kbShiftPgDn)
             || keypress.equals(kbCtrlPgDn)
             || keypress.equals(kbAltPgDn)
         ) {
-            vScroller.bigIncrement();
+            bigVerticalIncrement();
             return;
         }
 
@@ -548,7 +537,7 @@ public class TTerminalWindow extends TWindow {
         synchronized (emulator) {
             if (emulator.isReading()) {
                 // Get out of scrollback
-                vScroller.setValue(0);
+                setVerticalValue(0);
                 emulator.keypress(keypress.getKey());
 
                 // UGLY HACK TIME!  cmd.exe needs CRLF, not just CR, so if
@@ -582,11 +571,11 @@ public class TTerminalWindow extends TWindow {
         }
 
         if (mouse.isMouseWheelUp()) {
-            vScroller.decrement();
+            verticalDecrement();
             return;
         }
         if (mouse.isMouseWheelDown()) {
-            vScroller.increment();
+            verticalIncrement();
             return;
         }
         if (mouseOnEmulator(mouse)) {

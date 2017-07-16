@@ -116,6 +116,15 @@ public final class TVScroller extends TWidget {
     private int smallChange = 1;
 
     /**
+     * Get the increment for clicking on an arrow.
+     *
+     * @return the increment value
+     */
+    public int getSmallChange() {
+        return smallChange;
+    }
+
+    /**
      * Set the increment for clicking on an arrow.
      *
      * @param smallChange the new increment value
@@ -128,6 +137,16 @@ public final class TVScroller extends TWidget {
      * The increment for clicking in the bar between the box and an arrow.
      */
     private int bigChange = 20;
+
+    /**
+     * Set the increment for clicking in the bar between the box and an
+     * arrow.
+     *
+     * @return the increment value
+     */
+    public int getBigChange() {
+        return bigChange;
+    }
 
     /**
      * Set the increment for clicking in the bar between the box and an

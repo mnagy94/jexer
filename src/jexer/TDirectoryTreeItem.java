@@ -76,7 +76,7 @@ public class TDirectoryTreeItem extends TTreeItem {
         setExpandable(true);
 
         if (!isExpanded() || !isExpandable()) {
-            getTreeView().reflow();
+            getTreeView().reflowData();
             return;
         }
 
@@ -103,7 +103,7 @@ public class TDirectoryTreeItem extends TTreeItem {
         }
         Collections.sort(getChildren());
 
-        getTreeView().reflow();
+        getTreeView().reflowData();
     }
 
     /**
@@ -212,6 +212,6 @@ public class TDirectoryTreeItem extends TTreeItem {
             getTreeView().setSelected(childFile);
             setExpanded(oldExpanded);
         }
-        getTreeView().reflow();
+        getTreeView().reflowData();
     }
 }

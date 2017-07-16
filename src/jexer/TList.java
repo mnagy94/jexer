@@ -39,7 +39,7 @@ import static jexer.TKeypress.*;
 /**
  * TList shows a list of strings, and lets the user select one.
  */
-public class TList extends TWidget {
+public class TList extends TScrollableWidget {
 
     /**
      * The list of strings to display.
@@ -89,35 +89,7 @@ public class TList extends TWidget {
     public final void setList(final List<String> list) {
         strings.clear();
         strings.addAll(list);
-        reflow();
-    }
-
-    /**
-     * Vertical scrollbar.
-     */
-    private TVScroller vScroller;
-
-    /**
-     * Get the vertical scrollbar.  This is used by subclasses.
-     *
-     * @return the vertical scrollbar
-     */
-    public final TVScroller getVScroller() {
-        return vScroller;
-    }
-
-    /**
-     * Horizontal scrollbar.
-     */
-    private THScroller hScroller;
-
-    /**
-     * Get the horizontal scrollbar.  This is used by subclasses.
-     *
-     * @return the horizontal scrollbar
-     */
-    public final THScroller getHScroller() {
-        return hScroller;
+        reflowData();
     }
 
     /**
@@ -160,7 +132,8 @@ public class TList extends TWidget {
     /**
      * Resize for a new width/height.
      */
-    public void reflow() {
+    @Override
+    public void reflowData() {
 
         // Reset the lines
         selectedString = -1;
@@ -173,37 +146,15 @@ public class TList extends TWidget {
             }
         }
 
-        // Start at the top
-        if (vScroller == null) {
-            vScroller = new TVScroller(this, getWidth() - 1, 0,
-                getHeight() - 1);
-        } else {
-            vScroller.setX(getWidth() - 1);
-            vScroller.setHeight(getHeight() - 1);
+        setBottomValue(strings.size() - getHeight() + 1);
+        if (getBottomValue() < 0) {
+            setBottomValue(0);
         }
-        vScroller.setBottomValue(strings.size() - getHeight() + 1);
-        vScroller.setTopValue(0);
-        vScroller.setValue(0);
-        if (vScroller.getBottomValue() < 0) {
-            vScroller.setBottomValue(0);
-        }
-        vScroller.setBigChange(getHeight() - 1);
 
-        // Start at the left
-        if (hScroller == null) {
-            hScroller = new THScroller(this, 0, getHeight() - 1,
-                getWidth() - 1);
-        } else {
-            hScroller.setY(getHeight() - 1);
-            hScroller.setWidth(getWidth() - 1);
+        setRightValue(maxLineWidth - getWidth() + 1);
+        if (getRightValue() < 0) {
+            setRightValue(0);
         }
-        hScroller.setRightValue(maxLineWidth - getWidth() + 1);
-        hScroller.setLeftValue(0);
-        hScroller.setValue(0);
-        if (hScroller.getRightValue() < 0) {
-            hScroller.setRightValue(0);
-        }
-        hScroller.setBigChange(getWidth() - 1);
     }
 
     /**
@@ -244,7 +195,10 @@ public class TList extends TWidget {
         if (strings != null) {
             this.strings.addAll(strings);
         }
-        reflow();
+
+        hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
+        vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
+        reflowData();
     }
 
     /**
@@ -272,7 +226,10 @@ public class TList extends TWidget {
         if (strings != null) {
             this.strings.addAll(strings);
         }
-        reflow();
+
+        hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
+        vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
+        reflowData();
     }
 
     /**
@@ -281,12 +238,12 @@ public class TList extends TWidget {
     @Override
     public void draw() {
         CellAttributes color = null;
-        int begin = vScroller.getValue();
+        int begin = getVerticalValue();
         int topY = 0;
         for (int i = begin; i < strings.size(); i++) {
             String line = strings.get(i);
-            if (hScroller.getValue() < line.length()) {
-                line = line.substring(hScroller.getValue());
+            if (getHorizontalValue() < line.length()) {
+                line = line.substring(getHorizontalValue());
             } else {
                 line = "";
             }
@@ -326,20 +283,20 @@ public class TList extends TWidget {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         if (mouse.isMouseWheelUp()) {
-            vScroller.decrement();
+            verticalDecrement();
             return;
         }
         if (mouse.isMouseWheelDown()) {
-            vScroller.increment();
+            verticalIncrement();
             return;
         }
 
         if ((mouse.getX() < getWidth() - 1)
             && (mouse.getY() < getHeight() - 1)) {
-            if (vScroller.getValue() + mouse.getY() < strings.size()) {
-                selectedString = vScroller.getValue() + mouse.getY();
+            if (getVerticalValue() + mouse.getY() < strings.size()) {
+                selectedString = getVerticalValue() + mouse.getY();
+                dispatchEnter();
             }
-            dispatchEnter();
             return;
         }
 
@@ -355,15 +312,15 @@ public class TList extends TWidget {
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
         if (keypress.equals(kbLeft)) {
-            hScroller.decrement();
+            horizontalDecrement();
         } else if (keypress.equals(kbRight)) {
-            hScroller.increment();
+            horizontalIncrement();
         } else if (keypress.equals(kbUp)) {
             if (strings.size() > 0) {
                 if (selectedString >= 0) {
                     if (selectedString > 0) {
-                        if (selectedString - vScroller.getValue() == 0) {
-                            vScroller.decrement();
+                        if (selectedString - getVerticalValue() == 0) {
+                            verticalDecrement();
                         }
                         selectedString--;
                     }
@@ -379,8 +336,8 @@ public class TList extends TWidget {
                 if (selectedString >= 0) {
                     if (selectedString < strings.size() - 1) {
                         selectedString++;
-                        if (selectedString - vScroller.getValue() == getHeight() - 1) {
-                            vScroller.increment();
+                        if (selectedString - getVerticalValue() == getHeight() - 1) {
+                            verticalIncrement();
                         }
                     }
                 } else {
@@ -391,7 +348,7 @@ public class TList extends TWidget {
                 dispatchMove();
             }
         } else if (keypress.equals(kbPgUp)) {
-            vScroller.bigDecrement();
+            bigVerticalDecrement();
             if (selectedString >= 0) {
                 selectedString -= getHeight() - 1;
                 if (selectedString < 0) {
@@ -402,7 +359,7 @@ public class TList extends TWidget {
                 dispatchMove();
             }
         } else if (keypress.equals(kbPgDn)) {
-            vScroller.bigIncrement();
+            bigVerticalIncrement();
             if (selectedString >= 0) {
                 selectedString += getHeight() - 1;
                 if (selectedString > strings.size() - 1) {
@@ -413,7 +370,7 @@ public class TList extends TWidget {
                 dispatchMove();
             }
         } else if (keypress.equals(kbHome)) {
-            vScroller.toTop();
+            toTop();
             if (strings.size() > 0) {
                 selectedString = 0;
             }
@@ -421,7 +378,7 @@ public class TList extends TWidget {
                 dispatchMove();
             }
         } else if (keypress.equals(kbEnd)) {
-            vScroller.toBottom();
+            toBottom();
             if (strings.size() > 0) {
                 selectedString = strings.size() - 1;
             }

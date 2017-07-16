@@ -11,22 +11,9 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 0.0.5
 
 
-- Scrollable:
-  - TTreeView
-  - TText
-  - TList
-  - TTerminalWindow
-  - TScrollableWindow
-
-
 - TWindow:
   - UNCLOSABLE (#8)
-  - H/V scrollbars (#4)
-    - Expose toTop()/toLeft()/...
 
-- TText:
-  - Scrollbars adjust automatically
-    - Expose toTop()/toLeft()/...
 
 - TEditor
 - Eliminate all Eclipse warnings

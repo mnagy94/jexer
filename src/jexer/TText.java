@@ -48,7 +48,7 @@ import jexer.event.TMouseEvent;
  * TText implements a simple scrollable text area. It reflows automatically on
  * resize.
  */
-public final class TText extends TWidget {
+public final class TText extends TScrollableWidget {
 
     /**
      * Available text justifications.
@@ -96,16 +96,6 @@ public final class TText extends TWidget {
     private String colorKey;
 
     /**
-     * Vertical scrollbar.
-     */
-    private TVScroller vScroller;
-
-    /**
-     * Horizontal scrollbar.
-     */
-    private THScroller hScroller;
-
-    /**
      * Maximum width of a single line.
      */
     private int maxLineWidth;
@@ -114,6 +104,25 @@ public final class TText extends TWidget {
      * Number of lines between each paragraph.
      */
     private int lineSpacing = 1;
+
+    /**
+     * Set the text.
+     *
+     * @param text new text to display
+     */
+    public void setText(final String text) {
+        this.text = text;
+        reflowData();
+    }
+
+    /**
+     * Get the text.
+     *
+     * @return the text
+     */
+    public String getText() {
+        return text;
+    }
 
     /**
      * Convenience method used by TWindowLoggerOutput.
@@ -127,7 +136,7 @@ public final class TText extends TWidget {
             text += "\n\n";
             text += line;
         }
-        reflow();
+        reflowData();
     }
 
     /**
@@ -141,6 +150,7 @@ public final class TText extends TWidget {
             }
         }
 
+        vScroller.setTopValue(0);
         vScroller.setBottomValue((lines.size() - getHeight()) + 1);
         if (vScroller.getBottomValue() < 0) {
             vScroller.setBottomValue(0);
@@ -149,6 +159,7 @@ public final class TText extends TWidget {
             vScroller.setValue(vScroller.getBottomValue());
         }
 
+        hScroller.setLeftValue(0);
         hScroller.setRightValue((maxLineWidth - getWidth()) + 1);
         if (hScroller.getRightValue() < 0) {
             hScroller.setRightValue(0);
@@ -165,7 +176,7 @@ public final class TText extends TWidget {
      */
     public void setJustification(final Justification justification) {
         this.justification = justification;
-        reflow();
+        reflowData();
     }
 
     /**
@@ -173,7 +184,7 @@ public final class TText extends TWidget {
      */
     public void leftJustify() {
         justification = Justification.LEFT;
-        reflow();
+        reflowData();
     }
 
     /**
@@ -181,7 +192,7 @@ public final class TText extends TWidget {
      */
     public void centerJustify() {
         justification = Justification.CENTER;
-        reflow();
+        reflowData();
     }
 
     /**
@@ -189,7 +200,7 @@ public final class TText extends TWidget {
      */
     public void rightJustify() {
         justification = Justification.RIGHT;
-        reflow();
+        reflowData();
     }
 
     /**
@@ -197,13 +208,14 @@ public final class TText extends TWidget {
      */
     public void fullJustify() {
         justification = Justification.FULL;
-        reflow();
+        reflowData();
     }
 
     /**
      * Resize text and scrollbars for a new width/height.
      */
-    public void reflow() {
+    @Override
+    public void reflowData() {
         // Reset the lines
         lines.clear();
 
@@ -233,29 +245,6 @@ public final class TText extends TWidget {
                 lines.add("");
             }
         }
-
-        // Start at the top
-        if (vScroller == null) {
-            vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
-            vScroller.setTopValue(0);
-            vScroller.setValue(0);
-        } else {
-            vScroller.setX(getWidth() - 1);
-            vScroller.setHeight(getHeight() - 1);
-        }
-        vScroller.setBigChange(getHeight() - 1);
-
-        // Start at the left
-        if (hScroller == null) {
-            hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
-            hScroller.setLeftValue(0);
-            hScroller.setValue(0);
-        } else {
-            hScroller.setY(getHeight() - 1);
-            hScroller.setWidth(getWidth() - 1);
-        }
-        hScroller.setBigChange(getWidth() - 1);
-
         computeBounds();
     }
 
@@ -299,7 +288,9 @@ public final class TText extends TWidget {
 
         lines = new LinkedList<String>();
 
-        reflow();
+        vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
+        hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
+        reflowData();
     }
 
     /**

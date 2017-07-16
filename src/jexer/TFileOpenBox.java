@@ -126,7 +126,7 @@ public final class TFileOpenBox extends TWindow {
                 treeViewRoot = new TDirectoryTreeItem(treeView, newFilename,
                     true);
                 treeView.setTreeRoot(treeViewRoot, true);
-                treeView.reflow();
+                treeView.reflowData();
                 openButton.setEnabled(false);
                 directoryList.setPath(newFilename);
             }

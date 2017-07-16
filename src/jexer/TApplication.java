@@ -2609,7 +2609,6 @@ public class TApplication implements Runnable {
     /**
      * Convenience function to create a new window and make it active.
      *
-     * @param application TApplication that manages this window
      * @param title window title, will be centered along the top border
      * @param x column relative to parent
      * @param y row relative to parent

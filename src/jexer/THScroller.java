@@ -116,6 +116,15 @@ public final class THScroller extends TWidget {
     private int smallChange = 1;
 
     /**
+     * Get the increment for clicking on an arrow.
+     *
+     * @return the increment value
+     */
+    public int getSmallChange() {
+        return smallChange;
+    }
+
+    /**
      * Set the increment for clicking on an arrow.
      *
      * @param smallChange the new increment value
@@ -128,6 +137,16 @@ public final class THScroller extends TWidget {
      * The increment for clicking in the bar between the box and an arrow.
      */
     private int bigChange = 20;
+
+    /**
+     * Set the increment for clicking in the bar between the box and an
+     * arrow.
+     *
+     * @return the increment value
+     */
+    public int getBigChange() {
+        return bigChange;
+    }
 
     /**
      * Set the increment for clicking in the bar between the box and an
@@ -216,6 +235,46 @@ public final class THScroller extends TWidget {
         if (value > rightValue) {
             value = rightValue;
         }
+    }
+
+    /**
+     * Perform a big step change left.
+     */
+    public void bigDecrement() {
+        if (leftValue == rightValue) {
+            return;
+        }
+        value -= bigChange;
+        if (value < leftValue) {
+            value = leftValue;
+        }
+    }
+
+    /**
+     * Perform a big step change right.
+     */
+    public void bigIncrement() {
+        if (rightValue == leftValue) {
+            return;
+        }
+        value += bigChange;
+        if (value > rightValue) {
+            value = rightValue;
+        }
+    }
+
+    /**
+     * Go to the left edge of the scroller.
+     */
+    public void toLeft() {
+        value = leftValue;
+    }
+
+    /**
+     * Go to the right edge of the scroller.
+     */
+    public void toRight() {
+        value = rightValue;
     }
 
     /**

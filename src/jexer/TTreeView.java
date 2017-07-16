@@ -35,27 +35,7 @@ import static jexer.TKeypress.*;
 /**
  * TTreeView implements a simple tree view.
  */
-public class TTreeView extends TWidget {
-
-    /**
-     * Vertical scrollbar.
-     */
-    private TVScroller vScroller;
-
-    /**
-     * Horizontal scrollbar.
-     */
-    private THScroller hScroller;
-
-    /**
-     * Get the horizontal scrollbar.  This is used by TTreeItem.draw(), and
-     * potentially subclasses.
-     *
-     * @return the horizontal scrollbar
-     */
-    public final THScroller getHScroller() {
-        return hScroller;
-    }
+public class TTreeView extends TScrollableWidget {
 
     /**
      * Root of the tree.
@@ -144,6 +124,9 @@ public class TTreeView extends TWidget {
 
         super(parent, x, y, width, height);
         this.action = action;
+
+        vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
+        hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
     }
 
     /**
@@ -180,40 +163,13 @@ public class TTreeView extends TWidget {
     }
 
     /**
-     * Update (or instantiate) vScroller and hScroller.
-     */
-    private void updateScrollers() {
-        // Setup vertical scroller
-        if (vScroller == null) {
-            vScroller = new TVScroller(this, getWidth() - 1, 0,
-                getHeight() - 1);
-            vScroller.setValue(0);
-            vScroller.setTopValue(0);
-        }
-        vScroller.setX(getWidth() - 1);
-        vScroller.setHeight(getHeight() - 1);
-        vScroller.setBigChange(getHeight() - 1);
-
-        // Setup horizontal scroller
-        if (hScroller == null) {
-            hScroller = new THScroller(this, 0, getHeight() - 1,
-                getWidth() - 1);
-            hScroller.setValue(0);
-            hScroller.setLeftValue(0);
-        }
-        hScroller.setY(getHeight() - 1);
-        hScroller.setWidth(getWidth() - 1);
-        hScroller.setBigChange(getWidth() - 1);
-    }
-
-    /**
      * Resize text and scrollbars for a new width/height.
      */
-    public void reflow() {
+    @Override
+    public void reflowData() {
         int selectedRow = 0;
         boolean foundSelectedRow = false;
 
-        updateScrollers();
         if (treeRoot == null) {
             return;
         }
@@ -253,34 +209,30 @@ public class TTreeView extends TWidget {
         }
 
         if ((centerWindow) && (foundSelectedRow)) {
-            if ((selectedRow < vScroller.getValue())
-                || (selectedRow > vScroller.getValue() + getHeight() - 2)
+            if ((selectedRow < getVerticalValue())
+                || (selectedRow > getVerticalValue() + getHeight() - 2)
             ) {
-                vScroller.setValue(selectedRow);
+                setVerticalValue(selectedRow);
                 centerWindow = false;
             }
         }
         updatePositions();
 
         // Rescale the scroll bars
-        vScroller.setBottomValue(getChildren().size() - getHeight() + 1);
-        if (vScroller.getBottomValue() < 0) {
-            vScroller.setBottomValue(0);
+        setBottomValue(getChildren().size() - getHeight() + 1);
+        if (getBottomValue() < 0) {
+            setBottomValue(0);
         }
-        /*
-        if (vScroller.getValue() > vScroller.getBottomValue()) {
-            vScroller.setValue(vScroller.getBottomValue());
+        if (getVerticalValue() > getBottomValue()) {
+            setVerticalValue(getBottomValue());
         }
-         */
-        hScroller.setRightValue(maxLineWidth - getWidth() + 3);
-        if (hScroller.getRightValue() < 0) {
-            hScroller.setRightValue(0);
+        setRightValue(maxLineWidth - getWidth() + 3);
+        if (getRightValue() < 0) {
+            setRightValue(0);
         }
-        /*
-        if (hScroller.getValue() > hScroller.getRightValue()) {
-            hScroller.setValue(hScroller.getRightValue());
+        if (getHorizontalValue() > getRightValue()) {
+            setHorizontalValue(getRightValue());
         }
-         */
         getChildren().add(hScroller);
         getChildren().add(vScroller);
     }
@@ -293,7 +245,7 @@ public class TTreeView extends TWidget {
             return;
         }
 
-        int begin = vScroller.getValue();
+        int begin = getVerticalValue();
         int topY = 0;
 
         // As we walk the list we also adjust next/previous pointers,
@@ -344,16 +296,16 @@ public class TTreeView extends TWidget {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         if (mouse.isMouseWheelUp()) {
-            vScroller.decrement();
+            verticalDecrement();
         } else if (mouse.isMouseWheelDown()) {
-            vScroller.increment();
+            verticalIncrement();
         } else {
             // Pass to children
             super.onMouseDown(mouse);
         }
 
         // Update the screen after the scrollbars have moved
-        reflow();
+        reflowData();
     }
 
     /**
@@ -367,7 +319,7 @@ public class TTreeView extends TWidget {
         super.onMouseDown(mouse);
 
         // Update the screen after any thing has expanded/contracted
-        reflow();
+        reflowData();
     }
 
     /**
@@ -381,36 +333,36 @@ public class TTreeView extends TWidget {
             || keypress.equals(kbCtrlLeft)
             || keypress.equals(kbAltLeft)
         ) {
-            hScroller.decrement();
+            horizontalDecrement();
         } else if (keypress.equals(kbShiftRight)
             || keypress.equals(kbCtrlRight)
             || keypress.equals(kbAltRight)
         ) {
-            hScroller.increment();
+            horizontalIncrement();
         } else if (keypress.equals(kbShiftUp)
             || keypress.equals(kbCtrlUp)
             || keypress.equals(kbAltUp)
         ) {
-            vScroller.decrement();
+            verticalDecrement();
         } else if (keypress.equals(kbShiftDown)
             || keypress.equals(kbCtrlDown)
             || keypress.equals(kbAltDown)
         ) {
-            vScroller.increment();
+            verticalIncrement();
         } else if (keypress.equals(kbShiftPgUp)
             || keypress.equals(kbCtrlPgUp)
             || keypress.equals(kbAltPgUp)
         ) {
-            vScroller.bigDecrement();
+            bigVerticalDecrement();
         } else if (keypress.equals(kbShiftPgDn)
             || keypress.equals(kbCtrlPgDn)
             || keypress.equals(kbAltPgDn)
         ) {
-            vScroller.bigIncrement();
+            bigVerticalIncrement();
         } else if (keypress.equals(kbHome)) {
-            vScroller.toTop();
+            toTop();
         } else if (keypress.equals(kbEnd)) {
-            vScroller.toBottom();
+            toBottom();
         } else if (keypress.equals(kbEnter)) {
             if (selectedItem != null) {
                 dispatch();
@@ -422,7 +374,7 @@ public class TTreeView extends TWidget {
                 if (selectedItem.keyboardPrevious != null) {
                     setSelected(selectedItem.keyboardPrevious);
                     if (oldItem.getY() == 0) {
-                        vScroller.decrement();
+                        verticalDecrement();
                     }
                 }
             }
@@ -433,7 +385,7 @@ public class TTreeView extends TWidget {
                 if (selectedItem.keyboardNext != null) {
                     setSelected(selectedItem.keyboardNext);
                     if (oldItem.getY() == getHeight() - 2) {
-                        vScroller.increment();
+                        verticalIncrement();
                     }
                 }
             }
@@ -454,7 +406,7 @@ public class TTreeView extends TWidget {
         }
 
         // Update the screen after any thing has expanded/contracted
-        reflow();
+        reflowData();
     }
 
 }

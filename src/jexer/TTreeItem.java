@@ -232,7 +232,7 @@ public class TTreeItem extends TWidget {
             view.setTreeRoot(this, true);
         }
 
-        view.reflow();
+        view.reflowData();
     }
 
     /**
@@ -256,7 +256,7 @@ public class TTreeItem extends TWidget {
         TTreeItem item = new TTreeItem(view, text, expanded);
         item.level = this.level + 1;
         getChildren().add(item);
-        view.reflow();
+        view.reflowData();
         return item;
     }
 
@@ -333,7 +333,7 @@ public class TTreeItem extends TWidget {
      */
     @Override
     public void onMouseUp(final TMouseEvent mouse) {
-        if ((mouse.getX() == (getExpanderX() - view.getHScroller().getValue()))
+        if ((mouse.getX() == (getExpanderX() - view.getHorizontalValue()))
             && (mouse.getY() == 0)
         ) {
             if (selectable) {
@@ -352,7 +352,7 @@ public class TTreeItem extends TWidget {
         }
 
         // Update the screen after any thing has expanded/contracted
-        view.reflow();
+        view.reflowData();
     }
 
     /**
@@ -403,7 +403,7 @@ public class TTreeItem extends TWidget {
             return;
         }
 
-        int offset = -view.getHScroller().getValue();
+        int offset = -view.getHorizontalValue();
 
         CellAttributes color = getTheme().getColor("ttreeview");
         CellAttributes textColor = getTheme().getColor("ttreeview");
