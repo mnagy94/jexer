@@ -172,6 +172,20 @@ public class DesktopDemoApplication extends TApplication {
             }
         );
 
+        desktop.addButton("Enable focusFollowsMouse", 25, 18,
+            new TAction() {
+                public void DO() {
+                    DesktopDemoApplication.this.setFocusFollowsMouse(true);
+                }
+            }
+        );
+        desktop.addButton("Disable focusFollowsMouse", 25, 21,
+            new TAction() {
+                public void DO() {
+                    DesktopDemoApplication.this.setFocusFollowsMouse(false);
+                }
+            }
+        );
 
     }
 

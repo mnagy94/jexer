@@ -580,6 +580,32 @@ public class TApplication implements Runnable {
         return result;
     }
 
+    /**
+     * If true, focus follows mouse: windows automatically raised if the
+     * mouse passes over them.
+     */
+    private boolean focusFollowsMouse = false;
+
+    /**
+     * Get focusFollowsMouse flag.
+     *
+     * @return true if focus follows mouse: windows automatically raised if
+     * the mouse passes over them
+     */
+    public boolean getFocusFollowsMouse() {
+        return focusFollowsMouse;
+    }
+
+    /**
+     * Set focusFollowsMouse flag.
+     *
+     * @param focusFollowsMouse if true, focus follows mouse: windows
+     * automatically raised if the mouse passes over them
+     */
+    public void setFocusFollowsMouse(final boolean focusFollowsMouse) {
+        this.focusFollowsMouse = focusFollowsMouse;
+    }
+
     // ------------------------------------------------------------------------
     // General behavior -------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1962,55 +1988,64 @@ public class TApplication implements Runnable {
             return;
         }
 
+        // If a menu is still active, don't switch windows
+        if (activeMenu != null) {
+            return;
+        }
+
         // Only switch if there are multiple windows
         if (windows.size() < 2) {
             return;
         }
 
-        // Switch on the upclick
-        if (mouse.getType() != TMouseEvent.Type.MOUSE_UP) {
+        if (((focusFollowsMouse == true)
+                && (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION))
+            || (mouse.getType() == TMouseEvent.Type.MOUSE_UP)
+        ) {
+            synchronized (windows) {
+                Collections.sort(windows);
+                if (windows.get(0).isModal()) {
+                    // Modal windows don't switch
+                    return;
+                }
+
+                for (TWindow window: windows) {
+                    assert (!window.isModal());
+
+                    if (window.isHidden()) {
+                        assert (!window.isActive());
+                        continue;
+                    }
+
+                    if (window.mouseWouldHit(mouse)) {
+                        if (window == windows.get(0)) {
+                            // Clicked on the same window, nothing to do
+                            assert (window.isActive());
+                            return;
+                        }
+
+                        // We will be switching to another window
+                        assert (windows.get(0).isActive());
+                        assert (windows.get(0) == activeWindow);
+                        assert (!window.isActive());
+                        activeWindow.onUnfocus();
+                        activeWindow.setActive(false);
+                        activeWindow.setZ(window.getZ());
+                        activeWindow = window;
+                        window.setZ(0);
+                        window.setActive(true);
+                        window.onFocus();
+                        return;
+                    }
+                }
+            }
+
+            // Clicked on the background, nothing to do
             return;
         }
 
-        synchronized (windows) {
-            Collections.sort(windows);
-            if (windows.get(0).isModal()) {
-                // Modal windows don't switch
-                return;
-            }
-
-            for (TWindow window: windows) {
-                assert (!window.isModal());
-
-                if (window.isHidden()) {
-                    assert (!window.isActive());
-                    continue;
-                }
-
-                if (window.mouseWouldHit(mouse)) {
-                    if (window == windows.get(0)) {
-                        // Clicked on the same window, nothing to do
-                        assert (window.isActive());
-                        return;
-                    }
-
-                    // We will be switching to another window
-                    assert (windows.get(0).isActive());
-                    assert (windows.get(0) == activeWindow);
-                    assert (!window.isActive());
-                    activeWindow.onUnfocus();
-                    activeWindow.setActive(false);
-                    activeWindow.setZ(window.getZ());
-                    activeWindow = window;
-                    window.setZ(0);
-                    window.setActive(true);
-                    window.onFocus();
-                    return;
-                }
-            }
-        }
-
-        // Clicked on the background, nothing to do
+        // Nothing to do: this isn't a mouse up, or focus isn't following
+        // mouse.
         return;
     }
 
