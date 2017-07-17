@@ -67,6 +67,12 @@ public class TWindow extends TWidget {
      */
     public static final int CENTERED    = 0x04;
 
+    /**
+     * Window has no close box (default no).  Window can still be closed via
+     * TApplication.closeWindow() and TWindow.close().
+     */
+    public static final int NOCLOSEBOX  = 0x08;
+
     // ------------------------------------------------------------------------
     // Common window attributes -----------------------------------------------
     // ------------------------------------------------------------------------
@@ -387,6 +393,14 @@ public class TWindow extends TWidget {
         application.activateWindow(this);
     }
 
+    /**
+     * Close window.  Note that windows without a close box can still be
+     * closed by calling the close() method.
+     */
+    public void close() {
+        application.closeWindow(this);
+    }
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -495,6 +509,18 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Returns true if this window has a close box.
+     *
+     * @return true if this window has a close box
+     */
+    public final boolean hasCloseBox() {
+        if ((flags & NOCLOSEBOX) != 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Retrieve the background color.
      *
      * @return the background color
@@ -600,18 +626,20 @@ public class TWindow extends TWidget {
         if (isActive()) {
 
             // Draw the close button
-            putCharXY(2, 0, '[', border);
-            putCharXY(4, 0, ']', border);
-            if (mouseOnClose() && mouse.isMouse1()) {
-                putCharXY(3, 0, GraphicsChars.CP437[0x0F],
-                    !isModal()
-                    ? getTheme().getColor("twindow.border.windowmove")
-                    : getTheme().getColor("twindow.border.modal.windowmove"));
-            } else {
-                putCharXY(3, 0, GraphicsChars.CP437[0xFE],
-                    !isModal()
-                    ? getTheme().getColor("twindow.border.windowmove")
-                    : getTheme().getColor("twindow.border.modal.windowmove"));
+            if ((flags & NOCLOSEBOX) == 0) {
+                putCharXY(2, 0, '[', border);
+                putCharXY(4, 0, ']', border);
+                if (mouseOnClose() && mouse.isMouse1()) {
+                    putCharXY(3, 0, GraphicsChars.CP437[0x0F],
+                        !isModal()
+                        ? getTheme().getColor("twindow.border.windowmove")
+                        : getTheme().getColor("twindow.border.modal.windowmove"));
+                } else {
+                    putCharXY(3, 0, GraphicsChars.CP437[0xFE],
+                        !isModal()
+                        ? getTheme().getColor("twindow.border.windowmove")
+                        : getTheme().getColor("twindow.border.modal.windowmove"));
+                }
             }
 
             // Draw the maximize button
@@ -655,6 +683,9 @@ public class TWindow extends TWidget {
      * @return true if mouse is currently on the close button
      */
     protected boolean mouseOnClose() {
+        if ((flags & NOCLOSEBOX) != 0) {
+            return false;
+        }
         if ((mouse != null)
             && (mouse.getAbsoluteY() == getY())
             && (mouse.getAbsoluteX() == getX() + 3)
@@ -1009,7 +1040,9 @@ public class TWindow extends TWidget {
 
             // Ctrl-W - close window
             if (keypress.equals(kbCtrlW)) {
-                application.closeWindow(this);
+                if ((flags & NOCLOSEBOX) == 0) {
+                    application.closeWindow(this);
+                }
                 return;
             }
 
@@ -1060,7 +1093,9 @@ public class TWindow extends TWidget {
         if (!(this instanceof TDesktop)) {
 
             if (command.equals(cmWindowClose)) {
-                application.closeWindow(this);
+                if ((flags & NOCLOSEBOX) == 0) {
+                    application.closeWindow(this);
+                }
                 return;
             }
 
@@ -1104,7 +1139,9 @@ public class TWindow extends TWidget {
         if (!(this instanceof TDesktop)) {
 
             if (menu.getId() == TMenu.MID_WINDOW_CLOSE) {
-                application.closeWindow(this);
+                if ((flags & NOCLOSEBOX) == 0) {
+                    application.closeWindow(this);
+                }
                 return;
             }
 

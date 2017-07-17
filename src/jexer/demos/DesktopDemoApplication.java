@@ -159,8 +159,15 @@ public class DesktopDemoApplication extends TApplication {
         desktop.addButton("&Create Window C", 25, 15,
             new TAction() {
                 public void DO() {
-                    desktop.getApplication().addWindow("Window C",
-                        30, 20);
+                    final TWindow windowC = desktop.getApplication().addWindow(
+                        "Window C", 30, 20, TWindow.NOCLOSEBOX);
+                    windowC.addButton("&Close Me", 5, 5,
+                        new TAction() {
+                            public void DO() {
+                                windowC.close();
+                            }
+                        }
+                    );
                 }
             }
         );
