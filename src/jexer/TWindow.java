@@ -989,38 +989,46 @@ public class TWindow extends TWidget {
                     setY(getY() - 1);
                 }
             }
-            if (keypress.equals(kbShiftLeft)) {
-                if ((getWidth() > minimumWindowWidth)
-                    || (minimumWindowWidth <= 0)
-                ) {
-                    setWidth(getWidth() - 1);
-                }
-            }
-            if (keypress.equals(kbShiftRight)) {
-                if ((getWidth() < maximumWindowWidth)
-                    || (maximumWindowWidth <= 0)
-                ) {
-                    setWidth(getWidth() + 1);
-                }
-            }
-            if (keypress.equals(kbShiftUp)) {
-                if ((getHeight() > minimumWindowHeight)
-                    || (minimumWindowHeight <= 0)
-                ) {
-                    setHeight(getHeight() - 1);
-                }
-            }
-            if (keypress.equals(kbShiftDown)) {
-                if ((getHeight() < maximumWindowHeight)
-                    || (maximumWindowHeight <= 0)
-                ) {
-                    setHeight(getHeight() + 1);
-                }
-            }
 
-            // Pass a resize event to my children
-            onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                    getWidth(), getHeight()));
+            /*
+             * Only permit keyboard resizing if the window was RESIZABLE.
+             */
+            if ((flags & RESIZABLE) != 0) {
+
+                if (keypress.equals(kbShiftLeft)) {
+                    if ((getWidth() > minimumWindowWidth)
+                        || (minimumWindowWidth <= 0)
+                    ) {
+                        setWidth(getWidth() - 1);
+                    }
+                }
+                if (keypress.equals(kbShiftRight)) {
+                    if ((getWidth() < maximumWindowWidth)
+                        || (maximumWindowWidth <= 0)
+                    ) {
+                        setWidth(getWidth() + 1);
+                    }
+                }
+                if (keypress.equals(kbShiftUp)) {
+                    if ((getHeight() > minimumWindowHeight)
+                        || (minimumWindowHeight <= 0)
+                    ) {
+                        setHeight(getHeight() - 1);
+                    }
+                }
+                if (keypress.equals(kbShiftDown)) {
+                    if ((getHeight() < maximumWindowHeight)
+                        || (maximumWindowHeight <= 0)
+                    ) {
+                        setHeight(getHeight() + 1);
+                    }
+                }
+
+                // Pass a resize event to my children
+                onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                        getWidth(), getHeight()));
+
+            } // if ((flags & RESIZABLE) != 0)
 
             return;
         }
