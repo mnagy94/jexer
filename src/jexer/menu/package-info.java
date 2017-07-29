@@ -28,6 +28,6 @@
  */
 
 /**
- * This package contains the menu bar classes.
+ * Menu bar support classes.
  */
 package jexer.menu;

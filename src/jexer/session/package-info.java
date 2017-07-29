@@ -28,7 +28,6 @@
  */
 
 /**
- * This package contains classes to encapsulate text terminal metadata:
- * width, height, username, language, etc.
+ * Text terminal session values: width, height, username, language, etc.
  */
 package jexer.session;

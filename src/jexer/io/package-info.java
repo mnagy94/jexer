@@ -28,7 +28,6 @@
  */
 
 /**
- * This package contains the user-facing I/O, including screen, keyboard, and
- * mouse handling classes.
+ * User-facing I/O, including screen, keyboard, and mouse handling classes.
  */
 package jexer.io;

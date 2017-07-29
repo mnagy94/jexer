@@ -28,7 +28,7 @@
  */
 
 /**
- * This package contains low-level data objects and utility functions that
- * don't warrant their own separate package.
+ * Low-level data objects and utility functions that don't warrant their own
+ * separate package.
  */
 package jexer.bits;

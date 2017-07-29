@@ -28,7 +28,6 @@
  */
 
 /**
- * This package contains the Backend interface between TApplication and
- * user-facing I/O.
+ * The interface between TApplication and user-facing I/O.
  */
 package jexer.backend;

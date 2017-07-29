@@ -10,12 +10,25 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 
 0.0.5
 
-
-- TWindow:
-  - UNCLOSABLE (#8)
-
+- TApplication
+  - getAllWindows()
+  - Expose menu management functions (addMenu, getMenu, getAllMenus,
+    removeMenu, ...)
 
 - TEditor
+
+  - Swich Line from String to ArrayList<Cell>
+    - StringUtils.justify functions for ArrayList<Cell>
+  - TEditorWindow extends TScrollableWindow
+  - TEditor widget with keystroke functions:
+    - cursorRight/Left/...
+    - insertChar
+    - deleteForwardChar
+    - deleteBackwardChar
+    - deleteBackwardWord
+    - wordCount
+    - ...
+
 - Eliminate all Eclipse warnings
 
 0.0.6
