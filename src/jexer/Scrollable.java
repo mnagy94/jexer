@@ -28,10 +28,6 @@
  */
 package jexer;
 
-import jexer.event.TKeypressEvent;
-import jexer.event.TMouseEvent;
-import static jexer.TKeypress.*;
-
 /**
  * Scrollable provides a public API for horizontal and vertical scrollbars.
  * Note that not all Scrollables support both horizontal and vertical

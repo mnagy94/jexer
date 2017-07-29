@@ -28,12 +28,8 @@
  */
 package jexer.demos;
 
-import java.io.*;
-import java.util.*;
 
 import jexer.*;
-import jexer.event.*;
-import jexer.menu.*;
 
 /**
  * The modified desktop.

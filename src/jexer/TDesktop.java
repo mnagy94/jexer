@@ -33,7 +33,6 @@ import jexer.bits.GraphicsChars;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
-import jexer.event.TResizeEvent;
 
 /**
  * TDesktop is a special-class window that is drawn underneath everything

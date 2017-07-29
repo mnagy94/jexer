@@ -44,7 +44,6 @@ import java.util.Map;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.ColorTheme;
-import jexer.bits.GraphicsChars;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;

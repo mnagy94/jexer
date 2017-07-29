@@ -30,9 +30,8 @@
 
 <project name="jexer" basedir="." default="jar">
 
-  <!--
-      I am using GCJ deliberately to test against Java 1.5 features.
-  -->
+  <!-- I test with gcj because it is Java 1.5 and has better warnings
+       for unused imports. -->
   <property name="build.compiler" value="gcj"/>
 
   <property name="version"       value="0.0.5"/>
@@ -51,22 +50,22 @@
   <target name="compile">
     <mkdir dir="${classes.dir}"/>
     <javac srcdir="${src.dir}" destdir="${classes.dir}"
-	   includeantruntime="false"
-	   debug="on"
-	   debuglevel="lines,vars,source"
-	   />
+           includeantruntime="false"
+           debug="on"
+           debuglevel="lines,vars,source"
+           />
   </target>
 
   <target name="jar" depends="compile">
     <mkdir dir="${jar.dir}"/>
     <jar destfile="${jar.dir}/${ant.project.name}.jar"
-	 basedir="${classes.dir}">
+         basedir="${classes.dir}">
       <fileset dir="${resources.dir}"/>
       <!-- Include source by default. -->
       <fileset dir="${src.dir}"/>
       <manifest>
-	<attribute name="Main-Class" value="jexer.demos.Demo1"/>
-	<attribute name="Implementation-Version" value="${version}"/>
+        <attribute name="Main-Class" value="jexer.demos.Demo1"/>
+        <attribute name="Implementation-Version" value="${version}"/>
       </manifest>
     </jar>
   </target>
@@ -85,32 +84,32 @@
 
   <target name="docs" depends="jar">
     <javadoc
-	destdir="${apidocs.dir}"
-	author="true"
-	version="true"
-	use="true"
-	access="protected"
-	failonwarning="true"
-	windowtitle="Jexer - Java Text User Interface - API docs">
+        destdir="${apidocs.dir}"
+        author="true"
+        version="true"
+        use="true"
+        access="protected"
+        failonwarning="true"
+        windowtitle="Jexer - Java Text User Interface - API docs">
 
       <fileset dir="${src.dir}" defaultexcludes="yes">
-	<include name="jexer/**"/>
+        <include name="jexer/**"/>
       </fileset>
 
       <doctitle>
-	<![CDATA[<h1>Jexer - Java Text User Interface Library</h1>]]>
+        <![CDATA[<h1>Jexer - Java Text User Interface Library</h1>]]>
       </doctitle>
       <bottom>
-	<![CDATA[<i>Copyright &#169; 2017 Kevin Lamonte. Licensed MIT.</i>]]>
+        <![CDATA[<i>Copyright &#169; 2017 Kevin Lamonte. Licensed MIT.</i>]]>
       </bottom>
       <!--
-	  <tag name="todo" scope="all" description="To do:"/>
-	  <group title="Group 1 Packages" packages="com.dummy.test.a*"/>
-	  <group title="Group 2 Packages" packages="com.dummy.test.b*:com.dummy.test.c*"/>
-	  <link offline="true"
-	  href="http://docs.oracle.com/javase/7/docs/api/"
-	  packagelistLoc="C:\tmp"/>
-	  <link href="http://docs.oracle.com/javase/7/docs/api/"/>
+          <tag name="todo" scope="all" description="To do:"/>
+          <group title="Group 1 Packages" packages="com.dummy.test.a*"/>
+          <group title="Group 2 Packages" packages="com.dummy.test.b*:com.dummy.test.c*"/>
+          <link offline="true"
+          href="http://docs.oracle.com/javase/7/docs/api/"
+          packagelistLoc="C:\tmp"/>
+          <link href="http://docs.oracle.com/javase/7/docs/api/"/>
       -->
     </javadoc>
   </target>
