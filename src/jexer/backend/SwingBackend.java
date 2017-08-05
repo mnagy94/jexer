@@ -46,14 +46,31 @@ public final class SwingBackend extends Backend {
     private SwingTerminal terminal;
 
     /**
-     * Public constructor.
+     * Public constructor.  The window will be 80x25 with font size 20 pts.
      *
      * @param listener the object this backend needs to wake up when new
      * input comes in
      */
     public SwingBackend(final Object listener) {
+        this(listener, 80, 25, 20);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @param fontSize the size in points.  Good values to pick are: 16, 20,
+     * 22, and 24.
+     */
+    public SwingBackend(final Object listener, final int windowWidth,
+        final int windowHeight, final int fontSize) {
+
         // Create a screen
-        SwingScreen screen = new SwingScreen();
+        SwingScreen screen = new SwingScreen(windowWidth, windowHeight,
+            fontSize);
         this.screen = screen;
 
         // Create the Swing event listeners

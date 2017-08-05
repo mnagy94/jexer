@@ -133,13 +133,17 @@ public final class SwingSessionInfo implements SessionInfo {
      * @param frame the Swing Frame
      * @param textWidth the width of a cell in pixels
      * @param textHeight the height of a cell in pixels
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
      */
     public SwingSessionInfo(final Frame frame, final int textWidth,
-        final int textHeight) {
+        final int textHeight, final int windowWidth, final int windowHeight) {
 
-        this.frame      = frame;
-        this.textWidth  = textWidth;
-        this.textHeight = textHeight;
+        this.frame              = frame;
+        this.textWidth          = textWidth;
+        this.textHeight         = textHeight;
+        this.windowWidth        = windowWidth;
+        this.windowHeight       = windowHeight;
     }
 
     /**

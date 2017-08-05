@@ -24,11 +24,11 @@ Jexer currently supports three backends:
   TCP socket.  jexer.demos.Demo3 demonstrates how one might use a
   character encoding than the default UTF-8.
 
-* Java Swing UI.  The default window size for Swing is 80x25, which is
-  set in jexer.session.SwingSession.  For the demo applications, this
-  is the default backend on Windows and Mac platforms.  This backend
-  can be explicitly selected for the demo applications by setting
-  jexer.Swing=true.
+* Java Swing UI.  The default window size for Swing is 80x25 and 20
+  point font; this can be changed in the TApplication(BackendType)
+  constructor.  For the demo applications, this is the default backend
+  on Windows and Mac platforms.  This backend can be explicitly
+  selected for the demo applications by setting jexer.Swing=true.
 
 Additional backends can be created by subclassing
 jexer.backend.Backend and passing it into the TApplication

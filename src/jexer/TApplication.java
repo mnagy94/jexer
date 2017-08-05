@@ -635,6 +635,12 @@ public class TApplication implements Runnable {
 
         switch (backendType) {
         case SWING:
+            // The default SwingBackend is 80x25, 20 pt font.  If you want to
+            // change that, you can pass the extra arguments to the
+            // SwingBackend constructor here.  For example, if you wanted
+            // 90x30, 16 pt font:
+            //
+            // backend = new SwingBackend(this, 90, 30, 16);
             backend = new SwingBackend(this);
             break;
         case XTERM:

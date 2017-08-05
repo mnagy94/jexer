@@ -308,8 +308,10 @@ public final class SwingScreen extends Screen {
          * Public constructor.
          *
          * @param screen the Screen that Backend talks to
+         * @param fontSize the size in points.  Good values to pick are: 16,
+         * 20, 22, and 24.
          */
-        public SwingFrame(final SwingScreen screen) {
+        public SwingFrame(final SwingScreen screen, final int fontSize) {
             this.screen = screen;
             setDOSColors();
 
@@ -342,13 +344,13 @@ public final class SwingScreen extends Screen {
                         getContextClassLoader();
                 InputStream in = loader.getResourceAsStream(FONTFILE);
                 Font terminusRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-                Font terminus = terminusRoot.deriveFont(Font.PLAIN, 20);
+                Font terminus = terminusRoot.deriveFont(Font.PLAIN, fontSize);
                 setFont(terminus);
                 gotTerminus = true;
             } catch (Exception e) {
                 e.printStackTrace();
                 // setFont(new Font("Liberation Mono", Font.PLAIN, 24));
-                setFont(new Font(Font.MONOSPACED, Font.PLAIN, 24));
+                setFont(new Font(Font.MONOSPACED, Font.PLAIN, fontSize));
             }
             pack();
 
@@ -742,16 +744,24 @@ public final class SwingScreen extends Screen {
 
     /**
      * Public constructor.
+     *
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @param fontSize the size in points.  Good values to pick are: 16, 20,
+     * 22, and 24.
      */
-    public SwingScreen() {
+    public SwingScreen(final int windowWidth, final int windowHeight,
+        final int fontSize) {
+
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    SwingScreen.this.frame = new SwingFrame(SwingScreen.this);
+                    SwingScreen.this.frame = new SwingFrame(SwingScreen.this,
+                        fontSize);
                     SwingScreen.this.sessionInfo =
                         new SwingSessionInfo(SwingScreen.this.frame,
-                            frame.textWidth,
-                            frame.textHeight);
+                            frame.textWidth, frame.textHeight,
+                            windowWidth, windowHeight);
 
                     SwingScreen.this.setDimensions(sessionInfo.getWindowWidth(),
                         sessionInfo.getWindowHeight());
