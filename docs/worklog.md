@@ -1,6 +1,28 @@
 Jexer Work Log
 ==============
 
+July 28, 2017
+
+Got very busy with my meatspace life, now getting a chance to come
+back around.
+
+I gave up on TEditor knowing about graphemes, instead pulling back to
+simple Cells.  This will be better anyway in the long run, as getting
+grapheme support in Screen someday will also get it for me in TEditor
+for free.  But it does mean that TEditor will chew through much more
+RAM than it needs to for a text file.  Performance optimization will
+come someday.  But this means I can also go back to gcj, because I
+really like its warnings about unused imports.
+
+I've got a POM stubbed in, and created an account over at sonatype.
+If it isn't too hard, I will try to get 0.0.5 released into the maven
+universe.  But that is still a bit away, I need TEditor running with
+syntax highlighting first.
+
+July 17, 2017
+
+Focus-follows-mouse is in, as is NOCLOSEBOX.
+
 July 15, 2017
 
 I think I have cleaned up most of the window show/hide/activate mess
