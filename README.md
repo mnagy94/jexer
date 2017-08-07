@@ -149,6 +149,13 @@ follows:
   * 'java -cp jexer.jar jexer.demos.Demo4' .  This demonstrates hidden
     windows and a custom TDesktop.
 
+  * 'java -cp jexer.jar jexer.demos.Demo5' .  This demonstrates two
+    demo applications using different fonts in the same Swing frame.
+
+  * 'java -cp jexer.jar jexer.demos.Demo6' .  This demonstrates one
+    application performing I/O to two screens: an xterm screen and a
+    Swing screen.
+
 
 
 More Screenshots

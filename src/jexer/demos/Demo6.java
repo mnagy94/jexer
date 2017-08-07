@@ -26,44 +26,41 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer.backend;
+package jexer.demos;
 
-import java.util.List;
-
-import jexer.event.TInputEvent;
+import jexer.backend.*;
 
 /**
- * TerminalReader provides keyboard and mouse events.
+ * This class shows off the use of MultiBackend and MultiScreen.
  */
-public interface TerminalReader {
+public class Demo6 {
 
     /**
-     * Check if there are events in the queue.
+     * Main entry point.
      *
-     * @return if true, getEvents() has something to return to the backend
+     * @param args Command line arguments
      */
-    public boolean hasEvents();
+    public static void main(final String [] args) {
+        try {
+            /*
+             * Spin up a Swing backend to match the ECMA48 backend on
+             * System.in/out.
+             */
+            ECMA48Backend ecmaBackend = new ECMA48Backend(new Object(), null,
+                null);
+            MultiBackend multiBackend = new MultiBackend(ecmaBackend);
+            DemoApplication demoApp = new DemoApplication(multiBackend);
+            Screen multiScreen = multiBackend.getScreen();
 
-    /**
-     * Classes must provide an implementation to get keyboard, mouse, and
-     * screen resize events.
-     *
-     * @param queue list to append new events to
-     */
-    public void getEvents(List<TInputEvent> queue);
+            SwingBackend swingBackend = new SwingBackend(new Object(),
+                multiScreen.getWidth(), multiScreen.getHeight(), 16);
+            multiBackend.addBackend(swingBackend);
+            multiBackend.setListener(demoApp);
 
-    /**
-     * Classes must provide an implementation that closes sockets, restores
-     * console, etc.
-     */
-    public void closeTerminal();
-
-    /**
-     * Set listener to a different Object.
-     *
-     * @param listener the new listening object that run() wakes up on new
-     * input
-     */
-    public void setListener(final Object listener);
+            (new Thread(demoApp)).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

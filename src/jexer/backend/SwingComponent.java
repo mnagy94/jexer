@@ -55,7 +55,7 @@ class SwingComponent {
     /**
      * If true, use triple buffering when drawing to a JFrame.
      */
-    public static boolean tripleBuffer = false;
+    public static boolean tripleBuffer = true;
 
     /**
      * Get the BufferStrategy object needed for triple-buffering.

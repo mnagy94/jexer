@@ -28,6 +28,7 @@
  */
 package jexer.demos;
 
+import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import javax.swing.JFrame;
@@ -143,7 +144,9 @@ public class Demo5 implements WindowListener {
         SwingBackend app2Backend = new SwingBackend(app2Panel, new Object(),
             80, 25, 18);
         app2 = new DemoApplication(app2Backend);
-        app1Backend.setListener(app2);
+        Font font = new Font(Font.MONOSPACED, Font.PLAIN, 18);
+        app2Backend.setFont(font);
+        app2Backend.setListener(app2);
         (new Thread(app1)).start();
         (new Thread(app2)).start();
 

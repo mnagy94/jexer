@@ -68,30 +68,52 @@ public abstract class GenericBackend implements Backend {
     }
 
     /**
-     * Subclasses must provide an implementation that syncs the logical
-     * screen to the physical device.
+     * Sync the logical screen to the physical device.
      */
-    public abstract void flushScreen();
+    public void flushScreen() {
+        screen.flushPhysical();
+    }
 
     /**
-     * Subclasses must provide an implementation to get keyboard, mouse, and
-     * screen resize events.
+     * Input events are processed by this Terminal.
+     */
+    protected TerminalReader terminal;
+
+    /**
+     * Get keyboard, mouse, and screen resize events.
      *
      * @param queue list to append new events to
      */
-    public abstract void getEvents(List<TInputEvent> queue);
+    public void getEvents(final List<TInputEvent> queue) {
+        if (terminal.hasEvents()) {
+            terminal.getEvents(queue);
+        }
+    }
 
     /**
-     * Subclasses must provide an implementation that closes sockets,
-     * restores console, etc.
+     * Close the I/O, restore the console, etc.
      */
-    public abstract void shutdown();
+    public void shutdown() {
+        terminal.closeTerminal();
+    }
 
     /**
-     * Subclasses must provide an implementation that sets the window title.
+     * Set the window title.
      *
      * @param title the new title
      */
-    public abstract void setTitle(final String title);
+    public void setTitle(final String title) {
+        screen.setTitle(title);
+    }
+
+    /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener) {
+        terminal.setListener(listener);
+    }
 
 }

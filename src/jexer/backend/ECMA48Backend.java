@@ -33,20 +33,12 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.util.List;
-
-import jexer.event.TInputEvent;
 
 /**
  * This class uses an xterm/ANSI X3.64/ECMA-48 type terminal to provide a
  * screen, keyboard, and mouse to TApplication.
  */
 public final class ECMA48Backend extends GenericBackend {
-
-    /**
-     * Input events are processed by this Terminal.
-     */
-    private ECMA48Terminal terminal;
 
     /**
      * Public constructor.
@@ -70,10 +62,10 @@ public final class ECMA48Backend extends GenericBackend {
         terminal = new ECMA48Terminal(listener, input, output);
 
         // Keep the terminal's sessionInfo so that TApplication can see it
-        sessionInfo = terminal.getSessionInfo();
+        sessionInfo = ((ECMA48Terminal) terminal).getSessionInfo();
 
         // ECMA48Terminal is the screen too
-        screen = terminal;
+        screen = (ECMA48Terminal) terminal;
     }
 
     /**
@@ -99,10 +91,10 @@ public final class ECMA48Backend extends GenericBackend {
             setRawMode);
 
         // Keep the terminal's sessionInfo so that TApplication can see it
-        sessionInfo = terminal.getSessionInfo();
+        sessionInfo = ((ECMA48Terminal) terminal).getSessionInfo();
 
         // ECMA48Terminal is the screen too
-        screen = terminal;
+        screen = (ECMA48Terminal) terminal;
     }
 
     /**
@@ -122,42 +114,5 @@ public final class ECMA48Backend extends GenericBackend {
         this(listener, input, reader, writer, false);
     }
 
-    /**
-     * Sync the logical screen to the physical device.
-     */
-    @Override
-    public void flushScreen() {
-        screen.flushPhysical();
-    }
-
-    /**
-     * Get keyboard, mouse, and screen resize events.
-     *
-     * @param queue list to append new events to
-     */
-    @Override
-    public void getEvents(final List<TInputEvent> queue) {
-        if (terminal.hasEvents()) {
-            terminal.getEvents(queue);
-        }
-    }
-
-    /**
-     * Close the I/O, restore the console, etc.
-     */
-    @Override
-    public void shutdown() {
-        terminal.closeTerminal();
-    }
-
-    /**
-     * Set the window title.
-     *
-     * @param title the new title
-     */
-    @Override
-    public void setTitle(final String title) {
-        screen.setTitle(title);
-    }
 
 }

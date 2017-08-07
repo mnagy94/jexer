@@ -28,21 +28,14 @@
  */
 package jexer.backend;
 
-import java.util.List;
+import java.awt.Font;
 import javax.swing.JComponent;
-
-import jexer.event.TInputEvent;
 
 /**
  * This class uses standard Swing calls to handle screen, keyboard, and mouse
  * I/O.
  */
 public final class SwingBackend extends GenericBackend {
-
-    /**
-     * Input events are processed by this Terminal.
-     */
-    private SwingTerminal terminal;
 
     /**
      * Public constructor.  The window will be 80x25 with font size 20 pts.
@@ -72,10 +65,10 @@ public final class SwingBackend extends GenericBackend {
             listener);
 
         // Hang onto the session info
-        this.sessionInfo = terminal.getSessionInfo();
+        this.sessionInfo = ((SwingTerminal) terminal).getSessionInfo();
 
         // SwingTerminal is the screen too
-        screen = terminal;
+        screen = (SwingTerminal) terminal;
     }
 
     /**
@@ -97,58 +90,19 @@ public final class SwingBackend extends GenericBackend {
             fontSize, listener);
 
         // Hang onto the session info
-        this.sessionInfo = terminal.getSessionInfo();
+        this.sessionInfo = ((SwingTerminal) terminal).getSessionInfo();
 
         // SwingTerminal is the screen too
-        screen = terminal;
+        screen = (SwingTerminal) terminal;
     }
 
     /**
-     * Sync the logical screen to the physical device.
-     */
-    @Override
-    public void flushScreen() {
-        screen.flushPhysical();
-    }
-
-    /**
-     * Get keyboard, mouse, and screen resize events.
+     * Set to a new font, and resize the screen to match its dimensions.
      *
-     * @param queue list to append new events to
+     * @param font the new font
      */
-    @Override
-    public void getEvents(final List<TInputEvent> queue) {
-        if (terminal.hasEvents()) {
-            terminal.getEvents(queue);
-        }
-    }
-
-    /**
-     * Close the I/O, restore the console, etc.
-     */
-    @Override
-    public void shutdown() {
-        terminal.closeTerminal();
-    }
-
-    /**
-     * Set the window title.
-     *
-     * @param title the new title
-     */
-    @Override
-    public void setTitle(final String title) {
-        screen.setTitle(title);
-    }
-
-    /**
-     * Set listener to a different Object.
-     *
-     * @param listener the new listening object that run() wakes up on new
-     * input
-     */
-    public void setListener(final Object listener) {
-        terminal.setListener(listener);
+    public void setFont(final Font font) {
+        ((SwingTerminal) terminal).setFont(font);
     }
 
 }

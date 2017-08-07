@@ -196,6 +196,16 @@ public final class ECMA48Terminal extends LogicalScreen
     private Object listener;
 
     /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener) {
+        this.listener = listener;
+    }
+
+    /**
      * Get the output writer.
      *
      * @return the Writer

@@ -81,4 +81,12 @@ public interface Backend {
      */
     public void setTitle(final String title);
 
+    /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener);
+
 }
