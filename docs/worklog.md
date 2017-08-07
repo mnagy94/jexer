@@ -1,6 +1,50 @@
 Jexer Work Log
 ==============
 
+August 7, 2017
+
+Had trouble sleeping, what with a bunch of imaginative thoughts for
+this release.  jexer.backend will be the ultimate destination for
+jexer.session and most of jexer.io.  TerminalReader will be the
+interface for keyboard and mouse events.  cmScreenConnected and
+cmScreenDisconnected will be new events to represent a screen
+appearing/disappearing, and MultiBackend will be a new backend
+multiplexer that goes full XRandR.  Several new demos demonstrating
+multi-screen support will be coming along.
+
+August 6, 2017
+
+Time to clean up more API, particularly between Backend and Screen.
+Both of these will be interfaces soon, so that one could easily
+subclass JComponent and implement both Screen and Backend.  The
+original code evolved out of Qodem, where screen.c and input.c were
+two different things leading to ECMA48Screen and ECMA48Terminal, but
+now there is really no need to keep them separate.  It also
+complicates the constructors, as these are basically friend classes
+that have used package private access to get around their artificial
+separation.
+
+When I get this done it should be a lot easier to do any of:
+
+* Pass a JFrame or JComponent to SwingBackend and have it add itself,
+  like any other Swing widget.
+
+* Construct a SwingBackend and add it to any regular JComponent.
+
+* Have multiple TApplications running inside the same Swing
+  application, including having actions affect each other.  (Will also
+  need to ensure that TWidgets/TWindows are not in different
+  TApplication collections.)
+
+* Build a Backend/Screen multiplexer, so that one could have a ECMA48
+  TApplication listening on a port and a local Swing monitor for it.
+
+* Build a Backend/Screen manager, so that one could have multiple
+  ECMA48 screens acting as a single large screen (e.g. XRandR).
+
+Now I need to decide which package will collect Backend, SessionInfo,
+and Screen.  jexer.io has some java.io stuff, so it stays anyway.
+
 July 28, 2017
 
 Got very busy with my meatspace life, now getting a chance to come

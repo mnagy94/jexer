@@ -26,58 +26,36 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer.session;
+package jexer.backend;
+
+import java.util.List;
+
+import jexer.event.TInputEvent;
 
 /**
- * SessionInfo is used to store per-session properties that are determined at
- * different layers of the communication stack.
+ * TerminalReader provides keyboard and mouse events.
  */
-public interface SessionInfo {
+public interface TerminalReader {
 
     /**
-     * Username getter.
+     * Check if there are events in the queue.
      *
-     * @return the username
+     * @return if true, getEvents() has something to return to the backend
      */
-    public String getUsername();
+    public boolean hasEvents();
 
     /**
-     * Username setter.
+     * Classes must provide an implementation to get keyboard, mouse, and
+     * screen resize events.
      *
-     * @param username the value
+     * @param queue list to append new events to
      */
-    public void setUsername(String username);
+    public void getEvents(List<TInputEvent> queue);
 
     /**
-     * Language getter.
-     *
-     * @return the language
+     * Classes must provide an implementation that closes sockets, restores
+     * console, etc.
      */
-    public String getLanguage();
+    public void closeTerminal();
 
-    /**
-     * Language setter.
-     *
-     * @param language the value
-     */
-    public void setLanguage(String language);
-
-    /**
-     * Text window width getter.
-     *
-     * @return the window width
-     */
-    public int getWindowWidth();
-
-    /**
-     * Text window height getter.
-     *
-     * @return the window height
-     */
-    public int getWindowHeight();
-
-    /**
-     * Re-query the text window size.
-     */
-    public void queryWindowSize();
 }

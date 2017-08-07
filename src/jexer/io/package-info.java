@@ -28,6 +28,6 @@
  */
 
 /**
- * User-facing I/O, including screen, keyboard, and mouse handling classes.
+ * java.io subclasses.
  */
 package jexer.io;

@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 
+import jexer.backend.Screen;
 import jexer.bits.ColorTheme;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
@@ -39,7 +40,6 @@ import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.io.Screen;
 import jexer.menu.TMenu;
 import static jexer.TKeypress.*;
 

@@ -33,52 +33,65 @@ import java.util.List;
 import jexer.event.TInputEvent;
 
 /**
- * This interface provides a screen, keyboard, and mouse to TApplication.  It
- * also exposes session information as gleaned from lower levels of the
- * communication stack.
+ * This abstract class provides a screen, keyboard, and mouse to
+ * TApplication.  It also exposes session information as gleaned from lower
+ * levels of the communication stack.
  */
-public interface Backend {
+public abstract class GenericBackend implements Backend {
 
     /**
-     * Get a SessionInfo, which exposes text width/height, language,
-     * username, and other information from the communication stack.
+     * The session information.
+     */
+    protected SessionInfo sessionInfo;
+
+    /**
+     * Getter for sessionInfo.
      *
      * @return the SessionInfo
      */
-    public SessionInfo getSessionInfo();
+    public final SessionInfo getSessionInfo() {
+        return sessionInfo;
+    }
 
     /**
-     * Get a Screen, which displays the text cells to the user.
+     * The screen to draw on.
+     */
+    protected Screen screen;
+
+    /**
+     * Getter for screen.
      *
      * @return the Screen
      */
-    public Screen getScreen();
+    public final Screen getScreen() {
+        return screen;
+    }
 
     /**
-     * Classes must provide an implementation that syncs the logical screen
-     * to the physical device.
+     * Subclasses must provide an implementation that syncs the logical
+     * screen to the physical device.
      */
-    public void flushScreen();
+    public abstract void flushScreen();
 
     /**
-     * Classes must provide an implementation to get keyboard, mouse, and
+     * Subclasses must provide an implementation to get keyboard, mouse, and
      * screen resize events.
      *
      * @param queue list to append new events to
      */
-    public void getEvents(List<TInputEvent> queue);
+    public abstract void getEvents(List<TInputEvent> queue);
 
     /**
-     * Classes must provide an implementation that closes sockets, restores
-     * console, etc.
+     * Subclasses must provide an implementation that closes sockets,
+     * restores console, etc.
      */
-    public void shutdown();
+    public abstract void shutdown();
 
     /**
-     * Classes must provide an implementation that sets the window title.
+     * Subclasses must provide an implementation that sets the window title.
      *
      * @param title the new title
      */
-    public void setTitle(final String title);
+    public abstract void setTitle(final String title);
 
 }

@@ -26,7 +26,7 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer.io;
+package jexer.backend;
 
 import java.io.BufferedReader;
 import java.io.FileDescriptor;
@@ -44,21 +44,26 @@ import java.util.Date;
 import java.util.List;
 import java.util.LinkedList;
 
+import jexer.bits.Cell;
+import jexer.bits.CellAttributes;
 import jexer.bits.Color;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.session.SessionInfo;
-import jexer.session.TSessionInfo;
-import jexer.session.TTYSessionInfo;
 import static jexer.TKeypress.*;
 
 /**
  * This class reads keystrokes and mouse events and emits output to ANSI
  * X3.64 / ECMA-48 type terminals e.g. xterm, linux, vt100, ansi.sys, etc.
  */
-public final class ECMA48Terminal implements Runnable {
+public final class ECMA48Terminal extends LogicalScreen
+                                  implements TerminalReader, Runnable {
+
+    /**
+     * Emit debugging to stderr.
+     */
+    private boolean debugToStderr = false;
 
     /**
      * If true, emit T.416-style RGB colors.  This is a) expensive in
@@ -294,7 +299,7 @@ public final class ECMA48Terminal implements Runnable {
     public ECMA48Terminal(final Object listener, final InputStream input,
         final OutputStream output) throws UnsupportedEncodingException {
 
-        reset();
+        resetParser();
         mouse1           = false;
         mouse2           = false;
         mouse3           = false;
@@ -352,6 +357,14 @@ public final class ECMA48Terminal implements Runnable {
         eventQueue = new LinkedList<TInputEvent>();
         readerThread = new Thread(this);
         readerThread.start();
+
+        // Query the screen size
+        setDimensions(sessionInfo.getWindowWidth(),
+            sessionInfo.getWindowHeight());
+
+        // Clear the screen
+        this.output.write(clearAll());
+        this.output.flush();
     }
 
     /**
@@ -381,7 +394,7 @@ public final class ECMA48Terminal implements Runnable {
         if (writer == null) {
             throw new IllegalArgumentException("Writer must be specified");
         }
-        reset();
+        resetParser();
         mouse1           = false;
         mouse2           = false;
         mouse3           = false;
@@ -431,6 +444,14 @@ public final class ECMA48Terminal implements Runnable {
         eventQueue = new LinkedList<TInputEvent>();
         readerThread = new Thread(this);
         readerThread.start();
+
+        // Query the screen size
+        setDimensions(sessionInfo.getWindowWidth(),
+            sessionInfo.getWindowHeight());
+
+        // Clear the screen
+        this.output.write(clearAll());
+        this.output.flush();
     }
 
     /**
@@ -453,7 +474,7 @@ public final class ECMA48Terminal implements Runnable {
     /**
      * Restore terminal to normal state.
      */
-    public void shutdown() {
+    public void closeTerminal() {
 
         // System.err.println("=== shutdown() ==="); System.err.flush();
 
@@ -499,9 +520,242 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
+     * Perform a somewhat-optimal rendering of a line.
+     *
+     * @param y row coordinate.  0 is the top-most row.
+     * @param sb StringBuilder to write escape sequences to
+     * @param lastAttr cell attributes from the last call to flushLine
+     */
+    private void flushLine(final int y, final StringBuilder sb,
+        CellAttributes lastAttr) {
+
+        int lastX = -1;
+        int textEnd = 0;
+        for (int x = 0; x < width; x++) {
+            Cell lCell = logical[x][y];
+            if (!lCell.isBlank()) {
+                textEnd = x;
+            }
+        }
+        // Push textEnd to first column beyond the text area
+        textEnd++;
+
+        // DEBUG
+        // reallyCleared = true;
+
+        for (int x = 0; x < width; x++) {
+            Cell lCell = logical[x][y];
+            Cell pCell = physical[x][y];
+
+            if (!lCell.equals(pCell) || reallyCleared) {
+
+                if (debugToStderr) {
+                    System.err.printf("\n--\n");
+                    System.err.printf(" Y: %d X: %d\n", y, x);
+                    System.err.printf("   lCell: %s\n", lCell);
+                    System.err.printf("   pCell: %s\n", pCell);
+                    System.err.printf("    ====    \n");
+                }
+
+                if (lastAttr == null) {
+                    lastAttr = new CellAttributes();
+                    sb.append(normal());
+                }
+
+                // Place the cell
+                if ((lastX != (x - 1)) || (lastX == -1)) {
+                    // Advancing at least one cell, or the first gotoXY
+                    sb.append(gotoXY(x, y));
+                }
+
+                assert (lastAttr != null);
+
+                if ((x == textEnd) && (textEnd < width - 1)) {
+                    assert (lCell.isBlank());
+
+                    for (int i = x; i < width; i++) {
+                        assert (logical[i][y].isBlank());
+                        // Physical is always updated
+                        physical[i][y].reset();
+                    }
+
+                    // Clear remaining line
+                    sb.append(clearRemainingLine());
+                    lastAttr.reset();
+                    return;
+                }
+
+                // Now emit only the modified attributes
+                if ((lCell.getForeColor() != lastAttr.getForeColor())
+                    && (lCell.getBackColor() != lastAttr.getBackColor())
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+                    // Both colors changed, attributes the same
+                    sb.append(color(lCell.isBold(),
+                            lCell.getForeColor(), lCell.getBackColor()));
+
+                    if (debugToStderr) {
+                        System.err.printf("1 Change only fore/back colors\n");
+                    }
+                } else if ((lCell.getForeColor() != lastAttr.getForeColor())
+                    && (lCell.getBackColor() != lastAttr.getBackColor())
+                    && (lCell.isBold() != lastAttr.isBold())
+                    && (lCell.isReverse() != lastAttr.isReverse())
+                    && (lCell.isUnderline() != lastAttr.isUnderline())
+                    && (lCell.isBlink() != lastAttr.isBlink())
+                ) {
+                    // Everything is different
+                    sb.append(color(lCell.getForeColor(),
+                            lCell.getBackColor(),
+                            lCell.isBold(), lCell.isReverse(),
+                            lCell.isBlink(),
+                            lCell.isUnderline()));
+
+                    if (debugToStderr) {
+                        System.err.printf("2 Set all attributes\n");
+                    }
+                } else if ((lCell.getForeColor() != lastAttr.getForeColor())
+                    && (lCell.getBackColor() == lastAttr.getBackColor())
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+
+                    // Attributes same, foreColor different
+                    sb.append(color(lCell.isBold(),
+                            lCell.getForeColor(), true));
+
+                    if (debugToStderr) {
+                        System.err.printf("3 Change foreColor\n");
+                    }
+                } else if ((lCell.getForeColor() == lastAttr.getForeColor())
+                    && (lCell.getBackColor() != lastAttr.getBackColor())
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+                    // Attributes same, backColor different
+                    sb.append(color(lCell.isBold(),
+                            lCell.getBackColor(), false));
+
+                    if (debugToStderr) {
+                        System.err.printf("4 Change backColor\n");
+                    }
+                } else if ((lCell.getForeColor() == lastAttr.getForeColor())
+                    && (lCell.getBackColor() == lastAttr.getBackColor())
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+
+                    // All attributes the same, just print the char
+                    // NOP
+
+                    if (debugToStderr) {
+                        System.err.printf("5 Only emit character\n");
+                    }
+                } else {
+                    // Just reset everything again
+                    sb.append(color(lCell.getForeColor(),
+                            lCell.getBackColor(),
+                            lCell.isBold(),
+                            lCell.isReverse(),
+                            lCell.isBlink(),
+                            lCell.isUnderline()));
+
+                    if (debugToStderr) {
+                        System.err.printf("6 Change all attributes\n");
+                    }
+                }
+                // Emit the character
+                sb.append(lCell.getChar());
+
+                // Save the last rendered cell
+                lastX = x;
+                lastAttr.setTo(lCell);
+
+                // Physical is always updated
+                physical[x][y].setTo(lCell);
+
+            } // if (!lCell.equals(pCell) || (reallyCleared == true))
+
+        } // for (int x = 0; x < width; x++)
+    }
+
+    /**
+     * Render the screen to a string that can be emitted to something that
+     * knows how to process ECMA-48/ANSI X3.64 escape sequences.
+     *
+     * @return escape sequences string that provides the updates to the
+     * physical screen
+     */
+    private String flushString() {
+        if (!dirty) {
+            assert (!reallyCleared);
+            return "";
+        }
+
+        CellAttributes attr = null;
+
+        StringBuilder sb = new StringBuilder();
+        if (reallyCleared) {
+            attr = new CellAttributes();
+            sb.append(clearAll());
+        }
+
+        for (int y = 0; y < height; y++) {
+            flushLine(y, sb, attr);
+        }
+
+        dirty = false;
+        reallyCleared = false;
+
+        String result = sb.toString();
+        if (debugToStderr) {
+            System.err.printf("flushString(): %s\n", result);
+        }
+        return result;
+    }
+
+    /**
+     * Push the logical screen to the physical device.
+     */
+    @Override
+    public void flushPhysical() {
+        String result = flushString();
+        if ((cursorVisible)
+            && (cursorY <= height - 1)
+            && (cursorX <= width - 1)
+        ) {
+            result += cursor(true);
+            result += gotoXY(cursorX, cursorY);
+        } else {
+            result += cursor(false);
+        }
+        output.write(result);
+        flush();
+    }
+
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    public void setTitle(final String title) {
+        output.write(getSetTitleString(title));
+        flush();
+    }
+
+    /**
      * Reset keyboard/mouse input parser.
      */
-    private void reset() {
+    private void resetParser() {
         state = ParseState.GROUND;
         params = new ArrayList<String>();
         params.clear();
@@ -860,7 +1114,7 @@ public final class ECMA48Terminal implements Runnable {
             if (escDelay > 100) {
                 // After 0.1 seconds, assume a true escape character
                 queue.add(controlChar((char)0x1B, false));
-                reset();
+                resetParser();
             }
         }
     }
@@ -926,7 +1180,7 @@ public final class ECMA48Terminal implements Runnable {
             if (escDelay > 250) {
                 // After 0.25 seconds, assume a true escape character
                 events.add(controlChar((char)0x1B, false));
-                reset();
+                resetParser();
             }
         }
 
@@ -949,7 +1203,7 @@ public final class ECMA48Terminal implements Runnable {
             if (ch <= 0x1F) {
                 // Control character
                 events.add(controlChar(ch, false));
-                reset();
+                resetParser();
                 return;
             }
 
@@ -957,7 +1211,7 @@ public final class ECMA48Terminal implements Runnable {
                 // Normal character
                 events.add(new TKeypressEvent(false, 0, ch,
                         false, false, false));
-                reset();
+                resetParser();
                 return;
             }
 
@@ -967,7 +1221,7 @@ public final class ECMA48Terminal implements Runnable {
             if (ch <= 0x1F) {
                 // ALT-Control character
                 events.add(controlChar(ch, true));
-                reset();
+                resetParser();
                 return;
             }
 
@@ -989,7 +1243,7 @@ public final class ECMA48Terminal implements Runnable {
             }
             alt = true;
             events.add(new TKeypressEvent(false, 0, ch, alt, ctrl, shift));
-            reset();
+            resetParser();
             return;
 
         case ESCAPE_INTERMEDIATE:
@@ -1011,12 +1265,12 @@ public final class ECMA48Terminal implements Runnable {
                 default:
                     break;
                 }
-                reset();
+                resetParser();
                 return;
             }
 
             // Unknown keystroke, ignore
-            reset();
+            resetParser();
             return;
 
         case CSI_ENTRY:
@@ -1038,37 +1292,37 @@ public final class ECMA48Terminal implements Runnable {
                 case 'A':
                     // Up
                     events.add(new TKeypressEvent(kbUp, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'B':
                     // Down
                     events.add(new TKeypressEvent(kbDown, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'C':
                     // Right
                     events.add(new TKeypressEvent(kbRight, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'D':
                     // Left
                     events.add(new TKeypressEvent(kbLeft, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'H':
                     // Home
                     events.add(new TKeypressEvent(kbHome));
-                    reset();
+                    resetParser();
                     return;
                 case 'F':
                     // End
                     events.add(new TKeypressEvent(kbEnd));
-                    reset();
+                    resetParser();
                     return;
                 case 'Z':
                     // CBT - Cursor backward X tab stops (default 1)
                     events.add(new TKeypressEvent(kbBackTab));
-                    reset();
+                    resetParser();
                     return;
                 case 'M':
                     // Mouse position
@@ -1084,7 +1338,7 @@ public final class ECMA48Terminal implements Runnable {
             }
 
             // Unknown keystroke, ignore
-            reset();
+            resetParser();
             return;
 
         case MOUSE_SGR:
@@ -1107,7 +1361,7 @@ public final class ECMA48Terminal implements Runnable {
                 if (event != null) {
                     events.add(event);
                 }
-                reset();
+                resetParser();
                 return;
             case 'm':
                 // Generate a mouse release event
@@ -1115,14 +1369,14 @@ public final class ECMA48Terminal implements Runnable {
                 if (event != null) {
                     events.add(event);
                 }
-                reset();
+                resetParser();
                 return;
             default:
                 break;
             }
 
             // Unknown keystroke, ignore
-            reset();
+            resetParser();
             return;
 
         case CSI_PARAM:
@@ -1141,7 +1395,7 @@ public final class ECMA48Terminal implements Runnable {
 
             if (ch == '~') {
                 events.add(csiFnKey());
-                reset();
+                resetParser();
                 return;
             }
 
@@ -1155,7 +1409,7 @@ public final class ECMA48Terminal implements Runnable {
                         ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbUp, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'B':
                     // Down
@@ -1165,7 +1419,7 @@ public final class ECMA48Terminal implements Runnable {
                         ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbDown, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'C':
                     // Right
@@ -1175,7 +1429,7 @@ public final class ECMA48Terminal implements Runnable {
                         ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbRight, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'D':
                     // Left
@@ -1185,7 +1439,7 @@ public final class ECMA48Terminal implements Runnable {
                         ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbLeft, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'H':
                     // Home
@@ -1195,7 +1449,7 @@ public final class ECMA48Terminal implements Runnable {
                         ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbHome, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 case 'F':
                     // End
@@ -1205,7 +1459,7 @@ public final class ECMA48Terminal implements Runnable {
                         ctrl = csiIsCtrl(params.get(1));
                     }
                     events.add(new TKeypressEvent(kbEnd, alt, ctrl, shift));
-                    reset();
+                    resetParser();
                     return;
                 default:
                     break;
@@ -1213,7 +1467,7 @@ public final class ECMA48Terminal implements Runnable {
             }
 
             // Unknown keystroke, ignore
-            reset();
+            resetParser();
             return;
 
         case MOUSE:
@@ -1221,7 +1475,7 @@ public final class ECMA48Terminal implements Runnable {
             if (params.get(0).length() == 3) {
                 // We have enough to generate a mouse event
                 events.add(parseMouse());
-                reset();
+                resetParser();
             }
             return;
 
@@ -1249,19 +1503,17 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
-     * Create an xterm OSC sequence to change the window title.  Note package
-     * private access.
+     * Create an xterm OSC sequence to change the window title.
      *
      * @param title the new title
      * @return the string to emit to xterm
      */
-    String setTitle(final String title) {
+    private String getSetTitleString(final String title) {
         return "\033]2;" + title + "\007";
     }
 
     /**
-     * Create a SGR parameter sequence for a single color change.  Note
-     * package private access.
+     * Create a SGR parameter sequence for a single color change.
      *
      * @param bold if true, set bold
      * @param color one of the Color.WHITE, Color.BLUE, etc. constants
@@ -1269,7 +1521,7 @@ public final class ECMA48Terminal implements Runnable {
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[42m"
      */
-    String color(final boolean bold, final Color color,
+    private String color(final boolean bold, final Color color,
         final boolean foreground) {
         return color(color, foreground, true) +
                 rgbColor(bold, color, foreground);
@@ -1389,7 +1641,7 @@ public final class ECMA48Terminal implements Runnable {
 
     /**
      * Create a SGR parameter sequence for both foreground and background
-     * color change.  Note package private access.
+     * color change.
      *
      * @param bold if true, set bold
      * @param foreColor one of the Color.WHITE, Color.BLUE, etc. constants
@@ -1397,7 +1649,7 @@ public final class ECMA48Terminal implements Runnable {
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[31;42m"
      */
-    String color(final boolean bold, final Color foreColor,
+    private String color(final boolean bold, final Color foreColor,
         final Color backColor) {
         return color(foreColor, backColor, true) +
                 rgbColor(bold, foreColor, backColor);
@@ -1434,8 +1686,7 @@ public final class ECMA48Terminal implements Runnable {
     /**
      * Create a SGR parameter sequence for foreground, background, and
      * several attributes.  This sequence first resets all attributes to
-     * default, then sets attributes as per the parameters.  Note package
-     * private access.
+     * default, then sets attributes as per the parameters.
      *
      * @param foreColor one of the Color.WHITE, Color.BLUE, etc. constants
      * @param backColor one of the Color.WHITE, Color.BLUE, etc. constants
@@ -1446,7 +1697,7 @@ public final class ECMA48Terminal implements Runnable {
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[0;1;31;42m"
      */
-    String color(final Color foreColor, final Color backColor,
+    private String color(final Color foreColor, final Color backColor,
         final boolean bold, final boolean reverse, final boolean blink,
         final boolean underline) {
 
@@ -1498,13 +1749,12 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
-     * Create a SGR parameter sequence to reset to defaults.  Note package
-     * private access.
+     * Create a SGR parameter sequence to reset to defaults.
      *
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[0m"
      */
-    String normal() {
+    private String normal() {
         return normal(true) + rgbColor(false, Color.WHITE, Color.BLACK);
     }
 
@@ -1524,13 +1774,12 @@ public final class ECMA48Terminal implements Runnable {
     }
 
     /**
-     * Create a SGR parameter sequence for enabling the visible cursor.  Note
-     * package private access.
+     * Create a SGR parameter sequence for enabling the visible cursor.
      *
      * @param on if true, turn on cursor
      * @return the string to emit to an ANSI / ECMA-style terminal
      */
-    String cursor(final boolean on) {
+    private String cursor(final boolean on) {
         if (on && !cursorOn) {
             cursorOn = true;
             return "\033[?25h";
@@ -1548,29 +1797,29 @@ public final class ECMA48Terminal implements Runnable {
      *
      * @return the string to emit to an ANSI / ECMA-style terminal
      */
-    public String clearAll() {
+    private String clearAll() {
         return "\033[0;37;40m\033[2J";
     }
 
     /**
      * Clear the line from the cursor (inclusive) to the end of the screen.
      * Because some terminals use back-color-erase, set the color to
-     * white-on-black beforehand.  Note package private access.
+     * white-on-black beforehand.
      *
      * @return the string to emit to an ANSI / ECMA-style terminal
      */
-    String clearRemainingLine() {
+    private String clearRemainingLine() {
         return "\033[0;37;40m\033[K";
     }
 
     /**
-     * Move the cursor to (x, y).  Note package private access.
+     * Move the cursor to (x, y).
      *
      * @param x column coordinate.  0 is the left-most column.
      * @param y row coordinate.  0 is the top-most row.
      * @return the string to emit to an ANSI / ECMA-style terminal
      */
-    String gotoXY(final int x, final int y) {
+    private String gotoXY(final int x, final int y) {
         return String.format("\033[%d;%dH", y + 1, x + 1);
     }
 

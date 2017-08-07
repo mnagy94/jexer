@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 
-import jexer.session.SessionInfo;
+import jexer.backend.SessionInfo;
 import static jexer.net.TelnetSocket.*;
 
 /**

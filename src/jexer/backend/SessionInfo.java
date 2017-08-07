@@ -26,8 +26,58 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
+package jexer.backend;
 
 /**
- * Text terminal session values: width, height, username, language, etc.
+ * SessionInfo is used to store per-session properties that are determined at
+ * different layers of the communication stack.
  */
-package jexer.session;
+public interface SessionInfo {
+
+    /**
+     * Username getter.
+     *
+     * @return the username
+     */
+    public String getUsername();
+
+    /**
+     * Username setter.
+     *
+     * @param username the value
+     */
+    public void setUsername(String username);
+
+    /**
+     * Language getter.
+     *
+     * @return the language
+     */
+    public String getLanguage();
+
+    /**
+     * Language setter.
+     *
+     * @param language the value
+     */
+    public void setLanguage(String language);
+
+    /**
+     * Text window width getter.
+     *
+     * @return the window width
+     */
+    public int getWindowWidth();
+
+    /**
+     * Text window height getter.
+     *
+     * @return the window height
+     */
+    public int getWindowHeight();
+
+    /**
+     * Re-query the text window size.
+     */
+    public void queryWindowSize();
+}

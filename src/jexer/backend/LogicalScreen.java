@@ -26,17 +26,16 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer.io;
+package jexer.backend;
 
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 
 /**
- * This class represents a text-based screen.  Drawing operations write to a
- * logical screen.
+ * A logical screen composed of a 2D array of Cells.
  */
-public abstract class Screen {
+public class LogicalScreen implements Screen {
 
     /**
      * Width of the visible window.
@@ -551,7 +550,7 @@ public abstract class Screen {
     /**
      * Public constructor.  Sets everything to not-bold, white-on-black.
      */
-    protected Screen() {
+    protected LogicalScreen() {
         offsetX  = 0;
         offsetY  = 0;
         width    = 80;
@@ -747,10 +746,9 @@ public abstract class Screen {
     }
 
     /**
-     * Subclasses must provide an implementation to push the logical screen
-     * to the physical device.
+     * Default implementation does nothing.
      */
-    public abstract void flushPhysical();
+    public void flushPhysical() {}
 
     /**
      * Put the cursor at (x,y).
@@ -772,4 +770,12 @@ public abstract class Screen {
     public final void hideCursor() {
         cursorVisible = false;
     }
+
+    /**
+     * Set the window title.  Default implementation does nothing.
+     *
+     * @param title the new title
+     */
+    public void setTitle(final String title) {}
+
 }

@@ -26,7 +26,7 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer.session;
+package jexer.backend;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

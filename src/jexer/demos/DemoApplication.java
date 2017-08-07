@@ -34,6 +34,8 @@ import java.util.*;
 import jexer.*;
 import jexer.event.*;
 import jexer.menu.*;
+import jexer.backend.Backend;
+import jexer.backend.SwingTerminal;
 
 /**
  * The demo application itself.
@@ -72,6 +74,12 @@ public class DemoApplication extends TApplication {
         item = subMenu.addItem(2001, "Disabled (sub)");
         item.setEnabled(false);
         item = subMenu.addItem(2002, "&Normal (sub)");
+
+        if (getScreen() instanceof SwingTerminal) {
+            TMenu swingMenu = addMenu("&Swing");
+            item = swingMenu.addItem(3000, "&Bigger +2");
+            item = swingMenu.addItem(3001, "&Smaller -2");
+        }
 
         addWindowMenu();
         addHelpMenu();
@@ -134,6 +142,17 @@ public class DemoApplication extends TApplication {
     }
 
     /**
+     * Public constructor.
+     *
+     * @param backend a Backend that is already ready to go.
+     */
+    public DemoApplication(final Backend backend) {
+        super(backend);
+
+        addAllWidgets();
+    }
+
+    /**
      * Handle menu events.
      *
      * @param menu menu event
@@ -142,6 +161,21 @@ public class DemoApplication extends TApplication {
      */
     @Override
     public boolean onMenu(final TMenuEvent menu) {
+
+        if (menu.getId() == 3000) {
+            // Bigger +2
+            assert (getScreen() instanceof SwingTerminal);
+            SwingTerminal terminal = (SwingTerminal) getScreen();
+            terminal.setFontSize(terminal.getFontSize() + 2);
+            return true;
+        }
+        if (menu.getId() == 3001) {
+            // Smaller -2
+            assert (getScreen() instanceof SwingTerminal);
+            SwingTerminal terminal = (SwingTerminal) getScreen();
+            terminal.setFontSize(terminal.getFontSize() - 2);
+            return true;
+        }
 
         if (menu.getId() == 2050) {
             new TEditColorThemeWindow(this);

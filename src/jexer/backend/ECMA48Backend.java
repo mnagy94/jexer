@@ -36,14 +36,12 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import jexer.event.TInputEvent;
-import jexer.io.ECMA48Screen;
-import jexer.io.ECMA48Terminal;
 
 /**
  * This class uses an xterm/ANSI X3.64/ECMA-48 type terminal to provide a
  * screen, keyboard, and mouse to TApplication.
  */
-public final class ECMA48Backend extends Backend {
+public final class ECMA48Backend extends GenericBackend {
 
     /**
      * Input events are processed by this Terminal.
@@ -74,12 +72,8 @@ public final class ECMA48Backend extends Backend {
         // Keep the terminal's sessionInfo so that TApplication can see it
         sessionInfo = terminal.getSessionInfo();
 
-        // Create a screen
-        screen = new ECMA48Screen(terminal);
-
-        // Clear the screen
-        terminal.getOutput().write(terminal.clearAll());
-        terminal.flush();
+        // ECMA48Terminal is the screen too
+        screen = terminal;
     }
 
     /**
@@ -107,12 +101,8 @@ public final class ECMA48Backend extends Backend {
         // Keep the terminal's sessionInfo so that TApplication can see it
         sessionInfo = terminal.getSessionInfo();
 
-        // Create a screen
-        screen = new ECMA48Screen(terminal);
-
-        // Clear the screen
-        terminal.getOutput().write(terminal.clearAll());
-        terminal.flush();
+        // ECMA48Terminal is the screen too
+        screen = terminal;
     }
 
     /**
@@ -157,7 +147,7 @@ public final class ECMA48Backend extends Backend {
      */
     @Override
     public void shutdown() {
-        terminal.shutdown();
+        terminal.closeTerminal();
     }
 
     /**
@@ -167,7 +157,7 @@ public final class ECMA48Backend extends Backend {
      */
     @Override
     public void setTitle(final String title) {
-        ((ECMA48Screen) screen).setTitle(title);
+        screen.setTitle(title);
     }
 
 }

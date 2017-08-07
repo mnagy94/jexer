@@ -73,7 +73,7 @@ public class TimeoutInputStream extends InputStream {
     }
 
     /**
-     * Public constructor, using the default 10 bits per byte.
+     * Public constructor.
      *
      * @param stream the wrapped InputStream
      * @param timeoutMillis the timeout value in millis.  If it takes longer

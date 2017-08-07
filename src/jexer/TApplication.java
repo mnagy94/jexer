@@ -51,16 +51,18 @@ import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.backend.Backend;
+import jexer.backend.Screen;
 import jexer.backend.SwingBackend;
 import jexer.backend.ECMA48Backend;
-import jexer.io.Screen;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
- * TApplication sets up a full Text User Interface application.
+ * TApplication is the main driver class for a full Text User Interface
+ * application.  It manages windows, provides a menu bar and status bar, and
+ * processes events received from the user.
  */
 public class TApplication implements Runnable {
 
@@ -907,6 +909,13 @@ public class TApplication implements Runnable {
     // ------------------------------------------------------------------------
     // Main loop --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Force this application to exit.
+     */
+    public void exit() {
+        quit = true;
+    }
 
     /**
      * Run this application until it exits.

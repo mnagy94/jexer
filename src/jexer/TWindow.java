@@ -30,6 +30,7 @@ package jexer;
 
 import java.util.HashSet;
 
+import jexer.backend.Screen;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
@@ -38,7 +39,6 @@ import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.io.Screen;
 import jexer.menu.TMenu;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;

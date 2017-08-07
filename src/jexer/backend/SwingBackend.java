@@ -29,16 +29,15 @@
 package jexer.backend;
 
 import java.util.List;
+import javax.swing.JComponent;
 
 import jexer.event.TInputEvent;
-import jexer.io.SwingScreen;
-import jexer.io.SwingTerminal;
 
 /**
  * This class uses standard Swing calls to handle screen, keyboard, and mouse
  * I/O.
  */
-public final class SwingBackend extends Backend {
+public final class SwingBackend extends GenericBackend {
 
     /**
      * Input events are processed by this Terminal.
@@ -56,7 +55,7 @@ public final class SwingBackend extends Backend {
     }
 
     /**
-     * Public constructor.
+     * Public constructor will spawn a new JFrame.
      *
      * @param listener the object this backend needs to wake up when new
      * input comes in
@@ -68,16 +67,40 @@ public final class SwingBackend extends Backend {
     public SwingBackend(final Object listener, final int windowWidth,
         final int windowHeight, final int fontSize) {
 
-        // Create a screen
-        SwingScreen screen = new SwingScreen(windowWidth, windowHeight,
-            fontSize);
-        this.screen = screen;
-
-        // Create the Swing event listeners
-        terminal = new SwingTerminal(listener, screen);
+        // Create a Swing backend using a JFrame
+        terminal = new SwingTerminal(windowWidth, windowHeight, fontSize,
+            listener);
 
         // Hang onto the session info
         this.sessionInfo = terminal.getSessionInfo();
+
+        // SwingTerminal is the screen too
+        screen = terminal;
+    }
+
+    /**
+     * Public constructor will render onto a JComponent.
+     *
+     * @param component the Swing component to render to
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @param fontSize the size in points.  Good values to pick are: 16, 20,
+     * 22, and 24.
+     */
+    public SwingBackend(final JComponent component, final Object listener,
+        final int windowWidth, final int windowHeight, final int fontSize) {
+
+        // Create a Swing backend using a JComponent
+        terminal = new SwingTerminal(component, windowWidth, windowHeight,
+            fontSize, listener);
+
+        // Hang onto the session info
+        this.sessionInfo = terminal.getSessionInfo();
+
+        // SwingTerminal is the screen too
+        screen = terminal;
     }
 
     /**
@@ -105,7 +128,7 @@ public final class SwingBackend extends Backend {
      */
     @Override
     public void shutdown() {
-        ((SwingScreen) screen).shutdown();
+        terminal.closeTerminal();
     }
 
     /**
@@ -115,7 +138,17 @@ public final class SwingBackend extends Backend {
      */
     @Override
     public void setTitle(final String title) {
-        ((SwingScreen) screen).setTitle(title);
+        screen.setTitle(title);
+    }
+
+    /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener) {
+        terminal.setListener(listener);
     }
 
 }

@@ -26,13 +26,31 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer.session;
+package jexer.backend;
+
+import java.awt.Insets;
 
 /**
- * TSessionInfo provides a default session implementation.  The username is
- * blank, language is "en_US", with a 80x24 text window.
+ * SwingSessionInfo provides a session implementation with a callback into
+ * Swing to support queryWindowSize().  The username is blank, language is
+ * "en_US", with a 80x25 text window.
  */
-public final class TSessionInfo implements SessionInfo {
+public final class SwingSessionInfo implements SessionInfo {
+
+    /**
+     * The Swing JFrame or JComponent.
+     */
+    private SwingComponent swing;
+
+    /**
+     * The width of a text cell in pixels.
+     */
+    private int textWidth = 10;
+
+    /**
+     * The height of a text cell in pixels.
+     */
+    private int textHeight = 10;
 
     /**
      * User name.
@@ -52,7 +70,7 @@ public final class TSessionInfo implements SessionInfo {
     /**
      * Text window height.
      */
-    private int windowHeight = 24;
+    private int windowHeight = 25;
 
     /**
      * Username getter.
@@ -109,10 +127,49 @@ public final class TSessionInfo implements SessionInfo {
     }
 
     /**
+     * Set the dimensions of a single text cell.
+     *
+     * @param textWidth the width of a cell in pixels
+     * @param textHeight the height of a cell in pixels
+     */
+    public void setTextCellDimensions(final int textWidth,
+        final int textHeight) {
+
+        this.textWidth  = textWidth;
+        this.textHeight = textHeight;
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param swing the Swing JFrame or JComponent
+     * @param textWidth the width of a cell in pixels
+     * @param textHeight the height of a cell in pixels
+     */
+    public SwingSessionInfo(final SwingComponent swing, final int textWidth,
+        final int textHeight) {
+
+        this.swing      = swing;
+        this.textWidth  = textWidth;
+        this.textHeight = textHeight;
+    }
+
+    /**
      * Re-query the text window size.
      */
     public void queryWindowSize() {
-        // NOP
+        Insets insets = swing.getInsets();
+        int width = swing.getWidth() - insets.left - insets.right;
+        int height = swing.getHeight() - insets.top - insets.bottom;
+        windowWidth = width / textWidth;
+        windowHeight = height / textHeight;
+
+        /*
+        System.err.printf("queryWindowSize(): frame %d %d window %d %d\n",
+            swing.getWidth(), swing.getHeight(),
+            windowWidth, windowHeight);
+        */
+
     }
 
 }

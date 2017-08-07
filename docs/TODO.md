@@ -10,6 +10,10 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 
 0.0.5
 
+- Multiscreen support:
+  - cmAbort to cmScreenDisconnected
+  - cmScreenConnected
+
 - TApplication
   - getAllWindows()
   - Expose menu management functions (addMenu, getMenu, getAllMenus,
@@ -38,12 +42,6 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 - TCalendar
 
 0.0.7
-
-- Refactor SwingBackend to be embeddable
-  - jexer.Swing.blockMousePointer: false = do not invert cell, true
-    (default) is current behavior
-  - Make Demo5 with two separate Swing demos in a single JFrame.
-  - Make Demo6 mixing Swing and Jexer components
 
 - THelpWindow
   - TText + clickable links
