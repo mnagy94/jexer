@@ -183,16 +183,17 @@ The following properties control features of Jexer:
   jexer.Swing.cursorStyle
   -----------------------
 
-  Used by jexer.io.SwingScreen.  Selects the cursor style to draw.
-  Valid values are: underline, block, outline.  Default: underline.
+  Used by jexer.backend.SwingTerminal.  Selects the cursor style to
+  draw.  Valid values are: underline, block, outline.  Default:
+  underline.
 
   jexer.Swing.tripleBuffer
   ------------------------
 
-  Used by jexer.io.SwingScreen.  If true, use triple-buffering which
-  reduces screen tearing but may also be slower to draw on slower
-  systems.  If false, use naive Swing thread drawing, which may be
-  faster on slower systems but also more likely to have screen
+  Used by jexer.backend.SwingTerminal.  If true, use triple-buffering
+  which reduces screen tearing but may also be slower to draw on
+  slower systems.  If false, use naive Swing thread drawing, which may
+  be faster on slower systems but also more likely to have screen
   tearing.  Default: true.
 
 
@@ -235,9 +236,9 @@ ambiguous.  This section describes such issues.
     check the current window size, performing the same function as
     ioctl(TIOCGWINSZ) but without requiring a native library.
 
-  - jexer.io.ECMA48Terminal calls 'stty' to perform the equivalent of
-    cfmakeraw() when using System.in/out.  System.out is also
-    (blindly!) put in 'stty sane cooked' mode when exiting.
+  - jexer.backend.ECMA48Terminal calls 'stty' to perform the
+    equivalent of cfmakeraw() when using System.in/out.  System.out is
+    also (blindly!) put in 'stty sane cooked' mode when exiting.
 
 
 
