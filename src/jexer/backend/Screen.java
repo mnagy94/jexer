@@ -124,6 +124,15 @@ public interface Screen {
     public CellAttributes getAttrXY(final int x, final int y);
 
     /**
+     * Get the cell at one location.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @return the character + attributes
+     */
+    public Cell getCharXY(final int x, final int y);
+
+    /**
      * Set the attributes at one location.
      *
      * @param x column coordinate.  0 is the left-most column.
@@ -344,6 +353,27 @@ public interface Screen {
      * Hide the cursor.
      */
     public void hideCursor();
+
+    /**
+     * Get the cursor visibility.
+     *
+     * @return true if the cursor is visible
+     */
+    public boolean isCursorVisible();
+
+    /**
+     * Get the cursor X position.
+     *
+     * @return the cursor x column position
+     */
+    public int getCursorX();
+
+    /**
+     * Get the cursor Y position.
+     *
+     * @return the cursor y row position
+     */
+    public int getCursorY();
 
     /**
      * Set the window title.

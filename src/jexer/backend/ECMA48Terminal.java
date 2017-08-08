@@ -352,6 +352,11 @@ public final class ECMA48Terminal extends LogicalScreen
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
         this.output.flush();
 
+        // Query the screen size
+        sessionInfo.queryWindowSize();
+        setDimensions(sessionInfo.getWindowWidth(),
+            sessionInfo.getWindowHeight());
+
         // Hang onto the window size
         windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
@@ -360,6 +365,8 @@ public final class ECMA48Terminal extends LogicalScreen
         if (System.getProperty("jexer.ECMA48.rgbColor") != null) {
             if (System.getProperty("jexer.ECMA48.rgbColor").equals("true")) {
                 doRgbColor = true;
+            } else {
+                doRgbColor = false;
             }
         }
 
@@ -367,10 +374,6 @@ public final class ECMA48Terminal extends LogicalScreen
         eventQueue = new LinkedList<TInputEvent>();
         readerThread = new Thread(this);
         readerThread.start();
-
-        // Query the screen size
-        setDimensions(sessionInfo.getWindowWidth(),
-            sessionInfo.getWindowHeight());
 
         // Clear the screen
         this.output.write(clearAll());
@@ -439,6 +442,11 @@ public final class ECMA48Terminal extends LogicalScreen
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
         this.output.flush();
 
+        // Query the screen size
+        sessionInfo.queryWindowSize();
+        setDimensions(sessionInfo.getWindowWidth(),
+            sessionInfo.getWindowHeight());
+
         // Hang onto the window size
         windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
@@ -447,6 +455,8 @@ public final class ECMA48Terminal extends LogicalScreen
         if (System.getProperty("jexer.ECMA48.rgbColor") != null) {
             if (System.getProperty("jexer.ECMA48.rgbColor").equals("true")) {
                 doRgbColor = true;
+            } else {
+                doRgbColor = false;
             }
         }
 
@@ -454,10 +464,6 @@ public final class ECMA48Terminal extends LogicalScreen
         eventQueue = new LinkedList<TInputEvent>();
         readerThread = new Thread(this);
         readerThread.start();
-
-        // Query the screen size
-        setDimensions(sessionInfo.getWindowWidth(),
-            sessionInfo.getWindowHeight());
 
         // Clear the screen
         this.output.write(clearAll());
@@ -1892,8 +1898,10 @@ public final class ECMA48Terminal extends LogicalScreen
                             synchronized (eventQueue) {
                                 eventQueue.addAll(events);
                             }
-                            synchronized (listener) {
-                                listener.notifyAll();
+                            if (listener != null) {
+                                synchronized (listener) {
+                                    listener.notifyAll();
+                                }
                             }
                             events.clear();
                         }
@@ -1905,8 +1913,10 @@ public final class ECMA48Terminal extends LogicalScreen
                             eventQueue.addAll(events);
                         }
                         events.clear();
-                        synchronized (listener) {
-                            listener.notifyAll();
+                        if (listener != null) {
+                            synchronized (listener) {
+                                listener.notifyAll();
+                            }
                         }
                     }
 

@@ -115,4 +115,22 @@ public final class TSessionInfo implements SessionInfo {
         // NOP
     }
 
+    /**
+     * Public constructor.
+     */
+    public TSessionInfo() {
+        this(80, 24);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param width the number of columns
+     * @param height the number of rows
+     */
+    public TSessionInfo(final int width, final int height) {
+        this.windowWidth        = width;
+        this.windowHeight       = height;
+    }
+
 }

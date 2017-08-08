@@ -28,6 +28,7 @@
  */
 package jexer.demos;
 
+import jexer.TApplication;
 import jexer.backend.*;
 
 /**
@@ -42,22 +43,87 @@ public class Demo6 {
      */
     public static void main(final String [] args) {
         try {
+
             /*
-             * Spin up a Swing backend to match the ECMA48 backend on
-             * System.in/out.
+             * In this demo we will create two applications spanning three
+             * screens.  One of the applications will have both an ECMA48
+             * screen and a Swing screen, with all I/O mirrored between them.
+             * The second application will have a Swing screen containing a
+             * window showing the first application, also mirroring I/O
+             * between the window and the other two screens.
              */
-            ECMA48Backend ecmaBackend = new ECMA48Backend(new Object(), null,
-                null);
+
+            /*
+             * We create the first screen and use it to establish a
+             * MultiBackend.
+             */
+            ECMA48Backend ecmaBackend = new ECMA48Backend();
             MultiBackend multiBackend = new MultiBackend(ecmaBackend);
+
+            /*
+             * Now we create the first application (a standard demo).
+             */
             DemoApplication demoApp = new DemoApplication(multiBackend);
+
+            /*
+             * We will need the width and height of the ECMA48 screen, so get
+             * the Screen reference now.
+             */
             Screen multiScreen = multiBackend.getScreen();
 
-            SwingBackend swingBackend = new SwingBackend(new Object(),
-                multiScreen.getWidth(), multiScreen.getHeight(), 16);
-            multiBackend.addBackend(swingBackend);
-            multiBackend.setListener(demoApp);
+            /*
+             * Now we create the second screen (backend) for the first
+             * application.  It will be the same size as the ECMA48 screen,
+             * with a font size of 16 points.
+             */
+            SwingBackend swingBackend = new SwingBackend(multiScreen.getWidth(),
+                multiScreen.getHeight(), 16);
 
+            /*
+             * Add this screen to the MultiBackend, and at this point we have
+             * one demo application spanning two physical screens.
+             */
+            multiBackend.addBackend(swingBackend);
+
+            /*
+             * Time for the second application.  This one will have a single
+             * window mirroring the contents of the first application.  Let's
+             * make it a little larger than the first application's
+             * width/height.
+             */
+            int width = multiScreen.getWidth();
+            int height = multiScreen.getHeight();
+
+            /*
+             * Make a new Swing window for the second application.
+             */
+            SwingBackend monitorBackend = new SwingBackend(width + 5,
+                height + 5, 16);
+
+            /*
+             * Setup the second application, give it the basic file and
+             * window menus.
+             */
+            TApplication monitor = new TApplication(monitorBackend);
+            monitor.addFileMenu();
+            monitor.addWindowMenu();
+
+            /*
+             * Now add the third screen to the first application.  We want to
+             * change the object it locks on in its draw() method to the
+             * MultiScreen, that will dramatically reduce (not totally
+             * eliminate) screen tearing/artifacts.
+             */
+            TWindowBackend windowBackend = new TWindowBackend(demoApp,
+                monitor, "Monitor Window", width + 2, height + 2);
+            windowBackend.setDrawLock(multiScreen);
+            multiBackend.addBackend(windowBackend);
+
+            /*
+             * Three screens, two applications: spin them up!
+             */
             (new Thread(demoApp)).start();
+            (new Thread(monitor)).start();
         } catch (Exception e) {
             e.printStackTrace();
         }

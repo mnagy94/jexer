@@ -41,6 +41,18 @@ import java.io.UnsupportedEncodingException;
 public final class ECMA48Backend extends GenericBackend {
 
     /**
+     * Public constructor will use System.in and System.out and UTF-8
+     * encoding. On non-Windows systems System.in will be put in raw mode;
+     * shutdown() will (blindly!) put System.in in cooked mode.
+     *
+     * @throws UnsupportedEncodingException if an exception is thrown when
+     * creating the InputStreamReader
+     */
+    public ECMA48Backend() throws UnsupportedEncodingException {
+        this(null, null, null);
+    }
+
+    /**
      * Public constructor.
      *
      * @param listener the object this backend needs to wake up when new

@@ -56,7 +56,11 @@ public class MultiBackend implements Backend {
      */
     public MultiBackend(final Backend backend) {
         backends.add(backend);
-        multiScreen = new MultiScreen(backend.getScreen());
+        if (backend instanceof TWindowBackend) {
+            multiScreen = new MultiScreen(((TWindowBackend) backend).getOtherScreen());
+        } else {
+            multiScreen = new MultiScreen(backend.getScreen());
+        }
     }
 
     /**
@@ -66,7 +70,11 @@ public class MultiBackend implements Backend {
      */
     public void addBackend(final Backend backend) {
         backends.add(backend);
-        multiScreen.addScreen(backend.getScreen());
+        if (backend instanceof TWindowBackend) {
+            multiScreen.addScreen(((TWindowBackend) backend).getOtherScreen());
+        } else {
+            multiScreen.addScreen(backend.getScreen());
+        }
     }
 
     /**
@@ -76,7 +84,11 @@ public class MultiBackend implements Backend {
      */
     public void removeBackend(final Backend backend) {
         if (backends.size() > 1) {
-            multiScreen.removeScreen(backend.getScreen());
+            if (backend instanceof TWindowBackend) {
+                multiScreen.removeScreen(((TWindowBackend) backend).getOtherScreen());
+            } else {
+                multiScreen.removeScreen(backend.getScreen());
+            }
             backends.remove(backend);
         }
     }
@@ -86,7 +98,7 @@ public class MultiBackend implements Backend {
      *
      * @return the SessionInfo
      */
-    public final SessionInfo getSessionInfo() {
+    public SessionInfo getSessionInfo() {
         return backends.get(0).getSessionInfo();
     }
 
@@ -95,7 +107,7 @@ public class MultiBackend implements Backend {
      *
      * @return the Screen
      */
-    public final Screen getScreen() {
+    public Screen getScreen() {
         return multiScreen;
     }
 

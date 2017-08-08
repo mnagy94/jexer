@@ -90,6 +90,16 @@ public final class TKeypressEvent extends TInputEvent {
     }
 
     /**
+     * Create a duplicate instance.
+     *
+     * @return duplicate intance
+     */
+    public TKeypressEvent dup() {
+        TKeypressEvent keypress = new TKeypressEvent(key.dup());
+        return keypress;
+    }
+
+    /**
      * Comparison check.  All fields must match to return true.
      *
      * @param rhs another TKeypressEvent or TKeypress instance

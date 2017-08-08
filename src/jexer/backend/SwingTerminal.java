@@ -500,7 +500,6 @@ public final class SwingTerminal extends LogicalScreen
         // monospace.
         textHeight = fm.getMaxAscent() + maxDescent - leading;
 
-        // TODO: is this still necessary?
         if (gotTerminus == true) {
             textHeight++;
         }
@@ -1069,9 +1068,9 @@ public final class SwingTerminal extends LogicalScreen
 
         // Pull the system property for triple buffering.
         if (System.getProperty("jexer.Swing.tripleBuffer") != null) {
-            if (System.getProperty("jexer.Swing.tripleBuffer").
-                equals("false")) {
-
+            if (System.getProperty("jexer.Swing.tripleBuffer").equals("true")) {
+                SwingComponent.tripleBuffer = true;
+            } else {
                 SwingComponent.tripleBuffer = false;
             }
         }
@@ -1142,7 +1141,8 @@ public final class SwingTerminal extends LogicalScreen
                     SwingTerminal.this.sessionInfo =
                         new SwingSessionInfo(SwingTerminal.this.swing,
                             SwingTerminal.this.textWidth,
-                            SwingTerminal.this.textHeight);
+                            SwingTerminal.this.textHeight,
+                            windowWidth, windowHeight);
 
                     SwingTerminal.this.setDimensions(sessionInfo.getWindowWidth(),
                         sessionInfo.getWindowHeight());
@@ -1171,7 +1171,7 @@ public final class SwingTerminal extends LogicalScreen
     }
 
     /**
-     * Public constructor creates a new JFrame to render to.
+     * Public constructor renders to an existing JComponent.
      *
      * @param component the Swing component to render to
      * @param windowWidth the number of text columns to start with
@@ -1540,8 +1540,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(new TKeypressEvent(keypress));
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1576,8 +1578,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(new TCommandEvent(cmAbort));
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1664,8 +1668,10 @@ public final class SwingTerminal extends LogicalScreen
                 sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
             eventQueue.add(windowResize);
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1700,8 +1706,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1726,8 +1734,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1789,8 +1799,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1834,8 +1846,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 
@@ -1878,8 +1892,10 @@ public final class SwingTerminal extends LogicalScreen
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
         }
-        synchronized (listener) {
-            listener.notifyAll();
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
         }
     }
 

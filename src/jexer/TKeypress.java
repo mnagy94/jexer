@@ -276,6 +276,17 @@ public final class TKeypress {
     }
 
     /**
+     * Create a duplicate instance.
+     *
+     * @return duplicate intance
+     */
+    public TKeypress dup() {
+        TKeypress keypress = new TKeypress(isFunctionKey, keyCode, ch,
+            alt, ctrl, shift);
+        return keypress;
+    }
+
+    /**
      * Comparison check.  All fields must match to return true.
      *
      * @param rhs another TKeypress instance

@@ -136,6 +136,15 @@ public final class TMouseEvent extends TInputEvent {
     }
 
     /**
+     * Set absoluteX.
+     *
+     * @param absoluteX the new value
+     */
+    public void setAbsoluteX(final int absoluteX) {
+        this.absoluteX = absoluteX;
+    }
+
+    /**
      * Mouse Y - absolute screen coordinate.
      */
     private int absoluteY;
@@ -147,6 +156,15 @@ public final class TMouseEvent extends TInputEvent {
      */
     public int getAbsoluteY() {
         return absoluteY;
+    }
+
+    /**
+     * Set absoluteY.
+     *
+     * @param absoluteY the new value
+     */
+    public void setAbsoluteY(final int absoluteY) {
+        this.absoluteY = absoluteY;
     }
 
     /**
@@ -248,6 +266,17 @@ public final class TMouseEvent extends TInputEvent {
         this.mouse3             = mouse3;
         this.mouseWheelUp       = mouseWheelUp;
         this.mouseWheelDown     = mouseWheelDown;
+    }
+
+    /**
+     * Create a duplicate instance.
+     *
+     * @return duplicate intance
+     */
+    public TMouseEvent dup() {
+        TMouseEvent mouse = new TMouseEvent(type, x, y, absoluteX, absoluteY,
+            mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown);
+        return mouse;
     }
 
     /**

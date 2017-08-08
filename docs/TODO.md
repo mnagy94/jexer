@@ -10,10 +10,6 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 
 0.0.5
 
-- Multiscreen support:
-  - cmAbort to cmScreenDisconnected
-  - cmScreenConnected
-
 - TApplication
   - getAllWindows()
   - Expose menu management functions (addMenu, getMenu, getAllMenus,
@@ -36,6 +32,11 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 - Eliminate all Eclipse warnings
 
 0.0.6
+
+- Finish up multiscreen support:
+  - cmAbort to cmScreenDisconnected
+  - cmScreenConnected
+  - Handle screen resizes
 
 - TSpinner
 - TComboBox

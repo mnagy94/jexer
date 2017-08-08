@@ -155,6 +155,25 @@ public final class SwingSessionInfo implements SessionInfo {
     }
 
     /**
+     * Public constructor.
+     *
+     * @param swing the Swing JFrame or JComponent
+     * @param textWidth the width of a cell in pixels
+     * @param textHeight the height of a cell in pixels
+     * @param width the number of columns
+     * @param height the number of rows
+     */
+    public SwingSessionInfo(final SwingComponent swing, final int textWidth,
+        final int textHeight, final int width, final int height) {
+
+        this.swing              = swing;
+        this.textWidth          = textWidth;
+        this.textHeight         = textHeight;
+        this.windowWidth        = width;
+        this.windowHeight       = height;
+    }
+
+    /**
      * Re-query the text window size.
      */
     public void queryWindowSize() {

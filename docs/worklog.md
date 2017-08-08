@@ -1,6 +1,12 @@
 Jexer Work Log
 ==============
 
+August 8, 2017
+
+Multiscreen is looking really cool!  Demo6 now brings up three
+screens, including one that is inside a TWindow of a different
+application.
+
 August 7, 2017
 
 Had trouble sleeping, what with a bunch of imaginative thoughts for

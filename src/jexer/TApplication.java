@@ -54,6 +54,7 @@ import jexer.backend.Backend;
 import jexer.backend.Screen;
 import jexer.backend.SwingBackend;
 import jexer.backend.ECMA48Backend;
+import jexer.backend.TWindowBackend;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
 import static jexer.TCommand.*;
@@ -405,7 +406,15 @@ public class TApplication implements Runnable {
      * @return the Screen
      */
     public final Screen getScreen() {
-        return backend.getScreen();
+        if (backend instanceof TWindowBackend) {
+            // We are being rendered to a TWindow.  We can't use its
+            // getScreen() method because that is how it is rendering to a
+            // hardware backend somewhere.  Instead use its getOtherScreen()
+            // method.
+            return ((TWindowBackend) backend).getOtherScreen();
+        } else {
+            return backend.getScreen();
+        }
     }
 
     /**
@@ -719,6 +728,7 @@ public class TApplication implements Runnable {
      */
     public TApplication(final Backend backend) {
         this.backend = backend;
+        backend.setListener(this);
         TApplicationImpl();
     }
 

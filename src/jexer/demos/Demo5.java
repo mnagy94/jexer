@@ -127,29 +127,55 @@ public class Demo5 implements WindowListener {
      */
     private void addApplications() {
 
-        // Spin up the frame
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.addWindowListener(this);
+        /*
+         * In this demo we will create two swing panels with two
+         * independently running applications, each with a different font
+         * size.
+         */
 
-        // Create two panels with two applications, each with a different
-        // font size.
+        /*
+         * First we create a panel to put it on.  We need this to pass to
+         * SwingBackend's constructor, so that it knows not to create a new
+         * frame.
+         */
         JPanel app1Panel = new JPanel();
-        SwingBackend app1Backend = new SwingBackend(app1Panel, new Object(),
-            80, 25, 16);
-        app1 = new DemoApplication(app1Backend);
-        app1Backend.setListener(app1);
 
+        /*
+         * Next, we create the Swing backend.  The "listener" (second
+         * argument, set to null) is what the backend wakes up on every event
+         * received.  Typically this is the TApplication.  TApplication sets
+         * it in its constructor, so we can pass null here and be fine.
+         */
+        SwingBackend app1Backend = new SwingBackend(app1Panel, null,
+            80, 25, 16);
+        // Now that we have the backend, construct the TApplication.
+        app1 = new DemoApplication(app1Backend);
+
+        /*
+         * The second panel is the same sequence, except that we also change
+         * the font from the default Terminus to JVM monospaced.
+         */
         JPanel app2Panel = new JPanel();
-        SwingBackend app2Backend = new SwingBackend(app2Panel, new Object(),
+        SwingBackend app2Backend = new SwingBackend(app2Panel, null,
             80, 25, 18);
         app2 = new DemoApplication(app2Backend);
         Font font = new Font(Font.MONOSPACED, Font.PLAIN, 18);
         app2Backend.setFont(font);
-        app2Backend.setListener(app2);
+
+        /*
+         * Now that the applications are ready, spin them off on their
+         * threads.
+         */
         (new Thread(app1)).start();
         (new Thread(app2)).start();
 
+        /*
+         * The rest of this is standard Swing.  Set up a frame, a split pane,
+         * put each of the panels on it, and make it visible.
+         */
+        JFrame frame = new JFrame();
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.addWindowListener(this);
         JSplitPane mainPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
             app1Panel, app2Panel);
         mainPane.setOneTouchExpandable(true);
