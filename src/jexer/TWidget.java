@@ -951,9 +951,15 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param resize resize event
      */
     public void onResize(final TResizeEvent resize) {
-        // Default: do nothing, pass to children instead
-        for (TWidget widget: children) {
-            widget.onResize(resize);
+        // Default: change my width/height.
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            width = resize.getWidth();
+            height = resize.getHeight();
+        } else {
+            // Let children see the screen resize
+            for (TWidget widget: children) {
+                widget.onResize(resize);
+            }
         }
     }
 
@@ -1221,6 +1227,23 @@ public abstract class TWidget implements Comparable<TWidget> {
         final int width, final int height) {
 
         return new TText(this, text, x, y, width, height, "ttext");
+    }
+
+    /**
+     * Convenience function to add an editable text area box to this
+     * container/window.
+     *
+     * @param text text on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @return the new text box
+     */
+    public final TEditorWidget addEditor(final String text, final int x,
+        final int y, final int width, final int height) {
+
+        return new TEditorWidget(this, text, x, y, width, height);
     }
 
     /**

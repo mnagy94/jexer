@@ -122,17 +122,15 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        /*
-        if (!isModal()) {
-            addLabel("Editor window", 1, row);
-            addButton("Edito&r", 35, row,
-                {
-                    new TEditor(application, 0, 0, 60, 15);
+        addLabel("Editor window", 1, row);
+        addButton("Edito&r", 35, row,
+            new TAction() {
+                public void DO() {
+                    new DemoEditorWindow(getApplication());
                 }
-            );
-        }
+            }
+        );
         row += 2;
-         */
 
         addLabel("Text areas", 1, row);
         addButton("&Text", 35, row,

@@ -382,8 +382,8 @@ public class TWindowBackend extends TWindow implements Backend {
             event.setY(mouse.getY() - 1);
             event.setAbsoluteX(event.getX());
             event.setAbsoluteY(event.getY());
-            otherMouseX = event.getX() + 1;
-            otherMouseY = event.getY() + 2;
+            otherMouseX = event.getX() + getX() + 1;
+            otherMouseY = event.getY() + getY() + 1;
             synchronized (eventQueue) {
                 eventQueue.add(event);
             }

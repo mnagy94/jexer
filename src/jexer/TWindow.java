@@ -901,6 +901,12 @@ public class TWindow extends TWidget {
         }
 
         if (inWindowResize) {
+            // Do not permit resizing below the status line
+            if (mouse.getAbsoluteY() == application.getDesktopBottom()) {
+                inWindowResize = false;
+                return;
+            }
+
             // Move window over
             setWidth(resizeWindowWidth + (mouse.getAbsoluteX()
                     - moveWindowMouseX));

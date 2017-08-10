@@ -28,6 +28,6 @@
  */
 
 /**
- * A "stream"-based text editor / word processor backend.
+ * A basic text editor backend supporting word highlighting.
  */
 package jexer.teditor;

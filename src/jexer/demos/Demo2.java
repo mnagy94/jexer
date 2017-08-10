@@ -44,6 +44,7 @@ public class Demo2 {
      * @param args Command line arguments
      */
     public static void main(final String [] args) {
+        ServerSocket server = null;
         try {
             if (args.length == 0) {
                 System.err.printf("USAGE: java -cp jexer.jar jexer.demos.Demo2 port\n");
@@ -51,7 +52,7 @@ public class Demo2 {
             }
 
             int port = Integer.parseInt(args[0]);
-            ServerSocket server = new TelnetServerSocket(port);
+            server = new TelnetServerSocket(port);
             while (true) {
                 Socket socket = server.accept();
                 System.out.printf("New connection: %s\n", socket);
@@ -64,6 +65,14 @@ public class Demo2 {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (server != null) {
+                try {
+                    server.close();
+                } catch (Exception e) {
+                    // SQUASH
+                }
+            }
         }
     }
 
