@@ -1,6 +1,21 @@
 Jexer Work Log
 ==============
 
+August 12, 2017
+
+TEditor is stubbed in about 50% complete now.  I have a Highlighter
+class that provides different colors based on Word text values, but it
+is a lot too simple to do true syntax highlighting.  I am noodling on
+the right design that would let TEditor be both a programmer's editor
+(so Highlighter needs to have state and do a lexical scan) and a word
+processor (where Word needs to tokenize on whitespace).  I estimate
+probably a good 2-4 weeks left to get the editor behavior where I want
+it, and then after that will be the 0.0.5 release.
+
+Finding more minor paper cuts and fixing them: the mouse cursor being
+ahead of a window drag event, SwingTerminal resetting blink on new
+input, prevent TWindow from resizing down into the status bar.
+
 August 8, 2017
 
 Multiscreen is looking really cool!  Demo6 now brings up three

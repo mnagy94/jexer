@@ -31,6 +31,8 @@ package jexer.teditor;
 import java.util.ArrayList;
 import java.util.List;
 
+import jexer.bits.CellAttributes;
+
 /**
  * A Document represents a text file, as a collection of lines.
  */
@@ -51,6 +53,16 @@ public class Document {
      * The overwrite flag.  When true, characters overwrite data.
      */
     private boolean overwrite = false;
+
+    /**
+     * The default color for the TEditor class.
+     */
+    private CellAttributes defaultColor = null;
+
+    /**
+     * The text highlighter to use.
+     */
+    private Highlighter highlighter = new Highlighter();
 
     /**
      * Get the overwrite flag.
@@ -82,6 +94,15 @@ public class Document {
     }
 
     /**
+     * Get the current editing line.
+     *
+     * @return the line
+     */
+    public Line getCurrentLine() {
+        return lines.get(lineNumber);
+    }
+
+    /**
      * Get a specific line by number.
      *
      * @param lineNumber the line number.  Note that this is 0-based: 0 is
@@ -100,19 +121,56 @@ public class Document {
      */
     public void setLineNumber(final int n) {
         if ((n < 0) || (n > lines.size())) {
-            throw new IndexOutOfBoundsException("Line size is " + lines.size() +
-                ", requested index " + n);
+            throw new IndexOutOfBoundsException("Lines array size is " +
+                lines.size() + ", requested index " + n);
         }
         lineNumber = n;
     }
 
     /**
-     * Increment the line number by one.  If at the last line, do nothing.
+     * Get the current cursor position of the editing line.
+     *
+     * @return the cursor position
      */
-    public void down() {
-        if (lineNumber < lines.size() - 1) {
-            lineNumber++;
+    public int getCursor() {
+        return lines.get(lineNumber).getCursor();
+    }
+
+    /**
+     * Construct a new Document from an existing text string.
+     *
+     * @param str the text string
+     * @param defaultColor the color for unhighlighted text
+     */
+    public Document(final String str, final CellAttributes defaultColor) {
+        this.defaultColor = defaultColor;
+
+        // TODO: set different colors based on file extension
+        highlighter.setJavaColors();
+
+        String [] rawLines = str.split("\n");
+        for (int i = 0; i < rawLines.length; i++) {
+            lines.add(new Line(rawLines[i], this.defaultColor, highlighter));
         }
+    }
+
+    /**
+     * Increment the line number by one.  If at the last line, do nothing.
+     *
+     * @return true if the editing line changed
+     */
+    public boolean down() {
+        if (lineNumber < lines.size() - 1) {
+            int x = lines.get(lineNumber).getCursor();
+            lineNumber++;
+            if (x > lines.get(lineNumber).getDisplayLength()) {
+                lines.get(lineNumber).end();
+            } else {
+                lines.get(lineNumber).setCursor(x);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -120,21 +178,42 @@ public class Document {
      * increment only to the last line.
      *
      * @param n the number of lines to increment by
+     * @return true if the editing line changed
      */
-    public void down(final int n) {
-        lineNumber += n;
-        if (lineNumber > lines.size() - 1) {
-            lineNumber = lines.size() - 1;
+    public boolean down(final int n) {
+        if (lineNumber < lines.size() - 1) {
+            int x = lines.get(lineNumber).getCursor();
+            lineNumber += n;
+            if (lineNumber > lines.size() - 1) {
+                lineNumber = lines.size() - 1;
+            }
+            if (x > lines.get(lineNumber).getDisplayLength()) {
+                lines.get(lineNumber).end();
+            } else {
+                lines.get(lineNumber).setCursor(x);
+            }
+            return true;
         }
+        return false;
     }
 
     /**
      * Decrement the line number by one.  If at the first line, do nothing.
+     *
+     * @return true if the editing line changed
      */
-    public void up() {
+    public boolean up() {
         if (lineNumber > 0) {
+            int x = lines.get(lineNumber).getCursor();
             lineNumber--;
+            if (x > lines.get(lineNumber).getDisplayLength()) {
+                lines.get(lineNumber).end();
+            } else {
+                lines.get(lineNumber).setCursor(x);
+            }
+            return true;
         }
+        return false;
     }
 
     /**
@@ -142,40 +221,59 @@ public class Document {
      * decrement only to the first line.
      *
      * @param n the number of lines to decrement by
+     * @return true if the editing line changed
      */
-    public void up(final int n) {
-        lineNumber -= n;
-        if (lineNumber < 0) {
-            lineNumber = 0;
+    public boolean up(final int n) {
+        if (lineNumber > 0) {
+            int x = lines.get(lineNumber).getCursor();
+            lineNumber -= n;
+            if (lineNumber < 0) {
+                lineNumber = 0;
+            }
+            if (x > lines.get(lineNumber).getDisplayLength()) {
+                lines.get(lineNumber).end();
+            } else {
+                lines.get(lineNumber).setCursor(x);
+            }
+            return true;
         }
+        return false;
     }
 
     /**
      * Decrement the cursor by one.  If at the first column, do nothing.
+     *
+     * @return true if the cursor position changed
      */
-    public void left() {
-        lines.get(lineNumber).left();
+    public boolean left() {
+        return lines.get(lineNumber).left();
     }
 
     /**
      * Increment the cursor by one.  If at the last column, do nothing.
+     *
+     * @return true if the cursor position changed
      */
-    public void right() {
-        lines.get(lineNumber).right();
+    public boolean right() {
+        return lines.get(lineNumber).right();
     }
 
     /**
      * Go to the first column of this line.
+     *
+     * @return true if the cursor position changed
      */
-    public void home() {
-        lines.get(lineNumber).home();
+    public boolean home() {
+        return lines.get(lineNumber).home();
     }
 
     /**
      * Go to the last column of this line.
+     *
+     * @return true if the cursor position changed
      */
-    public void end() {
-        lines.get(lineNumber).end();
+    public boolean end() {
+        return lines.get(lineNumber).end();
     }
 
     /**
@@ -199,7 +297,11 @@ public class Document {
      * @param ch the character to replace or insert
      */
     public void addChar(final char ch) {
-        lines.get(lineNumber).addChar(ch);
+        if (overwrite) {
+            lines.get(lineNumber).replaceChar(ch);
+        } else {
+            lines.get(lineNumber).addChar(ch);
+        }
     }
 
     /**
@@ -233,18 +335,6 @@ public class Document {
             }
         }
         return n;
-    }
-
-    /**
-     * Construct a new Document from an existing text string.
-     *
-     * @param str the text string
-     */
-    public Document(final String str) {
-        String [] rawLines = str.split("\n");
-        for (int i = 0; i < rawLines.length; i++) {
-            lines.add(new Line(rawLines[i]));
-        }
     }
 
 }

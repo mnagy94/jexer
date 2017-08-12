@@ -33,6 +33,10 @@ import jexer.bits.CellAttributes;
 /**
  * A Word represents text that was entered by the user.  It can be either
  * whitespace or non-whitespace.
+ *
+ * Very dumb highlighting is supported, it has no sense of parsing (not even
+ * comments).  For now this only highlights some Java keywords and
+ * puctuation.
  */
 public class Word {
 
@@ -40,6 +44,16 @@ public class Word {
      * The color to render this word as on screen.
      */
     private CellAttributes color = new CellAttributes();
+
+    /**
+     * The default color for the TEditor class.
+     */
+    private CellAttributes defaultColor = null;
+
+    /**
+     * The text highlighter to use.
+     */
+    private Highlighter highlighter = null;
 
     /**
      * The actual text of this word.  Average word length is 6 characters,
@@ -108,15 +122,44 @@ public class Word {
      * Construct a word with one character.
      *
      * @param ch the first character of the word
+     * @param defaultColor the color for unhighlighted text
+     * @param highlighter the highlighter to use
      */
-    public Word(final char ch) {
+    public Word(final char ch, final CellAttributes defaultColor,
+        final Highlighter highlighter) {
+
+        this.defaultColor = defaultColor;
+        this.highlighter = highlighter;
         text.append(ch);
     }
 
     /**
      * Construct a word with an empty string.
+     *
+     * @param defaultColor the color for unhighlighted text
+     * @param highlighter the highlighter to use
      */
-    public Word() {}
+    public Word(final CellAttributes defaultColor,
+        final Highlighter highlighter) {
+
+        this.defaultColor = defaultColor;
+        this.highlighter = highlighter;
+    }
+
+    /**
+     * Perform highlighting.
+     */
+    public void applyHighlight() {
+        color.setTo(defaultColor);
+        if (highlighter == null) {
+            return;
+        }
+        String key = text.toString();
+        CellAttributes newColor = highlighter.getColor(key);
+        if (newColor != null) {
+            color.setTo(newColor);
+        }
+    }
 
     /**
      * Add a character to this word.  If this is a whitespace character
@@ -133,21 +176,36 @@ public class Word {
             text.append(ch);
             return this;
         }
+
+        // Give the highlighter the option to split here.
+        if (highlighter != null) {
+            if (highlighter.shouldSplit(ch)
+                || highlighter.shouldSplit(text.charAt(0))
+            ) {
+                Word newWord = new Word(ch, defaultColor, highlighter);
+                return newWord;
+            }
+        }
+
+        // Highlighter didn't care, so split at whitespace.
         if (Character.isWhitespace(text.charAt(0))
             && Character.isWhitespace(ch)
         ) {
+            // Adding to a whitespace word, keep at it.
             text.append(ch);
             return this;
         }
         if (!Character.isWhitespace(text.charAt(0))
             && !Character.isWhitespace(ch)
         ) {
+            // Adding to a non-whitespace word, keep at it.
             text.append(ch);
             return this;
         }
 
-        // We will be splitting here.
-        Word newWord = new Word(ch);
+        // Switching from whitespace to non-whitespace or vice versa, so
+        // split here.
+        Word newWord = new Word(ch, defaultColor, highlighter);
         return newWord;
     }
 

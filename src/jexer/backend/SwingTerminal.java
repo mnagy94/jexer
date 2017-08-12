@@ -658,6 +658,16 @@ public final class SwingTerminal extends LogicalScreen
     }
 
     /**
+     * Reset the blink timer.
+     */
+    private void resetBlinkTimer() {
+        // See if it is time to flip the blink time.
+        long nowTime = (new Date()).getTime();
+        lastBlinkTime = nowTime;
+        cursorBlinkVisible = true;
+    }
+
+    /**
      * Paint redraws the whole screen.
      *
      * @param gr the Swing Graphics context
@@ -1539,6 +1549,7 @@ public final class SwingTerminal extends LogicalScreen
         // Save it and we are done.
         synchronized (eventQueue) {
             eventQueue.add(new TKeypressEvent(keypress));
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1577,6 +1588,7 @@ public final class SwingTerminal extends LogicalScreen
         // Drop a cmAbort and walk away
         synchronized (eventQueue) {
             eventQueue.add(new TCommandEvent(cmAbort));
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1667,6 +1679,7 @@ public final class SwingTerminal extends LogicalScreen
             TResizeEvent windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
                 sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
             eventQueue.add(windowResize);
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1705,6 +1718,7 @@ public final class SwingTerminal extends LogicalScreen
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1733,6 +1747,7 @@ public final class SwingTerminal extends LogicalScreen
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1798,6 +1813,7 @@ public final class SwingTerminal extends LogicalScreen
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1845,6 +1861,7 @@ public final class SwingTerminal extends LogicalScreen
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1891,6 +1908,7 @@ public final class SwingTerminal extends LogicalScreen
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
+            resetBlinkTimer();
         }
         if (listener != null) {
             synchronized (listener) {

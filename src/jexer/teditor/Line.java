@@ -31,6 +31,8 @@ package jexer.teditor;
 import java.util.ArrayList;
 import java.util.List;
 
+import jexer.bits.CellAttributes;
+
 /**
  * A Line represents a single line of text on the screen, as a collection of
  * words.
@@ -43,9 +45,19 @@ public class Line {
     private ArrayList<Word> words = new ArrayList<Word>();
 
     /**
+     * The default color for the TEditor class.
+     */
+    private CellAttributes defaultColor = null;
+
+    /**
+     * The text highlighter to use.
+     */
+    private Highlighter highlighter = null;
+
+    /**
      * The current cursor position on this line.
      */
-    private int cursorX;
+    private int cursor = 0;
 
     /**
      * The current word that the cursor position is in.
@@ -56,6 +68,32 @@ public class Line {
      * We use getDisplayLength() a lot, so cache the value.
      */
     private int displayLength = -1;
+
+    /**
+     * Get the current cursor position.
+     *
+     * @return the cursor position
+     */
+    public int getCursor() {
+        return cursor;
+    }
+
+    /**
+     * Set the current cursor position.
+     *
+     * @param cursor the new cursor position
+     */
+    public void setCursor(final int cursor) {
+        if ((cursor < 0)
+            || ((cursor >= getDisplayLength())
+                && (getDisplayLength() > 0))
+        ) {
+            throw new IndexOutOfBoundsException("Max length is " +
+                getDisplayLength() + ", requested position " + cursor);
+        }
+        this.cursor = cursor;
+        // TODO: set word
+    }
 
     /**
      * Get a (shallow) copy of the list of words.
@@ -80,16 +118,30 @@ public class Line {
             n += word.getDisplayLength();
         }
         displayLength = n;
+
+        // If we have any visible characters, add one to the display so that
+        // the cursor is immediately after the data.
+        if (displayLength > 0) {
+            displayLength++;
+        }
         return displayLength;
     }
 
     /**
-     * Construct a new Line from an existing text string.
+     * Construct a new Line from an existing text string, and highlight
+     * certain strings.
      *
      * @param str the text string
+     * @param defaultColor the color for unhighlighted text
+     * @param highlighter the highlighter to use
      */
-    public Line(final String str) {
-        currentWord = new Word();
+    public Line(final String str, final CellAttributes defaultColor,
+        final Highlighter highlighter) {
+
+        this.defaultColor = defaultColor;
+        this.highlighter = highlighter;
+
+        currentWord = new Word(this.defaultColor, this.highlighter);
         words.add(currentWord);
         for (int i = 0; i < str.length(); i++) {
             char ch = str.charAt(i);
@@ -99,40 +151,81 @@ public class Line {
                 currentWord = newWord;
             }
         }
+        for (Word word: words) {
+            word.applyHighlight();
+        }
+    }
+
+    /**
+     * Construct a new Line from an existing text string.
+     *
+     * @param str the text string
+     * @param defaultColor the color for unhighlighted text
+     */
+    public Line(final String str, final CellAttributes defaultColor) {
+        this(str, defaultColor, null);
     }
 
     /**
      * Decrement the cursor by one.  If at the first column, do nothing.
+     *
+     * @return true if the cursor position changed
      */
-    public void left() {
-        if (cursorX == 0) {
-            return;
+    public boolean left() {
+        if (cursor == 0) {
+            return false;
         }
-        // TODO
+        // TODO: switch word
+        cursor--;
+        return true;
     }
 
     /**
      * Increment the cursor by one.  If at the last column, do nothing.
+     *
+     * @return true if the cursor position changed
      */
-    public void right() {
-        if (cursorX == getDisplayLength() - 1) {
-            return;
+    public boolean right() {
+        if (getDisplayLength() == 0) {
+            return false;
         }
-        // TODO
+        if (cursor == getDisplayLength() - 1) {
+            return false;
+        }
+        // TODO: switch word
+        cursor++;
+        return true;
     }
 
     /**
      * Go to the first column of this line.
+     *
+     * @return true if the cursor position changed
      */
-    public void home() {
-        // TODO
+    public boolean home() {
+        if (cursor > 0) {
+            cursor = 0;
+            currentWord = words.get(0);
+            return true;
+        }
+        return false;
     }
 
     /**
      * Go to the last column of this line.
+     *
+     * @return true if the cursor position changed
      */
-    public void end() {
-        // TODO
+    public boolean end() {
+        if (cursor != getDisplayLength() - 1) {
+            cursor = getDisplayLength() - 1;
+            if (cursor < 0) {
+                cursor = 0;
+            }
+            currentWord = words.get(words.size() - 1);
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -150,12 +243,20 @@ public class Line {
     }
 
     /**
-     * Replace or insert a character at the cursor, depending on overwrite
-     * flag.
+     * Insert a character at the cursor.
      *
-     * @param ch the character to replace or insert
+     * @param ch the character to insert
      */
     public void addChar(final char ch) {
+        // TODO
+    }
+
+    /**
+     * Replace a character at the cursor.
+     *
+     * @param ch the character to replace
+     */
+    public void replaceChar(final char ch) {
         // TODO
     }
 

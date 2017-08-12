@@ -580,7 +580,7 @@ public class TApplication implements Runnable {
     }
 
     /**
-     * Get the list of windows.
+     * Get a (shallow) copy of the window list.
      *
      * @return a copy of the list of windows for this application
      */
@@ -1071,19 +1071,6 @@ public class TApplication implements Runnable {
             return;
         }
 
-        // Peek at the mouse position
-        if (event instanceof TMouseEvent) {
-            TMouseEvent mouse = (TMouseEvent) event;
-            synchronized (getScreen()) {
-                if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
-                    oldMouseX = mouseX;
-                    oldMouseY = mouseY;
-                    mouseX = mouse.getX();
-                    mouseY = mouse.getY();
-                }
-            }
-        }
-
         // Put into the main queue
         drainEventQueue.add(event);
     }
@@ -1106,6 +1093,14 @@ public class TApplication implements Runnable {
 
         // Peek at the mouse position
         if (event instanceof TMouseEvent) {
+            TMouseEvent mouse = (TMouseEvent) event;
+            if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
+                oldMouseX = mouseX;
+                oldMouseY = mouseY;
+                mouseX = mouse.getX();
+                mouseY = mouse.getY();
+            }
+
             // See if we need to switch focus to another window or the menu
             checkSwitchFocus((TMouseEvent) event);
         }
@@ -1241,6 +1236,17 @@ public class TApplication implements Runnable {
      * @see #primaryHandleEvent(TInputEvent event)
      */
     private void secondaryHandleEvent(final TInputEvent event) {
+        // Peek at the mouse position
+        if (event instanceof TMouseEvent) {
+            TMouseEvent mouse = (TMouseEvent) event;
+            if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
+                oldMouseX = mouseX;
+                oldMouseY = mouseY;
+                mouseX = mouse.getX();
+                mouseY = mouse.getY();
+            }
+        }
+
         secondaryEventReceiver.handleEvent(event);
     }
 
@@ -2085,6 +2091,53 @@ public class TApplication implements Runnable {
             }
             subMenus.clear();
         }
+    }
+
+    /**
+     * Get a (shallow) copy of the menu list.
+     *
+     * @return a copy of the menu list
+     */
+    public final List<TMenu> getAllMenus() {
+        return new LinkedList<TMenu>(menus);
+    }
+
+    /**
+     * Add a top-level menu to the list.
+     *
+     * @param menu the menu to add
+     * @throws IllegalArgumentException if the menu is already used in
+     * another TApplication
+     */
+    public final void addMenu(final TMenu menu) {
+        if ((menu.getApplication() != null)
+            && (menu.getApplication() != this)
+        ) {
+            throw new IllegalArgumentException("Menu " + menu + " is already " +
+                "part of application " + menu.getApplication());
+        }
+        closeMenu();
+        menus.add(menu);
+        recomputeMenuX();
+    }
+
+    /**
+     * Remove a top-level menu from the list.
+     *
+     * @param menu the menu to remove
+     * @throws IllegalArgumentException if the menu is already used in
+     * another TApplication
+     */
+    public final void removeMenu(final TMenu menu) {
+        if ((menu.getApplication() != null)
+            && (menu.getApplication() != this)
+        ) {
+            throw new IllegalArgumentException("Menu " + menu + " is already " +
+                "part of application " + menu.getApplication());
+        }
+        closeMenu();
+        menus.remove(menu);
+        recomputeMenuX();
     }
 
     /**

@@ -10,28 +10,18 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 
 0.0.5
 
-- TApplication
-  - getAllWindows()
-  - Expose menu management functions (addMenu, getMenu, getAllMenus,
-    removeMenu, ...)
-
 - TEditor
-
-  - Swich Line from String to ArrayList<Cell>
-    - StringUtils.justify functions for ArrayList<Cell>
+  - TEditorWidget:
+    - Mouse wheel is buggy as hell
+    - Actual editing
+    - Cut and Paste
   - TEditorWindow extends TScrollableWindow
-  - TEditor widget with keystroke functions:
-    - cursorRight/Left/...
-    - insertChar
-    - deleteForwardChar
-    - deleteBackwardChar
-    - deleteBackwardWord
-    - wordCount
-    - ...
-
-- Eliminate all Eclipse warnings
+  - TTextArea extends TScrollableWidget
 
 0.0.6
+
+- TEditor
+  - True tokenization and syntax highlighting: Java, C, Clojure
 
 - Finish up multiscreen support:
   - cmAbort to cmScreenDisconnected
@@ -98,8 +88,6 @@ Fix all marked TODOs in code
 
 Eliminate DEBUG, System.err prints
 
-Version in:
-
 Update written by date to current year:
     All code headers
     VERSION
@@ -108,6 +96,7 @@ Tag github
 
 Upload to SF
 
+Upload to sonatype
 
 
 Brainstorm Wishlist

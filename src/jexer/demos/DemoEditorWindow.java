@@ -80,7 +80,23 @@ public class DemoEditorWindow extends TWindow {
 "on many more platforms.\n" +
 "\n" +
 "This library is licensed MIT.  See the file LICENSE for the full license\n" +
-"for the details.\n");
+"for the details.\n" +
+"\n" +
+"package jexer.demos;\n" +
+"\n" +
+"import jexer.*;\n" +
+"import jexer.event.*;\n" +
+"import static jexer.TCommand.*;\n" +
+"import static jexer.TKeypress.*;\n" +
+"\n" +
+"/**\n" +
+" * This window demonstates the TText, THScroller, and TVScroller widgets.\n" +
+" */\n" +
+"public class DemoEditorWindow extends TWindow {\n" +
+"\n" +
+"1 2 3 123\n" +
+"\n"
+        );
 
     }
 

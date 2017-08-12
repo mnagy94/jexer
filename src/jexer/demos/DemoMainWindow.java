@@ -77,7 +77,7 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, "Demo Window", 0, 0, 60, 22, flags);
+        super(parent, "Demo Window", 0, 0, 60, 23, flags);
 
         int row = 1;
 

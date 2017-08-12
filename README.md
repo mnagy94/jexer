@@ -205,6 +205,11 @@ Some arbitrary design decisions had to be made when either the
 obviously expected behavior did not happen or when a specification was
 ambiguous.  This section describes such issues.
 
+  - The JVM needs some warmup time to exhibit the true performance
+    behavior.  Drag a window around for a bit to see this: the initial
+    performance is slow, then the JIT compiler kicks in and Jexer can
+    be visually competitive with C/C++ curses applications.
+
   - See jexer.tterminal.ECMA48 for more specifics of terminal
     emulation limitations.
 

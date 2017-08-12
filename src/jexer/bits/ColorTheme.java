@@ -284,7 +284,7 @@ public final class ColorTheme {
         // TText text
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
-        color.setBackColor(Color.BLACK);
+        color.setBackColor(Color.BLUE);
         color.setBold(false);
         colors.put("ttext", color);
 
@@ -457,7 +457,7 @@ public final class ColorTheme {
         // TEditor
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
-        color.setBackColor(Color.BLACK);
+        color.setBackColor(Color.BLUE);
         color.setBold(false);
         colors.put("teditor", color);
 

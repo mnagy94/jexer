@@ -31,6 +31,7 @@ package jexer;
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
+import jexer.event.TResizeEvent;
 import jexer.teditor.Document;
 import jexer.teditor.Line;
 import jexer.teditor.Word;
@@ -46,6 +47,21 @@ public final class TEditorWidget extends TWidget {
      * The document being edited.
      */
     private Document document;
+
+    /**
+     * The default color for the TEditor class.
+     */
+    private CellAttributes defaultColor = null;
+
+    /**
+     * The topmost line number in the visible area.  0-based.
+     */
+    private int topLine = 0;
+
+    /**
+     * The leftmost column number in the visible area.  0-based.
+     */
+    private int leftColumn = 0;
 
     /**
      * Public constructor.
@@ -64,7 +80,9 @@ public final class TEditorWidget extends TWidget {
         super(parent, x, y, width, height);
 
         setCursorVisible(true);
-        document = new Document(text);
+
+        defaultColor = getTheme().getColor("teditor");
+        document = new Document(text, defaultColor);
     }
 
     /**
@@ -72,23 +90,21 @@ public final class TEditorWidget extends TWidget {
      */
     @Override
     public void draw() {
-        // Setup my color
-        CellAttributes color = getTheme().getColor("teditor");
-
-        int lineNumber = document.getLineNumber();
         for (int i = 0; i < getHeight(); i++) {
             // Background line
-            getScreen().hLineXY(0, i, getWidth(), ' ', color);
+            getScreen().hLineXY(0, i, getWidth(), ' ', defaultColor);
 
             // Now draw document's line
-            if (lineNumber + i < document.getLineCount()) {
-                Line line = document.getLine(lineNumber + i);
+            if (topLine + i < document.getLineCount()) {
+                Line line = document.getLine(topLine + i);
                 int x = 0;
                 for (Word word: line.getWords()) {
-                    getScreen().putStringXY(x, i, word.getText(),
+                    // For now, we are cheating: draw outside the left region
+                    // if needed and let screen do the clipping.
+                    getScreen().putStringXY(x - leftColumn, i, word.getText(),
                         word.getColor());
                     x += word.getDisplayLength();
-                    if (x > getWidth()) {
+                    if (x - leftColumn > getWidth()) {
                         break;
                     }
                 }
@@ -105,18 +121,91 @@ public final class TEditorWidget extends TWidget {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         if (mouse.isMouseWheelUp()) {
-            document.up();
+            if (getCursorY() == getHeight() - 1) {
+                if (document.up()) {
+                    if (topLine > 0) {
+                        topLine--;
+                    }
+                    alignCursor();
+                }
+            } else {
+                if (topLine > 0) {
+                    topLine--;
+                    setCursorY(getCursorY() + 1);
+                }
+            }
             return;
         }
         if (mouse.isMouseWheelDown()) {
-            document.down();
+            if (getCursorY() == 0) {
+                if (document.down()) {
+                    if (topLine < document.getLineNumber()) {
+                        topLine++;
+                    }
+                    alignCursor();
+                }
+            } else {
+                if (topLine < document.getLineCount() - getHeight()) {
+                    topLine++;
+                    setCursorY(getCursorY() - 1);
+                }
+            }
             return;
         }
 
-        // TODO: click sets row and column
+        if (mouse.isMouse1()) {
+            // Set the row and column
+            int newLine = topLine + mouse.getY();
+            int newX = leftColumn + mouse.getX();
+            if (newLine > document.getLineCount()) {
+                // Go to the end
+                document.setLineNumber(document.getLineCount() - 1);
+                document.end();
+                if (document.getLineCount() > getHeight()) {
+                    setCursorY(getHeight() - 1);
+                } else {
+                    setCursorY(document.getLineCount() - 1);
+                }
+                alignCursor();
+                return;
+            }
+
+            document.setLineNumber(newLine);
+            setCursorY(mouse.getY());
+            if (newX > document.getCurrentLine().getDisplayLength()) {
+                document.end();
+                alignCursor();
+            } else {
+                setCursorX(mouse.getX());
+            }
+            return;
+        }
 
         // Pass to children
         super.onMouseDown(mouse);
+    }
+
+    /**
+     * Align visible cursor with document cursor.
+     */
+    private void alignCursor() {
+        int width = getWidth();
+
+        int desiredX = document.getCursor() - leftColumn;
+        if (desiredX < 0) {
+            // We need to push the screen to the left.
+            leftColumn = document.getCursor();
+        } else if (desiredX > width - 1) {
+            // We need to push the screen to the right.
+            leftColumn = document.getCursor() - (width - 1);
+        }
+
+        /*
+        System.err.println("document cursor " + document.getCursor() +
+            " leftColumn " + leftColumn);
+         */
+
+        setCursorX(document.getCursor() - leftColumn);
     }
 
     /**
@@ -127,33 +216,104 @@ public final class TEditorWidget extends TWidget {
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
         if (keypress.equals(kbLeft)) {
-            document.left();
+            if (document.left()) {
+                alignCursor();
+            }
         } else if (keypress.equals(kbRight)) {
-            document.right();
+            if (document.right()) {
+                alignCursor();
+            }
         } else if (keypress.equals(kbUp)) {
-            document.up();
+            if (document.up()) {
+                if (getCursorY() > 0) {
+                    setCursorY(getCursorY() - 1);
+                } else {
+                    if (topLine > 0) {
+                        topLine--;
+                    }
+                }
+                alignCursor();
+            }
         } else if (keypress.equals(kbDown)) {
-            document.down();
+            if (document.down()) {
+                if (getCursorY() < getHeight() - 1) {
+                    setCursorY(getCursorY() + 1);
+                } else {
+                    if (topLine < document.getLineCount() - getHeight()) {
+                        topLine++;
+                    }
+                }
+                alignCursor();
+            }
         } else if (keypress.equals(kbPgUp)) {
-            document.up(getHeight() - 1);
+            for (int i = 0; i < getHeight() - 1; i++) {
+                if (document.up()) {
+                    if (getCursorY() > 0) {
+                        setCursorY(getCursorY() - 1);
+                    } else {
+                        if (topLine > 0) {
+                            topLine--;
+                        }
+                    }
+                    alignCursor();
+                } else {
+                    break;
+                }
+            }
         } else if (keypress.equals(kbPgDn)) {
-            document.down(getHeight() - 1);
+            for (int i = 0; i < getHeight() - 1; i++) {
+                if (document.down()) {
+                    if (getCursorY() < getHeight() - 1) {
+                        setCursorY(getCursorY() + 1);
+                    } else {
+                        if (topLine < document.getLineCount() - getHeight()) {
+                            topLine++;
+                        }
+                    }
+                    alignCursor();
+                } else {
+                    break;
+                }
+            }
         } else if (keypress.equals(kbHome)) {
-            document.home();
+            if (document.home()) {
+                leftColumn = 0;
+                if (leftColumn < 0) {
+                    leftColumn = 0;
+                }
+                setCursorX(0);
+            }
         } else if (keypress.equals(kbEnd)) {
-            document.end();
+            if (document.end()) {
+                alignCursor();
+            }
         } else if (keypress.equals(kbCtrlHome)) {
             document.setLineNumber(0);
             document.home();
+            topLine = 0;
+            leftColumn = 0;
+            setCursorX(0);
+            setCursorY(0);
         } else if (keypress.equals(kbCtrlEnd)) {
             document.setLineNumber(document.getLineCount() - 1);
             document.end();
+            topLine = document.getLineCount() - getHeight();
+            if (topLine < 0) {
+                topLine = 0;
+            }
+            if (document.getLineCount() > getHeight()) {
+                setCursorY(getHeight() - 1);
+            } else {
+                setCursorY(document.getLineCount() - 1);
+            }
+            alignCursor();
         } else if (keypress.equals(kbIns)) {
             document.setOverwrite(!document.getOverwrite());
         } else if (keypress.equals(kbDel)) {
             document.del();
         } else if (keypress.equals(kbBackspace)) {
             document.backspace();
+            alignCursor();
         } else if (!keypress.getKey().isFnKey()
             && !keypress.getKey().isAlt()
             && !keypress.getKey().isCtrl()
@@ -163,6 +323,34 @@ public final class TEditorWidget extends TWidget {
         } else {
             // Pass other keys (tab etc.) on to TWidget
             super.onKeypress(keypress);
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle window/screen resize
+     * events.
+     *
+     * @param resize resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent resize) {
+        // Change my width/height, and pull the cursor in as needed.
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            setWidth(resize.getWidth());
+            setHeight(resize.getHeight());
+            // See if the cursor is now outside the window, and if so move
+            // things.
+            if (getCursorX() >= getWidth()) {
+                leftColumn += getCursorX() - (getWidth() - 1);
+                setCursorX(getWidth() - 1);
+            }
+            if (getCursorY() >= getHeight()) {
+                topLine += getCursorY() - (getHeight() - 1);
+                setCursorY(getHeight() - 1);
+            }
+        } else {
+            // Let superclass handle it
+            super.onResize(resize);
         }
     }
 
