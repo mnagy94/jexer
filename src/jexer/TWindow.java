@@ -284,7 +284,58 @@ public class TWindow extends TWidget {
      * @param maximumWindowWidth new maximum width
      */
     public final void setMaximumWindowWidth(final int maximumWindowWidth) {
+        if ((maximumWindowWidth != -1)
+            && (maximumWindowWidth < minimumWindowWidth + 1)
+        ) {
+            throw new IllegalArgumentException("Maximum window width cannot " +
+                "be smaller than minimum window width + 1");
+        }
         this.maximumWindowWidth = maximumWindowWidth;
+    }
+
+    /**
+     * Set the minimum width for this window.
+     *
+     * @param minimumWindowWidth new minimum width
+     */
+    public final void setMinimumWindowWidth(final int minimumWindowWidth) {
+        if ((maximumWindowWidth != -1)
+            && (minimumWindowWidth > maximumWindowWidth - 1)
+        ) {
+            throw new IllegalArgumentException("Minimum window width cannot " +
+                "be larger than maximum window width - 1");
+        }
+        this.minimumWindowWidth = minimumWindowWidth;
+    }
+
+    /**
+     * Set the maximum height for this window.
+     *
+     * @param maximumWindowHeight new maximum height
+     */
+    public final void setMaximumWindowHeight(final int maximumWindowHeight) {
+        if ((maximumWindowHeight != -1)
+            && (maximumWindowHeight < minimumWindowHeight + 1)
+        ) {
+            throw new IllegalArgumentException("Maximum window height cannot " +
+                "be smaller than minimum window height + 1");
+        }
+        this.maximumWindowHeight = maximumWindowHeight;
+    }
+
+    /**
+     * Set the minimum height for this window.
+     *
+     * @param minimumWindowHeight new minimum height
+     */
+    public final void setMinimumWindowHeight(final int minimumWindowHeight) {
+        if ((maximumWindowHeight != -1)
+            && (minimumWindowHeight > maximumWindowHeight - 1)
+        ) {
+            throw new IllegalArgumentException("Minimum window height cannot " +
+                "be larger than maximum window height - 1");
+        }
+        this.minimumWindowHeight = minimumWindowHeight;
     }
 
     /**

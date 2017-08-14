@@ -28,6 +28,8 @@
  */
 package jexer;
 
+import java.io.IOException;
+
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
@@ -121,34 +123,16 @@ public final class TEditorWidget extends TWidget {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         if (mouse.isMouseWheelUp()) {
-            if (getCursorY() == getHeight() - 1) {
-                if (document.up()) {
-                    if (topLine > 0) {
-                        topLine--;
-                    }
-                    alignCursor();
-                }
-            } else {
-                if (topLine > 0) {
-                    topLine--;
-                    setCursorY(getCursorY() + 1);
-                }
+            if (topLine > 0) {
+                topLine--;
+                alignDocument(false);
             }
             return;
         }
         if (mouse.isMouseWheelDown()) {
-            if (getCursorY() == 0) {
-                if (document.down()) {
-                    if (topLine < document.getLineNumber()) {
-                        topLine++;
-                    }
-                    alignCursor();
-                }
-            } else {
-                if (topLine < document.getLineCount() - getHeight()) {
-                    topLine++;
-                    setCursorY(getCursorY() - 1);
-                }
+            if (topLine < document.getLineCount() - 1) {
+                topLine++;
+                alignDocument(true);
             }
             return;
         }
@@ -183,6 +167,63 @@ public final class TEditorWidget extends TWidget {
 
         // Pass to children
         super.onMouseDown(mouse);
+    }
+
+    /**
+     * Align visible area with document current line.
+     *
+     * @param topLineIsTop if true, make the top visible line the document
+     * current line if it was off-screen.  If false, make the bottom visible
+     * line the document current line.
+     */
+    private void alignTopLine(final boolean topLineIsTop) {
+        int line = document.getLineNumber();
+
+        if ((line < topLine) || (line > topLine + getHeight() - 1)) {
+            // Need to move topLine to bring document back into view.
+            if (topLineIsTop) {
+                topLine = line - (getHeight() - 1);
+            } else {
+                topLine = line;
+            }
+        }
+
+        /*
+        System.err.println("line " + line + " topLine " + topLine);
+        */
+
+        // Document is in view, let's set cursorY
+        setCursorY(line - topLine);
+        alignCursor();
+    }
+
+    /**
+     * Align document current line with visible area.
+     *
+     * @param topLineIsTop if true, make the top visible line the document
+     * current line if it was off-screen.  If false, make the bottom visible
+     * line the document current line.
+     */
+    private void alignDocument(final boolean topLineIsTop) {
+        int line = document.getLineNumber();
+
+        if ((line < topLine) || (line > topLine + getHeight() - 1)) {
+            // Need to move document to ensure it fits view.
+            if (topLineIsTop) {
+                document.setLineNumber(topLine);
+            } else {
+                document.setLineNumber(topLine + (getHeight() - 1));
+            }
+        }
+
+        /*
+        System.err.println("getLineNumber() " + document.getLineNumber() +
+            " topLine " + topLine);
+        */
+
+        // Document is in view, let's set cursorY
+        setCursorY(document.getLineNumber() - topLine);
+        alignCursor();
     }
 
     /**
@@ -224,57 +265,17 @@ public final class TEditorWidget extends TWidget {
                 alignCursor();
             }
         } else if (keypress.equals(kbUp)) {
-            if (document.up()) {
-                if (getCursorY() > 0) {
-                    setCursorY(getCursorY() - 1);
-                } else {
-                    if (topLine > 0) {
-                        topLine--;
-                    }
-                }
-                alignCursor();
-            }
+            document.up();
+            alignTopLine(false);
         } else if (keypress.equals(kbDown)) {
-            if (document.down()) {
-                if (getCursorY() < getHeight() - 1) {
-                    setCursorY(getCursorY() + 1);
-                } else {
-                    if (topLine < document.getLineCount() - getHeight()) {
-                        topLine++;
-                    }
-                }
-                alignCursor();
-            }
+            document.down();
+            alignTopLine(true);
         } else if (keypress.equals(kbPgUp)) {
-            for (int i = 0; i < getHeight() - 1; i++) {
-                if (document.up()) {
-                    if (getCursorY() > 0) {
-                        setCursorY(getCursorY() - 1);
-                    } else {
-                        if (topLine > 0) {
-                            topLine--;
-                        }
-                    }
-                    alignCursor();
-                } else {
-                    break;
-                }
-            }
+            document.up(getHeight() - 1);
+            alignTopLine(false);
         } else if (keypress.equals(kbPgDn)) {
-            for (int i = 0; i < getHeight() - 1; i++) {
-                if (document.down()) {
-                    if (getCursorY() < getHeight() - 1) {
-                        setCursorY(getCursorY() + 1);
-                    } else {
-                        if (topLine < document.getLineCount() - getHeight()) {
-                            topLine++;
-                        }
-                    }
-                    alignCursor();
-                } else {
-                    break;
-                }
-            }
+            document.down(getHeight() - 1);
+            alignTopLine(true);
         } else if (keypress.equals(kbHome)) {
             if (document.home()) {
                 leftColumn = 0;
@@ -297,29 +298,25 @@ public final class TEditorWidget extends TWidget {
         } else if (keypress.equals(kbCtrlEnd)) {
             document.setLineNumber(document.getLineCount() - 1);
             document.end();
-            topLine = document.getLineCount() - getHeight();
-            if (topLine < 0) {
-                topLine = 0;
-            }
-            if (document.getLineCount() > getHeight()) {
-                setCursorY(getHeight() - 1);
-            } else {
-                setCursorY(document.getLineCount() - 1);
-            }
-            alignCursor();
+            alignTopLine(false);
         } else if (keypress.equals(kbIns)) {
             document.setOverwrite(!document.getOverwrite());
         } else if (keypress.equals(kbDel)) {
+            // TODO: join lines
             document.del();
+            alignCursor();
         } else if (keypress.equals(kbBackspace)) {
             document.backspace();
             alignCursor();
+        } else if (keypress.equals(kbEnter)) {
+            // TODO: split lines
         } else if (!keypress.getKey().isFnKey()
             && !keypress.getKey().isAlt()
             && !keypress.getKey().isCtrl()
         ) {
             // Plain old keystroke, process it
             document.addChar(keypress.getKey().getChar());
+            alignCursor();
         } else {
             // Pass other keys (tab etc.) on to TWidget
             super.onKeypress(keypress);
@@ -352,6 +349,89 @@ public final class TEditorWidget extends TWidget {
             // Let superclass handle it
             super.onResize(resize);
         }
+    }
+
+    /**
+     * Get the number of lines in the underlying Document.
+     *
+     * @return the number of lines
+     */
+    public int getLineCount() {
+        return document.getLineCount();
+    }
+
+    /**
+     * Get the current editing row number.  1-based.
+     *
+     * @return the editing row number.  Row 1 is the first row.
+     */
+    public int getEditingRowNumber() {
+        return document.getLineNumber() + 1;
+    }
+
+    /**
+     * Set the current editing row number.  1-based.
+     *
+     * @param row the new editing row number.  Row 1 is the first row.
+     */
+    public void setEditingRowNumber(final int row) {
+        document.setLineNumber(row - 1);
+    }
+
+    /**
+     * Get the current editing column number.  1-based.
+     *
+     * @return the editing column number.  Column 1 is the first column.
+     */
+    public int getEditingColumnNumber() {
+        return document.getCursor() + 1;
+    }
+
+    /**
+     * Set the current editing column number.  1-based.
+     *
+     * @param column the new editing column number.  Column 1 is the first
+     * column.
+     */
+    public void setEditingColumnNumber(final int column) {
+        document.setCursor(column - 1);
+    }
+
+    /**
+     * Get the maximum possible row number.  1-based.
+     *
+     * @return the maximum row number.  Row 1 is the first row.
+     */
+    public int getMaximumRowNumber() {
+        return document.getLineCount() + 1;
+    }
+
+    /**
+     * Get the maximum possible column number.  1-based.
+     *
+     * @return the maximum column number.  Column 1 is the first column.
+     */
+    public int getMaximumColumnNumber() {
+        return document.getLineLengthMax() + 1;
+    }
+
+    /**
+     * Get the dirty value.
+     *
+     * @return true if the buffer is dirty
+     */
+    public boolean isDirty() {
+        return document.isDirty();
+    }
+
+    /**
+     * Save contents to file.
+     *
+     * @param filename file to save to
+     * @throws IOException if a java.io operation throws
+     */
+    public void saveToFilename(final String filename) throws IOException {
+        document.saveToFilename(filename);
     }
 
 }

@@ -76,7 +76,7 @@ public class DemoApplication extends TApplication {
         item = subMenu.addItem(2002, "&Normal (sub)");
 
         if (getScreen() instanceof SwingTerminal) {
-            TMenu swingMenu = addMenu("&Swing");
+            TMenu swingMenu = addMenu("Swin&g");
             item = swingMenu.addItem(3000, "&Bigger +2");
             item = swingMenu.addItem(3001, "&Smaller -2");
         }

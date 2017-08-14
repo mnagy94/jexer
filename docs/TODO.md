@@ -11,17 +11,18 @@ BUG: TTreeView.reflow() doesn't keep the vertical dot within the
 0.0.5
 
 - TEditor
+  - Document
+    - Filename
+    - Pick appropriate Highlighter: plain, Java, XML, ...
   - TEditorWidget:
-    - Mouse wheel is buggy as hell
-    - Actual editing
     - Cut and Paste
-  - TEditorWindow extends TScrollableWindow
   - TTextArea extends TScrollableWidget
 
 0.0.6
 
 - TEditor
-  - True tokenization and syntax highlighting: Java, C, Clojure
+  - True tokenization and syntax highlighting: Java, C, Clojure, XML
+  - Tab character support
 
 - Finish up multiscreen support:
   - cmAbort to cmScreenDisconnected

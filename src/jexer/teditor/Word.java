@@ -165,7 +165,8 @@ public class Word {
      * Add a character to this word.  If this is a whitespace character
      * adding to a non-whitespace word, create a new word and return that;
      * similarly if this a non-whitespace character adding to a whitespace
-     * word, create a new word and return that.
+     * word, create a new word and return that.  Note package private access:
+     * this is only called by Line to figure out highlighting boundaries.
      *
      * @param ch the new character to add
      * @return either this word (if it was added), or a new word that

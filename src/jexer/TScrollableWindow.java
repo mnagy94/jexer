@@ -53,8 +53,8 @@ public class TScrollableWindow extends TWindow implements Scrollable {
     protected void placeScrollbars() {
         if (hScroller != null) {
             hScroller.setY(getHeight() - 2);
-            hScroller.setWidth(getWidth() - 3);
-            hScroller.setBigChange(getWidth() - 3);
+            hScroller.setWidth(getWidth() - hScroller.getX() - 3);
+            hScroller.setBigChange(getWidth() - hScroller.getX() - 3);
         }
         if (vScroller != null) {
             vScroller.setX(getWidth() - 2);

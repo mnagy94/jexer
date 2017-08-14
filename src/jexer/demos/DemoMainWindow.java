@@ -77,7 +77,7 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, "Demo Window", 0, 0, 60, 23, flags);
+        super(parent, "Demo Window", 0, 0, 64, 23, flags);
 
         int row = 1;
 
@@ -123,10 +123,17 @@ public class DemoMainWindow extends TWindow {
         row += 2;
 
         addLabel("Editor window", 1, row);
-        addButton("Edito&r", 35, row,
+        addButton("&1 Widget", 35, row,
             new TAction() {
                 public void DO() {
                     new DemoEditorWindow(getApplication());
+                }
+            }
+        );
+        addButton("&2 Window", 48, row,
+            new TAction() {
+                public void DO() {
+                    new TEditorWindow(getApplication());
                 }
             }
         );

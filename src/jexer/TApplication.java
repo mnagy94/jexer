@@ -2420,6 +2420,16 @@ public class TApplication implements Runnable {
             return true;
         }
 
+        if (command.equals(cmMenu)) {
+            if (!modalWindowActive() && (activeMenu == null)) {
+                if (menus.size() > 0) {
+                    menus.get(0).setActive(true);
+                    activeMenu = menus.get(0);
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 

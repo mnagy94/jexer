@@ -122,6 +122,16 @@ public class TCommand {
     public static final int HELP                = 20;
 
     /**
+     * Enter first menu.
+     */
+    public static final int MENU                = 21;
+
+    /**
+     * Save file.
+     */
+    public static final int SAVE                = 30;
+
+    /**
      * Type of command, one of EXIT, CASCADE, etc.
      */
     private int type;
@@ -189,5 +199,7 @@ public class TCommand {
     public static final TCommand cmWindowPrevious = new TCommand(WINDOW_PREVIOUS);
     public static final TCommand cmWindowClose  = new TCommand(WINDOW_CLOSE);
     public static final TCommand cmHelp         = new TCommand(HELP);
+    public static final TCommand cmSave         = new TCommand(SAVE);
+    public static final TCommand cmMenu         = new TCommand(MENU);
 
 }

@@ -60,14 +60,19 @@ public class Line {
     private int cursor = 0;
 
     /**
-     * The current word that the cursor position is in.
+     * The raw text of this line, what is passed to Word to determine
+     * highlighting behavior.
      */
-    private Word currentWord;
+    private StringBuilder rawText;
 
     /**
-     * We use getDisplayLength() a lot, so cache the value.
+     * Get a (shallow) copy of the words in this line.
+     *
+     * @return a copy of the word list
      */
-    private int displayLength = -1;
+    public List<Word> getWords() {
+        return new ArrayList<Word>(words);
+    }
 
     /**
      * Get the current cursor position.
@@ -92,16 +97,6 @@ public class Line {
                 getDisplayLength() + ", requested position " + cursor);
         }
         this.cursor = cursor;
-        // TODO: set word
-    }
-
-    /**
-     * Get a (shallow) copy of the list of words.
-     *
-     * @return the list of words
-     */
-    public List<Word> getWords() {
-        return new ArrayList<Word>(words);
     }
 
     /**
@@ -110,21 +105,44 @@ public class Line {
      * @return the number of cells needed to display this line
      */
     public int getDisplayLength() {
-        if (displayLength != -1) {
-            return displayLength;
-        }
-        int n = 0;
-        for (Word word: words) {
-            n += word.getDisplayLength();
-        }
-        displayLength = n;
+        int n = rawText.length();
 
-        // If we have any visible characters, add one to the display so that
-        // the cursor is immediately after the data.
-        if (displayLength > 0) {
-            displayLength++;
+        // For now just return the raw text length.
+        if (n > 0) {
+            // If we have any visible characters, add one to the display so
+            // that the cursor is immediately after the data.
+            return n + 1;
         }
-        return displayLength;
+        return n;
+    }
+
+    /**
+     * Get the raw string that matches this line.
+     *
+     * @return the string
+     */
+    public String getRawString() {
+        return rawText.toString();
+    }
+
+    /**
+     * Scan rawText and make words out of it.
+     */
+    private void scanLine() {
+        words.clear();
+        Word word = new Word(this.defaultColor, this.highlighter);
+        words.add(word);
+        for (int i = 0; i < rawText.length(); i++) {
+            char ch = rawText.charAt(i);
+            Word newWord = word.addChar(ch);
+            if (newWord != word) {
+                words.add(newWord);
+                word = newWord;
+            }
+        }
+        for (Word w: words) {
+            w.applyHighlight();
+        }
     }
 
     /**
@@ -140,20 +158,9 @@ public class Line {
 
         this.defaultColor = defaultColor;
         this.highlighter = highlighter;
+        this.rawText = new StringBuilder(str);
 
-        currentWord = new Word(this.defaultColor, this.highlighter);
-        words.add(currentWord);
-        for (int i = 0; i < str.length(); i++) {
-            char ch = str.charAt(i);
-            Word newWord = currentWord.addChar(ch);
-            if (newWord != currentWord) {
-                words.add(newWord);
-                currentWord = newWord;
-            }
-        }
-        for (Word word: words) {
-            word.applyHighlight();
-        }
+        scanLine();
     }
 
     /**
@@ -175,7 +182,6 @@ public class Line {
         if (cursor == 0) {
             return false;
         }
-        // TODO: switch word
         cursor--;
         return true;
     }
@@ -192,7 +198,6 @@ public class Line {
         if (cursor == getDisplayLength() - 1) {
             return false;
         }
-        // TODO: switch word
         cursor++;
         return true;
     }
@@ -205,7 +210,6 @@ public class Line {
     public boolean home() {
         if (cursor > 0) {
             cursor = 0;
-            currentWord = words.get(0);
             return true;
         }
         return false;
@@ -222,7 +226,6 @@ public class Line {
             if (cursor < 0) {
                 cursor = 0;
             }
-            currentWord = words.get(words.size() - 1);
             return true;
         }
         return false;
@@ -232,14 +235,23 @@ public class Line {
      * Delete the character under the cursor.
      */
     public void del() {
-        // TODO
+        assert (words.size() > 0);
+
+        if (cursor < getDisplayLength()) {
+            rawText.deleteCharAt(cursor);
+        }
+
+        // Re-scan the line to determine the new word boundaries.
+        scanLine();
     }
 
     /**
      * Delete the character immediately preceeding the cursor.
      */
     public void backspace() {
-        // TODO
+        if (left()) {
+            del();
+        }
     }
 
     /**
@@ -248,7 +260,13 @@ public class Line {
      * @param ch the character to insert
      */
     public void addChar(final char ch) {
-        // TODO
+        if (cursor < getDisplayLength() - 1) {
+            rawText.insert(cursor, ch);
+        } else {
+            rawText.append(ch);
+        }
+        scanLine();
+        cursor++;
     }
 
     /**
@@ -257,7 +275,13 @@ public class Line {
      * @param ch the character to replace
      */
     public void replaceChar(final char ch) {
-        // TODO
+        if (cursor < getDisplayLength() - 1) {
+            rawText.setCharAt(cursor, ch);
+        } else {
+            rawText.append(ch);
+        }
+        scanLine();
+        cursor++;
     }
 
 }

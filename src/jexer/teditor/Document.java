@@ -28,6 +28,9 @@
  */
 package jexer.teditor;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +58,11 @@ public class Document {
     private boolean overwrite = false;
 
     /**
+     * If true, the document has been edited.
+     */
+    private boolean dirty = false;
+
+    /**
      * The default color for the TEditor class.
      */
     private CellAttributes defaultColor = null;
@@ -71,6 +79,41 @@ public class Document {
      */
     public boolean getOverwrite() {
         return overwrite;
+    }
+
+    /**
+     * Get the dirty value.
+     *
+     * @return true if the buffer is dirty
+     */
+    public boolean isDirty() {
+        return dirty;
+    }
+
+    /**
+     * Save contents to file.
+     *
+     * @param filename file to save to
+     * @throws IOException if a java.io operation throws
+     */
+    public void saveToFilename(final String filename) throws IOException {
+        OutputStreamWriter output = null;
+        try {
+            output = new OutputStreamWriter(new FileOutputStream(filename),
+                "UTF-8");
+
+            for (Line line: lines) {
+                output.write(line.getRawString());
+                output.write("\n");
+            }
+
+            dirty = false;
+        }
+        finally {
+            if (output != null) {
+                output.close();
+            }
+        }
     }
 
     /**
@@ -134,6 +177,15 @@ public class Document {
      */
     public int getCursor() {
         return lines.get(lineNumber).getCursor();
+    }
+
+    /**
+     * Set the current cursor position of the editing line.  0-based.
+     *
+     * @param cursor the new cursor position
+     */
+    public void setCursor(final int cursor) {
+        lines.get(lineNumber).setCursor(cursor);
     }
 
     /**
@@ -280,6 +332,7 @@ public class Document {
      * Delete the character under the cursor.
      */
     public void del() {
+        dirty = true;
         lines.get(lineNumber).del();
     }
 
@@ -287,6 +340,7 @@ public class Document {
      * Delete the character immediately preceeding the cursor.
      */
     public void backspace() {
+        dirty = true;
         lines.get(lineNumber).backspace();
     }
 
@@ -297,6 +351,7 @@ public class Document {
      * @param ch the character to replace or insert
      */
     public void addChar(final char ch) {
+        dirty = true;
         if (overwrite) {
             lines.get(lineNumber).replaceChar(ch);
         } else {

@@ -146,4 +146,5 @@ public final class GraphicsChars {
     public static final char WINDOW_LEFT_BOTTOM_DOUBLE  = CP437[0xC8];
     public static final char WINDOW_RIGHT_BOTTOM_DOUBLE = CP437[0xBC];
     public static final char VERTICAL_BAR               = CP437[0xB3];
+    public static final char OCTOSTAR                   = CP437[0x0F];
 }

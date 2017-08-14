@@ -34,7 +34,7 @@ import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
- * This window demonstates the TText, THScroller, and TVScroller widgets.
+ * This window demonstates the TEditor widget.
  */
 public class DemoEditorWindow extends TWindow {
 
@@ -56,10 +56,9 @@ public class DemoEditorWindow extends TWindow {
         super(parent, title, 0, 0, 44, 22, RESIZABLE);
         editField = addEditor(text, 0, 0, 42, 20);
 
-        statusBar = newStatusBar("Editable text window");
+        statusBar = newStatusBar("Editable text demo window");
         statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
         statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
         statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
 
