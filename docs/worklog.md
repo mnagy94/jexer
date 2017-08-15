@@ -1,6 +1,18 @@
 Jexer Work Log
 ==============
 
+August 15, 2017
+
+I cut 0.0.5 just now, and also applied for a Sonatype repository.
+It was a reasonable spot: TEditor was working albeit buggy, and a bug
+had just come in on the main TApplication run loop.  So we are about
+to embark upon some performance work again, it's been probably version
+0.0.2 or so since the last cycle.
+
+Code size: 40446 lines.
+
+Now switching head to 0.0.6 and taking a small break.
+
 August 14, 2017
 
 TEditor is basically done.  Mouse movement, keyboard movement,

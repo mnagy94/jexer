@@ -7,7 +7,7 @@
   <packaging>jar</packaging>
   <name>Jexer</name>
   <description>Java Text User Interface library that resembles Turbo Vision</description>
-  <version>0.0.5</version>
+  <version>0.0.6</version>
   <url>https://github.com/klamonte/jexer</url>
 
   <licenses>

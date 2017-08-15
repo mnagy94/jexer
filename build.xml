@@ -34,7 +34,7 @@
        for unused imports. -->
   <property name="build.compiler" value="gcj"/>
 
-  <property name="version"       value="0.0.5"/>
+  <property name="version"       value="0.0.6"/>
   <property name="src.dir"       value="src"/>
   <property name="resources.dir" value="resources"/>
   <property name="build.dir"     value="build"/>

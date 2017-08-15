@@ -7,6 +7,11 @@ Roadmap
 
 0.0.6
 
+#18 Rework TApplication run loop:
+    - Reduce thread spinlocks
+    - Eliminate unnecessary screen redraws
+    - No activity means no CPU usage
+
 - TSpinner
 - TComboBox
 - TCalendar
