@@ -46,6 +46,11 @@ import static jexer.TKeypress.*;
 public final class TEditorWidget extends TWidget {
 
     /**
+     * The number of lines to scroll on mouse wheel up/down.
+     */
+    private static final int wheelScrollSize = 3;
+
+    /**
      * The document being edited.
      */
     private Document document;
@@ -122,16 +127,20 @@ public final class TEditorWidget extends TWidget {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         if (mouse.isMouseWheelUp()) {
-            if (topLine > 0) {
-                topLine--;
-                alignDocument(false);
+            for (int i = 0; i < wheelScrollSize; i++) {
+                if (topLine > 0) {
+                    topLine--;
+                    alignDocument(false);
+                }
             }
             return;
         }
         if (mouse.isMouseWheelDown()) {
-            if (topLine < document.getLineCount() - 1) {
-                topLine++;
-                alignDocument(true);
+            for (int i = 0; i < wheelScrollSize; i++) {
+                if (topLine < document.getLineCount() - 1) {
+                    topLine++;
+                    alignDocument(true);
+                }
             }
             return;
         }
