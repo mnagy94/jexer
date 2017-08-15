@@ -931,10 +931,16 @@ public class TApplication implements Runnable {
      * Run this application until it exits.
      */
     public void run() {
+        boolean first = true;
+
         while (!quit) {
             // Timeout is in milliseconds, so default timeout after 1 second
             // of inactivity.
             long timeout = 1000;
+            if (first) {
+                first = false;
+                timeout = 0;
+            }
 
             // If I've got no updates to render, wait for something from the
             // backend or a timer.
