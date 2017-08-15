@@ -8,21 +8,12 @@ Roadmap
 BUG: TTreeView.reflow() doesn't keep the vertical dot within the
      scrollbar.
 
-0.0.5
-
-- TEditor
-  - Document
-    - Filename
-    - Pick appropriate Highlighter: plain, Java, XML, ...
-  - TEditorWidget:
-    - Cut and Paste
-  - TTextArea extends TScrollableWidget
-
 0.0.6
 
 - TEditor
   - True tokenization and syntax highlighting: Java, C, Clojure, XML
   - Tab character support
+  - Cut and Paste
 
 - Finish up multiscreen support:
   - cmAbort to cmScreenDisconnected

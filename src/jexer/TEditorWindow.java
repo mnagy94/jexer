@@ -115,12 +115,64 @@ public class TEditorWindow extends TScrollableWindow {
     }
 
     /**
+     * Public constructor opens a file.
+     *
+     * @param parent the main application
+     * @param file the file to open
+     * @throws IOException if a java.io operation throws
+     */
+    public TEditorWindow(final TApplication parent,
+        final File file) throws IOException {
+
+        super(parent, file.getName(), 0, 0, parent.getScreen().getWidth(),
+            parent.getScreen().getHeight() - 2, RESIZABLE);
+
+        filename = file.getName();
+        String contents = readFileData(file);
+        editField = addEditor(contents, 0, 0, getWidth() - 2, getHeight() - 2);
+        setupAfterEditor();
+    }
+
+    /**
      * Public constructor.
      *
      * @param parent the main application
      */
     public TEditorWindow(final TApplication parent) {
         this(parent, "New Text Document");
+    }
+
+    /**
+     * Read file data into a string.
+     *
+     * @param file the file to open
+     * @return the file contents
+     * @throws IOException if a java.io operation throws
+     */
+    private String readFileData(final File file) throws IOException {
+        StringBuilder fileContents = new StringBuilder();
+        Scanner scanner = new Scanner(file);
+        String EOL = System.getProperty("line.separator");
+
+        try {
+            while (scanner.hasNextLine()) {
+                fileContents.append(scanner.nextLine() + EOL);
+            }
+            return fileContents.toString();
+        } finally {
+            scanner.close();
+        }
+    }
+
+    /**
+     * Read file data into a string.
+     *
+     * @param filename the file to open
+     * @return the file contents
+     * @throws IOException if a java.io operation throws
+     */
+    private String readFileData(final String filename) throws IOException {
+        return readFileData(new File(filename));
     }
 
     /**
@@ -169,17 +221,18 @@ public class TEditorWindow extends TScrollableWindow {
      */
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
+        // Use TWidget's code to pass the event to the children.
+        super.onMouseDown(mouse);
+
         if (mouseOnEditor(mouse)) {
-            editField.onMouseDown(mouse);
+            // The editor might have changed, update the scollbars.
             setBottomValue(editField.getMaximumRowNumber());
             setVerticalValue(editField.getEditingRowNumber());
             setRightValue(editField.getMaximumColumnNumber());
             setHorizontalValue(editField.getEditingColumnNumber());
         } else {
-            // Let the scrollbars get the event
-            super.onMouseDown(mouse);
-
             if (mouse.isMouseWheelUp() || mouse.isMouseWheelDown()) {
+                // Vertical scrollbar actions
                 editField.setEditingRowNumber(getVerticalValue());
             }
             // TODO: horizontal scrolling
@@ -220,30 +273,18 @@ public class TEditorWindow extends TScrollableWindow {
         if (command.equals(cmOpen)) {
             try {
                 String filename = fileOpenBox(".");
-                 if (filename != null) {
-                     try {
-                         File file = new File(filename);
-                         StringBuilder fileContents = new StringBuilder();
-                         Scanner scanner = new Scanner(file);
-                         String EOL = System.getProperty("line.separator");
-
-                         try {
-                             while (scanner.hasNextLine()) {
-                                 fileContents.append(scanner.nextLine() + EOL);
-                             }
-                             new TEditorWindow(getApplication(), filename,
-                                 fileContents.toString());
-                         } finally {
-                             scanner.close();
-                         }
-                     } catch (IOException e) {
-                         // TODO: make this a message box
-                         e.printStackTrace();
-                     }
-                 }
+                if (filename != null) {
+                    try {
+                        String contents = readFileData(filename);
+                        new TEditorWindow(getApplication(), filename, contents);
+                    } catch (IOException e) {
+                        messageBox("Error", "Error reading file: " +
+                            e.getMessage());
+                    }
+                }
             } catch (IOException e) {
-                // TODO: make this a message box
-                e.printStackTrace();
+                messageBox("Error", "Error opening file dialog: " +
+                    e.getMessage());
             }
             return;
         }
@@ -253,8 +294,7 @@ public class TEditorWindow extends TScrollableWindow {
                 try {
                     editField.saveToFilename(filename);
                 } catch (IOException e) {
-                    // TODO: make this a message box
-                    e.printStackTrace();
+                    messageBox("Error", "Error saving file: " + e.getMessage());
                 }
             }
             return;

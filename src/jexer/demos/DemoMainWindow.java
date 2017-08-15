@@ -28,7 +28,10 @@
  */
 package jexer.demos;
 
+import java.io.*;
+
 import jexer.*;
+import jexer.event.*;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -206,4 +209,34 @@ public class DemoMainWindow extends TWindow {
         statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
         statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
+
+    /**
+     * Method that subclasses can override to handle posted command events.
+     *
+     * @param command command event
+     */
+    @Override
+    public void onCommand(final TCommandEvent command) {
+        if (command.equals(cmOpen)) {
+            try {
+                String filename = fileOpenBox(".");
+                if (filename != null) {
+                    try {
+                        new TEditorWindow(getApplication(), new File(filename));
+                    } catch (IOException e) {
+                        messageBox("Error", "Error reading file: " +
+                            e.getMessage());
+                    }
+                }
+            } catch (IOException e) {
+                messageBox("Error", "Error opening file dialog: " +
+                    e.getMessage());
+            }
+            return;
+        }
+
+        // Didn't handle it, let children get it instead
+        super.onCommand(command);
+    }
+
 }

@@ -29,7 +29,6 @@
 package jexer.demos;
 
 import java.io.*;
-import java.util.*;
 
 import jexer.*;
 import jexer.event.*;
@@ -187,20 +186,7 @@ public class DemoApplication extends TApplication {
                 String filename = fileOpenBox(".");
                  if (filename != null) {
                      try {
-                         File file = new File(filename);
-                         StringBuilder fileContents = new StringBuilder();
-                         Scanner scanner = new Scanner(file);
-                         String EOL = System.getProperty("line.separator");
-
-                         try {
-                             while (scanner.hasNextLine()) {
-                                 fileContents.append(scanner.nextLine() + EOL);
-                             }
-                             new DemoTextWindow(this, filename,
-                                 fileContents.toString());
-                         } finally {
-                             scanner.close();
-                         }
+                         new TEditorWindow(this, new File(filename));
                      } catch (IOException e) {
                          e.printStackTrace();
                      }

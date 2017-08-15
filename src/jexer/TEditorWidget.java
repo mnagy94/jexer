@@ -112,7 +112,6 @@ public final class TEditorWidget extends TWidget {
                 }
             }
         }
-
     }
 
     /**
@@ -141,14 +140,14 @@ public final class TEditorWidget extends TWidget {
             // Set the row and column
             int newLine = topLine + mouse.getY();
             int newX = leftColumn + mouse.getX();
-            if (newLine > document.getLineCount()) {
+            if (newLine > document.getLineCount() - 1) {
                 // Go to the end
                 document.setLineNumber(document.getLineCount() - 1);
                 document.end();
-                if (document.getLineCount() > getHeight()) {
-                    setCursorY(getHeight() - 1);
+                if (newLine > document.getLineCount() - 1) {
+                    setCursorY(document.getLineCount() - 1 - topLine);
                 } else {
-                    setCursorY(document.getLineCount() - 1);
+                    setCursorY(mouse.getY());
                 }
                 alignCursor();
                 return;
@@ -160,6 +159,7 @@ public final class TEditorWidget extends TWidget {
                 document.end();
                 alignCursor();
             } else {
+                document.setCursor(newX);
                 setCursorX(mouse.getX());
             }
             return;
@@ -206,6 +206,7 @@ public final class TEditorWidget extends TWidget {
      */
     private void alignDocument(final boolean topLineIsTop) {
         int line = document.getLineNumber();
+        int cursor = document.getCursor();
 
         if ((line < topLine) || (line > topLine + getHeight() - 1)) {
             // Need to move document to ensure it fits view.
@@ -213,6 +214,9 @@ public final class TEditorWidget extends TWidget {
                 document.setLineNumber(topLine);
             } else {
                 document.setLineNumber(topLine + (getHeight() - 1));
+            }
+            if (cursor < document.getCurrentLine().getDisplayLength()) {
+                document.setCursor(cursor);
             }
         }
 
@@ -244,7 +248,8 @@ public final class TEditorWidget extends TWidget {
         /*
         System.err.println("document cursor " + document.getCursor() +
             " leftColumn " + leftColumn);
-         */
+        */
+
 
         setCursorX(document.getCursor() - leftColumn);
     }
@@ -257,13 +262,11 @@ public final class TEditorWidget extends TWidget {
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
         if (keypress.equals(kbLeft)) {
-            if (document.left()) {
-                alignCursor();
-            }
+            document.left();
+            alignTopLine(false);
         } else if (keypress.equals(kbRight)) {
-            if (document.right()) {
-                alignCursor();
-            }
+            document.right();
+            alignTopLine(true);
         } else if (keypress.equals(kbUp)) {
             document.up();
             alignTopLine(false);
@@ -302,14 +305,21 @@ public final class TEditorWidget extends TWidget {
         } else if (keypress.equals(kbIns)) {
             document.setOverwrite(!document.getOverwrite());
         } else if (keypress.equals(kbDel)) {
-            // TODO: join lines
             document.del();
             alignCursor();
         } else if (keypress.equals(kbBackspace)) {
             document.backspace();
+            alignTopLine(false);
+        } else if (keypress.equals(kbTab)) {
+            // TODO: tab character.  For now just add spaces until we hit
+            // modulo 8.
+            for (int i = document.getCursor(); (i + 1) % 8 != 0; i++) {
+                document.addChar(' ');
+            }
             alignCursor();
         } else if (keypress.equals(kbEnter)) {
-            // TODO: split lines
+            document.enter();
+            alignTopLine(true);
         } else if (!keypress.getKey().isFnKey()
             && !keypress.getKey().isAlt()
             && !keypress.getKey().isCtrl()

@@ -1384,5 +1384,4 @@ public class TWindow extends TWidget {
         getScreen().hLineXY(x, y, n, ch, attr);
     }
 
-
 }

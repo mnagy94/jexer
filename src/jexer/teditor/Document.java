@@ -298,7 +298,15 @@ public class Document {
      * @return true if the cursor position changed
      */
     public boolean left() {
-        return lines.get(lineNumber).left();
+        if (!lines.get(lineNumber).left()) {
+            // We are on the leftmost column, wrap
+            if (up()) {
+                end();
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -307,7 +315,15 @@ public class Document {
      * @return true if the cursor position changed
      */
     public boolean right() {
-        return lines.get(lineNumber).right();
+        if (!lines.get(lineNumber).right()) {
+            // We are on the rightmost column, wrap
+            if (down()) {
+                home();
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -333,7 +349,19 @@ public class Document {
      */
     public void del() {
         dirty = true;
-        lines.get(lineNumber).del();
+        int cursor = lines.get(lineNumber).getCursor();
+        if (cursor < lines.get(lineNumber).getDisplayLength() - 1) {
+            lines.get(lineNumber).del();
+        } else if (lineNumber < lines.size() - 2) {
+            // Join two lines
+            StringBuilder newLine = new StringBuilder(lines.
+                get(lineNumber).getRawString());
+            newLine.append(lines.get(lineNumber + 1).getRawString());
+            lines.set(lineNumber, new Line(newLine.toString(),
+                    defaultColor, highlighter));
+            lines.get(lineNumber).setCursor(cursor);
+            lines.remove(lineNumber + 1);
+        }
     }
 
     /**
@@ -341,7 +369,43 @@ public class Document {
      */
     public void backspace() {
         dirty = true;
-        lines.get(lineNumber).backspace();
+        int cursor = lines.get(lineNumber).getCursor();
+        if (cursor > 0) {
+            lines.get(lineNumber).backspace();
+        } else if (lineNumber > 0) {
+            // Join two lines
+            lineNumber--;
+            String firstLine = lines.get(lineNumber).getRawString();
+            if (firstLine.length() > 0) {
+                // Backspacing combining two lines
+                StringBuilder newLine = new StringBuilder(firstLine);
+                newLine.append(lines.get(lineNumber + 1).getRawString());
+                lines.set(lineNumber, new Line(newLine.toString(),
+                        defaultColor, highlighter));
+                lines.get(lineNumber).setCursor(firstLine.length());
+                lines.remove(lineNumber + 1);
+            } else {
+                // Backspacing an empty line
+                lines.remove(lineNumber);
+                lines.get(lineNumber).setCursor(0);
+            }
+        }
+    }
+
+    /**
+     * Split the current line into two, like pressing the enter key.
+     */
+    public void enter() {
+        dirty = true;
+        int cursor = lines.get(lineNumber).getCursor();
+        String original = lines.get(lineNumber).getRawString();
+        String firstLine = original.substring(0, cursor);
+        String secondLine = original.substring(cursor);
+        lines.add(lineNumber + 1, new Line(secondLine, defaultColor,
+                highlighter));
+        lines.set(lineNumber, new Line(firstLine, defaultColor, highlighter));
+        lineNumber++;
+        lines.get(lineNumber).home();
     }
 
     /**

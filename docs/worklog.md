@@ -1,6 +1,16 @@
 Jexer Work Log
 ==============
 
+August 14, 2017
+
+TEditor is basically done.  Mouse movement, keyboard movement,
+backspace / delete / enter / etc. are all in.  Things are starting to
+look pretty good.
+
+I'm going to prep for a final cut and release tag tomorrow or the next
+evening.  I need to take a break and get some meatspace life dealt
+with.
+
 August 12, 2017
 
 TEditor is stubbed in about 50% complete now.  I have a Highlighter
@@ -180,4 +190,3 @@ checklists.  I think I will see if jexer is available at SourceForge,
 and if so grab it.  Perhaps I can put together some good Turbo Vision
 resources too.  At the very least direct people to the Borland-derived
 C++ releases and Free Vision.
-
