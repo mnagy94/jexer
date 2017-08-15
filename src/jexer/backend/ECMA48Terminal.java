@@ -746,6 +746,8 @@ public final class ECMA48Terminal extends LogicalScreen
     public void flushPhysical() {
         String result = flushString();
         if ((cursorVisible)
+            && (cursorY >= 0)
+            && (cursorX >= 0)
             && (cursorY <= height - 1)
             && (cursorX <= width - 1)
         ) {

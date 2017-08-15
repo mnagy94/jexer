@@ -41,6 +41,7 @@ import jexer.TWidget;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.event.TCommandEvent;
+import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import static jexer.TCommand.*;
@@ -201,7 +202,7 @@ public class TEditorWindow extends TScrollableWindow {
      * editor.
      *
      * @param mouse a mouse-based event
-     * @return whether or not the mouse is on the emulator
+     * @return whether or not the mouse is on the editor
      */
     private final boolean mouseOnEditor(final TMouseEvent mouse) {
         if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
@@ -235,8 +236,69 @@ public class TEditorWindow extends TScrollableWindow {
                 // Vertical scrollbar actions
                 editField.setEditingRowNumber(getVerticalValue());
             }
+        }
+    }
+
+    /**
+     * Handle mouse release events.
+     *
+     * @param mouse mouse button release event
+     */
+    @Override
+    public void onMouseUp(final TMouseEvent mouse) {
+        // Use TWidget's code to pass the event to the children.
+        super.onMouseUp(mouse);
+
+        if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
+            // Clicked on vertical scrollbar
+            editField.setEditingRowNumber(getVerticalValue());
+        }
+
+        // TODO: horizontal scrolling
+    }
+
+    /**
+     * Method that subclasses can override to handle mouse movements.
+     *
+     * @param mouse mouse motion event
+     */
+    @Override
+    public void onMouseMotion(final TMouseEvent mouse) {
+        // Use TWidget's code to pass the event to the children.
+        super.onMouseMotion(mouse);
+
+        if (mouseOnEditor(mouse) && mouse.isMouse1()) {
+            // The editor might have changed, update the scollbars.
+            setBottomValue(editField.getMaximumRowNumber());
+            setVerticalValue(editField.getEditingRowNumber());
+            setRightValue(editField.getMaximumColumnNumber());
+            setHorizontalValue(editField.getEditingColumnNumber());
+        } else {
+            if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
+                // Clicked/dragged on vertical scrollbar
+                editField.setEditingRowNumber(getVerticalValue());
+            }
+
             // TODO: horizontal scrolling
         }
+
+    }
+
+    /**
+     * Handle keystrokes.
+     *
+     * @param keypress keystroke event
+     */
+    @Override
+    public void onKeypress(final TKeypressEvent keypress) {
+        // Use TWidget's code to pass the event to the children.
+        super.onKeypress(keypress);
+
+        // The editor might have changed, update the scollbars.
+        setBottomValue(editField.getMaximumRowNumber());
+        setVerticalValue(editField.getEditingRowNumber());
+        setRightValue(editField.getMaximumColumnNumber());
+        setHorizontalValue(editField.getEditingColumnNumber());
     }
 
     /**

@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 
 /**
@@ -597,6 +598,48 @@ public class TScrollableWindow extends TWindow implements Scrollable {
         if (vScroller != null) {
             vScroller.toBottom();
         }
+    }
+
+    /**
+     * Check if a mouse press/release/motion event coordinate is over the
+     * vertical scrollbar.
+     *
+     * @param mouse a mouse-based event
+     * @return whether or not the mouse is on the scrollbar
+     */
+    protected final boolean mouseOnVerticalScroller(final TMouseEvent mouse) {
+        if (vScroller == null) {
+            return false;
+        }
+        if ((mouse.getAbsoluteX() == vScroller.getAbsoluteX())
+            && (mouse.getAbsoluteY() >= vScroller.getAbsoluteY())
+            && (mouse.getAbsoluteY() <  vScroller.getAbsoluteY() +
+                vScroller.getHeight())
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if a mouse press/release/motion event coordinate is over the
+     * horizontal scrollbar.
+     *
+     * @param mouse a mouse-based event
+     * @return whether or not the mouse is on the scrollbar
+     */
+    protected final boolean mouseOnHorizontalScroller(final TMouseEvent mouse) {
+        if (hScroller == null) {
+            return false;
+        }
+        if ((mouse.getAbsoluteY() == hScroller.getAbsoluteY())
+            && (mouse.getAbsoluteX() >= hScroller.getAbsoluteX())
+            && (mouse.getAbsoluteX() <  hScroller.getAbsoluteX() +
+                hScroller.getWidth())
+        ) {
+            return true;
+        }
+        return false;
     }
 
 }

@@ -1396,6 +1396,13 @@ public class TApplication implements Runnable {
             return;
         }
 
+        // Whatever window might be moving/dragging, stop it now.
+        for (TWindow w: windows) {
+            if (w.inMovements()) {
+                w.stopMovements();
+            }
+        }
+
         assert (windows.size() > 0);
 
         if (window.isHidden()) {
@@ -1455,6 +1462,13 @@ public class TApplication implements Runnable {
             return;
         }
 
+        // Whatever window might be moving/dragging, stop it now.
+        for (TWindow w: windows) {
+            if (w.inMovements()) {
+                w.stopMovements();
+            }
+        }
+
         assert (windows.size() > 0);
 
         if (!window.hidden) {
@@ -1486,6 +1500,13 @@ public class TApplication implements Runnable {
             return;
         }
 
+        // Whatever window might be moving/dragging, stop it now.
+        for (TWindow w: windows) {
+            if (w.inMovements()) {
+                w.stopMovements();
+            }
+        }
+
         assert (windows.size() > 0);
 
         if (window.hidden) {
@@ -1511,6 +1532,13 @@ public class TApplication implements Runnable {
         }
 
         synchronized (windows) {
+            // Whatever window might be moving/dragging, stop it now.
+            for (TWindow w: windows) {
+                if (w.inMovements()) {
+                    w.stopMovements();
+                }
+            }
+
             int z = window.getZ();
             window.setZ(-1);
             window.onUnfocus();
@@ -1575,6 +1603,12 @@ public class TApplication implements Runnable {
         assert (activeWindow != null);
 
         synchronized (windows) {
+            // Whatever window might be moving/dragging, stop it now.
+            for (TWindow w: windows) {
+                if (w.inMovements()) {
+                    w.stopMovements();
+                }
+            }
 
             // Swap z/active between active window and the next in the list
             int activeWindowI = -1;
@@ -1633,6 +1667,13 @@ public class TApplication implements Runnable {
         }
 
         synchronized (windows) {
+            // Whatever window might be moving/dragging, stop it now.
+            for (TWindow w: windows) {
+                if (w.inMovements()) {
+                    w.stopMovements();
+                }
+            }
+
             // Do not allow a modal window to spawn a non-modal window.  If a
             // modal window is active, then this window will become modal
             // too.

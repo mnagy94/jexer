@@ -82,6 +82,15 @@ public class TList extends TScrollableWidget {
     }
 
     /**
+     * Get the maximum selection index value.
+     *
+     * @return -1 if the list is empty
+     */
+    public final int getMaxSelectedIndex() {
+        return strings.size() - 1;
+    }
+
+    /**
      * Set the new list of strings to display.
      *
      * @param list new list of strings

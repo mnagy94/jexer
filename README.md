@@ -32,7 +32,7 @@ Jexer currently supports three backends:
 
 Additional backends can be created by subclassing
 jexer.backend.Backend and passing it into the TApplication
-constructor.
+constructor.  See Demo5 and Demo6 for examples of other backends.
 
 The Jexer homepage, which includes additional information and binary
 release downloads, is at: https://jexer.sourceforge.io .  The Jexer
@@ -226,6 +226,11 @@ ambiguous.  This section describes such issues.
 
   - Closing a TTerminalWindow without exiting the process inside it
     may result in a zombie 'script' process.
+
+  - TTerminalWindow cannot notify the child process of changes in
+    window size, due to Java's lack of support for forkpty() and
+    similar.  Solving this requires C, and will be pursued only if
+    sufficient user requests come in.
 
   - Java's InputStreamReader as used by the ECMA48 backend requires a
     valid UTF-8 stream.  The default X10 encoding for mouse

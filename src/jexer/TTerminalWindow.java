@@ -28,10 +28,7 @@
  */
 package jexer;
 
-import java.io.InputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
@@ -189,7 +186,7 @@ public class TTerminalWindow extends TScrollableWindow {
             emulator = new ECMA48(deviceType, shell.getInputStream(),
                 shell.getOutputStream());
         } catch (IOException e) {
-            e.printStackTrace();
+            messageBox("Error", "Error launching shell: " + e.getMessage());
         }
 
         // Setup the scroll bars
@@ -234,39 +231,6 @@ public class TTerminalWindow extends TScrollableWindow {
                 return;
             }
         }
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param application TApplication that manages this window
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param flags mask of CENTERED, MODAL, or RESIZABLE
-     * @param input an InputStream connected to the remote side.  For type ==
-     * XTERM, input is converted to a Reader with UTF-8 encoding.
-     * @param output an OutputStream connected to the remote user.  For type
-     * == XTERM, output is converted to a Writer with UTF-8 encoding.
-     * @throws UnsupportedEncodingException if an exception is thrown when
-     * creating the InputStreamReader
-     */
-    public TTerminalWindow(final TApplication application, final int x,
-        final int y, final int flags, final InputStream input,
-        final OutputStream output) throws UnsupportedEncodingException {
-
-        super(application, "Terminal", x, y, 80 + 2, 24 + 2, flags);
-
-        emulator = new ECMA48(ECMA48.DeviceType.XTERM, input, output);
-
-        // Setup the scroll bars
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
-                getHeight()));
-
-        // Claim the keystrokes the emulator will need.
-        addShortcutKeys();
-
-        // Add shortcut text
-        newStatusBar("Terminal session executing...");
     }
 
     /**

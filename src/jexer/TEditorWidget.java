@@ -183,8 +183,13 @@ public final class TEditorWidget extends TWidget {
             // Need to move topLine to bring document back into view.
             if (topLineIsTop) {
                 topLine = line - (getHeight() - 1);
+                if (topLine < 0) {
+                    topLine = 0;
+                }
+                assert (topLine >= 0);
             } else {
                 topLine = line;
+                assert (topLine >= 0);
             }
         }
 
@@ -193,6 +198,7 @@ public final class TEditorWidget extends TWidget {
         */
 
         // Document is in view, let's set cursorY
+        assert (line >= topLine);
         setCursorY(line - topLine);
         alignCursor();
     }
@@ -385,7 +391,11 @@ public final class TEditorWidget extends TWidget {
      * @param row the new editing row number.  Row 1 is the first row.
      */
     public void setEditingRowNumber(final int row) {
-        document.setLineNumber(row - 1);
+        assert (row > 0);
+        if ((row > 0) && (row < document.getLineCount())) {
+            document.setLineNumber(row - 1);
+            alignTopLine(true);
+        }
     }
 
     /**
@@ -404,7 +414,10 @@ public final class TEditorWidget extends TWidget {
      * column.
      */
     public void setEditingColumnNumber(final int column) {
-        document.setCursor(column - 1);
+        if ((column > 0) && (column < document.getLineLength())) {
+            document.setCursor(column - 1);
+            alignCursor();
+        }
     }
 
     /**

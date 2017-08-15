@@ -548,6 +548,27 @@ public class TWindow extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * See if this window is undergoing any movement/resize/etc.
+     *
+     * @return true if the window is moving
+     */
+    public boolean inMovements() {
+        if (inWindowResize || inWindowMove || inKeyboardResize) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Stop any pending movement/resize/etc.
+     */
+    public void stopMovements() {
+        inWindowResize = false;
+        inWindowMove = false;
+        inKeyboardResize = false;
+    }
+
+    /**
      * Returns true if this window is modal.
      *
      * @return true if this window is modal

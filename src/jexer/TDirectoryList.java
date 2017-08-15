@@ -73,6 +73,11 @@ public final class TDirectoryList extends TList {
             }
         }
         setList(newStrings);
+
+        // Select the first entry
+        if (getMaxSelectedIndex() >= 0) {
+            setSelectedIndex(0);
+        }
     }
 
     /**

@@ -633,6 +633,8 @@ public final class SwingTerminal extends LogicalScreen
     private void drawCursor(final Graphics gr) {
 
         if (cursorVisible
+            && (cursorY >= 0)
+            && (cursorX >= 0)
             && (cursorY <= height - 1)
             && (cursorX <= width - 1)
             && cursorBlinkVisible
@@ -942,6 +944,8 @@ public final class SwingTerminal extends LogicalScreen
         }
 
         if (cursorVisible
+            && (cursorY >= 0)
+            && (cursorX >= 0)
             && (cursorY <= height - 1)
             && (cursorX <= width - 1)
         ) {

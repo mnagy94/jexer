@@ -456,4 +456,13 @@ public class Document {
         return n;
     }
 
+    /**
+     * Get the current line length.
+     *
+     * @return the number of cells needed to display the current line
+     */
+    public int getLineLength() {
+        return lines.get(lineNumber).getDisplayLength();
+    }
+
 }
