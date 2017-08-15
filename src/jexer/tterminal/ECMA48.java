@@ -28,6 +28,7 @@
  */
 package jexer.tterminal;
 
+import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -905,11 +906,12 @@ public class ECMA48 implements Runnable {
         }
         if (type == DeviceType.XTERM) {
             this.input    = new InputStreamReader(this.inputStream, "UTF-8");
-            this.output   = new OutputStreamWriter(outputStream, "UTF-8");
+            this.output   = new OutputStreamWriter(new
+                BufferedOutputStream(outputStream), "UTF-8");
             this.outputStream = null;
         } else {
             this.output       = null;
-            this.outputStream = outputStream;
+            this.outputStream = new BufferedOutputStream(outputStream);
         }
 
         reset();
@@ -1796,20 +1798,9 @@ public class ECMA48 implements Runnable {
         if (keypress.equalsWithoutModifiers(kbPgUp)) {
             switch (type) {
             case XTERM:
-                switch (arrowKeyMode) {
-                case ANSI:
-                    return xtermBuildKeySequence("\033[", '5', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT52:
-                    return xtermBuildKeySequence("\033", '5', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT100:
-                    return xtermBuildKeySequence("\033O", '5', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                }
+                return xtermBuildKeySequence("\033[", '5', '~',
+                    keypress.isCtrl(), keypress.isAlt(),
+                    keypress.isShift());
             default:
                 return "\033[5~";
             }
@@ -1818,20 +1809,9 @@ public class ECMA48 implements Runnable {
         if (keypress.equalsWithoutModifiers(kbPgDn)) {
             switch (type) {
             case XTERM:
-                switch (arrowKeyMode) {
-                case ANSI:
-                    return xtermBuildKeySequence("\033[", '6', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT52:
-                    return xtermBuildKeySequence("\033", '6', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT100:
-                    return xtermBuildKeySequence("\033O", '6', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                }
+                return xtermBuildKeySequence("\033[", '6', '~',
+                    keypress.isCtrl(), keypress.isAlt(),
+                    keypress.isShift());
             default:
                 return "\033[6~";
             }
@@ -1840,20 +1820,9 @@ public class ECMA48 implements Runnable {
         if (keypress.equalsWithoutModifiers(kbIns)) {
             switch (type) {
             case XTERM:
-                switch (arrowKeyMode) {
-                case ANSI:
-                    return xtermBuildKeySequence("\033[", '2', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT52:
-                    return xtermBuildKeySequence("\033", '2', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT100:
-                    return xtermBuildKeySequence("\033O", '2', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                }
+                return xtermBuildKeySequence("\033[", '2', '~',
+                    keypress.isCtrl(), keypress.isAlt(),
+                    keypress.isShift());
             default:
                 return "\033[2~";
             }
@@ -1862,20 +1831,9 @@ public class ECMA48 implements Runnable {
         if (keypress.equalsWithoutModifiers(kbDel)) {
             switch (type) {
             case XTERM:
-                switch (arrowKeyMode) {
-                case ANSI:
-                    return xtermBuildKeySequence("\033[", '3', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT52:
-                    return xtermBuildKeySequence("\033", '3', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                case VT100:
-                    return xtermBuildKeySequence("\033O", '3', '~',
-                        keypress.isCtrl(), keypress.isAlt(),
-                        keypress.isShift());
-                }
+                return xtermBuildKeySequence("\033[", '3', '~',
+                    keypress.isCtrl(), keypress.isAlt(),
+                    keypress.isShift());
             default:
                 // Delete sends real delete for VTxxx
                 return "\177";
