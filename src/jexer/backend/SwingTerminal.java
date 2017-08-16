@@ -36,6 +36,7 @@ import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
@@ -50,7 +51,6 @@ import java.awt.event.WindowListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -241,10 +241,21 @@ public final class SwingTerminal extends LogicalScreen
     private CursorStyle cursorStyle = CursorStyle.UNDERLINE;
 
     /**
-     * The number of millis to wait before switching the blink from
-     * visible to invisible.
+     * The number of millis to wait before switching the blink from visible
+     * to invisible.  Set to 0 or negative to disable blinking.
      */
     private long blinkMillis = 500;
+
+    /**
+     * Get the number of millis to wait before switching the blink from
+     * visible to invisible.
+     *
+     * @return the number of milli to wait before switching the blink from
+     * visible to invisible
+     */
+    public long getBlinkMillis() {
+        return blinkMillis;
+    }
 
     /**
      * If true, the cursor should be visible right now based on the blink
@@ -663,9 +674,7 @@ public final class SwingTerminal extends LogicalScreen
      * Reset the blink timer.
      */
     private void resetBlinkTimer() {
-        // See if it is time to flip the blink time.
-        long nowTime = (new Date()).getTime();
-        lastBlinkTime = nowTime;
+        lastBlinkTime = System.currentTimeMillis();
         cursorBlinkVisible = true;
     }
 
@@ -678,21 +687,12 @@ public final class SwingTerminal extends LogicalScreen
 
         if (gotFontDimensions == false) {
             // Lazy-load the text width/height
-            // System.err.println("calling getFontDimensions...");
             getFontDimensions(gr);
             /*
             System.err.println("textWidth " + textWidth +
                 " textHeight " + textHeight);
             System.err.println("FONT: " + swing.getFont() + " font " + font);
              */
-            // resizeToScreen();
-        }
-
-        // See if it is time to flip the blink time.
-        long nowTime = (new Date()).getTime();
-        if (nowTime > blinkMillis + lastBlinkTime) {
-            lastBlinkTime = nowTime;
-            cursorBlinkVisible = !cursorBlinkVisible;
         }
 
         int xCellMin = 0;
@@ -762,7 +762,6 @@ public final class SwingTerminal extends LogicalScreen
             }
             drawCursor(gr);
 
-            dirty = false;
             reallyCleared = false;
         } // synchronized (this)
     }
@@ -779,9 +778,39 @@ public final class SwingTerminal extends LogicalScreen
      */
     @Override
     public void flushPhysical() {
+        // See if it is time to flip the blink time.
+        long nowTime = System.currentTimeMillis();
+        if (nowTime >= blinkMillis + lastBlinkTime) {
+            lastBlinkTime = nowTime;
+            cursorBlinkVisible = !cursorBlinkVisible;
+            // System.err.println("New lastBlinkTime: " + lastBlinkTime);
+        }
+
+        if ((swing.getFrame() != null)
+            && (swing.getBufferStrategy() != null)
+        ) {
+            do {
+                do {
+                    drawToSwing();
+                } while (swing.getBufferStrategy().contentsRestored());
+
+                swing.getBufferStrategy().show();
+                Toolkit.getDefaultToolkit().sync();
+            } while (swing.getBufferStrategy().contentsLost());
+
+        } else {
+            // Non-triple-buffered, call drawToSwing() once
+            drawToSwing();
+        }
+    }
+
+    /**
+     * Push the logical screen to the physical device.
+     */
+    private void drawToSwing() {
 
         /*
-        System.err.printf("flushPhysical(): reallyCleared %s dirty %s\n",
+        System.err.printf("drawToSwing(): reallyCleared %s dirty %s\n",
             reallyCleared, dirty);
         */
 
@@ -795,8 +824,7 @@ public final class SwingTerminal extends LogicalScreen
             swing.paint(gr);
             gr.dispose();
             swing.getBufferStrategy().show();
-            // sync() doesn't seem to help the tearing for me.
-            // Toolkit.getDefaultToolkit().sync();
+            Toolkit.getDefaultToolkit().sync();
             return;
         } else if (((swing.getFrame() != null)
                 && (swing.getBufferStrategy() == null))
@@ -808,19 +836,7 @@ public final class SwingTerminal extends LogicalScreen
             return;
         }
 
-        // Do nothing if nothing happened.
-        if (!dirty) {
-            return;
-        }
-
         if ((swing.getFrame() != null) && (swing.getBufferStrategy() != null)) {
-            // See if it is time to flip the blink time.
-            long nowTime = (new Date()).getTime();
-            if (nowTime > blinkMillis + lastBlinkTime) {
-                lastBlinkTime = nowTime;
-                cursorBlinkVisible = !cursorBlinkVisible;
-            }
-
             Graphics gr = swing.getBufferStrategy().getDrawGraphics();
 
             synchronized (this) {
@@ -848,8 +864,7 @@ public final class SwingTerminal extends LogicalScreen
 
             gr.dispose();
             swing.getBufferStrategy().show();
-            // sync() doesn't seem to help the tearing for me.
-            // Toolkit.getDefaultToolkit().sync();
+            Toolkit.getDefaultToolkit().sync();
             return;
         }
 
@@ -916,48 +931,11 @@ public final class SwingTerminal extends LogicalScreen
             swing.paint(gr);
             gr.dispose();
             swing.getBufferStrategy().show();
-            // sync() doesn't seem to help the tearing for me.
-            // Toolkit.getDefaultToolkit().sync();
+            Toolkit.getDefaultToolkit().sync();
         } else {
             // Repaint on the Swing thread.
             swing.repaint(xMin, yMin, xMax - xMin, yMax - yMin);
         }
-    }
-
-    /**
-     * Put the cursor at (x,y).
-     *
-     * @param visible if true, the cursor should be visible
-     * @param x column coordinate to put the cursor on
-     * @param y row coordinate to put the cursor on
-     */
-    @Override
-    public void putCursor(final boolean visible, final int x, final int y) {
-
-        if ((visible == cursorVisible) && ((x == cursorX) && (y == cursorY))) {
-            // See if it is time to flip the blink time.
-            long nowTime = (new Date()).getTime();
-            if (nowTime < blinkMillis + lastBlinkTime) {
-                // Nothing has changed, so don't do anything.
-                return;
-            }
-        }
-
-        if (cursorVisible
-            && (cursorY >= 0)
-            && (cursorX >= 0)
-            && (cursorY <= height - 1)
-            && (cursorX <= width - 1)
-        ) {
-            // Make the current cursor position dirty
-            if (physical[cursorX][cursorY].getChar() == 'Q') {
-                physical[cursorX][cursorY].setChar('X');
-            } else {
-                physical[cursorX][cursorY].setChar('Q');
-            }
-        }
-
-        super.putCursor(visible, x, y);
     }
 
     /**
@@ -1264,6 +1242,9 @@ public final class SwingTerminal extends LogicalScreen
                     };
                     component.setLayout(new BorderLayout());
                     component.add(newComponent);
+
+                    // Allow key events to be received
+                    component.setFocusable(true);
 
                     // Get the Swing component
                     SwingTerminal.this.swing = new SwingComponent(component);

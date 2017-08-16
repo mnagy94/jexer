@@ -84,6 +84,7 @@ public class Demo6 {
              * one demo application spanning two physical screens.
              */
             multiBackend.addBackend(swingBackend);
+            multiBackend.setListener(demoApp);
 
             /*
              * Time for the second application.  This one will have a single

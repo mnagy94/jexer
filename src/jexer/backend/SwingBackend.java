@@ -136,4 +136,15 @@ public final class SwingBackend extends GenericBackend {
         ((SwingTerminal) terminal).setFont(font);
     }
 
+    /**
+     * Get the number of millis to wait before switching the blink from
+     * visible to invisible.
+     *
+     * @return the number of milli to wait before switching the blink from
+     * visible to invisible
+     */
+    public long getBlinkMillis() {
+        return ((SwingTerminal) terminal).getBlinkMillis();
+    }
+
 }

@@ -31,7 +31,6 @@ package jexer.backend;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.Date;
 import java.util.StringTokenizer;
 
 /**
@@ -64,7 +63,7 @@ public final class TTYSessionInfo implements SessionInfo {
     /**
      * Time at which the window size was refreshed.
      */
-    private Date lastQueryWindowTime;
+    private long lastQueryWindowTime;
 
     /**
      * Username getter.
@@ -180,11 +179,11 @@ public final class TTYSessionInfo implements SessionInfo {
      * Re-query the text window size.
      */
     public void queryWindowSize() {
-        if (lastQueryWindowTime == null) {
-            lastQueryWindowTime = new Date();
+        if (lastQueryWindowTime == 0) {
+            lastQueryWindowTime = System.currentTimeMillis();
         } else {
-            Date now = new Date();
-            if (now.getTime() - lastQueryWindowTime.getTime() < 3000) {
+            long nowTime = System.currentTimeMillis();
+            if (nowTime - lastQueryWindowTime < 3000) {
                 // Don't re-spawn stty, it's been too soon.
                 return;
             }

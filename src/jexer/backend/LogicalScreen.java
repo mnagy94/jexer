@@ -178,18 +178,26 @@ public class LogicalScreen implements Screen {
     protected Cell [][] logical;
 
     /**
-     * When true, logical != physical.
-     */
-    protected volatile boolean dirty;
-
-    /**
      * Get dirty flag.
      *
      * @return if true, the logical screen is not in sync with the physical
      * screen
      */
     public final boolean isDirty() {
-        return dirty;
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                if (!logical[x][y].equals(physical[x][y])) {
+                    return true;
+                }
+                if (logical[x][y].isBlink()) {
+                    // Blinking screens are always dirty.  There is
+                    // opportunity for a Netscape blink tag joke here...
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -284,14 +292,7 @@ public class LogicalScreen implements Screen {
         }
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
-            dirty = true;
-            logical[X][Y].setForeColor(attr.getForeColor());
-            logical[X][Y].setBackColor(attr.getBackColor());
-            logical[X][Y].setBold(attr.isBold());
-            logical[X][Y].setBlink(attr.isBlink());
-            logical[X][Y].setReverse(attr.isReverse());
-            logical[X][Y].setUnderline(attr.isUnderline());
-            logical[X][Y].setProtect(attr.isProtect());
+            logical[X][Y].setTo(attr);
         }
     }
 
@@ -346,20 +347,13 @@ public class LogicalScreen implements Screen {
         // System.err.printf("putCharXY: %d, %d, %c\n", X, Y, ch);
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
-            dirty = true;
 
             // Do not put control characters on the display
             assert (ch >= 0x20);
             assert (ch != 0x7F);
 
+            logical[X][Y].setTo(attr);
             logical[X][Y].setChar(ch);
-            logical[X][Y].setForeColor(attr.getForeColor());
-            logical[X][Y].setBackColor(attr.getBackColor());
-            logical[X][Y].setBold(attr.isBold());
-            logical[X][Y].setBlink(attr.isBlink());
-            logical[X][Y].setReverse(attr.isReverse());
-            logical[X][Y].setUnderline(attr.isUnderline());
-            logical[X][Y].setProtect(attr.isProtect());
         }
     }
 
@@ -386,7 +380,6 @@ public class LogicalScreen implements Screen {
         // System.err.printf("putCharXY: %d, %d, %c\n", X, Y, ch);
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
-            dirty = true;
             logical[X][Y].setChar(ch);
         }
     }
@@ -510,7 +503,6 @@ public class LogicalScreen implements Screen {
         clipBottom = height;
 
         reallyCleared = true;
-        dirty = true;
     }
 
     /**
@@ -580,7 +572,6 @@ public class LogicalScreen implements Screen {
      * clip variables.
      */
     public final synchronized void reset() {
-        dirty = true;
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
                 logical[col][row].reset();
@@ -612,7 +603,6 @@ public class LogicalScreen implements Screen {
      * Clear the physical screen.
      */
     public final void clearPhysical() {
-        dirty = true;
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
                 physical[col][row].reset();
@@ -773,6 +763,18 @@ public class LogicalScreen implements Screen {
      * @param y row coordinate to put the cursor on
      */
     public void putCursor(final boolean visible, final int x, final int y) {
+        if ((cursorY >= 0)
+            && (cursorX >= 0)
+            && (cursorY <= height - 1)
+            && (cursorX <= width - 1)
+        ) {
+            // Make the current cursor position dirty
+            if (physical[cursorX][cursorY].getChar() == 'Q') {
+                physical[cursorX][cursorY].setChar('X');
+            } else {
+                physical[cursorX][cursorY].setChar('Q');
+            }
+        }
 
         cursorVisible = visible;
         cursorX = x;

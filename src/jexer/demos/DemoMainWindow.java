@@ -197,6 +197,8 @@ public class DemoMainWindow extends TWindow {
                     timerLabel.setWidth(timerLabel.getLabel().length());
                     if (timerI < 100) {
                         timerI++;
+                    } else {
+                        timer.setRecurring(false);
                     }
                     progressBar.setValue(timerI);
                 }

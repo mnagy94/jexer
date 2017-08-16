@@ -52,6 +52,7 @@ import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.backend.Backend;
 import jexer.backend.Screen;
+import jexer.backend.MultiBackend;
 import jexer.backend.SwingBackend;
 import jexer.backend.ECMA48Backend;
 import jexer.backend.TWindowBackend;
@@ -145,6 +146,7 @@ public class TApplication implements Runnable {
          * The consumer loop.
          */
         public void run() {
+            boolean first = true;
 
             // Loop forever
             while (!application.quit) {
@@ -158,44 +160,52 @@ public class TApplication implements Runnable {
                             }
                         }
 
-                        synchronized (this) {
-                            if (debugThreads) {
-                                System.err.printf("%s %s sleep\n", this,
-                                    primary ? "primary" : "secondary");
-                            }
+                        long timeout = 0;
+                        if (first) {
+                            first = false;
+                        } else {
+                            timeout = application.getSleepTime(1000);
+                        }
 
-                            this.wait();
-
-                            if (debugThreads) {
-                                System.err.printf("%s %s AWAKE\n", this,
-                                    primary ? "primary" : "secondary");
-                            }
-
-                            if ((!primary)
-                                && (application.secondaryEventReceiver == null)
-                            ) {
-                                // Secondary thread, emergency exit.  If we
-                                // got here then something went wrong with
-                                // the handoff between yield() and
-                                // closeWindow().
-                                synchronized (application.primaryEventHandler) {
-                                    application.primaryEventHandler.notify();
-                                }
-                                application.secondaryEventHandler = null;
-                                throw new RuntimeException(
-                                        "secondary exited at wrong time");
-                            }
+                        if (timeout == 0) {
+                            // A timer needs to fire, break out.
                             break;
                         }
+
+                        if (debugThreads) {
+                            System.err.printf("%d %s %s sleep %d millis\n",
+                                System.currentTimeMillis(), this,
+                                primary ? "primary" : "secondary", timeout);
+                        }
+
+                        synchronized (this) {
+                            this.wait(timeout);
+                        }
+
+                        if (debugThreads) {
+                            System.err.printf("%d %s %s AWAKE\n",
+                                System.currentTimeMillis(), this,
+                                primary ? "primary" : "secondary");
+                        }
+
+                        if ((!primary)
+                            && (application.secondaryEventReceiver == null)
+                        ) {
+                            // Secondary thread, emergency exit.  If we got
+                            // here then something went wrong with the
+                            // handoff between yield() and closeWindow().
+                            synchronized (application.primaryEventHandler) {
+                                application.primaryEventHandler.notify();
+                            }
+                            application.secondaryEventHandler = null;
+                            throw new RuntimeException("secondary exited " +
+                                "at wrong time");
+                        }
+                        break;
                     } catch (InterruptedException e) {
                         // SQUASH
                     }
-                }
-
-                // Wait for drawAll() or doIdle() to be done, then handle the
-                // events.
-                boolean oldLock = lockHandleEvent();
-                assert (oldLock == false);
+                } // while (!application.quit)
 
                 // Pull all events off the queue
                 for (;;) {
@@ -206,7 +216,11 @@ public class TApplication implements Runnable {
                         }
                         event = application.drainEventQueue.remove(0);
                     }
+
+                    // We will have an event to process, so repaint the
+                    // screen at the end.
                     application.repaint = true;
+
                     if (primary) {
                         primaryHandleEvent(event);
                     } else {
@@ -230,17 +244,12 @@ public class TApplication implements Runnable {
                         // All done!
                         return;
                     }
+
                 } // for (;;)
 
-                // Unlock.  Either I am primary thread, or I am secondary
-                // thread and still running.
-                oldLock = unlockHandleEvent();
-                assert (oldLock == true);
-
-                // I have done some work of some kind.  Tell the main run()
-                // loop to wake up now.
-                synchronized (application) {
-                    application.notify();
+                // Fire timers, update screen.
+                if (!quit) {
+                    application.finishEventProcessing();
                 }
 
             } // while (true) (main runnable loop)
@@ -263,12 +272,6 @@ public class TApplication implements Runnable {
     private volatile TWidget secondaryEventReceiver;
 
     /**
-     * Spinlock for the primary and secondary event handlers.
-     * WidgetEventHandler.run() is responsible for setting this value.
-     */
-    private volatile boolean insideHandleEvent = false;
-
-    /**
      * Wake the sleeping active event handler.
      */
     private void wakeEventHandler() {
@@ -282,104 +285,6 @@ public class TApplication implements Runnable {
                 primaryEventHandler.notify();
             }
         }
-    }
-
-    /**
-     * Set the insideHandleEvent flag to true.  lockoutEventHandlers() will
-     * spin indefinitely until unlockHandleEvent() is called.
-     *
-     * @return the old value of insideHandleEvent
-     */
-    private boolean lockHandleEvent() {
-        if (debugThreads) {
-            System.err.printf("  >> lockHandleEvent(): oldValue %s",
-                insideHandleEvent);
-        }
-        boolean oldValue = true;
-
-        synchronized (this) {
-            // Wait for TApplication.run() to finish using the global state
-            // before allowing further event processing.
-            while (lockoutHandleEvent == true) {
-                try {
-                    // Backoff so that the backend can finish its work.
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    // SQUASH
-                }
-            }
-
-            oldValue = insideHandleEvent;
-            insideHandleEvent = true;
-        }
-
-        if (debugThreads) {
-            System.err.printf(" ***\n");
-        }
-        return oldValue;
-    }
-
-    /**
-     * Set the insideHandleEvent flag to false.  lockoutEventHandlers() will
-     * spin indefinitely until unlockHandleEvent() is called.
-     *
-     * @return the old value of insideHandleEvent
-     */
-    private boolean unlockHandleEvent() {
-        if (debugThreads) {
-            System.err.printf("  << unlockHandleEvent(): oldValue %s\n",
-                insideHandleEvent);
-        }
-        synchronized (this) {
-            boolean oldValue = insideHandleEvent;
-            insideHandleEvent = false;
-            return oldValue;
-        }
-    }
-
-    /**
-     * Spinlock for the primary and secondary event handlers.  When true, the
-     * event handlers will spinlock wait before calling handleEvent().
-     */
-    private volatile boolean lockoutHandleEvent = false;
-
-    /**
-     * TApplication.run() needs to be able rely on the global data structures
-     * being intact when calling doIdle() and drawAll().  Tell the event
-     * handlers to wait for an unlock before handling their events.
-     */
-    private void stopEventHandlers() {
-        if (debugThreads) {
-            System.err.printf(">> stopEventHandlers()");
-        }
-
-        lockoutHandleEvent = true;
-        // Wait for the last event to finish processing before returning
-        // control to TApplication.run().
-        while (insideHandleEvent == true) {
-            try {
-                // Backoff so that the event handler can finish its work.
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                // SQUASH
-            }
-        }
-
-        if (debugThreads) {
-            System.err.printf(" XXX\n");
-        }
-    }
-
-    /**
-     * TApplication.run() needs to be able rely on the global data structures
-     * being intact when calling doIdle() and drawAll().  Tell the event
-     * handlers that it is now OK to handle their events.
-     */
-    private void startEventHandlers() {
-        if (debugThreads) {
-            System.err.printf("<< startEventHandlers()\n");
-        }
-        lockoutHandleEvent = false;
     }
 
     // ------------------------------------------------------------------------
@@ -511,6 +416,14 @@ public class TApplication implements Runnable {
      * When true, repaint the entire screen.
      */
     private volatile boolean repaint = true;
+
+    /**
+     * Repaint the screen on the next update.
+     */
+    public void doRepaint() {
+        repaint = true;
+        wakeEventHandler();
+    }
 
     /**
      * Y coordinate of the top edge of the desktop.  For now this is a
@@ -748,14 +661,55 @@ public class TApplication implements Runnable {
         menuItems       = new ArrayList<TMenuItem>();
         desktop         = new TDesktop(this);
 
-        // Setup the main consumer thread
-        primaryEventHandler = new WidgetEventHandler(this, true);
-        (new Thread(primaryEventHandler)).start();
+        // Special case: the Swing backend needs to have a timer to drive its
+        // blink state.
+        if ((backend instanceof SwingBackend)
+            || (backend instanceof MultiBackend)
+        ) {
+            // Default to 500 millis, unless a SwingBackend has its own
+            // value.
+            long millis = 500;
+            if (backend instanceof SwingBackend) {
+                millis = ((SwingBackend) backend).getBlinkMillis();
+            }
+            if (millis > 0) {
+                addTimer(millis, true,
+                    new TAction() {
+                        public void DO() {
+                            TApplication.this.doRepaint();
+                        }
+                    }
+                );
+            }
+        }
     }
 
     // ------------------------------------------------------------------------
     // Screen refresh loop ----------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Process background events, and update the screen.
+     */
+    private void finishEventProcessing() {
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " finishEventProcessing()\n");
+        }
+
+        // Process timers and call doIdle()'s
+        doIdle();
+
+        // Update the screen
+        synchronized (getScreen()) {
+            drawAll();
+        }
+
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " finishEventProcessing() END\n");
+        }
+    }
 
     /**
      * Invert the cell color at a position.  This is used to track the mouse.
@@ -765,7 +719,8 @@ public class TApplication implements Runnable {
      */
     private void invertCell(final int x, final int y) {
         if (debugThreads) {
-            System.err.printf("invertCell() %d %d\n", x, y);
+            System.err.printf("%d %s invertCell() %d %d\n",
+                System.currentTimeMillis(), Thread.currentThread(), x, y);
         }
         CellAttributes attr = getScreen().getAttrXY(x, y);
         attr.setForeColor(attr.getForeColor().invert());
@@ -778,12 +733,14 @@ public class TApplication implements Runnable {
      */
     private void drawAll() {
         if (debugThreads) {
-            System.err.printf("drawAll() enter\n");
+            System.err.printf("%d %s drawAll() enter\n",
+                System.currentTimeMillis(), Thread.currentThread());
         }
 
         if (!repaint) {
             if (debugThreads) {
-                System.err.printf("drawAll() !repaint\n");
+                System.err.printf("%d %s drawAll() !repaint\n",
+                    System.currentTimeMillis(), Thread.currentThread());
             }
             synchronized (getScreen()) {
                 if ((oldMouseX != mouseX) || (oldMouseY != mouseY)) {
@@ -802,7 +759,8 @@ public class TApplication implements Runnable {
         }
 
         if (debugThreads) {
-            System.err.printf("drawAll() REDRAW\n");
+            System.err.printf("%d %s drawAll() REDRAW\n",
+                System.currentTimeMillis(), Thread.currentThread());
         }
 
         // If true, the cursor is not visible
@@ -897,9 +855,19 @@ public class TApplication implements Runnable {
         if (sorted.size() > 0) {
             activeWidget = sorted.get(sorted.size() - 1).getActiveChild();
             if (activeWidget.isCursorVisible()) {
-                getScreen().putCursor(true, activeWidget.getCursorAbsoluteX(),
-                    activeWidget.getCursorAbsoluteY());
-                cursor = true;
+                if ((activeWidget.getCursorAbsoluteY() < desktopBottom)
+                    && (activeWidget.getCursorAbsoluteY() > desktopTop)
+                ) {
+                    getScreen().putCursor(true,
+                        activeWidget.getCursorAbsoluteX(),
+                        activeWidget.getCursorAbsoluteY());
+                    cursor = true;
+                } else {
+                    getScreen().putCursor(false,
+                        activeWidget.getCursorAbsoluteX(),
+                        activeWidget.getCursorAbsoluteY());
+                    cursor = false;
+                }
             }
         }
 
@@ -925,85 +893,72 @@ public class TApplication implements Runnable {
      */
     public void exit() {
         quit = true;
+        synchronized (this) {
+            this.notify();
+        }
     }
 
     /**
      * Run this application until it exits.
      */
     public void run() {
-        boolean first = true;
+        // Start the main consumer thread
+        primaryEventHandler = new WidgetEventHandler(this, true);
+        (new Thread(primaryEventHandler)).start();
 
         while (!quit) {
-            // Timeout is in milliseconds, so default timeout after 1 second
-            // of inactivity.
-            long timeout = 1000;
-            if (first) {
-                first = false;
-                timeout = 0;
-            }
+            synchronized (this) {
+                boolean doWait = false;
 
-            // If I've got no updates to render, wait for something from the
-            // backend or a timer.
-            if (!repaint
-                && ((mouseX == oldMouseX) && (mouseY == oldMouseY))
-            ) {
-                // Never sleep longer than 50 millis.  We need time for
-                // windows with background tasks to update the display, and
-                // still flip buffers reasonably quickly in
-                // backend.flushPhysical().
-                timeout = getSleepTime(50);
-            }
-
-            if (timeout > 0) {
-                // As of now, I've got nothing to do: no I/O, nothing from
-                // the consumer threads, no timers that need to run ASAP.  So
-                // wait until either the backend or the consumer threads have
-                // something to do.
-                try {
-                    if (debugThreads) {
-                        System.err.println("sleep " + timeout + " millis");
+                synchronized (fillEventQueue) {
+                    if (fillEventQueue.size() == 0) {
+                        doWait = true;
                     }
-                    synchronized (this) {
-                        this.wait(timeout);
+                }
+
+                if (doWait) {
+                    // No I/O to dispatch, so wait until the backend
+                    // provides new I/O.
+                    try {
+                        if (debugThreads) {
+                            System.err.println(System.currentTimeMillis() +
+                                " MAIN sleep");
+                        }
+
+                        this.wait();
+
+                        if (debugThreads) {
+                            System.err.println(System.currentTimeMillis() +
+                                " MAIN AWAKE");
+                        }
+                    } catch (InterruptedException e) {
+                        // I'm awake and don't care why, let's see what's
+                        // going on out there.
                     }
-                } catch (InterruptedException e) {
-                    // I'm awake and don't care why, let's see what's going
-                    // on out there.
                 }
-                repaint = true;
-            }
 
-            // Prevent stepping on the primary or secondary event handler.
-            stopEventHandlers();
+            } // synchronized (this)
 
-            // Pull any pending I/O events
-            backend.getEvents(fillEventQueue);
+            synchronized (fillEventQueue) {
+                // Pull any pending I/O events
+                backend.getEvents(fillEventQueue);
 
-            // Dispatch each event to the appropriate handler, one at a time.
-            for (;;) {
-                TInputEvent event = null;
-                if (fillEventQueue.size() == 0) {
-                    break;
+                // Dispatch each event to the appropriate handler, one at a
+                // time.
+                for (;;) {
+                    TInputEvent event = null;
+                    if (fillEventQueue.size() == 0) {
+                        break;
+                    }
+                    event = fillEventQueue.remove(0);
+                    metaHandleEvent(event);
                 }
-                event = fillEventQueue.remove(0);
-                metaHandleEvent(event);
             }
 
             // Wake a consumer thread if we have any pending events.
             if (drainEventQueue.size() > 0) {
                 wakeEventHandler();
             }
-
-            // Process timers and call doIdle()'s
-            doIdle();
-
-            // Update the screen
-            synchronized (getScreen()) {
-                drawAll();
-            }
-
-            // Let the event handlers run again.
-            startEventHandlers();
 
         } // while (!quit)
 
@@ -1053,32 +1008,34 @@ public class TApplication implements Runnable {
         if (event instanceof TCommandEvent) {
             TCommandEvent command = (TCommandEvent) event;
             if (command.getCmd().equals(cmAbort)) {
-                quit = true;
+                exit();
                 return;
             }
         }
 
-        // Screen resize
-        if (event instanceof TResizeEvent) {
-            TResizeEvent resize = (TResizeEvent) event;
-            synchronized (getScreen()) {
-                getScreen().setDimensions(resize.getWidth(),
-                    resize.getHeight());
-                desktopBottom = getScreen().getHeight() - 1;
-                mouseX = 0;
-                mouseY = 0;
-                oldMouseX = 0;
-                oldMouseY = 0;
+        synchronized (drainEventQueue) {
+            // Screen resize
+            if (event instanceof TResizeEvent) {
+                TResizeEvent resize = (TResizeEvent) event;
+                synchronized (getScreen()) {
+                    getScreen().setDimensions(resize.getWidth(),
+                        resize.getHeight());
+                    desktopBottom = getScreen().getHeight() - 1;
+                    mouseX = 0;
+                    mouseY = 0;
+                    oldMouseX = 0;
+                    oldMouseY = 0;
+                }
+                if (desktop != null) {
+                    desktop.setDimensions(0, 0, resize.getWidth(),
+                        resize.getHeight() - 1);
+                }
+                return;
             }
-            if (desktop != null) {
-                desktop.setDimensions(0, 0, resize.getWidth(),
-                    resize.getHeight() - 1);
-            }
-            return;
-        }
 
-        // Put into the main queue
-        drainEventQueue.add(event);
+            // Put into the main queue
+            drainEventQueue.add(event);
+        }
     }
 
     /**
@@ -1262,12 +1219,18 @@ public class TApplication implements Runnable {
      * @param widget widget that will receive events
      */
     public final void enableSecondaryEventReceiver(final TWidget widget) {
+        if (debugThreads) {
+            System.err.println(System.currentTimeMillis() +
+                " enableSecondaryEventReceiver()");
+        }
+
         assert (secondaryEventReceiver == null);
         assert (secondaryEventHandler == null);
         assert ((widget instanceof TMessageBox)
             || (widget instanceof TFileOpenBox));
         secondaryEventReceiver = widget;
         secondaryEventHandler = new WidgetEventHandler(this, false);
+
         (new Thread(secondaryEventHandler)).start();
     }
 
@@ -1276,12 +1239,6 @@ public class TApplication implements Runnable {
      */
     public final void yield() {
         assert (secondaryEventReceiver != null);
-        // This is where we handoff the event handler lock from the primary
-        // to secondary thread.  We unlock here, and in a future loop the
-        // secondary thread locks again.  When it gives up, we have the
-        // single lock back.
-        boolean oldLock = unlockHandleEvent();
-        assert (oldLock);
 
         while (secondaryEventReceiver != null) {
             synchronized (primaryEventHandler) {
@@ -1299,23 +1256,34 @@ public class TApplication implements Runnable {
      */
     private void doIdle() {
         if (debugThreads) {
-            System.err.printf("doIdle()\n");
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " doIdle()\n");
         }
 
-        // Now run any timers that have timed out
-        Date now = new Date();
-        List<TTimer> keepTimers = new LinkedList<TTimer>();
-        for (TTimer timer: timers) {
-            if (timer.getNextTick().getTime() <= now.getTime()) {
-                timer.tick();
-                if (timer.recurring) {
+        synchronized (timers) {
+
+            if (debugThreads) {
+                System.err.printf(System.currentTimeMillis() + " " +
+                    Thread.currentThread() + " doIdle() 2\n");
+            }
+
+            // Run any timers that have timed out
+            Date now = new Date();
+            List<TTimer> keepTimers = new LinkedList<TTimer>();
+            for (TTimer timer: timers) {
+                if (timer.getNextTick().getTime() <= now.getTime()) {
+                    // Something might change, so repaint the screen.
+                    repaint = true;
+                    timer.tick();
+                    if (timer.recurring) {
+                        keepTimers.add(timer);
+                    }
+                } else {
                     keepTimers.add(timer);
                 }
-            } else {
-                keepTimers.add(timer);
             }
+            timers = keepTimers;
         }
-        timers = keepTimers;
 
         // Call onIdle's
         for (TWindow window: windows) {
@@ -2322,10 +2290,17 @@ public class TApplication implements Runnable {
      * @param event new event to add to the queue
      */
     public final void postMenuEvent(final TInputEvent event) {
-        synchronized (fillEventQueue) {
-            fillEventQueue.add(event);
+        synchronized (this) {
+            synchronized (fillEventQueue) {
+                fillEventQueue.add(event);
+            }
+            if (debugThreads) {
+                System.err.println(System.currentTimeMillis() + " " +
+                    Thread.currentThread() + " postMenuEvent() wake up main");
+            }
+            closeMenu();
+            this.notify();
         }
-        closeMenu();
     }
 
     /**
@@ -2444,7 +2419,7 @@ public class TApplication implements Runnable {
         if (command.equals(cmExit)) {
             if (messageBox("Confirmation", "Exit application?",
                     TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
-                quit = true;
+                exit();
             }
             return true;
         }
@@ -2493,7 +2468,7 @@ public class TApplication implements Runnable {
         if (menu.getId() == TMenu.MID_EXIT) {
             if (messageBox("Confirmation", "Exit application?",
                     TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
-                quit = true;
+                exit();
             }
             return true;
         }
@@ -2569,17 +2544,21 @@ public class TApplication implements Runnable {
         Date now = new Date();
         long nowTime = now.getTime();
         long sleepTime = timeout;
-        for (TTimer timer: timers) {
-            long nextTickTime = timer.getNextTick().getTime();
-            if (nextTickTime < nowTime) {
-                return 0;
-            }
 
-            long timeDifference = nextTickTime - nowTime;
-            if (timeDifference < sleepTime) {
-                sleepTime = timeDifference;
+        synchronized (timers) {
+            for (TTimer timer: timers) {
+                long nextTickTime = timer.getNextTick().getTime();
+                if (nextTickTime < nowTime) {
+                    return 0;
+                }
+
+                long timeDifference = nextTickTime - nowTime;
+                if (timeDifference < sleepTime) {
+                    sleepTime = timeDifference;
+                }
             }
         }
+
         assert (sleepTime >= 0);
         assert (sleepTime <= timeout);
         return sleepTime;

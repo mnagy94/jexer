@@ -182,7 +182,12 @@ public class MultiScreen implements Screen {
      * screen
      */
     public boolean isDirty() {
-        return screens.get(0).isDirty();
+        for (Screen screen: screens) {
+            if (screen.isDirty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

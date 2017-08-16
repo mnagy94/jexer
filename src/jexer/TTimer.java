@@ -61,6 +61,15 @@ public final class TTimer {
     }
 
     /**
+     * Set the recurring flag.
+     *
+     * @param recurring if true, re-schedule this timer after every tick
+     */
+    public void setRecurring(final boolean recurring) {
+        this.recurring = recurring;
+    }
+
+    /**
      * The action to perfom on a tick.
      */
     private TAction action;

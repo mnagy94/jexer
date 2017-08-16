@@ -303,6 +303,21 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * The enclosing listening object.
+     */
+    private DisplayListener listener;
+
+    /**
+     * Set a listening object.
+     *
+     * @param listener the object that will have displayChanged() called
+     * after bytes are received from the remote terminal
+     */
+    public void setListener(final DisplayListener listener) {
+        this.listener = listener;
+    }
+
+    /**
      * When true, the reader thread is expected to exit.
      */
     private volatile boolean stopReaderThread = false;
@@ -6023,6 +6038,10 @@ public class ECMA48 implements Runnable {
                             // Don't step on UI events
                             consume((char)ch);
                         }
+                    }
+                    // Permit my enclosing UI to know that I updated.
+                    if (listener != null) {
+                        listener.displayChanged();
                     }
                 }
                 // System.err.println("end while loop"); System.err.flush();

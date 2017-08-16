@@ -1,6 +1,46 @@
 Jexer Work Log
 ==============
 
+August 16, 2017
+
+Holy balls this has gotten so much faster!  It is FINALLY visibly
+identical in speed to the original d-tui: on xterm it is glass
+smooth.  CPU load is about +/- 10%, idling around 5%.
+
+I had to dramatically rework the event processing order, but now it
+makes much more sense.  TApplication.run()'s sole job is to listen for
+backend I/O, push it into drainEventQueue, and wake up the consumer
+thread.  The consumer thread's run() has the job of dealing with the
+event, AND THEN calling doIdles and updating the screen.  That was the
+big breakthrough: why bother having main thread do screen updates?  It
+just leads to contention everywhere as it tries to tell the consumer
+thread to lay off its data structures, when in reality the consumer
+thread should have been the real owner of those structures in the
+first place!  This was mainly an artifact of the d-tui fiber threading
+design.
+
+So now we have nice flow of events:
+
+* I/O enters the backend, backend wakes up main thread.
+
+* Main thread grabs events, wakes up consumer thread.
+
+* Consumer thread does work, updates screen.
+
+* Anyone can call doRepaint() to get a screen update shortly
+  thereafter.
+
+* Same flow for TTerminalWindow: ECMA48 gets remote I/O, calls back
+  into TTerminalWindow, which then calls doRepaint().  So in this case
+  we have a completely external thread asking for a screen update, and
+  it is working.
+
+Along the way I also eliminated the Screen.dirty flag and cut out
+calls to CellAttribute checks.  Overall we now have about 80% less CPU
+being burned and way less latency.  Both HPROF samples and times puts
+my code at roughly 5% of the total, all the rest is the
+sleeping/locking infrastructure.
+
 August 15, 2017
 
 I cut 0.0.5 just now, and also applied for a Sonatype repository.

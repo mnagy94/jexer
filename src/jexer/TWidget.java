@@ -550,6 +550,13 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
     }
 
+    /**
+     * Repaint the screen on the next update.
+     */
+    public void doRepaint() {
+        window.getApplication().doRepaint();
+    }
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -990,7 +997,8 @@ public abstract class TWidget implements Comparable<TWidget> {
 
     /**
      * Method that subclasses can override to do processing when the UI is
-     * idle.
+     * idle.  Note that repainting is NOT assumed.  To get a refresh after
+     * onIdle, call doRepaint().
      */
     public void onIdle() {
         // Default: do nothing, pass to children instead

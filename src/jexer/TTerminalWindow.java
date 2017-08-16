@@ -40,13 +40,15 @@ import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.tterminal.DisplayLine;
+import jexer.tterminal.DisplayListener;
 import jexer.tterminal.ECMA48;
 import static jexer.TKeypress.*;
 
 /**
  * TTerminalWindow exposes a ECMA-48 / ANSI X3.64 style terminal in a window.
  */
-public class TTerminalWindow extends TScrollableWindow {
+public class TTerminalWindow extends TScrollableWindow
+                             implements DisplayListener {
 
     /**
      * The emulator.
@@ -185,6 +187,7 @@ public class TTerminalWindow extends TScrollableWindow {
             shell = pb.start();
             emulator = new ECMA48(deviceType, shell.getInputStream(),
                 shell.getOutputStream());
+            emulator.setListener(this);
         } catch (IOException e) {
             messageBox("Error", "Error launching shell: " + e.getMessage());
         }
@@ -321,6 +324,13 @@ public class TTerminalWindow extends TScrollableWindow {
 
         } // synchronized (emulator)
 
+    }
+
+    /**
+     * Called by emulator when fresh data has come in.
+     */
+    public void displayChanged() {
+        doRepaint();
     }
 
     /**

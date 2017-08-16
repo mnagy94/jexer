@@ -40,7 +40,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.LinkedList;
 
@@ -712,11 +711,6 @@ public final class ECMA48Terminal extends LogicalScreen
      * physical screen
      */
     private String flushString() {
-        if (!dirty) {
-            assert (!reallyCleared);
-            return "";
-        }
-
         CellAttributes attr = null;
 
         StringBuilder sb = new StringBuilder();
@@ -729,7 +723,6 @@ public final class ECMA48Terminal extends LogicalScreen
             flushLine(y, sb, attr);
         }
 
-        dirty = false;
         reallyCleared = false;
 
         String result = sb.toString();
@@ -1106,10 +1099,10 @@ public final class ECMA48Terminal extends LogicalScreen
      * @param queue list to append new events to
      */
     private void getIdleEvents(final List<TInputEvent> queue) {
-        Date now = new Date();
+        long nowTime = System.currentTimeMillis();
 
         // Check for new window size
-        long windowSizeDelay = now.getTime() - windowSizeTime;
+        long windowSizeDelay = nowTime - windowSizeTime;
         if (windowSizeDelay > 1000) {
             sessionInfo.queryWindowSize();
             int newWidth = sessionInfo.getWindowWidth();
@@ -1123,12 +1116,12 @@ public final class ECMA48Terminal extends LogicalScreen
                     newWidth, newHeight);
                 queue.add(event);
             }
-            windowSizeTime = now.getTime();
+            windowSizeTime = nowTime;
         }
 
         // ESCDELAY type timeout
         if (state == ParseState.ESCAPE) {
-            long escDelay = now.getTime() - escapeTime;
+            long escDelay = nowTime - escapeTime;
             if (escDelay > 100) {
                 // After 0.1 seconds, assume a true escape character
                 queue.add(controlChar((char)0x1B, false));
@@ -1192,9 +1185,9 @@ public final class ECMA48Terminal extends LogicalScreen
     private void processChar(final List<TInputEvent> events, final char ch) {
 
         // ESCDELAY type timeout
-        Date now = new Date();
+        long nowTime = System.currentTimeMillis();
         if (state == ParseState.ESCAPE) {
-            long escDelay = now.getTime() - escapeTime;
+            long escDelay = nowTime - escapeTime;
             if (escDelay > 250) {
                 // After 0.25 seconds, assume a true escape character
                 events.add(controlChar((char)0x1B, false));
@@ -1214,7 +1207,7 @@ public final class ECMA48Terminal extends LogicalScreen
 
             if (ch == 0x1B) {
                 state = ParseState.ESCAPE;
-                escapeTime = now.getTime();
+                escapeTime = nowTime;
                 return;
             }
 
