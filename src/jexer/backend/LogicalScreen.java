@@ -293,6 +293,16 @@ public class LogicalScreen implements Screen {
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
             logical[X][Y].setTo(attr);
+
+            // If this happens to be the cursor position, make the position
+            // dirty.
+            if ((cursorX == X) && (cursorY == Y)) {
+                if (physical[cursorX][cursorY].getChar() == 'Q') {
+                    physical[cursorX][cursorY].setChar('X');
+                } else {
+                    physical[cursorX][cursorY].setChar('Q');
+                }
+            }
         }
     }
 
@@ -354,6 +364,16 @@ public class LogicalScreen implements Screen {
 
             logical[X][Y].setTo(attr);
             logical[X][Y].setChar(ch);
+
+            // If this happens to be the cursor position, make the position
+            // dirty.
+            if ((cursorX == X) && (cursorY == Y)) {
+                if (physical[cursorX][cursorY].getChar() == 'Q') {
+                    physical[cursorX][cursorY].setChar('X');
+                } else {
+                    physical[cursorX][cursorY].setChar('Q');
+                }
+            }
         }
     }
 
@@ -381,6 +401,16 @@ public class LogicalScreen implements Screen {
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
             logical[X][Y].setChar(ch);
+
+            // If this happens to be the cursor position, make the position
+            // dirty.
+            if ((cursorX == X) && (cursorY == Y)) {
+                if (physical[cursorX][cursorY].getChar() == 'Q') {
+                    physical[cursorX][cursorY].setChar('X');
+                } else {
+                    physical[cursorX][cursorY].setChar('Q');
+                }
+            }
         }
     }
 

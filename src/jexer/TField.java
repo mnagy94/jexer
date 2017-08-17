@@ -218,7 +218,8 @@ public class TField extends TWidget {
     }
 
     /**
-     * Update the cursor position.
+     * Update the visible cursor position to match the location of position
+     * and windowStart.
      */
     protected void updateCursor() {
         if ((position > getWidth()) && fixed) {
@@ -228,6 +229,23 @@ public class TField extends TWidget {
         } else {
             setCursorX(position - windowStart);
         }
+    }
+
+    /**
+     * Normalize windowStart such that most of the field data if visible.
+     */
+    protected void normalizeWindowStart() {
+        if (fixed) {
+            // windowStart had better be zero, there is nothing to do here.
+            assert (windowStart == 0);
+            return;
+        }
+        windowStart = position - (getWidth() - 1);
+        if (windowStart < 0) {
+            windowStart = 0;
+        }
+
+        updateCursor();
     }
 
     /**
@@ -268,6 +286,7 @@ public class TField extends TWidget {
                     windowStart--;
                 }
             }
+            normalizeWindowStart();
             return;
         }
 
@@ -322,6 +341,7 @@ public class TField extends TWidget {
                 text = text.substring(0, position)
                         + text.substring(position + 1);
             }
+            dispatch(false);
             return;
         }
 
@@ -339,6 +359,7 @@ public class TField extends TWidget {
                 }
             }
             dispatch(false);
+            normalizeWindowStart();
             return;
         }
 

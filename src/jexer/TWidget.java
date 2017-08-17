@@ -302,6 +302,25 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @return if true, this widget has a visible cursor
      */
     public final boolean isCursorVisible() {
+        // If cursor is out of my bounds, it is not visible.
+        if ((cursorX >= width)
+            || (cursorX < 0)
+            || (cursorY >= height)
+            || (cursorY < 0)
+        ) {
+            return false;
+        }
+
+        // If cursor is out of my window's bounds, it is not visible.
+        if ((getCursorAbsoluteX() >= window.getAbsoluteX()
+                + window.getWidth() - 1)
+            || (getCursorAbsoluteX() < 0)
+            || (getCursorAbsoluteY() >= window.getAbsoluteY()
+                + window.getHeight() - 1)
+            || (getCursorAbsoluteY() < 0)
+        ) {
+            return false;
+        }
         return cursorVisible;
     }
 

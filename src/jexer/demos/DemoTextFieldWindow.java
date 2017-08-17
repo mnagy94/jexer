@@ -67,6 +67,9 @@ public class DemoTextFieldWindow extends TWindow {
         addPasswordField(35, row++, 15, false);
         addLabel("Fixed-width password:", 1, row);
         addPasswordField(35, row++, 15, true, "hunter2");
+        addLabel("Very long text field:", 1, row);
+        TField selected = addField(35, row++, 40, false,
+            "Very very long field text that should be outside the window");
         row += 1;
 
         addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
@@ -76,6 +79,8 @@ public class DemoTextFieldWindow extends TWindow {
                 }
             }
         );
+
+        activate(selected);
 
         statusBar = newStatusBar("Text fields");
         statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
