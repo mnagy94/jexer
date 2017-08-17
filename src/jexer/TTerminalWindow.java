@@ -354,7 +354,10 @@ public class TTerminalWindow extends TScrollableWindow
      * @return the number of columns in the display
      */
     public int getDisplayWidth() {
-        return getWidth() - 2;
+        if (ptypipe) {
+            return getWidth() - 2;
+        }
+        return 80;
     }
 
     /**
@@ -363,7 +366,10 @@ public class TTerminalWindow extends TScrollableWindow
      * @return the number of rows in the display
      */
     public int getDisplayHeight() {
-        return getHeight() - 2;
+        if (ptypipe) {
+            return getHeight() - 2;
+        }
+        return 24;
     }
 
     /**
