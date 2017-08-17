@@ -1107,9 +1107,18 @@ public final class ECMA48Terminal extends LogicalScreen
             sessionInfo.queryWindowSize();
             int newWidth = sessionInfo.getWindowWidth();
             int newHeight = sessionInfo.getWindowHeight();
+
             if ((newWidth != windowResize.getWidth())
                 || (newHeight != windowResize.getHeight())
             ) {
+
+                if (debugToStderr) {
+                    System.err.println("Screen size changed, old size " +
+                        windowResize);
+                    System.err.println("                     new size " +
+                        newWidth + " x " + newHeight);
+                }
+
                 TResizeEvent event = new TResizeEvent(TResizeEvent.Type.SCREEN,
                     newWidth, newHeight);
                 windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
@@ -1870,14 +1879,27 @@ public final class ECMA48Terminal extends LogicalScreen
                 // We assume that if inputStream has bytes available, then
                 // input won't block on read().
                 int n = inputStream.available();
+
+                /*
+                System.err.printf("inputStream.available(): %d\n", n);
+                System.err.flush();
+                */
+
                 if (n > 0) {
                     if (readBuffer.length < n) {
                         // The buffer wasn't big enough, make it huger
                         readBuffer = new char[readBuffer.length * 2];
                     }
 
+                    // System.err.printf("BEFORE read()\n"); System.err.flush();
+
                     int rc = input.read(readBuffer, 0, readBuffer.length);
-                    // System.err.printf("read() %d", rc); System.err.flush();
+
+                    /*
+                    System.err.printf("AFTER read() %d\n", rc);
+                    System.err.flush();
+                    */
+
                     if (rc == -1) {
                         // This is EOF
                         done = true;
@@ -1907,16 +1929,16 @@ public final class ECMA48Terminal extends LogicalScreen
                         synchronized (eventQueue) {
                             eventQueue.addAll(events);
                         }
-                        events.clear();
                         if (listener != null) {
                             synchronized (listener) {
                                 listener.notifyAll();
                             }
                         }
+                        events.clear();
                     }
 
-                    // Wait 10 millis for more data
-                    Thread.sleep(10);
+                    // Wait 20 millis for more data
+                    Thread.sleep(20);
                 }
                 // System.err.println("end while loop"); System.err.flush();
             } catch (InterruptedException e) {

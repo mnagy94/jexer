@@ -1030,6 +1030,8 @@ public class TApplication implements Runnable {
                     desktop.setDimensions(0, 0, resize.getWidth(),
                         resize.getHeight() - 1);
                 }
+                // We are dirty, redraw the screen.
+                doRepaint();
                 return;
             }
 

@@ -183,8 +183,9 @@ public final class TTYSessionInfo implements SessionInfo {
             lastQueryWindowTime = System.currentTimeMillis();
         } else {
             long nowTime = System.currentTimeMillis();
-            if (nowTime - lastQueryWindowTime < 3000) {
-                // Don't re-spawn stty, it's been too soon.
+            if (nowTime - lastQueryWindowTime < 1000) {
+                // Don't re-spawn stty if it hasn't been a full second since
+                // the last time.
                 return;
             }
         }
