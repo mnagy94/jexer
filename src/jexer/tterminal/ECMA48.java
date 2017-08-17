@@ -204,7 +204,7 @@ public class ECMA48 implements Runnable {
      *
      * @param str string to send
      */
-    private void writeRemote(final String str) {
+    public void writeRemote(final String str) {
         if (stopReaderThread) {
             // Reader hit EOF, bail out now.
             close();
@@ -221,6 +221,7 @@ public class ECMA48 implements Runnable {
                 return;
             }
             try {
+                outputStream.flush();
                 for (int i = 0; i < str.length(); i++) {
                     outputStream.write(str.charAt(i));
                 }
@@ -235,6 +236,7 @@ public class ECMA48 implements Runnable {
                 return;
             }
             try {
+                output.flush();
                 output.write(str);
                 output.flush();
             } catch (IOException e) {
@@ -539,6 +541,22 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Set the display width.
+     *
+     * @param width the new width
+     */
+    public final void setWidth(final int width) {
+        this.width = width;
+        rightMargin = width - 1;
+        if (currentState.cursorX >= width) {
+            currentState.cursorX = width - 1;
+        }
+        if (savedState.cursorX >= width) {
+            savedState.cursorX = width - 1;
+        }
+    }
+
+    /**
      * Physical display height.  We start at 80x24, but the user can resize
      * us bigger/smaller.
      */
@@ -551,6 +569,33 @@ public class ECMA48 implements Runnable {
      */
     public final int getHeight() {
         return height;
+    }
+
+    /**
+     * Set the display height.
+     *
+     * @param height the new height
+     */
+    public final void setHeight(final int height) {
+        this.height = height;
+        scrollRegionBottom = height - 1;
+        if (scrollRegionTop >= scrollRegionBottom) {
+            scrollRegionTop = 0;
+        }
+        if (currentState.cursorY >= height) {
+            currentState.cursorY = height - 1;
+        }
+        if (savedState.cursorY >= height) {
+            savedState.cursorY = height - 1;
+        }
+        while (display.size() < height) {
+            DisplayLine line = new DisplayLine(currentState.attr);
+            line.setReverseColor(reverseVideo);
+            display.add(line);
+        }
+        while (display.size() > height) {
+            scrollback.add(display.remove(0));
+        }
     }
 
     /**

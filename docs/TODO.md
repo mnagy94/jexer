@@ -80,10 +80,6 @@ Roadmap
 1.1.0 Wishlist
 --------------
 
-- TTerminal
-  - Handle resize events (pass to child process).  Will need to switch
-    to forkpty(), or ship a C wrapper process.
-
 - Screen
   - Allow complex characters in putCharXY() and detect them in putStringXY().
 

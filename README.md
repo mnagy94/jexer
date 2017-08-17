@@ -196,6 +196,14 @@ The following properties control features of Jexer:
   be faster on slower systems but also more likely to have screen
   tearing.  Default: true.
 
+  jexer.TTerminal.ptypipe
+  -----------------------
+
+  Used by jexer.TTerminalWindow.  If true, spawn shell using the
+  'ptypipe' utility rather than 'script'.  This permits terminals to
+  resize with the window.  ptypipe is a separate C language utility,
+  available at https://github.com/klamonte/ptypipe.  Default: false.
+
 
 
 Known Issues / Arbitrary Decisions
@@ -213,19 +221,19 @@ ambiguous.  This section describes such issues.
     input (see the ENABLE_LINE_INPUT flag for GetConsoleMode() and
     SetConsoleMode()).
 
-  - TTerminalWindow launches 'script -fqe /dev/null' or 'script -q -F
-    /dev/null' on non-Windows platforms.  This is a workaround for the
-    C library behavior of checking for a tty: script launches $SHELL
-    in a pseudo-tty.  This works on Linux and Mac but might not on
-    other Posix-y platforms.
+  - TTerminalWindow by default launches 'script -fqe /dev/null' or
+    'script -q -F /dev/null' on non-Windows platforms.  This is a
+    workaround for the C library behavior of checking for a tty:
+    script launches $SHELL in a pseudo-tty.  This works on Linux and
+    Mac but might not on other Posix-y platforms.
 
   - Closing a TTerminalWindow without exiting the process inside it
     may result in a zombie 'script' process.
 
-  - TTerminalWindow cannot notify the child process of changes in
-    window size, due to Java's lack of support for forkpty() and
-    similar.  Solving this requires C, and will be pursued only if
-    sufficient user requests come in.
+  - TTerminalWindow can only notify the child process of changes in
+    window size if using the 'ptypipe' utility, due to Java's lack of
+    support for forkpty() and similar.  ptypipe is available at
+    https://github.com/klamonte/ptypipe.
 
   - Java's InputStreamReader as used by the ECMA48 backend requires a
     valid UTF-8 stream.  The default X10 encoding for mouse

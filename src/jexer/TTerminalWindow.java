@@ -61,6 +61,13 @@ public class TTerminalWindow extends TScrollableWindow
     private Process shell;
 
     /**
+     * If true, we are using the ptypipe utility to support dynamic window
+     * resizing.  ptypipe is available at
+     * https://github.com/klamonte/ptypipe .
+     */
+    private boolean ptypipe = false;
+
+    /**
      * Claim the keystrokes the emulator will need.
      */
     private void addShortcutKeys() {
@@ -165,10 +172,19 @@ public class TTerminalWindow extends TScrollableWindow
             String [] cmdShellBSD = {
                 "script", "-q", "-F", "/dev/null"
             };
+            String [] cmdShellPtypipe = {
+                "ptypipe", "/bin/bash", "--login"
+            };
             // Spawn a shell and pass its I/O to the other constructor.
 
             ProcessBuilder pb;
-            if (System.getProperty("os.name").startsWith("Windows")) {
+            if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
+                && (System.getProperty("jexer.TTerminal.ptypipe").
+                    equals("true"))
+            ) {
+                pb = new ProcessBuilder(cmdShellPtypipe);
+                ptypipe = true;
+            } else if (System.getProperty("os.name").startsWith("Windows")) {
                 pb = new ProcessBuilder(cmdShellWindows);
             } else if (System.getProperty("os.name").startsWith("Mac")) {
                 pb = new ProcessBuilder(cmdShellBSD);
@@ -429,6 +445,14 @@ public class TTerminalWindow extends TScrollableWindow
 
                 // Get out of scrollback
                 setVerticalValue(0);
+
+                if (ptypipe) {
+                    emulator.setWidth(getWidth() - 2);
+                    emulator.setHeight(getHeight() - 2);
+
+                    emulator.writeRemote("\033[8;" + (getHeight() - 2) + ";" +
+                        (getWidth() - 2) + "t");
+                }
             }
             return;
 
