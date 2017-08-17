@@ -202,8 +202,7 @@ public class TTerminalWindow extends TScrollableWindow
             pb.redirectErrorStream(true);
             shell = pb.start();
             emulator = new ECMA48(deviceType, shell.getInputStream(),
-                shell.getOutputStream());
-            emulator.setListener(this);
+                shell.getOutputStream(), this);
         } catch (IOException e) {
             messageBox("Error", "Error launching shell: " + e.getMessage());
         }
@@ -347,6 +346,24 @@ public class TTerminalWindow extends TScrollableWindow
      */
     public void displayChanged() {
         doRepaint();
+    }
+
+    /**
+     * Function to call to obtain the display width.
+     *
+     * @return the number of columns in the display
+     */
+    public int getDisplayWidth() {
+        return getWidth() - 2;
+    }
+
+    /**
+     * Function to call to obtain the display height.
+     *
+     * @return the number of rows in the display
+     */
+    public int getDisplayHeight() {
+        return getHeight() - 2;
     }
 
     /**

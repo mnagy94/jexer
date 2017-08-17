@@ -307,17 +307,7 @@ public class ECMA48 implements Runnable {
     /**
      * The enclosing listening object.
      */
-    private DisplayListener listener;
-
-    /**
-     * Set a listening object.
-     *
-     * @param listener the object that will have displayChanged() called
-     * after bytes are received from the remote terminal
-     */
-    public void setListener(final DisplayListener listener) {
-        this.listener = listener;
-    }
+    private DisplayListener displayListener;
 
     /**
      * When true, the reader thread is expected to exit.
@@ -578,7 +568,9 @@ public class ECMA48 implements Runnable {
      */
     public final void setHeight(final int height) {
         this.height = height;
-        scrollRegionBottom = height - 1;
+        if (scrollRegionBottom >= height) {
+            scrollRegionBottom = height - 1;
+        }
         if (scrollRegionTop >= scrollRegionBottom) {
             scrollRegionTop = 0;
         }
@@ -906,6 +898,11 @@ public class ECMA48 implements Runnable {
         arrowKeyMode            = ArrowKeyMode.ANSI;
         keypadMode              = KeypadMode.Numeric;
         wrapLineFlag            = false;
+        if (displayListener != null) {
+            width = displayListener.getDisplayWidth();
+            height = displayListener.getDisplayHeight();
+            rightMargin         = width - 1;
+        }
 
         // Flags
         shiftOut                = false;
@@ -944,11 +941,14 @@ public class ECMA48 implements Runnable {
      * @param outputStream an OutputStream connected to the remote user.  For
      * type == XTERM, outputStream is converted to a Writer with UTF-8
      * encoding.
+     * @param displayListener a callback to the outer display, or null for
+     * default VT100 behavior
      * @throws UnsupportedEncodingException if an exception is thrown when
      * creating the InputStreamReader
      */
     public ECMA48(final DeviceType type, final InputStream inputStream,
-        final OutputStream outputStream) throws UnsupportedEncodingException {
+        final OutputStream outputStream, final DisplayListener displayListener)
+        throws UnsupportedEncodingException {
 
         assert (inputStream != null);
         assert (outputStream != null);
@@ -973,6 +973,7 @@ public class ECMA48 implements Runnable {
             this.output       = null;
             this.outputStream = new BufferedOutputStream(outputStream);
         }
+        this.displayListener  = displayListener;
 
         reset();
         for (int i = 0; i < height; i++) {
@@ -2503,9 +2504,18 @@ public class ECMA48 implements Runnable {
                     } else {
                         // 80 columns
                         columns132 = false;
-                        rightMargin = 79;
+                        if ((displayListener != null)
+                            && (type == DeviceType.XTERM)
+                        ) {
+                            // For xterms, reset to the actual width, not 80
+                            // columns.
+                            width = displayListener.getDisplayWidth();
+                            rightMargin = width - 1;
+                        } else {
+                            rightMargin = 79;
+                            width = rightMargin + 1;
+                        }
                     }
-                    width = rightMargin + 1;
                     // Entire screen is cleared, and scrolling region is
                     // reset
                     eraseScreen(0, 0, height - 1, width - 1, false);
@@ -6085,8 +6095,8 @@ public class ECMA48 implements Runnable {
                         }
                     }
                     // Permit my enclosing UI to know that I updated.
-                    if (listener != null) {
-                        listener.displayChanged();
+                    if (displayListener != null) {
+                        displayListener.displayChanged();
                     }
                 }
                 // System.err.println("end while loop"); System.err.flush();

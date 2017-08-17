@@ -39,4 +39,18 @@ public interface DisplayListener {
      */
     public void displayChanged();
 
+    /**
+     * Function to call to obtain the display width.
+     *
+     * @return the number of columns in the display
+     */
+    public int getDisplayWidth();
+
+    /**
+     * Function to call to obtain the display height.
+     *
+     * @return the number of rows in the display
+     */
+    public int getDisplayHeight();
+
 }
