@@ -316,23 +316,12 @@ public class TField extends TWidget {
             return;
         }
         if (keypress.equals(kbHome)) {
-            position = 0;
-            windowStart = 0;
+            home();
             return;
         }
 
         if (keypress.equals(kbEnd)) {
-            position = text.length();
-            if (fixed == true) {
-                if (position >= getWidth()) {
-                    position = text.length() - 1;
-                }
-            } else {
-                windowStart = text.length() - getWidth() + 1;
-                if (windowStart < 0) {
-                    windowStart = 0;
-                }
-            }
+            end();
             return;
         }
 
@@ -465,6 +454,50 @@ public class TField extends TWidget {
             assert (!fixed);
             windowStart++;
         }
+    }
+
+    /**
+     * Position the cursor at the first column.  The field may adjust the
+     * window start to show as much of the field as possible.
+     */
+    public void home() {
+        position = 0;
+        windowStart = 0;
+    }
+
+    /**
+     * Set the editing position to the last filled character.  The field may
+     * adjust the window start to show as much of the field as possible.
+     */
+    public void end() {
+        position = text.length();
+        if (fixed == true) {
+            if (position >= getWidth()) {
+                position = text.length() - 1;
+            }
+        } else {
+            windowStart = text.length() - getWidth() + 1;
+            if (windowStart < 0) {
+                windowStart = 0;
+            }
+        }
+    }
+
+    /**
+     * Set the editing position.  The field may adjust the window start to
+     * show as much of the field as possible.
+     *
+     * @param position the new position
+     * @throws IndexOutOfBoundsException if position is outside the range of
+     * the available text
+     */
+    public void setPosition(final int position) {
+        if ((position < 0) || (position >= text.length())) {
+            throw new IndexOutOfBoundsException("Max length is " +
+                text.length() + ", requested position " + position);
+        }
+        this.position = position;
+        normalizeWindowStart();
     }
 
 }
