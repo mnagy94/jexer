@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.ColorTheme;
@@ -67,6 +69,11 @@ import static jexer.TKeypress.*;
  * processes events received from the user.
  */
 public class TApplication implements Runnable {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TApplication.class.getName());
 
     // ------------------------------------------------------------------------
     // Public constants -------------------------------------------------------
@@ -537,8 +544,9 @@ public class TApplication implements Runnable {
      * Display the about dialog.
      */
     protected void showAboutDialog() {
-        messageBox("About", "Jexer Version " +
-            this.getClass().getPackage().getImplementationVersion(),
+        messageBox(i18n.getString("aboutDialogTitle"),
+            MessageFormat.format(i18n.getString("aboutDialogText"),
+                this.getClass().getPackage().getImplementationVersion()),
             TMessageBox.Type.OK);
     }
 
@@ -732,6 +740,8 @@ public class TApplication implements Runnable {
      * Draw everything.
      */
     private void drawAll() {
+        boolean menuIsActive = false;
+
         if (debugThreads) {
             System.err.printf("%d %s drawAll() enter\n",
                 System.currentTimeMillis(), Thread.currentThread());
@@ -799,6 +809,7 @@ public class TApplication implements Runnable {
             CellAttributes menuColor;
             CellAttributes menuMnemonicColor;
             if (menu.isActive()) {
+                menuIsActive = true;
                 menuColor = theme.getColor("tmenu.highlighted");
                 menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
                 topLevel = menu;
@@ -851,22 +862,24 @@ public class TApplication implements Runnable {
         oldMouseY = mouseY;
 
         // Place the cursor if it is visible
-        TWidget activeWidget = null;
-        if (sorted.size() > 0) {
-            activeWidget = sorted.get(sorted.size() - 1).getActiveChild();
-            if (activeWidget.isCursorVisible()) {
-                if ((activeWidget.getCursorAbsoluteY() < desktopBottom)
-                    && (activeWidget.getCursorAbsoluteY() > desktopTop)
-                ) {
-                    getScreen().putCursor(true,
-                        activeWidget.getCursorAbsoluteX(),
-                        activeWidget.getCursorAbsoluteY());
-                    cursor = true;
-                } else {
-                    getScreen().putCursor(false,
-                        activeWidget.getCursorAbsoluteX(),
-                        activeWidget.getCursorAbsoluteY());
-                    cursor = false;
+        if (!menuIsActive) {
+            TWidget activeWidget = null;
+            if (sorted.size() > 0) {
+                activeWidget = sorted.get(sorted.size() - 1).getActiveChild();
+                if (activeWidget.isCursorVisible()) {
+                    if ((activeWidget.getCursorAbsoluteY() < desktopBottom)
+                        && (activeWidget.getCursorAbsoluteY() > desktopTop)
+                    ) {
+                        getScreen().putCursor(true,
+                            activeWidget.getCursorAbsoluteX(),
+                            activeWidget.getCursorAbsoluteY());
+                        cursor = true;
+                    } else {
+                        getScreen().putCursor(false,
+                            activeWidget.getCursorAbsoluteX(),
+                            activeWidget.getCursorAbsoluteY());
+                        cursor = false;
+                    }
                 }
             }
         }
@@ -2335,14 +2348,14 @@ public class TApplication implements Runnable {
      * @return the new menu
      */
     public final TMenu addFileMenu() {
-        TMenu fileMenu = addMenu("&File");
+        TMenu fileMenu = addMenu(i18n.getString("fileMenuTitle"));
         fileMenu.addDefaultItem(TMenu.MID_OPEN_FILE);
         fileMenu.addSeparator();
         fileMenu.addDefaultItem(TMenu.MID_SHELL);
         fileMenu.addDefaultItem(TMenu.MID_EXIT);
-        TStatusBar statusBar = fileMenu.newStatusBar("File-management " +
-            "commands (Open, Save, Print, etc.)");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        TStatusBar statusBar = fileMenu.newStatusBar(i18n.
+            getString("fileMenuStatus"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
         return fileMenu;
     }
 
@@ -2352,14 +2365,14 @@ public class TApplication implements Runnable {
      * @return the new menu
      */
     public final TMenu addEditMenu() {
-        TMenu editMenu = addMenu("&Edit");
+        TMenu editMenu = addMenu(i18n.getString("editMenuTitle"));
         editMenu.addDefaultItem(TMenu.MID_CUT);
         editMenu.addDefaultItem(TMenu.MID_COPY);
         editMenu.addDefaultItem(TMenu.MID_PASTE);
         editMenu.addDefaultItem(TMenu.MID_CLEAR);
-        TStatusBar statusBar = editMenu.newStatusBar("Editor operations, " +
-            "undo, and Clipboard access");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        TStatusBar statusBar = editMenu.newStatusBar(i18n.
+            getString("editMenuStatus"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
         return editMenu;
     }
 
@@ -2369,7 +2382,7 @@ public class TApplication implements Runnable {
      * @return the new menu
      */
     public final TMenu addWindowMenu() {
-        TMenu windowMenu = addMenu("&Window");
+        TMenu windowMenu = addMenu(i18n.getString("windowMenuTitle"));
         windowMenu.addDefaultItem(TMenu.MID_TILE);
         windowMenu.addDefaultItem(TMenu.MID_CASCADE);
         windowMenu.addDefaultItem(TMenu.MID_CLOSE_ALL);
@@ -2379,9 +2392,9 @@ public class TApplication implements Runnable {
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_NEXT);
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_PREVIOUS);
         windowMenu.addDefaultItem(TMenu.MID_WINDOW_CLOSE);
-        TStatusBar statusBar = windowMenu.newStatusBar("Open, arrange, and " +
-            "list windows");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        TStatusBar statusBar = windowMenu.newStatusBar(i18n.
+            getString("windowMenuStatus"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
         return windowMenu;
     }
 
@@ -2391,7 +2404,7 @@ public class TApplication implements Runnable {
      * @return the new menu
      */
     public final TMenu addHelpMenu() {
-        TMenu helpMenu = addMenu("&Help");
+        TMenu helpMenu = addMenu(i18n.getString("helpMenuTitle"));
         helpMenu.addDefaultItem(TMenu.MID_HELP_CONTENTS);
         helpMenu.addDefaultItem(TMenu.MID_HELP_INDEX);
         helpMenu.addDefaultItem(TMenu.MID_HELP_SEARCH);
@@ -2400,8 +2413,9 @@ public class TApplication implements Runnable {
         helpMenu.addDefaultItem(TMenu.MID_HELP_ACTIVE_FILE);
         helpMenu.addSeparator();
         helpMenu.addDefaultItem(TMenu.MID_ABOUT);
-        TStatusBar statusBar = helpMenu.newStatusBar("Access online help");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
+        TStatusBar statusBar = helpMenu.newStatusBar(i18n.
+            getString("helpMenuStatus"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
         return helpMenu;
     }
 
@@ -2419,7 +2433,8 @@ public class TApplication implements Runnable {
     protected boolean onCommand(final TCommandEvent command) {
         // Default: handle cmExit
         if (command.equals(cmExit)) {
-            if (messageBox("Confirmation", "Exit application?",
+            if (messageBox(i18n.getString("exitDialogTitle"),
+                    i18n.getString("exitDialogText"),
                     TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
                 exit();
             }
@@ -2468,7 +2483,8 @@ public class TApplication implements Runnable {
 
         // Default: handle MID_EXIT
         if (menu.getId() == TMenu.MID_EXIT) {
-            if (messageBox("Confirmation", "Exit application?",
+            if (messageBox(i18n.getString("exitDialogTitle"),
+                    i18n.getString("exitDialogText"),
                     TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
                 exit();
             }

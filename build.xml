@@ -61,8 +61,13 @@
     <jar destfile="${jar.dir}/${ant.project.name}.jar"
          basedir="${classes.dir}">
       <fileset dir="${resources.dir}"/>
+
+      <!-- Include properties files. -->
+      <fileset dir="${src.dir}" includes="**/*.properties"/>
+
       <!-- Include source by default. -->
       <fileset dir="${src.dir}"/>
+
       <manifest>
         <attribute name="Main-Class" value="jexer.demos.Demo1"/>
         <attribute name="Implementation-Version" value="${version}"/>
@@ -93,7 +98,7 @@
         windowtitle="Jexer - Java Text User Interface - API docs">
 
       <fileset dir="${src.dir}" defaultexcludes="yes">
-        <include name="jexer/**"/>
+        <include name="jexer/**/*.java"/>
       </fileset>
 
       <doctitle>

@@ -28,6 +28,8 @@
  */
 package jexer.menu;
 
+import java.util.ResourceBundle;
+
 import jexer.TApplication;
 import jexer.TKeypress;
 import jexer.TWidget;
@@ -43,6 +45,11 @@ import static jexer.TKeypress.*;
  * TMenu is a top-level collection of TMenuItems.
  */
 public final class TMenu extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TMenu.class.getName());
 
     /**
      * If true, this is a sub-menu.  Note package private access.
@@ -385,89 +392,89 @@ public final class TMenu extends TWindow {
         switch (id) {
 
         case MID_EXIT:
-            label = "E&xit";
+            label = i18n.getString("menuExit");
             key = kbAltX;
             break;
 
         case MID_SHELL:
-            label = "O&S Shell";
+            label = i18n.getString("menuShell");
             break;
 
         case MID_OPEN_FILE:
-            label = "&Open";
+            label = i18n.getString("menuOpen");
             key = kbAltO;
             break;
 
         case MID_CUT:
-            label = "Cu&t";
+            label = i18n.getString("menuCut");
             key = kbCtrlX;
             break;
         case MID_COPY:
-            label = "&Copy";
+            label = i18n.getString("menuCopy");
             key = kbCtrlC;
             break;
         case MID_PASTE:
-            label = "&Paste";
+            label = i18n.getString("menuPaste");
             key = kbCtrlV;
             break;
         case MID_CLEAR:
-            label = "C&lear";
+            label = i18n.getString("menuClear");
             // key = kbDel;
             break;
 
         case MID_TILE:
-            label = "&Tile";
+            label = i18n.getString("menuWindowTile");
             break;
         case MID_CASCADE:
-            label = "C&ascade";
+            label = i18n.getString("menuWindowCascade");
             break;
         case MID_CLOSE_ALL:
-            label = "Cl&ose All";
+            label = i18n.getString("menuWindowCloseAll");
             break;
         case MID_WINDOW_MOVE:
-            label = "&Size/Move";
+            label = i18n.getString("menuWindowMove");
             key = kbCtrlF5;
             break;
         case MID_WINDOW_ZOOM:
-            label = "&Zoom";
+            label = i18n.getString("menuWindowZoom");
             key = kbF5;
             break;
         case MID_WINDOW_NEXT:
-            label = "&Next";
+            label = i18n.getString("menuWindowNext");
             key = kbF6;
             break;
         case MID_WINDOW_PREVIOUS:
-            label = "&Previous";
+            label = i18n.getString("menuWindowPrevious");
             key = kbShiftF6;
             break;
         case MID_WINDOW_CLOSE:
-            label = "&Close";
+            label = i18n.getString("menuWindowClose");
             key = kbCtrlW;
             break;
 
         case MID_HELP_CONTENTS:
-            label = "&Contents";
+            label = i18n.getString("menuHelpContents");
             break;
         case MID_HELP_INDEX:
-            label = "&Index";
+            label = i18n.getString("menuHelpIndex");
             key = kbShiftF1;
             break;
         case MID_HELP_SEARCH:
-            label = "&Topic search";
+            label = i18n.getString("menuHelpSearch");
             key = kbCtrlF1;
             break;
         case MID_HELP_PREVIOUS:
-            label = "&Previous topic";
+            label = i18n.getString("menuHelpPrevious");
             key = kbAltF1;
             break;
         case MID_HELP_HELP:
-            label = "&Help on help";
+            label = i18n.getString("menuHelpHelp");
             break;
         case MID_HELP_ACTIVE_FILE:
-            label = "Active &file...";
+            label = i18n.getString("menuHelpActive");
             break;
         case MID_ABOUT:
-            label = "&About...";
+            label = i18n.getString("menuHelpAbout");
             break;
 
         default:

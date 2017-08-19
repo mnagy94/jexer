@@ -30,6 +30,7 @@ package jexer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 import jexer.bits.GraphicsChars;
 import jexer.event.TKeypressEvent;
@@ -52,6 +53,11 @@ import static jexer.TKeypress.*;
  *
  */
 public final class TFileOpenBox extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TFileOpenBox.class.getName());
 
     /**
      * TFileOpenBox can be called for either Open or Save actions.
@@ -199,12 +205,12 @@ public final class TFileOpenBox extends TWindow {
         String openLabel = "";
         switch (type) {
         case OPEN:
-            openLabel = " &Open ";
-            setTitle("Open File...");
+            openLabel = i18n.getString("openButton");
+            setTitle(i18n.getString("openTitle"));
             break;
         case SAVE:
-            openLabel = " &Save ";
-            setTitle("Save File...");
+            openLabel = i18n.getString("saveButton");
+            setTitle(i18n.getString("saveTitle"));
             break;
         default:
             throw new IllegalArgumentException("Invalid type: " + type);
@@ -224,7 +230,7 @@ public final class TFileOpenBox extends TWindow {
         );
         openButton.setEnabled(false);
 
-        addButton("&Cancel", getWidth() - 12, 5,
+        addButton(i18n.getString("cancelButton"), getWidth() - 12, 5,
             new TAction() {
                 public void DO() {
                     filename = null;

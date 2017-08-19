@@ -30,9 +30,11 @@ package jexer;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.text.MessageFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
@@ -49,6 +51,12 @@ import static jexer.TKeypress.*;
  */
 public class TTerminalWindow extends TScrollableWindow
                              implements DisplayListener {
+
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TTerminalWindow.class.getName());
 
     /**
      * The emulator.
@@ -148,7 +156,8 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final int flags) {
 
-        super(application, "Terminal", x, y, 80 + 2, 24 + 2, flags);
+        super(application, i18n.getString("windowTitle"), x, y,
+            80 + 2, 24 + 2, flags);
 
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
         setBottomValue(0);
@@ -204,7 +213,9 @@ public class TTerminalWindow extends TScrollableWindow
             emulator = new ECMA48(deviceType, shell.getInputStream(),
                 shell.getOutputStream(), this);
         } catch (IOException e) {
-            messageBox("Error", "Error launching shell: " + e.getMessage());
+            messageBox(i18n.getString("errorLaunchingShellTitle"),
+                MessageFormat.format(i18n.getString("errorLaunchingShellText"),
+                    e.getMessage()));
         }
 
         // Setup the scroll bars
@@ -215,7 +226,7 @@ public class TTerminalWindow extends TScrollableWindow
         addShortcutKeys();
 
         // Add shortcut text
-        newStatusBar("Terminal session executing...");
+        newStatusBar(i18n.getString("statusBarRunning"));
     }
 
     /**
@@ -417,13 +428,13 @@ public class TTerminalWindow extends TScrollableWindow
                 try {
                     int rc = shell.exitValue();
                     // The emulator exited on its own, all is fine
-                    setTitle(String.format("%s [Completed - %d]",
-                            getTitle(), rc));
+                    setTitle(MessageFormat.format(i18n.
+                            getString("windowTitleCompleted"), getTitle(), rc));
                     shell = null;
                     emulator.close();
                     clearShortcutKeypresses();
-                    statusBar.setText("Terminal session completed, exit " +
-                        "code " + rc + ".");
+                    statusBar.setText(MessageFormat.format(i18n.
+                            getString("statusBarCompleted"), rc));
                 } catch (IllegalThreadStateException e) {
                     // The emulator thread has exited, but the shell Process
                     // hasn't figured that out yet.  Do nothing, we will see
@@ -434,13 +445,13 @@ public class TTerminalWindow extends TScrollableWindow
                 try {
                     int rc = shell.exitValue();
                     // If we got here, the shell died.
-                    setTitle(String.format("%s [Completed - %d]",
-                            getTitle(), rc));
+                    setTitle(MessageFormat.format(i18n.
+                            getString("windowTitleCompleted"), getTitle(), rc));
                     shell = null;
                     emulator.close();
                     clearShortcutKeypresses();
-                    statusBar.setText("Terminal session completed, exit " +
-                        "code " + rc + ".");
+                    statusBar.setText(MessageFormat.format(i18n.
+                            getString("statusBarCompleted"), rc));
                 } catch (IllegalThreadStateException e) {
                     // The shell is still running, do nothing.
                 }

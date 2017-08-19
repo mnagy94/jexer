@@ -29,6 +29,7 @@
 package jexer;
 
 import java.util.List;
+import java.util.ResourceBundle;
 
 import jexer.bits.Color;
 import jexer.bits.ColorTheme;
@@ -44,6 +45,11 @@ import static jexer.TKeypress.*;
  *
  */
 public final class TEditColorThemeWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TEditColorThemeWindow.class.getName());
 
     /**
      * The foreground color picker.
@@ -197,7 +203,8 @@ public final class TEditColorThemeWindow extends TWindow {
                 attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
                 attr.setBold(getTheme().getColor("tlabel").isBold());
             }
-            getScreen().putStringXY(1, 0, " Foreground ", attr);
+            getScreen().putStringXY(1, 0, i18n.getString("foregroundLabel"),
+                attr);
 
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
@@ -470,7 +477,8 @@ public final class TEditColorThemeWindow extends TWindow {
                 attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
                 attr.setBold(getTheme().getColor("tlabel").isBold());
             }
-            getScreen().putStringXY(1, 0, " Background ", attr);
+            getScreen().putStringXY(1, 0, i18n.getString("backgroundLabel"),
+                attr);
 
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
@@ -650,7 +658,7 @@ public final class TEditColorThemeWindow extends TWindow {
     public TEditColorThemeWindow(final TApplication application) {
 
         // Register with the TApplication
-        super(application, "Colors", 0, 0, 60, 18, MODAL);
+        super(application, i18n.getString("windowTitle"), 0, 0, 60, 18, MODAL);
 
         // Initialize with the first color
         List<String> colors = getTheme().getColorNames();
@@ -681,7 +689,7 @@ public final class TEditColorThemeWindow extends TWindow {
         refreshFromTheme(colors.get(0));
         colorNames.setSelectedIndex(0);
 
-        addButton("  &OK  ", getWidth() - 37, getHeight() - 4,
+        addButton(i18n.getString("okButton"), getWidth() - 37, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     ColorTheme global = getTheme();
@@ -696,7 +704,8 @@ public final class TEditColorThemeWindow extends TWindow {
             }
         );
 
-        addButton("&Cancel", getWidth() - 25, getHeight() - 4,
+        addButton(i18n.getString("cancelButton"), getWidth() - 25,
+            getHeight() - 4,
             new TAction() {
                 public void DO() {
                     getApplication().closeWindow(TEditColorThemeWindow.this);
@@ -708,7 +717,7 @@ public final class TEditColorThemeWindow extends TWindow {
         activate(colorNames);
 
         // Add shortcut text
-        newStatusBar("Select Colors");
+        newStatusBar(i18n.getString("statusBar"));
     }
 
     /**
@@ -725,7 +734,7 @@ public final class TEditColorThemeWindow extends TWindow {
             attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
             attr.setBold(getTheme().getColor("tlabel").isBold());
         }
-        getScreen().putStringXY(3, 2, "Color Name", attr);
+        getScreen().putStringXY(3, 2, i18n.getString("colorName"), attr);
 
         // Draw the sample text box
         attr.reset();
@@ -733,9 +742,9 @@ public final class TEditColorThemeWindow extends TWindow {
         attr.setBold(foreground.bold);
         attr.setBackColor(background.color);
         getScreen().putStringXY(getWidth() - 17, getHeight() - 6,
-            "Text Text Text", attr);
+            i18n.getString("textTextText"), attr);
         getScreen().putStringXY(getWidth() - 17, getHeight() - 5,
-            "Text Text Text", attr);
+            i18n.getString("textTextText"), attr);
     }
 
     /**

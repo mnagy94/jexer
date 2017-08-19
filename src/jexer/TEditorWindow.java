@@ -30,6 +30,8 @@ package jexer;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 import java.util.Scanner;
 
 import jexer.TApplication;
@@ -51,6 +53,11 @@ import static jexer.TKeypress.*;
  * TEditorWindow is a basic text file editor.
  */
 public class TEditorWindow extends TScrollableWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TEditorWindow.class.getName());
 
     /**
      * Hang onto my TEditor so I can resize it with the window.
@@ -75,11 +82,15 @@ public class TEditorWindow extends TScrollableWindow {
         setLeftValue(1);
         setRightValue(editField.getMaximumColumnNumber());
 
-        statusBar = newStatusBar("Editor");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmSave, "Save");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
-        statusBar.addShortcutKeypress(kbF10, cmMenu, "Menu");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmSave,
+            i18n.getString("statusBarSave"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmMenu,
+            i18n.getString("statusBarMenu"));
     }
 
     /**
@@ -140,7 +151,7 @@ public class TEditorWindow extends TScrollableWindow {
      * @param parent the main application
      */
     public TEditorWindow(final TApplication parent) {
-        this(parent, "New Text Document");
+        this(parent, i18n.getString("newTextDocument"));
     }
 
     /**
@@ -340,13 +351,15 @@ public class TEditorWindow extends TScrollableWindow {
                         String contents = readFileData(filename);
                         new TEditorWindow(getApplication(), filename, contents);
                     } catch (IOException e) {
-                        messageBox("Error", "Error reading file: " +
-                            e.getMessage());
+                        messageBox(i18n.getString("errorDialogTitle"),
+                            MessageFormat.format(i18n.
+                                getString("errorReadingFile"), e.getMessage()));
                     }
                 }
             } catch (IOException e) {
-                messageBox("Error", "Error opening file dialog: " +
-                    e.getMessage());
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorOpeningFileDialog"), e.getMessage()));
             }
             return;
         }
@@ -356,7 +369,9 @@ public class TEditorWindow extends TScrollableWindow {
                 try {
                     editField.saveToFilename(filename);
                 } catch (IOException e) {
-                    messageBox("Error", "Error saving file: " + e.getMessage());
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorSavingFile"), e.getMessage()));
                 }
             }
             return;
