@@ -622,7 +622,12 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.parent = parent;
         this.window = parent.window;
         children = new ArrayList<TWidget>();
-        parent.addChild(this);
+
+        // Do not add TStatusBars, they are drawn by TApplication
+        if (this instanceof TStatusBar) {
+        } else {
+            parent.addChild(this);
+        }
     }
 
     /**
@@ -642,7 +647,12 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.parent = parent;
         this.window = parent.window;
         children = new ArrayList<TWidget>();
-        parent.addChild(this);
+
+        // Do not add TStatusBars, they are drawn by TApplication
+        if (this instanceof TStatusBar) {
+        } else {
+            parent.addChild(this);
+        }
 
         this.x = x;
         this.y = y;

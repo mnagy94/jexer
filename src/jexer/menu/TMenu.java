@@ -104,6 +104,9 @@ public final class TMenu extends TWindow {
     public static final int MID_HELP_ACTIVE_FILE        = 45;
     public static final int MID_ABOUT                   = 46;
 
+    // Other
+    public static final int MID_REPAINT         = 50;
+
     /**
      * Public constructor.
      *
@@ -475,6 +478,10 @@ public final class TMenu extends TWindow {
             break;
         case MID_ABOUT:
             label = i18n.getString("menuHelpAbout");
+            break;
+
+        case MID_REPAINT:
+            label = i18n.getString("menuRepaintDesktop");
             break;
 
         default:

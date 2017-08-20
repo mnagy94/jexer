@@ -2512,6 +2512,10 @@ public class TApplication implements Runnable {
             showAboutDialog();
             return true;
         }
+        if (menu.getId() == TMenu.MID_REPAINT) {
+            doRepaint();
+            return true;
+        }
         return false;
     }
 
