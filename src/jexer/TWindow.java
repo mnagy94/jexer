@@ -73,6 +73,11 @@ public class TWindow extends TWidget {
      */
     public static final int NOCLOSEBOX  = 0x08;
 
+    /**
+     * Window has no maximize box (default no).
+     */
+    public static final int NOZOOMBOX   = 0x10;
+
     // ------------------------------------------------------------------------
     // Common window attributes -----------------------------------------------
     // ------------------------------------------------------------------------
@@ -593,11 +598,23 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Returns true if this window has a maximize/zoom box.
+     *
+     * @return true if this window has a maximize/zoom box
+     */
+    public final boolean hasZoomBox() {
+        if ((flags & NOZOOMBOX) != 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Retrieve the background color.
      *
      * @return the background color
      */
-    public final CellAttributes getBackground() {
+    public CellAttributes getBackground() {
         if (!isModal()
             && (inWindowMove || inWindowResize || inKeyboardResize)
         ) {
@@ -715,7 +732,7 @@ public class TWindow extends TWidget {
             }
 
             // Draw the maximize button
-            if (!isModal()) {
+            if (!isModal() && ((flags & NOZOOMBOX) == 0)) {
 
                 putCharXY(getWidth() - 5, 0, '[', border);
                 putCharXY(getWidth() - 3, 0, ']', border);
@@ -773,6 +790,9 @@ public class TWindow extends TWidget {
      * @return true if the mouse is currently on the maximize/restore button
      */
     protected boolean mouseOnMaximize() {
+        if ((flags & NOZOOMBOX) != 0) {
+            return false;
+        }
         if ((mouse != null)
             && !isModal()
             && (mouse.getAbsoluteY() == getY())
@@ -1145,7 +1165,7 @@ public class TWindow extends TWidget {
             }
 
             // F5 - zoom
-            if (keypress.equals(kbF5)) {
+            if (keypress.equals(kbF5) && ((flags & NOZOOMBOX) == 0)) {
                 if (maximized) {
                     restore();
                 } else {
@@ -1200,7 +1220,7 @@ public class TWindow extends TWidget {
                 return;
             }
 
-            if (command.equals(cmWindowZoom)) {
+            if (command.equals(cmWindowZoom) && ((flags & NOZOOMBOX) == 0)) {
                 if (maximized) {
                     restore();
                 } else {
@@ -1246,7 +1266,9 @@ public class TWindow extends TWidget {
                 return;
             }
 
-            if (menu.getId() == TMenu.MID_WINDOW_ZOOM) {
+            if ((menu.getId() == TMenu.MID_WINDOW_ZOOM)
+                && ((flags & NOZOOMBOX) == 0)
+            ) {
                 if (maximized) {
                     restore();
                 } else {

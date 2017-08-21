@@ -74,11 +74,6 @@ public final class TButton extends TWidget {
     private TAction action;
 
     /**
-     * How long to animate dispatch of the event in millis.
-     */
-    private static final long DISPATCH_TIME = 75;
-
-    /**
      * Act as though the button was pressed.  This is useful for other UI
      * elements to get the same action as if the user clicked the button.
      */

@@ -1043,6 +1043,10 @@ public class TApplication implements Runnable {
                     desktop.setDimensions(0, 0, resize.getWidth(),
                         resize.getHeight() - 1);
                 }
+
+                // Change menu edges if needed.
+                recomputeMenuX();
+
                 // We are dirty, redraw the screen.
                 doRepaint();
                 return;
@@ -2296,6 +2300,12 @@ public class TApplication implements Runnable {
         for (TMenu menu: menus) {
             menu.setX(x);
             x += menu.getTitle().length() + 2;
+
+            // Don't let the menu window exceed the screen width
+            int rightEdge = menu.getX() + menu.getWidth();
+            if (rightEdge > getScreen().getWidth()) {
+                menu.setX(getScreen().getWidth() - menu.getWidth());
+            }
         }
     }
 

@@ -32,6 +32,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -114,9 +115,20 @@ public final class ColorTheme {
      * @throws IOException if the I/O fails
      */
     public void load(final String filename) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(filename));
-        String line = reader.readLine();
-        for (; line != null; line = reader.readLine()) {
+        load(new FileReader(filename));
+    }
+
+    /**
+     * Read color theme mappings from a Reader.  The reader is closed at the
+     * end.
+     *
+     * @param reader the reader to read from
+     * @throws IOException if the I/O fails
+     */
+    public void load(final Reader reader) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        String line = bufferedReader.readLine();
+        for (; line != null; line = bufferedReader.readLine()) {
             String key;
             String bold;
             String foreColor;
@@ -154,7 +166,7 @@ public final class ColorTheme {
             colors.put(key, color);
         }
         // All done.
-        reader.close();
+        bufferedReader.close();
     }
 
     /**

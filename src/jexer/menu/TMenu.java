@@ -355,6 +355,23 @@ public final class TMenu extends TWindow {
      * @param id menu item ID.  Must be greater than 1024.
      * @param label menu item label
      * @param key global keyboard accelerator
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    public TMenuItem addItem(final int id, final String label,
+        final TKeypress key, final boolean enabled) {
+
+        TMenuItem item = addItem(id, label, key);
+        item.setEnabled(enabled);
+        return item;
+    }
+
+    /**
+     * Convenience function to add a custom menu item.
+     *
+     * @param id menu item ID.  Must be greater than 1024.
+     * @param label menu item label
+     * @param key global keyboard accelerator
      * @return the new menu item
      */
     private TMenuItem addItemInternal(final int id, final String label,
