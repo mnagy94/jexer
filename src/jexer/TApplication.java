@@ -2009,8 +2009,8 @@ public class TApplication implements Runnable {
 
             // They selected the menu, go activate it
             for (TMenu menu: menus) {
-                if ((mouse.getAbsoluteX() >= menu.getX())
-                    && (mouse.getAbsoluteX() < menu.getX()
+                if ((mouse.getAbsoluteX() >= menu.getTitleX())
+                    && (mouse.getAbsoluteX() < menu.getTitleX()
                         + menu.getTitle().length() + 2)
                 ) {
                     menu.setActive(true);
@@ -2037,8 +2037,8 @@ public class TApplication implements Runnable {
 
             // See if we should switch menus
             for (TMenu menu: menus) {
-                if ((mouse.getAbsoluteX() >= menu.getX())
-                    && (mouse.getAbsoluteX() < menu.getX()
+                if ((mouse.getAbsoluteX() >= menu.getTitleX())
+                    && (mouse.getAbsoluteX() < menu.getTitleX()
                         + menu.getTitle().length() + 2)
                 ) {
                     menu.setActive(true);
@@ -2299,6 +2299,7 @@ public class TApplication implements Runnable {
         int x = 0;
         for (TMenu menu: menus) {
             menu.setX(x);
+            menu.setTitleX(x);
             x += menu.getTitle().length() + 2;
 
             // Don't let the menu window exceed the screen width

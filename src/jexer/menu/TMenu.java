@@ -57,6 +57,29 @@ public final class TMenu extends TWindow {
     boolean isSubMenu = false;
 
     /**
+     * The X position of the menu's title.
+     */
+    private int titleX;
+
+    /**
+     * Set the menu title X position.
+     *
+     * @param titleX the position
+     */
+    public void setTitleX(final int titleX) {
+        this.titleX = titleX;
+    }
+
+    /**
+     * Get the menu title X position.
+     *
+     * @return the position
+     */
+    public int getTitleX() {
+        return titleX;
+    }
+
+    /**
      * The shortcut and title.
      */
     private MnemonicString mnemonic;
