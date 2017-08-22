@@ -219,7 +219,7 @@ public class TWindowBackend extends TWindow implements Backend {
      * screen to the physical device.
      */
     public void flushScreen() {
-        // NOP
+        getApplication().doRepaint();
     }
 
     /**
