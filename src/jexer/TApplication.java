@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -2755,6 +2756,7 @@ public class TApplication implements Runnable {
         TWindow window = new TWindow(this, title, 0, 0, width, height);
         return window;
     }
+
     /**
      * Convenience function to create a new window and make it active.
      * Window will be located at (0, 0).
@@ -2803,6 +2805,19 @@ public class TApplication implements Runnable {
 
         TWindow window = new TWindow(this, title, x, y, width, height, flags);
         return window;
+    }
+
+    /**
+     * Convenience function to open a file in an editor window and make it
+     * active.
+     *
+     * @param file the file to open
+     * @throws IOException if a java.io operation throws
+     */
+    public final TEditorWindow addEditor(final File file) throws IOException {
+
+        TEditorWindow editor = new TEditorWindow(this, file);
+        return editor;
     }
 
 }
