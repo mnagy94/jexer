@@ -1431,9 +1431,15 @@ public class TApplication implements Runnable {
         if (activeWindow != null) {
             assert (activeWindow.getZ() == 0);
 
-            activeWindow.onUnfocus();
             activeWindow.setActive(false);
             activeWindow.setZ(window.getZ());
+
+            // Unset activeWindow now before unfocus, so that a window
+            // lifecycle change inside onUnfocus() doesn't call
+            // switchWindow() and lead to a stack overflow.
+            TWindow oldActiveWindow = activeWindow;
+            activeWindow = null;
+            oldActiveWindow.onUnfocus();
         }
         activeWindow = window;
         activeWindow.setZ(0);
