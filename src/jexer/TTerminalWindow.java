@@ -146,18 +146,11 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
-     * Public constructor spawns a shell.
+     * Spawn the shell.
      *
-     * @param application TApplication that manages this window
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param commandLine the command line to execute
      */
-    public TTerminalWindow(final TApplication application, final int x,
-        final int y, final int flags) {
-
-        super(application, i18n.getString("windowTitle"), x, y,
-            80 + 2, 24 + 2, flags);
+    private void spawnShell(final String commandLine) {
 
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
         setBottomValue(0);
@@ -166,43 +159,8 @@ public class TTerminalWindow extends TScrollableWindow
         ECMA48.DeviceType deviceType = ECMA48.DeviceType.XTERM;
 
         try {
-            String [] cmdShellWindows = {
-                "cmd.exe"
-            };
-
-            // You cannot run a login shell in a bare Process interactively,
-            // due to libc's behavior of buffering when stdin/stdout aren't a
-            // tty.  Use 'script' instead to run a shell in a pty.  And
-            // because BSD and GNU differ on the '-f' vs '-F' flags, we need
-            // two different commands.  Lovely.
-            String [] cmdShellGNU = {
-                "script", "-fqe", "/dev/null"
-            };
-            String [] cmdShellBSD = {
-                "script", "-q", "-F", "/dev/null"
-            };
-            String [] cmdShellPtypipe = {
-                "ptypipe", "/bin/bash", "--login"
-            };
-            // Spawn a shell and pass its I/O to the other constructor.
-
-            ProcessBuilder pb;
-            if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
-                && (System.getProperty("jexer.TTerminal.ptypipe").
-                    equals("true"))
-            ) {
-                pb = new ProcessBuilder(cmdShellPtypipe);
-                ptypipe = true;
-            } else if (System.getProperty("os.name").startsWith("Windows")) {
-                pb = new ProcessBuilder(cmdShellWindows);
-            } else if (System.getProperty("os.name").startsWith("Mac")) {
-                pb = new ProcessBuilder(cmdShellBSD);
-            } else if (System.getProperty("os.name").startsWith("Linux")) {
-                pb = new ProcessBuilder(cmdShellGNU);
-            } else {
-                // When all else fails, assume GNU.
-                pb = new ProcessBuilder(cmdShellGNU);
-            }
+            String [] command = commandLine.split("\\s");
+            ProcessBuilder pb = new ProcessBuilder(command);
             Map<String, String> env = pb.environment();
             env.put("TERM", ECMA48.deviceTypeTerm(deviceType));
             env.put("LANG", ECMA48.deviceTypeLang(deviceType, "en"));
@@ -227,6 +185,91 @@ public class TTerminalWindow extends TScrollableWindow
 
         // Add shortcut text
         newStatusBar(i18n.getString("statusBarRunning"));
+    }
+
+    /**
+     * Public constructor spawns a custom command line.
+     *
+     * @param application TApplication that manages this window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param commandLine the command line to execute
+     */
+    public TTerminalWindow(final TApplication application, final int x,
+        final int y, final int flags, final String commandLine) {
+
+        super(application, i18n.getString("windowTitle"), x, y,
+            80 + 2, 24 + 2, flags);
+
+        String cmdShellWindows = "cmd.exe /c" + commandLine;
+        String cmdShellGNU = "script -fqe /dev/null -c " + commandLine;
+        String cmdShellBSD = "script -q -F /dev/null -c " + commandLine;
+        String cmdShellPtypipe = "ptypipe " + commandLine;
+
+        // Spawn a shell and pass its I/O to the other constructor.
+        if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
+            && (System.getProperty("jexer.TTerminal.ptypipe").
+                equals("true"))
+        ) {
+            ptypipe = true;
+            spawnShell(cmdShellPtypipe);
+        } else if (System.getProperty("os.name").startsWith("Windows")) {
+            spawnShell(cmdShellWindows);
+        } else if (System.getProperty("os.name").startsWith("Mac")) {
+            spawnShell(cmdShellBSD);
+        } else if (System.getProperty("os.name").startsWith("Linux")) {
+            spawnShell(cmdShellGNU);
+        } else {
+            // When all else fails, assume GNU.
+            spawnShell(cmdShellGNU);
+        }
+    }
+
+    /**
+     * Public constructor spawns a shell.
+     *
+     * @param application TApplication that manages this window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     */
+    public TTerminalWindow(final TApplication application, final int x,
+        final int y, final int flags) {
+
+        super(application, i18n.getString("windowTitle"), x, y,
+            80 + 2, 24 + 2, flags);
+
+        String cmdShellWindows = "cmd.exe";
+
+        // You cannot run a login shell in a bare Process interactively, due
+        // to libc's behavior of buffering when stdin/stdout aren't a tty.
+        // Use 'script' instead to run a shell in a pty.  And because BSD and
+        // GNU differ on the '-f' vs '-F' flags, we need two different
+        // commands.  Lovely.
+        String cmdShellGNU = "script -fqe /dev/null";
+        String cmdShellBSD = "script -q -F /dev/null";
+
+        // ptypipe is another solution that permits dynamic window resizing.
+        String cmdShellPtypipe = "ptypipe /bin/bash --login";
+
+        // Spawn a shell and pass its I/O to the other constructor.
+        if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
+            && (System.getProperty("jexer.TTerminal.ptypipe").
+                equals("true"))
+        ) {
+            ptypipe = true;
+            spawnShell(cmdShellPtypipe);
+        } else if (System.getProperty("os.name").startsWith("Windows")) {
+            spawnShell(cmdShellWindows);
+        } else if (System.getProperty("os.name").startsWith("Mac")) {
+            spawnShell(cmdShellBSD);
+        } else if (System.getProperty("os.name").startsWith("Linux")) {
+            spawnShell(cmdShellGNU);
+        } else {
+            // When all else fails, assume GNU.
+            spawnShell(cmdShellGNU);
+        }
     }
 
     /**

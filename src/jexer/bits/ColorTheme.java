@@ -130,27 +130,39 @@ public final class ColorTheme {
         String line = bufferedReader.readLine();
         for (; line != null; line = bufferedReader.readLine()) {
             String key;
-            String bold;
+            boolean bold = false;
+            boolean blink = false;
             String foreColor;
             String backColor;
+            String token;
 
             // Look for lines that resemble:
             //     "key = blah on blah"
             //     "key = bold blah on blah"
+            //     "key = blink bold blah on blah"
+            //     "key = bold blink blah on blah"
+            //     "key = blink blah on blah"
             StringTokenizer tokenizer = new StringTokenizer(line);
             key = tokenizer.nextToken();
             if (!tokenizer.nextToken().equals("=")) {
                 // Skip this line
                 continue;
             }
-            bold = tokenizer.nextToken();
-            if (!bold.toLowerCase().equals("bold")) {
-                // "key = blah on blah"
-                foreColor = bold;
-            } else {
-                // "key = bold blah on blah"
-                foreColor = tokenizer.nextToken().toLowerCase();
+            token = tokenizer.nextToken();
+            while (token.equals("bold") || token.equals("blink")) {
+                if (token.equals("bold")) {
+                    bold = true;
+                    token = tokenizer.nextToken();
+                }
+                if (token.equals("blink")) {
+                    blink = true;
+                    token = tokenizer.nextToken();
+                }
             }
+
+            // What's left is "blah on blah" or "blah"
+            foreColor = token.toLowerCase();
+
             if (!tokenizer.nextToken().toLowerCase().equals("on")) {
                 // Skip this line
                 continue;
@@ -158,8 +170,11 @@ public final class ColorTheme {
             backColor = tokenizer.nextToken().toLowerCase();
 
             CellAttributes color = new CellAttributes();
-            if (bold.equals("bold")) {
+            if (bold) {
                 color.setBold(true);
+            }
+            if (blink) {
+                color.setBlink(true);
             }
             color.setForeColor(Color.getColor(foreColor));
             color.setBackColor(Color.getColor(backColor));

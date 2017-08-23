@@ -2721,6 +2721,37 @@ public class TApplication implements Runnable {
     }
 
     /**
+     * Convenience function to open a terminal window and execute a custom
+     * command line inside it.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param commandLine the command line to execute
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final String commandLine) {
+
+        return openTerminal(x, y, TWindow.RESIZABLE, commandLine);
+    }
+
+    /**
+     * Convenience function to open a terminal window and execute a custom
+     * command line inside it.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param commandLine the command line to execute
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final int flags, final String commandLine) {
+
+        return new TTerminalWindow(this, x, y, flags, commandLine);
+    }
+
+    /**
      * Convenience function to spawn an file open box.
      *
      * @param path path of selected file

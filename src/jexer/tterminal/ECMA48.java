@@ -567,9 +567,11 @@ public class ECMA48 implements Runnable {
      * @param height the new height
      */
     public final void setHeight(final int height) {
+        int delta = height - this.height;
         this.height = height;
-        if (scrollRegionBottom >= height) {
-            scrollRegionBottom = height - 1;
+        scrollRegionBottom += delta;
+        if (scrollRegionBottom < 0) {
+            scrollRegionBottom = height;
         }
         if (scrollRegionTop >= scrollRegionBottom) {
             scrollRegionTop = 0;
