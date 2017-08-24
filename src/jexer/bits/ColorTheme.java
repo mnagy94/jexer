@@ -339,7 +339,6 @@ public final class ColorTheme {
         color.setBold(true);
         colors.put("tcheckbox.active", color);
 
-
         // TRadioButton
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
@@ -437,9 +436,12 @@ public final class ColorTheme {
         color.setBold(false);
         colors.put("ttreeview.unreadable", color);
         color = new CellAttributes();
-        color.setForeColor(Color.BLACK);
+        // color.setForeColor(Color.BLACK);
+        // color.setBackColor(Color.BLUE);
+        // color.setBold(true);
+        color.setForeColor(Color.WHITE);
         color.setBackColor(Color.BLUE);
-        color.setBold(true);
+        color.setBold(false);
         colors.put("ttreeview.inactive", color);
 
         // TList
@@ -459,9 +461,12 @@ public final class ColorTheme {
         color.setBold(false);
         colors.put("tlist.unreadable", color);
         color = new CellAttributes();
-        color.setForeColor(Color.BLACK);
+        // color.setForeColor(Color.BLACK);
+        // color.setBackColor(Color.BLUE);
+        // color.setBold(true);
+        color.setForeColor(Color.WHITE);
         color.setBackColor(Color.BLUE);
-        color.setBold(true);
+        color.setBold(false);
         colors.put("tlist.inactive", color);
 
         // TStatusBar

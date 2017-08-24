@@ -386,6 +386,28 @@ public final class TEditorWidget extends TWidget {
     }
 
     /**
+     * Get the current visible top row number.  1-based.
+     *
+     * @return the visible top row number.  Row 1 is the first row.
+     */
+    public int getVisibleRowNumber() {
+        return topLine + 1;
+    }
+
+    /**
+     * Set the current visible row number.  1-based.
+     *
+     * @param row the new visible row number.  Row 1 is the first row.
+     */
+    public void setVisibleRowNumber(final int row) {
+        assert (row > 0);
+        if ((row > 0) && (row < document.getLineCount())) {
+            topLine = row - 1;
+            alignDocument(true);
+        }
+    }
+
+    /**
      * Get the current editing row number.  1-based.
      *
      * @return the editing row number.  Row 1 is the first row.

@@ -52,7 +52,12 @@ public final class TMouseEvent extends TInputEvent {
         /**
          * Mouse button up.  X and Y will have screen coordinates.
          */
-        MOUSE_UP
+        MOUSE_UP,
+
+        /**
+         * Mouse double-click.  X and Y will have screen coordinates.
+         */
+        MOUSE_DOUBLE_CLICK
     }
 
     /**

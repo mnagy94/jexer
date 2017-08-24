@@ -981,6 +981,29 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Method that subclasses can override to handle mouse button
+     * double-clicks.
+     *
+     * @param mouse mouse button event
+     */
+    public void onMouseDoubleClick(final TMouseEvent mouse) {
+        // Default: do nothing, pass to children instead
+        for (int i = children.size() - 1 ; i >= 0 ; i--) {
+            TWidget widget = children.get(i);
+            if (widget.mouseWouldHit(mouse)) {
+                // Dispatch to this child, also activate it
+                activate(widget);
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+                widget.handleEvent(mouse);
+                return;
+            }
+        }
+    }
+
+    /**
      * Method that subclasses can override to handle window/screen resize
      * events.
      *
@@ -1070,6 +1093,10 @@ public abstract class TWidget implements Comparable<TWidget> {
 
             case MOUSE_MOTION:
                 onMouseMotion(mouse);
+                break;
+
+            case MOUSE_DOUBLE_CLICK:
+                onMouseDoubleClick(mouse);
                 break;
 
             default:

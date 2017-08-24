@@ -351,6 +351,17 @@ public class TApplication implements Runnable {
     private int oldMouseY;
 
     /**
+     * The last mouse up click time, used to determine if this is a mouse
+     * double-click.
+     */
+    private long lastMouseUpTime;
+
+    /**
+     * The amount of millis between mouse up events to assume a double-click.
+     */
+    private long doubleClickTime = 250;
+
+    /**
      * Event queue that is filled by run().
      */
     private List<TInputEvent> fillEventQueue;
@@ -1071,6 +1082,7 @@ public class TApplication implements Runnable {
         if (debugEvents) {
             System.err.printf("Handle event: %s\n", event);
         }
+        TMouseEvent doubleClick = null;
 
         // Special application-wide events -----------------------------------
 
@@ -1082,6 +1094,25 @@ public class TApplication implements Runnable {
                 oldMouseY = mouseY;
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
+            } else {
+                if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
+                    if ((mouse.getTime().getTime() - lastMouseUpTime) <
+                        doubleClickTime) {
+
+                        // This is a double-click.
+                        doubleClick = new TMouseEvent(TMouseEvent.Type.
+                            MOUSE_DOUBLE_CLICK,
+                            mouse.getX(), mouse.getY(),
+                            mouse.getAbsoluteX(), mouse.getAbsoluteY(),
+                            mouse.isMouse1(), mouse.isMouse2(),
+                            mouse.isMouse3(),
+                            mouse.isMouseWheelUp(), mouse.isMouseWheelDown());
+
+                    } else {
+                        // The first click of a potential double-click.
+                        lastMouseUpTime = mouse.getTime().getTime();
+                    }
+                }
             }
 
             // See if we need to switch focus to another window or the menu
@@ -1189,6 +1220,11 @@ public class TApplication implements Runnable {
                 mouse.setX(mouse.getX() - window.getX());
                 mouse.setY(mouse.getY() - window.getY());
 
+                if (doubleClick != null) {
+                    doubleClick.setX(doubleClick.getX() - window.getX());
+                    doubleClick.setY(doubleClick.getY() - window.getY());
+                }
+
                 if (window.mouseWouldHit(mouse)) {
                     dispatchToDesktop = false;
                 }
@@ -1201,11 +1237,17 @@ public class TApplication implements Runnable {
                     event);
             }
             window.handleEvent(event);
+            if (doubleClick != null) {
+                window.handleEvent(doubleClick);
+            }
         }
         if (dispatchToDesktop) {
             // This event is fair game for the desktop to process.
             if (desktop != null) {
                 desktop.handleEvent(event);
+                if (doubleClick != null) {
+                    desktop.handleEvent(doubleClick);
+                }
             }
         }
     }
@@ -1219,6 +1261,8 @@ public class TApplication implements Runnable {
      * @see #primaryHandleEvent(TInputEvent event)
      */
     private void secondaryHandleEvent(final TInputEvent event) {
+        TMouseEvent doubleClick = null;
+
         // Peek at the mouse position
         if (event instanceof TMouseEvent) {
             TMouseEvent mouse = (TMouseEvent) event;
@@ -1227,10 +1271,32 @@ public class TApplication implements Runnable {
                 oldMouseY = mouseY;
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
+            } else {
+                if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
+                    if ((mouse.getTime().getTime() - lastMouseUpTime) <
+                        doubleClickTime) {
+
+                        // This is a double-click.
+                        doubleClick = new TMouseEvent(TMouseEvent.Type.
+                            MOUSE_DOUBLE_CLICK,
+                            mouse.getX(), mouse.getY(),
+                            mouse.getAbsoluteX(), mouse.getAbsoluteY(),
+                            mouse.isMouse1(), mouse.isMouse2(),
+                            mouse.isMouse3(),
+                            mouse.isMouseWheelUp(), mouse.isMouseWheelDown());
+
+                    } else {
+                        // The first click of a potential double-click.
+                        lastMouseUpTime = mouse.getTime().getTime();
+                    }
+                }
             }
         }
 
         secondaryEventReceiver.handleEvent(event);
+        if (doubleClick != null) {
+            secondaryEventReceiver.handleEvent(doubleClick);
+        }
     }
 
     /**

@@ -239,13 +239,13 @@ public class TEditorWindow extends TScrollableWindow {
         if (mouseOnEditor(mouse)) {
             // The editor might have changed, update the scollbars.
             setBottomValue(editField.getMaximumRowNumber());
-            setVerticalValue(editField.getEditingRowNumber());
+            setVerticalValue(editField.getVisibleRowNumber());
             setRightValue(editField.getMaximumColumnNumber());
             setHorizontalValue(editField.getEditingColumnNumber());
         } else {
             if (mouse.isMouseWheelUp() || mouse.isMouseWheelDown()) {
                 // Vertical scrollbar actions
-                editField.setEditingRowNumber(getVerticalValue());
+                editField.setVisibleRowNumber(getVerticalValue());
             }
         }
     }
@@ -262,7 +262,7 @@ public class TEditorWindow extends TScrollableWindow {
 
         if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
             // Clicked on vertical scrollbar
-            editField.setEditingRowNumber(getVerticalValue());
+            editField.setVisibleRowNumber(getVerticalValue());
         }
 
         // TODO: horizontal scrolling
@@ -281,13 +281,13 @@ public class TEditorWindow extends TScrollableWindow {
         if (mouseOnEditor(mouse) && mouse.isMouse1()) {
             // The editor might have changed, update the scollbars.
             setBottomValue(editField.getMaximumRowNumber());
-            setVerticalValue(editField.getEditingRowNumber());
+            setVerticalValue(editField.getVisibleRowNumber());
             setRightValue(editField.getMaximumColumnNumber());
             setHorizontalValue(editField.getEditingColumnNumber());
         } else {
             if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
                 // Clicked/dragged on vertical scrollbar
-                editField.setEditingRowNumber(getVerticalValue());
+                editField.setVisibleRowNumber(getVerticalValue());
             }
 
             // TODO: horizontal scrolling
@@ -307,7 +307,7 @@ public class TEditorWindow extends TScrollableWindow {
 
         // The editor might have changed, update the scollbars.
         setBottomValue(editField.getMaximumRowNumber());
-        setVerticalValue(editField.getEditingRowNumber());
+        setVerticalValue(editField.getVisibleRowNumber());
         setRightValue(editField.getMaximumColumnNumber());
         setHorizontalValue(editField.getEditingColumnNumber());
     }

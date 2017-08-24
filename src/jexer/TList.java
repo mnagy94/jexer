@@ -304,13 +304,32 @@ public class TList extends TScrollableWidget {
             && (mouse.getY() < getHeight() - 1)) {
             if (getVerticalValue() + mouse.getY() < strings.size()) {
                 selectedString = getVerticalValue() + mouse.getY();
-                dispatchEnter();
             }
             return;
         }
 
         // Pass to children
         super.onMouseDown(mouse);
+    }
+
+    /**
+     * Handle mouse double click.
+     *
+     * @param mouse mouse double click event
+     */
+    @Override
+    public void onMouseDoubleClick(final TMouseEvent mouse) {
+        if ((mouse.getX() < getWidth() - 1)
+            && (mouse.getY() < getHeight() - 1)) {
+            if (getVerticalValue() + mouse.getY() < strings.size()) {
+                selectedString = getVerticalValue() + mouse.getY();
+                dispatchEnter();
+            }
+            return;
+        }
+
+        // Pass to children
+        super.onMouseDoubleClick(mouse);
     }
 
     /**
