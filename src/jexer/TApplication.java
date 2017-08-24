@@ -1941,10 +1941,16 @@ public class TApplication implements Runnable {
                 continue;
             }
             for (int x = w.getX(); x < w.getX() + w.getWidth(); x++) {
+                if (x < 0) {
+                    continue;
+                }
                 if (x >= width) {
                     continue;
                 }
                 for (int y = w.getY(); y < w.getY() + w.getHeight(); y++) {
+                    if (y < 0) {
+                        continue;
+                    }
                     if (y >= height) {
                         continue;
                     }
