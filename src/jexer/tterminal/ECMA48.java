@@ -6083,16 +6083,16 @@ public class ECMA48 implements Runnable {
                     // This is EOF
                     done = true;
                 } else {
-                    for (int i = 0; i < rc; i++) {
-                        int ch = 0;
-                        if (utf8) {
-                            ch = readBufferUTF8[i];
-                        } else {
-                            ch = readBuffer[i];
-                        }
+                    // Don't step on UI events
+                    synchronized (this) {
+                        for (int i = 0; i < rc; i++) {
+                            int ch = 0;
+                            if (utf8) {
+                                ch = readBufferUTF8[i];
+                            } else {
+                                ch = readBuffer[i];
+                            }
 
-                        synchronized (this) {
-                            // Don't step on UI events
                             consume((char)ch);
                         }
                     }
@@ -6124,6 +6124,11 @@ public class ECMA48 implements Runnable {
             input = null;
         } catch (IOException e) {
             // SQUASH
+        }
+
+        // Permit my enclosing UI to know that I updated.
+        if (displayListener != null) {
+            displayListener.displayChanged();
         }
 
         // System.err.println("*** run() exiting..."); System.err.flush();

@@ -445,7 +445,7 @@ public final class TMenu extends TWindow {
 
         case MID_OPEN_FILE:
             label = i18n.getString("menuOpen");
-            key = kbAltO;
+            key = kbF3;
             break;
 
         case MID_CUT:

@@ -39,8 +39,10 @@ import java.util.ResourceBundle;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
+import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
+import jexer.menu.TMenu;
 import jexer.tterminal.DisplayLine;
 import jexer.tterminal.DisplayListener;
 import jexer.tterminal.ECMA48;
@@ -185,6 +187,20 @@ public class TTerminalWindow extends TScrollableWindow
 
         // Add shortcut text
         newStatusBar(i18n.getString("statusBarRunning"));
+    }
+
+    /**
+     * Public constructor spawns a custom command line.
+     *
+     * @param application TApplication that manages this window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param commandLine the command line to execute
+     */
+    public TTerminalWindow(final TApplication application, final int x,
+        final int y, final String commandLine) {
+
+        this(application, x, y, RESIZABLE, commandLine);
     }
 
     /**
@@ -399,7 +415,7 @@ public class TTerminalWindow extends TScrollableWindow
      * Called by emulator when fresh data has come in.
      */
     public void displayChanged() {
-        doRepaint();
+        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
     }
 
     /**
@@ -437,6 +453,13 @@ public class TTerminalWindow extends TScrollableWindow
             shell.destroy();
             shell = null;
         }
+    }
+
+    /**
+     * Hook for subclasses to be notified of the shell termination.
+     */
+    public void onShellExit() {
+        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
     }
 
     /**
@@ -478,6 +501,7 @@ public class TTerminalWindow extends TScrollableWindow
                     clearShortcutKeypresses();
                     statusBar.setText(MessageFormat.format(i18n.
                             getString("statusBarCompleted"), rc));
+                    onShellExit();
                 } catch (IllegalThreadStateException e) {
                     // The emulator thread has exited, but the shell Process
                     // hasn't figured that out yet.  Do nothing, we will see
@@ -495,6 +519,7 @@ public class TTerminalWindow extends TScrollableWindow
                     clearShortcutKeypresses();
                     statusBar.setText(MessageFormat.format(i18n.
                             getString("statusBarCompleted"), rc));
+                    onShellExit();
                 } catch (IllegalThreadStateException e) {
                     // The shell is still running, do nothing.
                 }

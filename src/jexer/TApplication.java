@@ -283,6 +283,10 @@ public class TApplication implements Runnable {
      * Wake the sleeping active event handler.
      */
     private void wakeEventHandler() {
+        if (!started) {
+            return;
+        }
+
         if (secondaryEventHandler != null) {
             synchronized (secondaryEventHandler) {
                 secondaryEventHandler.notify();
@@ -425,6 +429,11 @@ public class TApplication implements Runnable {
      * Timers that are being ticked.
      */
     private List<TTimer> timers;
+
+    /**
+     * When true, the application has been started.
+     */
+    private volatile boolean started = false;
 
     /**
      * When true, exit the application.
@@ -930,6 +939,8 @@ public class TApplication implements Runnable {
         // Start the main consumer thread
         primaryEventHandler = new WidgetEventHandler(this, true);
         (new Thread(primaryEventHandler)).start();
+
+        started = true;
 
         while (!quit) {
             synchronized (this) {
@@ -2380,6 +2391,24 @@ public class TApplication implements Runnable {
             if (rightEdge > getScreen().getWidth()) {
                 menu.setX(getScreen().getWidth() - menu.getWidth());
             }
+        }
+    }
+
+    /**
+     * Post an event to process.
+     *
+     * @param event new event to add to the queue
+     */
+    public final void postEvent(final TInputEvent event) {
+        synchronized (this) {
+            synchronized (fillEventQueue) {
+                fillEventQueue.add(event);
+            }
+            if (debugThreads) {
+                System.err.println(System.currentTimeMillis() + " " +
+                    Thread.currentThread() + " postEvent() wake up main");
+            }
+            this.notify();
         }
     }
 
