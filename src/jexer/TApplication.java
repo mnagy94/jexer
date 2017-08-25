@@ -1623,6 +1623,12 @@ public class TApplication implements Runnable {
             windows.remove(0);
             activeWindow = null;
             for (TWindow w: windows) {
+
+                // Do not activate a hidden window.
+                if (w.isHidden()) {
+                    continue;
+                }
+
                 if (w.getZ() > z) {
                     w.setZ(w.getZ() - 1);
                     if (w.getZ() == 0) {

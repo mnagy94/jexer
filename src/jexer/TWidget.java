@@ -438,7 +438,6 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @return absolute screen column number for the cursor's X position
      */
     public final int getCursorAbsoluteX() {
-        assert (cursorVisible);
         return getAbsoluteX() + cursorX;
     }
 
@@ -448,7 +447,6 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @return absolute screen row number for the cursor's Y position
      */
     public final int getCursorAbsoluteY() {
-        assert (cursorVisible);
         return getAbsoluteY() + cursorY;
     }
 
