@@ -119,6 +119,54 @@ public final class ColorTheme {
     }
 
     /**
+     * Set a color based on a text string.  Color text string is of the form:
+     * <code>[ bold ] [ blink ] { foreground on background }</code>
+     *
+     * @param key the color key string
+     * @param text the text string
+     */
+    public void setColorFromString(final String key, final String text) {
+        boolean bold = false;
+        boolean blink = false;
+        String foreColor;
+        String backColor;
+        String token;
+
+        StringTokenizer tokenizer = new StringTokenizer(text);
+        token = tokenizer.nextToken();
+        while (token.equals("bold") || token.equals("blink")) {
+            if (token.equals("bold")) {
+                bold = true;
+                token = tokenizer.nextToken();
+            }
+            if (token.equals("blink")) {
+                blink = true;
+                token = tokenizer.nextToken();
+            }
+        }
+
+        // What's left is "blah on blah"
+        foreColor = token.toLowerCase();
+
+        if (!tokenizer.nextToken().toLowerCase().equals("on")) {
+            // Invalid line.
+            return;
+        }
+        backColor = tokenizer.nextToken().toLowerCase();
+
+        CellAttributes color = new CellAttributes();
+        if (bold) {
+            color.setBold(true);
+        }
+        if (blink) {
+            color.setBlink(true);
+        }
+        color.setForeColor(Color.getColor(foreColor));
+        color.setBackColor(Color.getColor(backColor));
+        colors.put(key, color);
+    }
+
+    /**
      * Read color theme mappings from a Reader.  The reader is closed at the
      * end.
      *
@@ -129,56 +177,19 @@ public final class ColorTheme {
         BufferedReader bufferedReader = new BufferedReader(reader);
         String line = bufferedReader.readLine();
         for (; line != null; line = bufferedReader.readLine()) {
-            String key;
-            boolean bold = false;
-            boolean blink = false;
-            String foreColor;
-            String backColor;
-            String token;
-
             // Look for lines that resemble:
             //     "key = blah on blah"
             //     "key = bold blah on blah"
             //     "key = blink bold blah on blah"
             //     "key = bold blink blah on blah"
             //     "key = blink blah on blah"
-            StringTokenizer tokenizer = new StringTokenizer(line);
-            key = tokenizer.nextToken();
-            if (!tokenizer.nextToken().equals("=")) {
-                // Skip this line
+            if (line.indexOf('=') == -1) {
+                // Invalid line.
                 continue;
             }
-            token = tokenizer.nextToken();
-            while (token.equals("bold") || token.equals("blink")) {
-                if (token.equals("bold")) {
-                    bold = true;
-                    token = tokenizer.nextToken();
-                }
-                if (token.equals("blink")) {
-                    blink = true;
-                    token = tokenizer.nextToken();
-                }
-            }
-
-            // What's left is "blah on blah" or "blah"
-            foreColor = token.toLowerCase();
-
-            if (!tokenizer.nextToken().toLowerCase().equals("on")) {
-                // Skip this line
-                continue;
-            }
-            backColor = tokenizer.nextToken().toLowerCase();
-
-            CellAttributes color = new CellAttributes();
-            if (bold) {
-                color.setBold(true);
-            }
-            if (blink) {
-                color.setBlink(true);
-            }
-            color.setForeColor(Color.getColor(foreColor));
-            color.setBackColor(Color.getColor(backColor));
-            colors.put(key, color);
+            String key = line.substring(0, line.indexOf(':')).trim();
+            String text = line.substring(line.indexOf(':') + 1);
+            setColorFromString(key, text);
         }
         // All done.
         bufferedReader.close();
@@ -493,6 +504,16 @@ public final class ColorTheme {
         color.setBold(false);
         colors.put("teditor", color);
 
+    }
+
+    /**
+     * Make human-readable description of this Cell.
+     *
+     * @return displayable String
+     */
+    @Override
+    public String toString() {
+        return colors.toString();
     }
 
 }

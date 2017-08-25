@@ -294,12 +294,8 @@ public class CellAttributes {
      */
     @Override
     public String toString() {
-        if (bold) {
-            return String.format("bold %s on %s",
-                foreColor, backColor);
-        } else {
-            return String.format("%s on %s", foreColor, backColor);
-        }
+        return String.format("%s%s%s on %s", (bold == true ? "bold " : ""),
+            (blink == true ? "blink " : ""), foreColor, backColor);
     }
 
 }

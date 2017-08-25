@@ -148,11 +148,33 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
+     * Convert a string array to a whitespace-separated string.
+     *
+     * @param array the string array
+     * @return a single string
+     */
+    private String stringArrayToString(final String [] array) {
+        StringBuilder sb = new StringBuilder(array[0].length());
+        for (int i = 0; i < array.length; i++) {
+            sb.append(array[i]);
+            if (i < array.length - 1) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
      * Spawn the shell.
      *
-     * @param commandLine the command line to execute
+     * @param command the command line to execute
      */
-    private void spawnShell(final String commandLine) {
+    private void spawnShell(final String [] command) {
+
+        /*
+        System.err.printf("spawnShell(): '%s'\n",
+            stringArrayToString(command));
+        */
 
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
         setBottomValue(0);
@@ -161,7 +183,6 @@ public class TTerminalWindow extends TScrollableWindow
         ECMA48.DeviceType deviceType = ECMA48.DeviceType.XTERM;
 
         try {
-            String [] command = commandLine.split("\\s");
             ProcessBuilder pb = new ProcessBuilder(command);
             Map<String, String> env = pb.environment();
             env.put("TERM", ECMA48.deviceTypeTerm(deviceType));
@@ -200,7 +221,7 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final String commandLine) {
 
-        this(application, x, y, RESIZABLE, commandLine);
+        this(application, x, y, RESIZABLE, commandLine.split("\\s"));
     }
 
     /**
@@ -210,18 +231,15 @@ public class TTerminalWindow extends TScrollableWindow
      * @param x column relative to parent
      * @param y row relative to parent
      * @param flags mask of CENTERED, MODAL, or RESIZABLE
-     * @param commandLine the command line to execute
+     * @param command the command line to execute
      */
     public TTerminalWindow(final TApplication application, final int x,
-        final int y, final int flags, final String commandLine) {
+        final int y, final int flags, final String [] command) {
 
         super(application, i18n.getString("windowTitle"), x, y,
             80 + 2, 24 + 2, flags);
 
-        String cmdShellWindows = "cmd.exe /c" + commandLine;
-        String cmdShellGNU = "script -fqe /dev/null -c " + commandLine;
-        String cmdShellBSD = "script -q -F /dev/null -c " + commandLine;
-        String cmdShellPtypipe = "ptypipe " + commandLine;
+        String [] fullCommand;
 
         // Spawn a shell and pass its I/O to the other constructor.
         if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
@@ -229,17 +247,32 @@ public class TTerminalWindow extends TScrollableWindow
                 equals("true"))
         ) {
             ptypipe = true;
-            spawnShell(cmdShellPtypipe);
+            fullCommand = new String[command.length + 1];
+            fullCommand[0] = "ptypipe";
+            System.arraycopy(command, 0, fullCommand, 1, command.length);
         } else if (System.getProperty("os.name").startsWith("Windows")) {
-            spawnShell(cmdShellWindows);
+            fullCommand = new String[3];
+            fullCommand[0] = "cmd";
+            fullCommand[1] = "/c";
+            fullCommand[2] = stringArrayToString(command);
         } else if (System.getProperty("os.name").startsWith("Mac")) {
-            spawnShell(cmdShellBSD);
-        } else if (System.getProperty("os.name").startsWith("Linux")) {
-            spawnShell(cmdShellGNU);
+            fullCommand = new String[6];
+            fullCommand[0] = "script";
+            fullCommand[1] = "-q";
+            fullCommand[2] = "-F";
+            fullCommand[3] = "/dev/null";
+            fullCommand[4] = "-c";
+            fullCommand[5] = stringArrayToString(command);
         } else {
-            // When all else fails, assume GNU.
-            spawnShell(cmdShellGNU);
+            // Default: behave like Linux
+            fullCommand = new String[5];
+            fullCommand[0] = "script";
+            fullCommand[1] = "-fqe";
+            fullCommand[2] = "/dev/null";
+            fullCommand[3] = "-c";
+            fullCommand[4] = stringArrayToString(command);
         }
+        spawnShell(fullCommand);
     }
 
     /**
@@ -275,16 +308,16 @@ public class TTerminalWindow extends TScrollableWindow
                 equals("true"))
         ) {
             ptypipe = true;
-            spawnShell(cmdShellPtypipe);
+            spawnShell(cmdShellPtypipe.split("\\s"));
         } else if (System.getProperty("os.name").startsWith("Windows")) {
-            spawnShell(cmdShellWindows);
+            spawnShell(cmdShellWindows.split("\\s"));
         } else if (System.getProperty("os.name").startsWith("Mac")) {
-            spawnShell(cmdShellBSD);
+            spawnShell(cmdShellBSD.split("\\s"));
         } else if (System.getProperty("os.name").startsWith("Linux")) {
-            spawnShell(cmdShellGNU);
+            spawnShell(cmdShellGNU.split("\\s"));
         } else {
             // When all else fails, assume GNU.
-            spawnShell(cmdShellGNU);
+            spawnShell(cmdShellGNU.split("\\s"));
         }
     }
 

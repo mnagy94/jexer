@@ -2843,13 +2843,29 @@ public class TApplication implements Runnable {
      * @param x column relative to parent
      * @param y row relative to parent
      * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param command the command line to execute
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final int flags, final String [] command) {
+
+        return new TTerminalWindow(this, x, y, flags, command);
+    }
+
+    /**
+     * Convenience function to open a terminal window and execute a custom
+     * command line inside it.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
      * @param commandLine the command line to execute
      * @return the terminal new window
      */
     public final TTerminalWindow openTerminal(final int x, final int y,
         final int flags, final String commandLine) {
 
-        return new TTerminalWindow(this, x, y, flags, commandLine);
+        return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s"));
     }
 
     /**
