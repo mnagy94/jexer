@@ -1489,8 +1489,7 @@ public final class SwingTerminal extends LogicalScreen
                     alt, ctrl, shift);
                 break;
             case KeyEvent.VK_BACK_SPACE:
-                // Special case: return it as kbBackspace (Ctrl-H)
-                keypress = new TKeypress(false, 0, 'H', false, true, false);
+                keypress = kbBackspace;
                 break;
             default:
                 // Unsupported, ignore
@@ -1501,7 +1500,15 @@ public final class SwingTerminal extends LogicalScreen
         if (keypress == null) {
             switch (ch) {
             case 0x08:
-                keypress = kbBackspace;
+                // Disambiguate ^H from Backspace.
+                if (KeyEvent.getKeyText(key.getKeyCode()).equals("H")) {
+                    // This is ^H.
+                    keypress = kbBackspace;
+                } else {
+                    // We are emulating Xterm here, where the backspace key
+                    // on the keyboard returns ^?.
+                    keypress = kbBackspaceDel;
+                }
                 break;
             case 0x0A:
                 keypress = kbEnter;

@@ -1385,7 +1385,7 @@ public class ECMA48 implements Runnable {
             return sb.toString();
         }
 
-        if (keypress.equals(kbBackspace)) {
+        if (keypress.equals(kbBackspaceDel)) {
             switch (type) {
             case VT100:
                 return "\010";
