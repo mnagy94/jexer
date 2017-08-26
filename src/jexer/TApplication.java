@@ -580,6 +580,39 @@ public class TApplication implements Runnable {
      *
      * @param backendType BackendType.XTERM, BackendType.ECMA48 or
      * BackendType.SWING
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @param fontSize the size in points
+     * @throws UnsupportedEncodingException if an exception is thrown when
+     * creating the InputStreamReader
+     */
+    public TApplication(final BackendType backendType, final int windowWidth,
+        final int windowHeight, final int fontSize)
+        throws UnsupportedEncodingException {
+
+        switch (backendType) {
+        case SWING:
+            backend = new SwingBackend(this, windowWidth, windowHeight,
+                fontSize);
+            break;
+        case XTERM:
+            // Fall through...
+        case ECMA48:
+            backend = new ECMA48Backend(this, null, null, windowWidth,
+                windowHeight, fontSize);
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid backend type: "
+                + backendType);
+        }
+        TApplicationImpl();
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param backendType BackendType.XTERM, BackendType.ECMA48 or
+     * BackendType.SWING
      * @throws UnsupportedEncodingException if an exception is thrown when
      * creating the InputStreamReader
      */

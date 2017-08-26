@@ -44,7 +44,7 @@ import static jexer.TKeypress.*;
  * color theme.
  *
  */
-public final class TEditColorThemeWindow extends TWindow {
+public class TEditColorThemeWindow extends TWindow {
 
     /**
      * Translated strings.

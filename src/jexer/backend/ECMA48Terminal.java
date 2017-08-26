@@ -302,6 +302,37 @@ public final class ECMA48Terminal extends LogicalScreen
      * @param output an OutputStream connected to the remote user, or null
      * for System.out.  output is always converted to a Writer with UTF-8
      * encoding.
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @throws UnsupportedEncodingException if an exception is thrown when
+     * creating the InputStreamReader
+     */
+    public ECMA48Terminal(final Object listener, final InputStream input,
+        final OutputStream output, final int windowWidth,
+        final int windowHeight) throws UnsupportedEncodingException {
+
+        this(listener, input, output);
+
+        // Send dtterm/xterm sequences, which will probably not work because
+        // allowWindowOps is defaulted to false.
+        String resizeString = String.format("\033[8;%d;%dt", windowHeight,
+            windowWidth);
+        this.output.write(resizeString);
+        this.output.flush();
+    }
+
+    /**
+     * Constructor sets up state for getEvent().
+     *
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     * @param input an InputStream connected to the remote user, or null for
+     * System.in.  If System.in is used, then on non-Windows systems it will
+     * be put in raw mode; shutdown() will (blindly!) put System.in in cooked
+     * mode.  input is always converted to a Reader with UTF-8 encoding.
+     * @param output an OutputStream connected to the remote user, or null
+     * for System.out.  output is always converted to a Writer with UTF-8
+     * encoding.
      * @throws UnsupportedEncodingException if an exception is thrown when
      * creating the InputStreamReader
      */
