@@ -40,6 +40,71 @@ import jexer.menu.*;
  */
 public class DesktopDemoApplication extends TApplication {
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     *
+     * @param backendType one of the TApplication.BackendType values
+     * @throws Exception if TApplication can't instantiate the Backend.
+     */
+    public DesktopDemoApplication(final BackendType backendType) throws Exception {
+        super(backendType);
+        addAllWidgets();
+        getBackend().setTitle("Jexer Demo Application");
+    }
+
+    // ------------------------------------------------------------------------
+    // TApplication -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Handle menu events.
+     *
+     * @param menu menu event
+     * @return if true, the event was processed and should not be passed onto
+     * a window
+     */
+    @Override
+    public boolean onMenu(final TMenuEvent menu) {
+
+        if (menu.getId() == TMenu.MID_OPEN_FILE) {
+            try {
+                String filename = fileOpenBox(".");
+                 if (filename != null) {
+                     try {
+                         File file = new File(filename);
+                         StringBuilder fileContents = new StringBuilder();
+                         Scanner scanner = new Scanner(file);
+                         String EOL = System.getProperty("line.separator");
+
+                         try {
+                             while (scanner.hasNextLine()) {
+                                 fileContents.append(scanner.nextLine() + EOL);
+                             }
+                             new DemoTextWindow(this, filename,
+                                 fileContents.toString());
+                         } finally {
+                             scanner.close();
+                         }
+                     } catch (IOException e) {
+                         e.printStackTrace();
+                     }
+                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        return super.onMenu(menu);
+    }
+
+    // ------------------------------------------------------------------------
+    // DesktopDemoApplication -------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Add all the widgets of the demo.
      */
@@ -189,56 +254,4 @@ public class DesktopDemoApplication extends TApplication {
 
     }
 
-    /**
-     * Handle menu events.
-     *
-     * @param menu menu event
-     * @return if true, the event was processed and should not be passed onto
-     * a window
-     */
-    @Override
-    public boolean onMenu(final TMenuEvent menu) {
-
-        if (menu.getId() == TMenu.MID_OPEN_FILE) {
-            try {
-                String filename = fileOpenBox(".");
-                 if (filename != null) {
-                     try {
-                         File file = new File(filename);
-                         StringBuilder fileContents = new StringBuilder();
-                         Scanner scanner = new Scanner(file);
-                         String EOL = System.getProperty("line.separator");
-
-                         try {
-                             while (scanner.hasNextLine()) {
-                                 fileContents.append(scanner.nextLine() + EOL);
-                             }
-                             new DemoTextWindow(this, filename,
-                                 fileContents.toString());
-                         } finally {
-                             scanner.close();
-                         }
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
-                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return true;
-        }
-        return super.onMenu(menu);
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param backendType one of the TApplication.BackendType values
-     * @throws Exception if TApplication can't instantiate the Backend.
-     */
-    public DesktopDemoApplication(final BackendType backendType) throws Exception {
-        super(backendType);
-        addAllWidgets();
-        getBackend().setTitle("Jexer Demo Application");
-    }
 }

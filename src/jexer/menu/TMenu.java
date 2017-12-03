@@ -128,8 +128,8 @@ public final class TMenu extends TWindow {
      * @param x column relative to parent
      * @param y row relative to parent
      * @param label mnemonic menu title.  Label must contain a keyboard
-     * shortcut (mnemonic), denoted by prefixing a letter with "&",
-     * e.g. "&File"
+     * shortcut (mnemonic), denoted by prefixing a letter with "&amp;",
+     * e.g. "&amp;File"
      */
     public TMenu(final TApplication parent, final int x, final int y,
         final String label) {
@@ -620,7 +620,7 @@ public final class TMenu extends TWindow {
      * Convenience function to add a sub-menu.
      *
      * @param title menu title.  Title must contain a keyboard shortcut,
-     * denoted by prefixing a letter with "&", e.g. "&File"
+     * denoted by prefixing a letter with "&amp;", e.g. "&amp;File"
      * @return the new sub-menu
      */
     public TSubMenu addSubMenu(final String title) {

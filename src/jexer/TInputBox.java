@@ -32,7 +32,6 @@ package jexer;
  * TInputBox is a system-modal dialog with an OK button and a text input
  * field.  Call it like:
  *
- * <p>
  * <pre>
  * {@code
  *     box = application.inputBox(title, caption);

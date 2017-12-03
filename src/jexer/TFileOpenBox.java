@@ -43,7 +43,6 @@ import static jexer.TKeypress.*;
  * TFileOpenBox is a system-modal dialog for selecting a file to open.  Call
  * it like:
  *
- * <p>
  * <pre>
  * {@code
  *     filename = application.fileOpenBox("/path/to/file.ext",

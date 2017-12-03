@@ -58,7 +58,7 @@ public final class TSubMenu extends TMenuItem {
      *
      * @param parent parent widget
      * @param title menu title.  Title must contain a keyboard shortcut,
-     * denoted by prefixing a letter with "&", e.g. "&File"
+     * denoted by prefixing a letter with "&amp;", e.g. "&amp;File"
      * @param x column relative to parent
      * @param y row relative to parent
      */
@@ -246,7 +246,7 @@ public final class TSubMenu extends TMenuItem {
      * Convenience function to add a sub-menu.
      *
      * @param title menu title.  Title must contain a keyboard shortcut,
-     * denoted by prefixing a letter with "&", e.g. "&File"
+     * denoted by prefixing a letter with "&amp;", e.g. "&amp;File"
      * @return the new sub-menu
      */
     public TSubMenu addSubMenu(final String title) {

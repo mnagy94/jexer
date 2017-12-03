@@ -37,6 +37,10 @@ import static jexer.TKeypress.*;
  */
 public class DemoTextFieldWindow extends TWindow {
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Constructor.
      *
@@ -88,4 +92,5 @@ public class DemoTextFieldWindow extends TWindow {
         statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
         statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
+
 }

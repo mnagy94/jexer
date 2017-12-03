@@ -35,6 +35,7 @@ import jexer.TApplication;
  * capabilities.
  */
 public class Demo1 {
+
     /**
      * Main entry point.
      *

@@ -39,7 +39,6 @@ import static jexer.TKeypress.*;
  * TMessageBox is a system-modal dialog with buttons for OK, Cancel, Yes, or
  * No.  Call it like:
  *
- * <p>
  * <pre>
  * {@code
  *     box = application.messageBox(title, caption,

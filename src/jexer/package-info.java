@@ -41,7 +41,6 @@
  * still being worked on.  Generally the goal will be to build applications
  * somewhat as follows:
  *
- * <p>
  * <pre>
  * {@code
  * import jexer.*;

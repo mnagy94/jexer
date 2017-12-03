@@ -47,7 +47,7 @@ import jexer.event.TMouseEvent;
  * <li>Keypress events are seen if no other windows are open.</li>
  * <li>Menu events are seen if no other windows are open.</li>
  * <li>Command events are seen if no other windows are open.</li>
- * <ul>
+ * </ul>
  */
 public class TDesktop extends TWindow {
 

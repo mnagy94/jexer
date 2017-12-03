@@ -44,6 +44,10 @@ import jexer.backend.SwingBackend;
  */
 public class Demo5 implements WindowListener {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The first demo application instance.
      */
@@ -53,6 +57,10 @@ public class Demo5 implements WindowListener {
      * The second demo application instance.
      */
     DemoApplication app2 = null;
+
+    // ------------------------------------------------------------------------
+    // WindowListener ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Pass window events into the event queue.
@@ -122,6 +130,10 @@ public class Demo5 implements WindowListener {
         // Ignore
     }
 
+    // ------------------------------------------------------------------------
+    // Demo5 ------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    
     /**
      * Run two demo applications in separate panes.
      */

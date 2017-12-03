@@ -29,10 +29,10 @@
 package jexer.bits;
 
 /**
- * MnemonicString is used to render a string like "&File" into a highlighted
- * 'F' and the rest of 'ile'.  To insert a literal '&', use two '&&'
- * characters, e.g. "&File && Stuff" would be "File & Stuff" with the first
- * 'F' highlighted.
+ * MnemonicString is used to render a string like "&amp;File" into a
+ * highlighted 'F' and the rest of 'ile'.  To insert a literal '&amp;', use
+ * two '&amp;&amp;' characters, e.g. "&amp;File &amp;&amp; Stuff" would be
+ * "File &amp; Stuff" with the first 'F' highlighted.
  */
 public final class MnemonicString {
 
@@ -63,7 +63,7 @@ public final class MnemonicString {
      * Public constructor.
      *
      * @param label widget label or title.  Label must contain a keyboard
-     * shortcut, denoted by prefixing a letter with "&", e.g. "&File"
+     * shortcut, denoted by prefixing a letter with "&amp;", e.g. "&amp;File"
      */
     public MnemonicString(final String label) {
 

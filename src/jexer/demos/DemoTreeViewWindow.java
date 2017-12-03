@@ -41,10 +41,18 @@ import static jexer.TKeypress.*;
  */
 public class DemoTreeViewWindow extends TWindow {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Hang onto my TTreeView so I can resize it with the window.
      */
     private TTreeViewWidget treeView;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -65,6 +73,10 @@ public class DemoTreeViewWindow extends TWindow {
         statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
         statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
     }
+
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle window/screen resize events.

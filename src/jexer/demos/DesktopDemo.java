@@ -36,10 +36,31 @@ import jexer.*;
  */
 public class DesktopDemo extends TDesktop {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * If true, draw the hatch.  Note package private access.
      */
     boolean drawHatch = true;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent application
+     */
+    public DesktopDemo(final TApplication parent) {
+        super(parent);
+    }
+
+    // ------------------------------------------------------------------------
+    // TDesktop ---------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * The default TDesktop draws a hatch character across everything.  This
@@ -50,15 +71,6 @@ public class DesktopDemo extends TDesktop {
         if (drawHatch) {
             super.draw();
         }
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param parent parent application
-     */
-    public DesktopDemo(final TApplication parent) {
-        super(parent);
     }
 
 }

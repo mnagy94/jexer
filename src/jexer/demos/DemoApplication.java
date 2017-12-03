@@ -41,48 +41,9 @@ import jexer.backend.SwingTerminal;
  */
 public class DemoApplication extends TApplication {
 
-    /**
-     * Add all the widgets of the demo.
-     */
-    private void addAllWidgets() {
-        new DemoMainWindow(this);
-
-        // Add the menus
-        addFileMenu();
-        addEditMenu();
-
-        TMenu demoMenu = addMenu("&Demo");
-        TMenuItem item = demoMenu.addItem(2000, "&Checkable");
-        item.setCheckable(true);
-        item = demoMenu.addItem(2001, "Disabled");
-        item.setEnabled(false);
-        item = demoMenu.addItem(2002, "&Normal");
-        TSubMenu subMenu = demoMenu.addSubMenu("Sub-&Menu");
-        item = demoMenu.addItem(2010, "N&ormal A&&D");
-        item = demoMenu.addItem(2050, "Co&lors...");
-
-        item = subMenu.addItem(2000, "&Checkable (sub)");
-        item.setCheckable(true);
-        item = subMenu.addItem(2001, "Disabled (sub)");
-        item.setEnabled(false);
-        item = subMenu.addItem(2002, "&Normal (sub)");
-
-        subMenu = subMenu.addSubMenu("Sub-&Menu");
-        item = subMenu.addItem(2000, "&Checkable (sub)");
-        item.setCheckable(true);
-        item = subMenu.addItem(2001, "Disabled (sub)");
-        item.setEnabled(false);
-        item = subMenu.addItem(2002, "&Normal (sub)");
-
-        if (getScreen() instanceof SwingTerminal) {
-            TMenu swingMenu = addMenu("Swin&g");
-            item = swingMenu.addItem(3000, "&Bigger +2");
-            item = swingMenu.addItem(3001, "&Smaller -2");
-        }
-
-        addWindowMenu();
-        addHelpMenu();
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -152,6 +113,22 @@ public class DemoApplication extends TApplication {
     }
 
     /**
+     * Public constructor.
+     *
+     * @param backendType one of the TApplication.BackendType values
+     * @throws Exception if TApplication can't instantiate the Backend.
+     */
+    public DemoApplication(final BackendType backendType) throws Exception {
+        super(backendType);
+        addAllWidgets();
+        getBackend().setTitle("Jexer Demo Application");
+    }
+
+    // ------------------------------------------------------------------------
+    // TApplication -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
      * Handle menu events.
      *
      * @param menu menu event
@@ -199,15 +176,51 @@ public class DemoApplication extends TApplication {
         return super.onMenu(menu);
     }
 
+    // ------------------------------------------------------------------------
+    // DemoApplication --------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
-     * Public constructor.
-     *
-     * @param backendType one of the TApplication.BackendType values
-     * @throws Exception if TApplication can't instantiate the Backend.
+     * Add all the widgets of the demo.
      */
-    public DemoApplication(final BackendType backendType) throws Exception {
-        super(backendType);
-        addAllWidgets();
-        getBackend().setTitle("Jexer Demo Application");
+    private void addAllWidgets() {
+        new DemoMainWindow(this);
+
+        // Add the menus
+        addFileMenu();
+        addEditMenu();
+
+        TMenu demoMenu = addMenu("&Demo");
+        TMenuItem item = demoMenu.addItem(2000, "&Checkable");
+        item.setCheckable(true);
+        item = demoMenu.addItem(2001, "Disabled");
+        item.setEnabled(false);
+        item = demoMenu.addItem(2002, "&Normal");
+        TSubMenu subMenu = demoMenu.addSubMenu("Sub-&Menu");
+        item = demoMenu.addItem(2010, "N&ormal A&&D");
+        item = demoMenu.addItem(2050, "Co&lors...");
+
+        item = subMenu.addItem(2000, "&Checkable (sub)");
+        item.setCheckable(true);
+        item = subMenu.addItem(2001, "Disabled (sub)");
+        item.setEnabled(false);
+        item = subMenu.addItem(2002, "&Normal (sub)");
+
+        subMenu = subMenu.addSubMenu("Sub-&Menu");
+        item = subMenu.addItem(2000, "&Checkable (sub)");
+        item.setCheckable(true);
+        item = subMenu.addItem(2001, "Disabled (sub)");
+        item.setEnabled(false);
+        item = subMenu.addItem(2002, "&Normal (sub)");
+
+        if (getScreen() instanceof SwingTerminal) {
+            TMenu swingMenu = addMenu("Swin&g");
+            item = swingMenu.addItem(3000, "&Bigger +2");
+            item = swingMenu.addItem(3001, "&Smaller -2");
+        }
+
+        addWindowMenu();
+        addHelpMenu();
     }
+
 }

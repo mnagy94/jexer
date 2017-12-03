@@ -2947,6 +2947,7 @@ public class TApplication implements Runnable {
      * @param title window title, will be centered along the top border
      * @param width width of window
      * @param height height of window
+     * @return the new window
      */
     public final TWindow addWindow(final String title, final int width,
         final int height) {
@@ -2963,6 +2964,7 @@ public class TApplication implements Runnable {
      * @param width width of window
      * @param height height of window
      * @param flags bitmask of RESIZABLE, CENTERED, or MODAL
+     * @return the new window
      */
     public final TWindow addWindow(final String title,
         final int width, final int height, final int flags) {
@@ -2979,6 +2981,7 @@ public class TApplication implements Runnable {
      * @param y row relative to parent
      * @param width width of window
      * @param height height of window
+     * @return the new window
      */
     public final TWindow addWindow(final String title,
         final int x, final int y, final int width, final int height) {
@@ -2996,6 +2999,7 @@ public class TApplication implements Runnable {
      * @param width width of window
      * @param height height of window
      * @param flags mask of RESIZABLE, CENTERED, or MODAL
+     * @return the new window
      */
     public final TWindow addWindow(final String title,
         final int x, final int y, final int width, final int height,
@@ -3010,6 +3014,7 @@ public class TApplication implements Runnable {
      * active.
      *
      * @param file the file to open
+     * @return the new editor window
      * @throws IOException if a java.io operation throws
      */
     public final TEditorWindow addEditor(final File file) throws IOException {
