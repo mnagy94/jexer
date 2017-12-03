@@ -36,19 +36,14 @@ package jexer.bits;
  */
 public final class MnemonicString {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Keyboard shortcut to activate this item.
      */
     private char shortcut;
-
-    /**
-     * Get the keyboard shortcut character.
-     *
-     * @return the highlighted character
-     */
-    public char getShortcut() {
-        return shortcut;
-    }
 
     /**
      * Location of the highlighted character.
@@ -56,27 +51,13 @@ public final class MnemonicString {
     private int shortcutIdx = -1;
 
     /**
-     * Get location of the highlighted character.
-     *
-     * @return location of the highlighted character
-     */
-    public int getShortcutIdx() {
-        return shortcutIdx;
-    }
-
-    /**
      * The raw (uncolored) string.
      */
     private String rawLabel;
 
-    /**
-     * Get the raw (uncolored) string.
-     *
-     * @return the raw (uncolored) string
-     */
-    public String getRawLabel() {
-        return rawLabel;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -116,4 +97,36 @@ public final class MnemonicString {
         }
         this.rawLabel = newLabel;
     }
+
+    // ------------------------------------------------------------------------
+    // MnemonicString ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the keyboard shortcut character.
+     *
+     * @return the highlighted character
+     */
+    public char getShortcut() {
+        return shortcut;
+    }
+
+    /**
+     * Get location of the highlighted character.
+     *
+     * @return location of the highlighted character
+     */
+    public int getShortcutIdx() {
+        return shortcutIdx;
+    }
+
+    /**
+     * Get the raw (uncolored) string.
+     *
+     * @return the raw (uncolored) string
+     */
+    public String getRawLabel() {
+        return rawLabel;
+    }
+
 }

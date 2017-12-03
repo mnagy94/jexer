@@ -33,6 +33,10 @@ package jexer;
  */
 public final class TKeypress {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     // Various special keystrokes
 
     /**
@@ -170,382 +174,6 @@ public final class TKeypress {
      */
     public static final int ESC         = 43;
 
-    /**
-     * If true, ch is meaningless, use keyCode instead.
-     */
-    private boolean isFunctionKey;
-
-    /**
-     * Getter for isFunctionKey.
-     *
-     * @return if true, ch is meaningless, use keyCode instead
-     */
-    public boolean isFnKey() {
-        return isFunctionKey;
-    }
-
-    /**
-     * Will be set to F1, F2, HOME, END, etc. if isKey is true.
-     */
-    private int keyCode;
-
-    /**
-     * Getter for function key code.
-     *
-     * @return function key code int value (only valid is isKey is true)
-     */
-    public int getKeyCode() {
-        return keyCode;
-    }
-
-    /**
-     * Keystroke modifier ALT.
-     */
-    private boolean alt;
-
-    /**
-     * Getter for ALT.
-     *
-     * @return alt value
-     */
-    public boolean isAlt() {
-        return alt;
-    }
-
-    /**
-     * Keystroke modifier CTRL.
-     */
-    private boolean ctrl;
-
-    /**
-     * Getter for CTRL.
-     *
-     * @return ctrl value
-     */
-    public boolean isCtrl() {
-        return ctrl;
-    }
-
-    /**
-     * Keystroke modifier SHIFT.
-     */
-    private boolean shift;
-
-    /**
-     * Getter for SHIFT.
-     *
-     * @return shift value
-     */
-    public boolean isShift() {
-        return shift;
-    }
-
-    /**
-     * The character received.
-     */
-    private char ch;
-
-    /**
-     * Getter for character.
-     *
-     * @return the character (only valid if isKey is false)
-     */
-    public char getChar() {
-        return ch;
-    }
-
-    /**
-     * Public constructor makes an immutable instance.
-     *
-     * @param isKey is true, this is a function key
-     * @param fnKey the function key code (only valid if isKey is true)
-     * @param ch the character (only valid if fnKey is false)
-     * @param alt if true, ALT was pressed with this keystroke
-     * @param ctrl if true, CTRL was pressed with this keystroke
-     * @param shift if true, SHIFT was pressed with this keystroke
-     */
-    public TKeypress(final boolean isKey, final int fnKey, final char ch,
-            final boolean alt, final boolean ctrl, final boolean shift) {
-
-        this.isFunctionKey = isKey;
-        this.keyCode       = fnKey;
-        this.ch            = ch;
-        this.alt           = alt;
-        this.ctrl          = ctrl;
-        this.shift         = shift;
-    }
-
-    /**
-     * Create a duplicate instance.
-     *
-     * @return duplicate intance
-     */
-    public TKeypress dup() {
-        TKeypress keypress = new TKeypress(isFunctionKey, keyCode, ch,
-            alt, ctrl, shift);
-        return keypress;
-    }
-
-    /**
-     * Comparison check.  All fields must match to return true.
-     *
-     * @param rhs another TKeypress instance
-     * @return true if all fields are equal
-     */
-    @Override
-    public boolean equals(final Object rhs) {
-        if (!(rhs instanceof TKeypress)) {
-            return false;
-        }
-
-        TKeypress that = (TKeypress) rhs;
-        return ((isFunctionKey == that.isFunctionKey)
-                && (keyCode == that.keyCode)
-                && (ch == that.ch)
-                && (alt == that.alt)
-                && (ctrl == that.ctrl)
-                && (shift == that.shift));
-    }
-
-    /**
-     * Comparison check, omitting the ctrl/alt/shift flags.
-     *
-     * @param rhs another TKeypress instance
-     * @return true if all fields (except for ctrl/alt/shift) are equal
-     */
-    public boolean equalsWithoutModifiers(final Object rhs) {
-        if (!(rhs instanceof TKeypress)) {
-            return false;
-        }
-
-        TKeypress that = (TKeypress) rhs;
-        return ((isFunctionKey == that.isFunctionKey)
-                && (keyCode == that.keyCode)
-                && (ch == that.ch));
-    }
-
-    /**
-     * Hashcode uses all fields in equals().
-     *
-     * @return the hash
-     */
-    @Override
-    public int hashCode() {
-        int A = 13;
-        int B = 23;
-        int hash = A;
-        hash = (B * hash) + (isFunctionKey ? 1 : 0);
-        hash = (B * hash) + keyCode;
-        hash = (B * hash) + ch;
-        hash = (B * hash) + (alt ? 1 : 0);
-        hash = (B * hash) + (ctrl ? 1 : 0);
-        hash = (B * hash) + (shift ? 1 : 0);
-        return hash;
-    }
-
-    /**
-     * Make human-readable description of this TKeypress.
-     *
-     * @return displayable String
-     */
-    @Override
-    public String toString() {
-        if (isFunctionKey) {
-            switch (keyCode) {
-            case F1:
-                return String.format("%s%s%sF1",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F2:
-                return String.format("%s%s%sF2",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F3:
-                return String.format("%s%s%sF3",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F4:
-                return String.format("%s%s%sF4",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F5:
-                return String.format("%s%s%sF5",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F6:
-                return String.format("%s%s%sF6",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F7:
-                return String.format("%s%s%sF7",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F8:
-                return String.format("%s%s%sF8",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F9:
-                return String.format("%s%s%sF9",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F10:
-                return String.format("%s%s%sF10",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F11:
-                return String.format("%s%s%sF11",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case F12:
-                return String.format("%s%s%sF12",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case HOME:
-                return String.format("%s%s%sHOME",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case END:
-                return String.format("%s%s%sEND",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case PGUP:
-                return String.format("%s%s%sPGUP",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case PGDN:
-                return String.format("%s%s%sPGDN",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case INS:
-                return String.format("%s%s%sINS",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case DEL:
-                return String.format("%s%s%sDEL",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case RIGHT:
-                return String.format("%s%s%sRIGHT",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case LEFT:
-                return String.format("%s%s%sLEFT",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case UP:
-                return String.format("%s%s%sUP",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case DOWN:
-                return String.format("%s%s%sDOWN",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case TAB:
-                return String.format("%s%s%sTAB",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case BTAB:
-                return String.format("%s%s%sBTAB",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case ENTER:
-                return String.format("%s%s%sENTER",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            case ESC:
-                return String.format("%s%s%sESC",
-                        ctrl ? "Ctrl+" : "",
-                                alt ? "Alt+" : "",
-                                        shift ? "Shift+" : "");
-            default:
-                return String.format("--UNKNOWN--");
-            }
-        } else {
-            if (alt && !shift && !ctrl) {
-                // Alt-X
-                return String.format("Alt+%c", Character.toUpperCase(ch));
-            } else if (!alt && shift && !ctrl) {
-                // Shift-X
-                return String.format("%c", ch);
-            } else if (!alt && !shift && ctrl) {
-                // Ctrl-X
-                return String.format("Ctrl+%c", ch);
-            } else if (alt && shift && !ctrl) {
-                // Alt-Shift-X
-                return String.format("Alt+Shift+%c", ch);
-            } else if (!alt && shift && ctrl) {
-                // Ctrl-Shift-X
-                return String.format("Ctrl+Shift+%c", ch);
-            } else if (alt && !shift && ctrl) {
-                // Ctrl-Alt-X
-                return String.format("Ctrl+Alt+%c", Character.toUpperCase(ch));
-            } else if (alt && shift && ctrl) {
-                // Ctrl-Alt-Shift-X
-                return String.format("Ctrl+Alt+Shift+%c",
-                        Character.toUpperCase(ch));
-            } else {
-                // X
-                return String.format("%c", ch);
-            }
-        }
-    }
-
-    /**
-     * Convert a keypress to lowercase.  Function keys and alt/ctrl keys are
-     * not converted.
-     *
-     * @return a new instance with the key converted
-     */
-    public TKeypress toLowerCase() {
-        TKeypress newKey = new TKeypress(isFunctionKey, keyCode, ch, alt, ctrl,
-                shift);
-        if (!isFunctionKey && (ch >= 'A') && (ch <= 'Z') && !ctrl && !alt) {
-            newKey.shift = false;
-            newKey.ch += 32;
-        }
-        return newKey;
-    }
-
-    /**
-     * Convert a keypress to uppercase.  Function keys and alt/ctrl keys are
-     * not converted.
-     *
-     * @return a new instance with the key converted
-     */
-    public TKeypress toUpperCase() {
-        TKeypress newKey = new TKeypress(isFunctionKey, keyCode, ch, alt, ctrl,
-                shift);
-        if (!isFunctionKey && (ch >= 'a') && (ch <= 'z') && !ctrl && !alt) {
-            newKey.shift = true;
-            newKey.ch -= 32;
-        }
-        return newKey;
-    }
 
     // Special "no-key" keypress, used to ignore undefined keystrokes
     public static final TKeypress kbNoKey = new TKeypress(true,
@@ -976,5 +604,394 @@ public final class TKeypress {
      */
     public static final TKeypress kbBackspaceDel = new TKeypress(false,
             0, (char)0x7F, false, false, false);
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * If true, ch is meaningless, use keyCode instead.
+     */
+    private boolean isFunctionKey;
+
+    /**
+     * Will be set to F1, F2, HOME, END, etc. if isKey is true.
+     */
+    private int keyCode;
+
+    /**
+     * Keystroke modifier ALT.
+     */
+    private boolean alt;
+
+    /**
+     * Keystroke modifier CTRL.
+     */
+    private boolean ctrl;
+
+    /**
+     * Keystroke modifier SHIFT.
+     */
+    private boolean shift;
+
+    /**
+     * The character received.
+     */
+    private char ch;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor makes an immutable instance.
+     *
+     * @param isKey is true, this is a function key
+     * @param fnKey the function key code (only valid if isKey is true)
+     * @param ch the character (only valid if fnKey is false)
+     * @param alt if true, ALT was pressed with this keystroke
+     * @param ctrl if true, CTRL was pressed with this keystroke
+     * @param shift if true, SHIFT was pressed with this keystroke
+     */
+    public TKeypress(final boolean isKey, final int fnKey, final char ch,
+            final boolean alt, final boolean ctrl, final boolean shift) {
+
+        this.isFunctionKey = isKey;
+        this.keyCode       = fnKey;
+        this.ch            = ch;
+        this.alt           = alt;
+        this.ctrl          = ctrl;
+        this.shift         = shift;
+    }
+
+    // ------------------------------------------------------------------------
+    // TKeypress --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Getter for isFunctionKey.
+     *
+     * @return if true, ch is meaningless, use keyCode instead
+     */
+    public boolean isFnKey() {
+        return isFunctionKey;
+    }
+
+    /**
+     * Getter for function key code.
+     *
+     * @return function key code int value (only valid is isKey is true)
+     */
+    public int getKeyCode() {
+        return keyCode;
+    }
+
+    /**
+     * Getter for ALT.
+     *
+     * @return alt value
+     */
+    public boolean isAlt() {
+        return alt;
+    }
+
+    /**
+     * Getter for CTRL.
+     *
+     * @return ctrl value
+     */
+    public boolean isCtrl() {
+        return ctrl;
+    }
+
+    /**
+     * Getter for SHIFT.
+     *
+     * @return shift value
+     */
+    public boolean isShift() {
+        return shift;
+    }
+
+    /**
+     * Getter for character.
+     *
+     * @return the character (only valid if isKey is false)
+     */
+    public char getChar() {
+        return ch;
+    }
+
+    /**
+     * Create a duplicate instance.
+     *
+     * @return duplicate intance
+     */
+    public TKeypress dup() {
+        TKeypress keypress = new TKeypress(isFunctionKey, keyCode, ch,
+            alt, ctrl, shift);
+        return keypress;
+    }
+
+    /**
+     * Comparison check.  All fields must match to return true.
+     *
+     * @param rhs another TKeypress instance
+     * @return true if all fields are equal
+     */
+    @Override
+    public boolean equals(final Object rhs) {
+        if (!(rhs instanceof TKeypress)) {
+            return false;
+        }
+
+        TKeypress that = (TKeypress) rhs;
+        return ((isFunctionKey == that.isFunctionKey)
+                && (keyCode == that.keyCode)
+                && (ch == that.ch)
+                && (alt == that.alt)
+                && (ctrl == that.ctrl)
+                && (shift == that.shift));
+    }
+
+    /**
+     * Comparison check, omitting the ctrl/alt/shift flags.
+     *
+     * @param rhs another TKeypress instance
+     * @return true if all fields (except for ctrl/alt/shift) are equal
+     */
+    public boolean equalsWithoutModifiers(final Object rhs) {
+        if (!(rhs instanceof TKeypress)) {
+            return false;
+        }
+
+        TKeypress that = (TKeypress) rhs;
+        return ((isFunctionKey == that.isFunctionKey)
+                && (keyCode == that.keyCode)
+                && (ch == that.ch));
+    }
+
+    /**
+     * Hashcode uses all fields in equals().
+     *
+     * @return the hash
+     */
+    @Override
+    public int hashCode() {
+        int A = 13;
+        int B = 23;
+        int hash = A;
+        hash = (B * hash) + (isFunctionKey ? 1 : 0);
+        hash = (B * hash) + keyCode;
+        hash = (B * hash) + ch;
+        hash = (B * hash) + (alt ? 1 : 0);
+        hash = (B * hash) + (ctrl ? 1 : 0);
+        hash = (B * hash) + (shift ? 1 : 0);
+        return hash;
+    }
+
+    /**
+     * Make human-readable description of this TKeypress.
+     *
+     * @return displayable String
+     */
+    @Override
+    public String toString() {
+        if (isFunctionKey) {
+            switch (keyCode) {
+            case F1:
+                return String.format("%s%s%sF1",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F2:
+                return String.format("%s%s%sF2",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F3:
+                return String.format("%s%s%sF3",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F4:
+                return String.format("%s%s%sF4",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F5:
+                return String.format("%s%s%sF5",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F6:
+                return String.format("%s%s%sF6",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F7:
+                return String.format("%s%s%sF7",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F8:
+                return String.format("%s%s%sF8",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F9:
+                return String.format("%s%s%sF9",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F10:
+                return String.format("%s%s%sF10",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F11:
+                return String.format("%s%s%sF11",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case F12:
+                return String.format("%s%s%sF12",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case HOME:
+                return String.format("%s%s%sHOME",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case END:
+                return String.format("%s%s%sEND",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case PGUP:
+                return String.format("%s%s%sPGUP",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case PGDN:
+                return String.format("%s%s%sPGDN",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case INS:
+                return String.format("%s%s%sINS",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case DEL:
+                return String.format("%s%s%sDEL",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case RIGHT:
+                return String.format("%s%s%sRIGHT",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case LEFT:
+                return String.format("%s%s%sLEFT",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case UP:
+                return String.format("%s%s%sUP",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case DOWN:
+                return String.format("%s%s%sDOWN",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case TAB:
+                return String.format("%s%s%sTAB",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case BTAB:
+                return String.format("%s%s%sBTAB",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case ENTER:
+                return String.format("%s%s%sENTER",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case ESC:
+                return String.format("%s%s%sESC",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            default:
+                return String.format("--UNKNOWN--");
+            }
+        } else {
+            if (alt && !shift && !ctrl) {
+                // Alt-X
+                return String.format("Alt+%c", Character.toUpperCase(ch));
+            } else if (!alt && shift && !ctrl) {
+                // Shift-X
+                return String.format("%c", ch);
+            } else if (!alt && !shift && ctrl) {
+                // Ctrl-X
+                return String.format("Ctrl+%c", ch);
+            } else if (alt && shift && !ctrl) {
+                // Alt-Shift-X
+                return String.format("Alt+Shift+%c", ch);
+            } else if (!alt && shift && ctrl) {
+                // Ctrl-Shift-X
+                return String.format("Ctrl+Shift+%c", ch);
+            } else if (alt && !shift && ctrl) {
+                // Ctrl-Alt-X
+                return String.format("Ctrl+Alt+%c", Character.toUpperCase(ch));
+            } else if (alt && shift && ctrl) {
+                // Ctrl-Alt-Shift-X
+                return String.format("Ctrl+Alt+Shift+%c",
+                        Character.toUpperCase(ch));
+            } else {
+                // X
+                return String.format("%c", ch);
+            }
+        }
+    }
+
+    /**
+     * Convert a keypress to lowercase.  Function keys and alt/ctrl keys are
+     * not converted.
+     *
+     * @return a new instance with the key converted
+     */
+    public TKeypress toLowerCase() {
+        TKeypress newKey = new TKeypress(isFunctionKey, keyCode, ch, alt, ctrl,
+                shift);
+        if (!isFunctionKey && (ch >= 'A') && (ch <= 'Z') && !ctrl && !alt) {
+            newKey.shift = false;
+            newKey.ch += 32;
+        }
+        return newKey;
+    }
+
+    /**
+     * Convert a keypress to uppercase.  Function keys and alt/ctrl keys are
+     * not converted.
+     *
+     * @return a new instance with the key converted
+     */
+    public TKeypress toUpperCase() {
+        TKeypress newKey = new TKeypress(isFunctionKey, keyCode, ch, alt, ctrl,
+                shift);
+        if (!isFunctionKey && (ch >= 'a') && (ch <= 'z') && !ctrl && !alt) {
+            newKey.shift = true;
+            newKey.ch -= 32;
+        }
+        return newKey;
+    }
 
 }

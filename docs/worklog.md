@@ -1,6 +1,17 @@
 Jexer Work Log
 ==============
 
+October 17, 2017
+
+I finally gave up the ghost on using gcj as the default compiler due
+to its awesome unused imports messages, and learned how to get PMD to
+do that job.  Which promptly created 1000+ warning messages related to
+class item order (variables, constructors, methods), nested ifs,
+useless checks, and so on.  So now we go on a code sweep to fix those,
+and along the way set a new class template.  Since this is so large
+and invasive, I will bite the bullet now and get it done before the
+next release which will get it out on Maven finally.
+
 August 16, 2017
 
 Holy balls this has gotten so much faster!  It is FINALLY visibly

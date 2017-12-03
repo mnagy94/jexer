@@ -35,6 +35,10 @@ package jexer.event;
  */
 public final class TMouseEvent extends TInputEvent {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The type of event generated.
      */
@@ -60,19 +64,14 @@ public final class TMouseEvent extends TInputEvent {
         MOUSE_DOUBLE_CLICK
     }
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Type of event, one of MOUSE_MOTION, MOUSE_UP, or MOUSE_DOWN.
      */
     private Type type;
-
-    /**
-     * Get type.
-     *
-     * @return type
-     */
-    public Type getType() {
-        return type;
-    }
 
     /**
      * Mouse X - relative coordinates.
@@ -80,51 +79,9 @@ public final class TMouseEvent extends TInputEvent {
     private int x;
 
     /**
-     * Get x.
-     *
-     * @return x
-     */
-    public int getX() {
-        return x;
-    }
-
-    /**
-     * Set x.
-     *
-     * @param x new relative X value
-     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
-     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
-     * @see jexer.TWidget#onMouseMotion(TMouseEvent mouse)
-     */
-    public void setX(final int x) {
-        this.x = x;
-    }
-
-    /**
      * Mouse Y - relative coordinates.
      */
     private int y;
-
-    /**
-     * Get y.
-     *
-     * @return y
-     */
-    public int getY() {
-        return y;
-    }
-
-    /**
-     * Set y.
-     *
-     * @param y new relative Y value
-     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
-     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
-     * @see jexer.TWidget#onMouseMotion(TMouseEvent mouse)
-     */
-    public void setY(final int y) {
-        this.y = y;
-    }
 
     /**
      * Mouse X - absolute screen coordinates.
@@ -132,45 +89,9 @@ public final class TMouseEvent extends TInputEvent {
     private int absoluteX;
 
     /**
-     * Get absoluteX.
-     *
-     * @return absoluteX
-     */
-    public int getAbsoluteX() {
-        return absoluteX;
-    }
-
-    /**
-     * Set absoluteX.
-     *
-     * @param absoluteX the new value
-     */
-    public void setAbsoluteX(final int absoluteX) {
-        this.absoluteX = absoluteX;
-    }
-
-    /**
      * Mouse Y - absolute screen coordinate.
      */
     private int absoluteY;
-
-    /**
-     * Get absoluteY.
-     *
-     * @return absoluteY
-     */
-    public int getAbsoluteY() {
-        return absoluteY;
-    }
-
-    /**
-     * Set absoluteY.
-     *
-     * @param absoluteY the new value
-     */
-    public void setAbsoluteY(final int absoluteY) {
-        this.absoluteY = absoluteY;
-    }
 
     /**
      * Mouse button 1 (left button).
@@ -178,27 +99,9 @@ public final class TMouseEvent extends TInputEvent {
     private boolean mouse1;
 
     /**
-     * Get mouse1.
-     *
-     * @return mouse1
-     */
-    public boolean isMouse1() {
-        return mouse1;
-    }
-
-    /**
      * Mouse button 2 (right button).
      */
     private boolean mouse2;
-
-    /**
-     * Get mouse2.
-     *
-     * @return mouse2
-     */
-    public boolean isMouse2() {
-        return mouse2;
-    }
 
     /**
      * Mouse button 3 (middle button).
@@ -206,41 +109,18 @@ public final class TMouseEvent extends TInputEvent {
     private boolean mouse3;
 
     /**
-     * Get mouse3.
-     *
-     * @return mouse3
-     */
-    public boolean isMouse3() {
-        return mouse3;
-    }
-
-    /**
      * Mouse wheel UP (button 4).
      */
     private boolean mouseWheelUp;
-
-    /**
-     * Get mouseWheelUp.
-     *
-     * @return mouseWheelUp
-     */
-    public boolean isMouseWheelUp() {
-        return mouseWheelUp;
-    }
 
     /**
      * Mouse wheel DOWN (button 5).
      */
     private boolean mouseWheelDown;
 
-    /**
-     * Get mouseWheelDown.
-     *
-     * @return mouseWheelDown
-     */
-    public boolean isMouseWheelDown() {
-        return mouseWheelDown;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public contructor.
@@ -271,6 +151,142 @@ public final class TMouseEvent extends TInputEvent {
         this.mouse3             = mouse3;
         this.mouseWheelUp       = mouseWheelUp;
         this.mouseWheelDown     = mouseWheelDown;
+    }
+
+    // ------------------------------------------------------------------------
+    // TMouseEvent ------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get type.
+     *
+     * @return type
+     */
+    public Type getType() {
+        return type;
+    }
+
+    /**
+     * Get x.
+     *
+     * @return x
+     */
+    public int getX() {
+        return x;
+    }
+
+    /**
+     * Set x.
+     *
+     * @param x new relative X value
+     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
+     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
+     * @see jexer.TWidget#onMouseMotion(TMouseEvent mouse)
+     */
+    public void setX(final int x) {
+        this.x = x;
+    }
+
+    /**
+     * Get y.
+     *
+     * @return y
+     */
+    public int getY() {
+        return y;
+    }
+
+    /**
+     * Set y.
+     *
+     * @param y new relative Y value
+     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
+     * @see jexer.TWidget#onMouseDown(TMouseEvent mouse)
+     * @see jexer.TWidget#onMouseMotion(TMouseEvent mouse)
+     */
+    public void setY(final int y) {
+        this.y = y;
+    }
+
+    /**
+     * Get absoluteX.
+     *
+     * @return absoluteX
+     */
+    public int getAbsoluteX() {
+        return absoluteX;
+    }
+
+    /**
+     * Set absoluteX.
+     *
+     * @param absoluteX the new value
+     */
+    public void setAbsoluteX(final int absoluteX) {
+        this.absoluteX = absoluteX;
+    }
+
+    /**
+     * Get absoluteY.
+     *
+     * @return absoluteY
+     */
+    public int getAbsoluteY() {
+        return absoluteY;
+    }
+
+    /**
+     * Set absoluteY.
+     *
+     * @param absoluteY the new value
+     */
+    public void setAbsoluteY(final int absoluteY) {
+        this.absoluteY = absoluteY;
+    }
+
+    /**
+     * Get mouse1.
+     *
+     * @return mouse1
+     */
+    public boolean isMouse1() {
+        return mouse1;
+    }
+
+    /**
+     * Get mouse2.
+     *
+     * @return mouse2
+     */
+    public boolean isMouse2() {
+        return mouse2;
+    }
+
+    /**
+     * Get mouse3.
+     *
+     * @return mouse3
+     */
+    public boolean isMouse3() {
+        return mouse3;
+    }
+
+    /**
+     * Get mouseWheelUp.
+     *
+     * @return mouseWheelUp
+     */
+    public boolean isMouseWheelUp() {
+        return mouseWheelUp;
+    }
+
+    /**
+     * Get mouseWheelDown.
+     *
+     * @return mouseWheelDown
+     */
+    public boolean isMouseWheelDown() {
+        return mouseWheelDown;
     }
 
     /**

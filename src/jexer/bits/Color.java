@@ -33,62 +33,9 @@ package jexer.bits;
  */
 public final class Color {
 
-    /**
-     * The color value.  Default is SGRWHITE.
-     */
-    private int value = SGRWHITE;
-
-    /**
-     * Get color value.  Note that these deliberately match the color values
-     * of the ECMA-48 / ANSI X3.64 / VT100-ish SGR function ("ANSI colors").
-     *
-     * @return the value
-     */
-    public int getValue() {
-        return value;
-    }
-
-    /**
-     * Private constructor used to make the static Color instances.
-     *
-     * @param value the integer Color value
-     */
-    private Color(final int value) {
-        this.value = value;
-    }
-
-    /**
-     * Public constructor returns one of the static Color instances.
-     *
-     * @param colorName "red", "blue", etc.
-     * @return Color.RED, Color.BLUE, etc.
-     */
-    static Color getColor(final String colorName) {
-        String str = colorName.toLowerCase();
-
-        if (str.equals("black")) {
-            return Color.BLACK;
-        } else if (str.equals("white")) {
-            return Color.WHITE;
-        } else if (str.equals("red")) {
-            return Color.RED;
-        } else if (str.equals("cyan")) {
-            return Color.CYAN;
-        } else if (str.equals("green")) {
-            return Color.GREEN;
-        } else if (str.equals("magenta")) {
-            return Color.MAGENTA;
-        } else if (str.equals("blue")) {
-            return Color.BLUE;
-        } else if (str.equals("yellow")) {
-            return Color.YELLOW;
-        } else if (str.equals("brown")) {
-            return Color.YELLOW;
-        } else {
-            // Let unknown strings become white
-            return Color.WHITE;
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * SGR black value = 0.
@@ -169,6 +116,75 @@ public final class Color {
      * White.
      */
     public static final Color WHITE = new Color(SGRWHITE);
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The color value.  Default is SGRWHITE.
+     */
+    private int value = SGRWHITE;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Private constructor used to make the static Color instances.
+     *
+     * @param value the integer Color value
+     */
+    private Color(final int value) {
+        this.value = value;
+    }
+
+    // ------------------------------------------------------------------------
+    // Color ------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get color value.  Note that these deliberately match the color values
+     * of the ECMA-48 / ANSI X3.64 / VT100-ish SGR function ("ANSI colors").
+     *
+     * @return the value
+     */
+    public int getValue() {
+        return value;
+    }
+
+    /**
+     * Public constructor returns one of the static Color instances.
+     *
+     * @param colorName "red", "blue", etc.
+     * @return Color.RED, Color.BLUE, etc.
+     */
+    static Color getColor(final String colorName) {
+        String str = colorName.toLowerCase();
+
+        if (str.equals("black")) {
+            return Color.BLACK;
+        } else if (str.equals("white")) {
+            return Color.WHITE;
+        } else if (str.equals("red")) {
+            return Color.RED;
+        } else if (str.equals("cyan")) {
+            return Color.CYAN;
+        } else if (str.equals("green")) {
+            return Color.GREEN;
+        } else if (str.equals("magenta")) {
+            return Color.MAGENTA;
+        } else if (str.equals("blue")) {
+            return Color.BLUE;
+        } else if (str.equals("yellow")) {
+            return Color.YELLOW;
+        } else if (str.equals("brown")) {
+            return Color.YELLOW;
+        } else {
+            // Let unknown strings become white
+            return Color.WHITE;
+        }
+    }
 
     /**
      * Invert a color in the same way as (CGA/VGA color XOR 0x7).

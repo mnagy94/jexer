@@ -39,10 +39,18 @@ import jexer.bits.CellAttributes;
  */
 public class MultiScreen implements Screen {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The list of screens to use.
      */
     private List<Screen> screens = new LinkedList<Screen>();
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor requires one screen.
@@ -53,25 +61,9 @@ public class MultiScreen implements Screen {
         screens.add(screen);
     }
 
-    /**
-     * Add a screen to the list.
-     *
-     * @param screen the screen to add
-     */
-    public void addScreen(final Screen screen) {
-        screens.add(screen);
-    }
-
-    /**
-     * Remove a screen from the list.
-     *
-     * @param screen the screen to remove
-     */
-    public void removeScreen(final Screen screen) {
-        if (screens.size() > 1) {
-            screens.remove(screen);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Screen -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Set drawing offset for x.
@@ -571,6 +563,30 @@ public class MultiScreen implements Screen {
     public void setTitle(final String title) {
         for (Screen screen: screens) {
             screen.setTitle(title);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // MultiScreen ------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Add a screen to the list.
+     *
+     * @param screen the screen to add
+     */
+    public void addScreen(final Screen screen) {
+        screens.add(screen);
+    }
+
+    /**
+     * Remove a screen from the list.
+     *
+     * @param screen the screen to remove
+     */
+    public void removeScreen(final Screen screen) {
+        if (screens.size() > 1) {
+            screens.remove(screen);
         }
     }
 

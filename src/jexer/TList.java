@@ -41,6 +41,10 @@ import static jexer.TKeypress.*;
  */
 public class TList extends TScrollableWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The list of strings to display.
      */
@@ -50,56 +54,6 @@ public class TList extends TScrollableWidget {
      * Selected string.
      */
     private int selectedString = -1;
-
-    /**
-     * Get the selection index.
-     *
-     * @return -1 if nothing is selected, otherwise the index into the list
-     */
-    public final int getSelectedIndex() {
-        return selectedString;
-    }
-
-    /**
-     * Set the selected string index.
-     *
-     * @param index -1 to unselect, otherwise the index into the list
-     */
-    public final void setSelectedIndex(final int index) {
-        selectedString = index;
-    }
-
-    /**
-     * Get the selected string.
-     *
-     * @return the selected string, or null of nothing is selected yet
-     */
-    public final String getSelected() {
-        if ((selectedString >= 0) && (selectedString <= strings.size() - 1)) {
-            return strings.get(selectedString);
-        }
-        return null;
-    }
-
-    /**
-     * Get the maximum selection index value.
-     *
-     * @return -1 if the list is empty
-     */
-    public final int getMaxSelectedIndex() {
-        return strings.size() - 1;
-    }
-
-    /**
-     * Set the new list of strings to display.
-     *
-     * @param list new list of strings
-     */
-    public final void setList(final List<String> list) {
-        strings.clear();
-        strings.addAll(list);
-        reflowData();
-    }
 
     /**
      * Maximum width of a single line.
@@ -116,55 +70,9 @@ public class TList extends TScrollableWidget {
      */
     private TAction moveAction = null;
 
-    /**
-     * Perform user selection action.
-     */
-    public void dispatchEnter() {
-        assert (selectedString >= 0);
-        assert (selectedString < strings.size());
-        if (enterAction != null) {
-            enterAction.DO();
-        }
-    }
-
-    /**
-     * Perform list movement action.
-     */
-    public void dispatchMove() {
-        assert (selectedString >= 0);
-        assert (selectedString < strings.size());
-        if (moveAction != null) {
-            moveAction.DO();
-        }
-    }
-
-    /**
-     * Resize for a new width/height.
-     */
-    @Override
-    public void reflowData() {
-
-        // Reset the lines
-        selectedString = -1;
-        maxLineWidth = 0;
-
-        for (int i = 0; i < strings.size(); i++) {
-            String line = strings.get(i);
-            if (line.length() > maxLineWidth) {
-                maxLineWidth = line.length();
-            }
-        }
-
-        setBottomValue(strings.size() - getHeight() + 1);
-        if (getBottomValue() < 0) {
-            setBottomValue(0);
-        }
-
-        setRightValue(maxLineWidth - getWidth() + 1);
-        if (getRightValue() < 0) {
-            setRightValue(0);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -241,48 +149,9 @@ public class TList extends TScrollableWidget {
         reflowData();
     }
 
-    /**
-     * Draw the files list.
-     */
-    @Override
-    public void draw() {
-        CellAttributes color = null;
-        int begin = getVerticalValue();
-        int topY = 0;
-        for (int i = begin; i < strings.size(); i++) {
-            String line = strings.get(i);
-            if (getHorizontalValue() < line.length()) {
-                line = line.substring(getHorizontalValue());
-            } else {
-                line = "";
-            }
-            if (i == selectedString) {
-                color = getTheme().getColor("tlist.selected");
-            } else if (isAbsoluteActive()) {
-                color = getTheme().getColor("tlist");
-            } else {
-                color = getTheme().getColor("tlist.inactive");
-            }
-            String formatString = "%-" + Integer.toString(getWidth() - 1) + "s";
-            getScreen().putStringXY(0, topY, String.format(formatString, line),
-                    color);
-            topY++;
-            if (topY >= getHeight() - 1) {
-                break;
-            }
-        }
-
-        if (isAbsoluteActive()) {
-            color = getTheme().getColor("tlist");
-        } else {
-            color = getTheme().getColor("tlist.inactive");
-        }
-
-        // Pad the rest with blank lines
-        for (int i = topY; i < getHeight() - 1; i++) {
-            getScreen().hLineXY(0, i, getWidth() - 1, ' ', color);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle mouse press events.
@@ -424,6 +293,161 @@ public class TList extends TScrollableWidget {
         } else {
             // Pass other keys (tab etc.) on
             super.onKeypress(keypress);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TScrollableWidget ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Resize for a new width/height.
+     */
+    @Override
+    public void reflowData() {
+
+        // Reset the lines
+        selectedString = -1;
+        maxLineWidth = 0;
+
+        for (int i = 0; i < strings.size(); i++) {
+            String line = strings.get(i);
+            if (line.length() > maxLineWidth) {
+                maxLineWidth = line.length();
+            }
+        }
+
+        setBottomValue(strings.size() - getHeight() + 1);
+        if (getBottomValue() < 0) {
+            setBottomValue(0);
+        }
+
+        setRightValue(maxLineWidth - getWidth() + 1);
+        if (getRightValue() < 0) {
+            setRightValue(0);
+        }
+    }
+
+    /**
+     * Draw the files list.
+     */
+    @Override
+    public void draw() {
+        CellAttributes color = null;
+        int begin = getVerticalValue();
+        int topY = 0;
+        for (int i = begin; i < strings.size(); i++) {
+            String line = strings.get(i);
+            if (getHorizontalValue() < line.length()) {
+                line = line.substring(getHorizontalValue());
+            } else {
+                line = "";
+            }
+            if (i == selectedString) {
+                if (isAbsoluteActive()) {
+                    color = getTheme().getColor("tlist.selected");
+                } else {
+                    color = getTheme().getColor("tlist.selected.inactive");
+                }
+            } else if (isAbsoluteActive()) {
+                color = getTheme().getColor("tlist");
+            } else {
+                color = getTheme().getColor("tlist.inactive");
+            }
+            String formatString = "%-" + Integer.toString(getWidth() - 1) + "s";
+            getScreen().putStringXY(0, topY, String.format(formatString, line),
+                    color);
+            topY++;
+            if (topY >= getHeight() - 1) {
+                break;
+            }
+        }
+
+        if (isAbsoluteActive()) {
+            color = getTheme().getColor("tlist");
+        } else {
+            color = getTheme().getColor("tlist.inactive");
+        }
+
+        // Pad the rest with blank lines
+        for (int i = topY; i < getHeight() - 1; i++) {
+            getScreen().hLineXY(0, i, getWidth() - 1, ' ', color);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TList ------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the selection index.
+     *
+     * @return -1 if nothing is selected, otherwise the index into the list
+     */
+    public final int getSelectedIndex() {
+        return selectedString;
+    }
+
+    /**
+     * Set the selected string index.
+     *
+     * @param index -1 to unselect, otherwise the index into the list
+     */
+    public final void setSelectedIndex(final int index) {
+        selectedString = index;
+    }
+
+    /**
+     * Get the selected string.
+     *
+     * @return the selected string, or null of nothing is selected yet
+     */
+    public final String getSelected() {
+        if ((selectedString >= 0) && (selectedString <= strings.size() - 1)) {
+            return strings.get(selectedString);
+        }
+        return null;
+    }
+
+    /**
+     * Get the maximum selection index value.
+     *
+     * @return -1 if the list is empty
+     */
+    public final int getMaxSelectedIndex() {
+        return strings.size() - 1;
+    }
+
+    /**
+     * Set the new list of strings to display.
+     *
+     * @param list new list of strings
+     */
+    public final void setList(final List<String> list) {
+        strings.clear();
+        strings.addAll(list);
+        reflowData();
+    }
+
+    /**
+     * Perform user selection action.
+     */
+    public void dispatchEnter() {
+        assert (selectedString >= 0);
+        assert (selectedString < strings.size());
+        if (enterAction != null) {
+            enterAction.DO();
+        }
+    }
+
+    /**
+     * Perform list movement action.
+     */
+    public void dispatchMove() {
+        assert (selectedString >= 0);
+        assert (selectedString < strings.size());
+        if (moveAction != null) {
+            moveAction.DO();
         }
     }
 

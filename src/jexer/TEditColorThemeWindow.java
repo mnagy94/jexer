@@ -51,6 +51,30 @@ public class TEditColorThemeWindow extends TWindow {
      */
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TEditColorThemeWindow.class.getName());
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The current editing theme.
+     */
+    private ColorTheme editTheme;
+
+    /**
+     * The left-side list of colors pane.
+     */
+    private TList colorNames;
+
+    /**
+     * The foreground color.
+     */
+    private ForegroundPicker foreground;
+
+    /**
+     * The background color.
+     */
+    private BackgroundPicker background;
+
     /**
      * The foreground color picker.
      */
@@ -602,53 +626,9 @@ public class TEditColorThemeWindow extends TWindow {
 
     }
 
-    /**
-     * The current editing theme.
-     */
-    private ColorTheme editTheme;
-
-    /**
-     * The left-side list of colors pane.
-     */
-    private TList colorNames;
-
-    /**
-     * The foreground color.
-     */
-    private ForegroundPicker foreground;
-
-    /**
-     * The background color.
-     */
-    private BackgroundPicker background;
-
-    /**
-     * Set various widgets/values to the editing theme color.
-     *
-     * @param colorName name of color from theme
-     */
-    private void refreshFromTheme(final String colorName) {
-        CellAttributes attr = editTheme.getColor(colorName);
-        foreground.color = attr.getForeColor();
-        foreground.bold = attr.isBold();
-        background.color = attr.getBackColor();
-    }
-
-    /**
-     * Examines foreground, background, and colorNames and sets the color in
-     * editTheme.
-     */
-    private void saveToEditTheme() {
-        String colorName = colorNames.getSelected();
-        if (colorName == null) {
-            return;
-        }
-        CellAttributes attr = editTheme.getColor(colorName);
-        attr.setForeColor(foreground.color);
-        attr.setBold(foreground.bold);
-        attr.setBackColor(background.color);
-        editTheme.setColor(colorName, attr);
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  The file open box will be centered on screen.
@@ -720,6 +700,31 @@ public class TEditColorThemeWindow extends TWindow {
         newStatusBar(i18n.getString("statusBar"));
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Handle keystrokes.
+     *
+     * @param keypress keystroke event
+     */
+    @Override
+    public void onKeypress(final TKeypressEvent keypress) {
+        // Escape - behave like cancel
+        if (keypress.equals(kbEsc)) {
+            getApplication().closeWindow(this);
+            return;
+        }
+
+        // Pass to my parent
+        super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Draw me on screen.
      */
@@ -747,21 +752,36 @@ public class TEditColorThemeWindow extends TWindow {
             i18n.getString("textTextText"), attr);
     }
 
+    // ------------------------------------------------------------------------
+    // TEditColorThemeWindow --------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
-     * Handle keystrokes.
+     * Set various widgets/values to the editing theme color.
      *
-     * @param keypress keystroke event
+     * @param colorName name of color from theme
      */
-    @Override
-    public void onKeypress(final TKeypressEvent keypress) {
-        // Escape - behave like cancel
-        if (keypress.equals(kbEsc)) {
-            getApplication().closeWindow(this);
+    private void refreshFromTheme(final String colorName) {
+        CellAttributes attr = editTheme.getColor(colorName);
+        foreground.color = attr.getForeColor();
+        foreground.bold = attr.isBold();
+        background.color = attr.getBackColor();
+    }
+
+    /**
+     * Examines foreground, background, and colorNames and sets the color in
+     * editTheme.
+     */
+    private void saveToEditTheme() {
+        String colorName = colorNames.getSelected();
+        if (colorName == null) {
             return;
         }
-
-        // Pass to my parent
-        super.onKeypress(keypress);
+        CellAttributes attr = editTheme.getColor(colorName);
+        attr.setForeColor(foreground.color);
+        attr.setBold(foreground.bold);
+        attr.setBackColor(background.color);
+        editTheme.setColor(colorName, attr);
     }
 
 }

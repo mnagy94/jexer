@@ -33,6 +33,10 @@ package jexer.event;
  */
 public final class TResizeEvent extends TInputEvent {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Resize events can be generated for either a total screen resize or a
      * widget/window resize.
@@ -49,19 +53,14 @@ public final class TResizeEvent extends TInputEvent {
         WIDGET
     }
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The type of resize.
      */
     private Type type;
-
-    /**
-     * Get resize type.
-     *
-     * @return SCREEN or WIDGET
-     */
-    public Type getType() {
-        return type;
-    }
 
     /**
      * New width.
@@ -69,27 +68,13 @@ public final class TResizeEvent extends TInputEvent {
     private int width;
 
     /**
-     * Get the new width.
-     *
-     * @return width
-     */
-    public int getWidth() {
-        return width;
-    }
-
-    /**
      * New height.
      */
     private int height;
 
-    /**
-     * Get the new height.
-     *
-     * @return height
-     */
-    public int getHeight() {
-        return height;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public contructor.
@@ -102,6 +87,37 @@ public final class TResizeEvent extends TInputEvent {
         this.type   = type;
         this.width  = width;
         this.height = height;
+    }
+
+    // ------------------------------------------------------------------------
+    // TResizeEvent -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get resize type.
+     *
+     * @return SCREEN or WIDGET
+     */
+    public Type getType() {
+        return type;
+    }
+
+    /**
+     * Get the new width.
+     *
+     * @return width
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
+     * Get the new height.
+     *
+     * @return height
+     */
+    public int getHeight() {
+        return height;
     }
 
     /**

@@ -39,33 +39,23 @@ import jexer.event.TMouseEvent;
  */
 public final class TCheckbox extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Checkbox state, true means checked.
      */
     private boolean checked = false;
 
     /**
-     * Get checked value.
-     *
-     * @return if true, this is checked
-     */
-    public boolean isChecked() {
-        return checked;
-    }
-
-    /**
-     * Set checked value.
-     *
-     * @param checked new checked value.
-     */
-    public void setChecked(final boolean checked) {
-        this.checked = checked;
-    }
-
-    /**
      * Label for this checkbox.
      */
     private String label;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -77,7 +67,7 @@ public final class TCheckbox extends TWidget {
      * @param checked initial check state
      */
     public TCheckbox(final TWidget parent, final int x, final int y,
-            final String label, final boolean checked) {
+        final String label, final boolean checked) {
 
         // Set parent and window
         super(parent, x, y, label.length() + 4, 1);
@@ -89,6 +79,10 @@ public final class TCheckbox extends TWidget {
         setCursorX(1);
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Returns true if the mouse is currently on the checkbox.
      *
@@ -97,35 +91,12 @@ public final class TCheckbox extends TWidget {
      */
     private boolean mouseOnCheckbox(final TMouseEvent mouse) {
         if ((mouse.getY() == 0)
-                && (mouse.getX() >= 0)
-                && (mouse.getX() <= 2)
-                ) {
+            && (mouse.getX() >= 0)
+            && (mouse.getX() <= 2)
+        ) {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Draw a checkbox with label.
-     */
-    @Override
-    public void draw() {
-        CellAttributes checkboxColor;
-
-        if (isAbsoluteActive()) {
-            checkboxColor = getTheme().getColor("tcheckbox.active");
-        } else {
-            checkboxColor = getTheme().getColor("tcheckbox.inactive");
-        }
-
-        getScreen().putCharXY(0, 0, '[', checkboxColor);
-        if (checked) {
-            getScreen().putCharXY(1, 0, GraphicsChars.CHECK, checkboxColor);
-        } else {
-            getScreen().putCharXY(1, 0, ' ', checkboxColor);
-        }
-        getScreen().putCharXY(2, 0, ']', checkboxColor);
-        getScreen().putStringXY(4, 0, label, checkboxColor);
     }
 
     /**
@@ -155,6 +126,55 @@ public final class TCheckbox extends TWidget {
 
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw a checkbox with label.
+     */
+    @Override
+    public void draw() {
+        CellAttributes checkboxColor;
+
+        if (isAbsoluteActive()) {
+            checkboxColor = getTheme().getColor("tcheckbox.active");
+        } else {
+            checkboxColor = getTheme().getColor("tcheckbox.inactive");
+        }
+
+        getScreen().putCharXY(0, 0, '[', checkboxColor);
+        if (checked) {
+            getScreen().putCharXY(1, 0, GraphicsChars.CHECK, checkboxColor);
+        } else {
+            getScreen().putCharXY(1, 0, ' ', checkboxColor);
+        }
+        getScreen().putCharXY(2, 0, ']', checkboxColor);
+        getScreen().putStringXY(4, 0, label, checkboxColor);
+    }
+
+    // ------------------------------------------------------------------------
+    // TCheckbox --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get checked value.
+     *
+     * @return if true, this is checked
+     */
+    public boolean isChecked() {
+        return checked;
+    }
+
+    /**
+     * Set checked value.
+     *
+     * @param checked new checked value.
+     */
+    public void setChecked(final boolean checked) {
+        this.checked = checked;
     }
 
 }

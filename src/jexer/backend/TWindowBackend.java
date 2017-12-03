@@ -48,6 +48,10 @@ import jexer.TWindow;
  */
 public class TWindowBackend extends TWindow implements Backend {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The listening object that run() wakes up on new input.
      */
@@ -84,32 +88,9 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     private SessionInfo sessionInfo;
 
-    /**
-     * Set the object to sync to in draw().
-     *
-     * @param drawLock the object to synchronize on
-     */
-    public void setDrawLock(final Object drawLock) {
-        this.drawLock = drawLock;
-    }
-
-    /**
-     * Getter for the other application's screen.
-     *
-     * @return the Screen
-     */
-    public Screen getOtherScreen() {
-        return otherScreen;
-    }
-
-    /**
-     * Getter for sessionInfo.
-     *
-     * @return the SessionInfo
-     */
-    public final SessionInfo getSessionInfo() {
-        return sessionInfo;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  Window will be located at (0, 0).
@@ -214,97 +195,9 @@ public class TWindowBackend extends TWindow implements Backend {
         drawLock = otherScreen;
     }
 
-    /**
-     * Subclasses must provide an implementation that syncs the logical
-     * screen to the physical device.
-     */
-    public void flushScreen() {
-        getApplication().doRepaint();
-    }
-
-    /**
-     * Subclasses must provide an implementation to get keyboard, mouse, and
-     * screen resize events.
-     *
-     * @param queue list to append new events to
-     */
-    public void getEvents(List<TInputEvent> queue) {
-        synchronized (eventQueue) {
-            if (eventQueue.size() > 0) {
-                synchronized (queue) {
-                    queue.addAll(eventQueue);
-                }
-                eventQueue.clear();
-            }
-        }
-    }
-
-    /**
-     * Subclasses must provide an implementation that closes sockets,
-     * restores console, etc.
-     */
-    public void shutdown() {
-        // NOP
-    }
-
-    /**
-     * Set listener to a different Object.
-     *
-     * @param listener the new listening object that run() wakes up on new
-     * input
-     */
-    public void setListener(final Object listener) {
-        this.listener = listener;
-    }
-
-    /**
-     * Draw the foreground colors grid.
-     */
-    @Override
-    public void draw() {
-
-        // Sync on other screen, so that we do not draw in the middle of
-        // their screen update.
-        synchronized (drawLock) {
-            // Draw the box
-            super.draw();
-
-            // Draw every cell of the other screen
-            for (int y = 0; y < otherScreen.getHeight(); y++) {
-                for (int x = 0; x < otherScreen.getWidth(); x++) {
-                    putCharXY(x + 1, y + 1, otherScreen.getCharXY(x, y));
-                }
-            }
-
-            // If the mouse pointer is over the other window, draw its
-            // pointer again here.  (Their TApplication drew it, then our
-            // TApplication drew it again (undo-ing it), so now we draw it a
-            // third time so that it is visible.)
-            if ((otherMouseX != -1) && (otherMouseY != -1)) {
-                CellAttributes attr = getAttrXY(otherMouseX, otherMouseY);
-                attr.setForeColor(attr.getForeColor().invert());
-                attr.setBackColor(attr.getBackColor().invert());
-                putAttrXY(otherMouseX, otherMouseY, attr, false);
-            }
-
-            // If their cursor is visible, draw that here too.
-            if (otherScreen.isCursorVisible()) {
-                setCursorX(otherScreen.getCursorX() + 1);
-                setCursorY(otherScreen.getCursorY() + 1);
-                setCursorVisible(true);
-            } else {
-                setCursorVisible(false);
-            }
-        }
-    }
-
-    /**
-     * Subclasses should override this method to cleanup resources.  This is
-     * called by application.closeWindow().
-     */
-    public void onClose() {
-        // TODO: send a screen disconnect
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Returns true if the mouse is currently in the otherScreen window.
@@ -411,6 +304,149 @@ public class TWindowBackend extends TWindow implements Backend {
         synchronized (listener) {
             listener.notifyAll();
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the foreground colors grid.
+     */
+    @Override
+    public void draw() {
+
+        // Sync on other screen, so that we do not draw in the middle of
+        // their screen update.
+        synchronized (drawLock) {
+            // Draw the box
+            super.draw();
+
+            // Draw every cell of the other screen
+            for (int y = 0; y < otherScreen.getHeight(); y++) {
+                for (int x = 0; x < otherScreen.getWidth(); x++) {
+                    putCharXY(x + 1, y + 1, otherScreen.getCharXY(x, y));
+                }
+            }
+
+            // If the mouse pointer is over the other window, draw its
+            // pointer again here.  (Their TApplication drew it, then our
+            // TApplication drew it again (undo-ing it), so now we draw it a
+            // third time so that it is visible.)
+            if ((otherMouseX != -1) && (otherMouseY != -1)) {
+                CellAttributes attr = getAttrXY(otherMouseX, otherMouseY);
+                attr.setForeColor(attr.getForeColor().invert());
+                attr.setBackColor(attr.getBackColor().invert());
+                putAttrXY(otherMouseX, otherMouseY, attr, false);
+            }
+
+            // If their cursor is visible, draw that here too.
+            if (otherScreen.isCursorVisible()) {
+                setCursorX(otherScreen.getCursorX() + 1);
+                setCursorY(otherScreen.getCursorY() + 1);
+                setCursorVisible(true);
+            } else {
+                setCursorVisible(false);
+            }
+        }
+    }
+
+    /**
+     * Subclasses should override this method to cleanup resources.  This is
+     * called by application.closeWindow().
+     */
+    @Override
+    public void onClose() {
+        // TODO: send a screen disconnect
+    }
+
+    // ------------------------------------------------------------------------
+    // Backend ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Getter for sessionInfo.
+     *
+     * @return the SessionInfo
+     */
+    public final SessionInfo getSessionInfo() {
+        return sessionInfo;
+    }
+
+    /**
+     * Subclasses must provide an implementation that syncs the logical
+     * screen to the physical device.
+     */
+    public void flushScreen() {
+        getApplication().doRepaint();
+    }
+
+    /**
+     * Check if there are events in the queue.
+     *
+     * @return if true, getEvents() has something to return to the application
+     */
+    public boolean hasEvents() {
+        synchronized (eventQueue) {
+            return (eventQueue.size() > 0);
+        }
+    }
+
+    /**
+     * Subclasses must provide an implementation to get keyboard, mouse, and
+     * screen resize events.
+     *
+     * @param queue list to append new events to
+     */
+    public void getEvents(List<TInputEvent> queue) {
+        synchronized (eventQueue) {
+            if (eventQueue.size() > 0) {
+                synchronized (queue) {
+                    queue.addAll(eventQueue);
+                }
+                eventQueue.clear();
+            }
+        }
+    }
+
+    /**
+     * Subclasses must provide an implementation that closes sockets,
+     * restores console, etc.
+     */
+    public void shutdown() {
+        // NOP
+    }
+
+    /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener) {
+        this.listener = listener;
+    }
+
+    // ------------------------------------------------------------------------
+    // TWindowBackend ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the object to sync to in draw().
+     *
+     * @param drawLock the object to synchronize on
+     */
+    public void setDrawLock(final Object drawLock) {
+        this.drawLock = drawLock;
+    }
+
+    /**
+     * Getter for the other application's screen.
+     *
+     * @return the Screen
+     */
+    public Screen getOtherScreen() {
+        return otherScreen;
     }
 
 }

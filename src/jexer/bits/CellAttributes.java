@@ -33,10 +33,72 @@ package jexer.bits;
  */
 public class CellAttributes {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Bold attribute.
      */
     private boolean bold;
+
+    /**
+     * Blink attribute.
+     */
+    private boolean blink;
+
+    /**
+     * Reverse attribute.
+     */
+    private boolean reverse;
+
+    /**
+     * Underline attribute.
+     */
+    private boolean underline;
+
+    /**
+     * Protected attribute.
+     */
+    private boolean protect;
+
+    /**
+     * Foreground color.  Color.WHITE, Color.RED, etc.
+     */
+    private Color foreColor;
+
+    /**
+     * Background color.  Color.WHITE, Color.RED, etc.
+     */
+    private Color backColor;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor sets default values of the cell to white-on-black,
+     * no bold/blink/reverse/underline/protect.
+     *
+     * @see #reset()
+     */
+    public CellAttributes() {
+        reset();
+    }
+
+    /**
+     * Public constructor makes a copy from another instance.
+     *
+     * @param that another CellAttributes instance
+     * @see #reset()
+     */
+    public CellAttributes(final CellAttributes that) {
+        setTo(that);
+    }
+
+    // ------------------------------------------------------------------------
+    // CellAttributes ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Getter for bold.
@@ -57,11 +119,6 @@ public class CellAttributes {
     }
 
     /**
-     * Blink attribute.
-     */
-    private boolean blink;
-
-    /**
      * Getter for blink.
      *
      * @return blink value
@@ -78,11 +135,6 @@ public class CellAttributes {
     public final void setBlink(final boolean blink) {
         this.blink = blink;
     }
-
-    /**
-     * Reverse attribute.
-     */
-    private boolean reverse;
 
     /**
      * Getter for reverse.
@@ -103,11 +155,6 @@ public class CellAttributes {
     }
 
     /**
-     * Underline attribute.
-     */
-    private boolean underline;
-
-    /**
      * Getter for underline.
      *
      * @return underline value
@@ -124,11 +171,6 @@ public class CellAttributes {
     public final void setUnderline(final boolean underline) {
         this.underline = underline;
     }
-
-    /**
-     * Protected attribute.
-     */
-    private boolean protect;
 
     /**
      * Getter for protect.
@@ -149,11 +191,6 @@ public class CellAttributes {
     }
 
     /**
-     * Foreground color.  Color.WHITE, Color.RED, etc.
-     */
-    private Color foreColor;
-
-    /**
      * Getter for foreColor.
      *
      * @return foreColor value
@@ -170,11 +207,6 @@ public class CellAttributes {
     public final void setForeColor(final Color foreColor) {
         this.foreColor = foreColor;
     }
-
-    /**
-     * Background color.  Color.WHITE, Color.RED, etc.
-     */
-    private Color backColor;
 
     /**
      * Getter for backColor.
@@ -206,26 +238,6 @@ public class CellAttributes {
         protect   = false;
         foreColor = Color.WHITE;
         backColor = Color.BLACK;
-    }
-
-    /**
-     * Public constructor sets default values of the cell to white-on-black,
-     * no bold/blink/reverse/underline/protect.
-     *
-     * @see #reset()
-     */
-    public CellAttributes() {
-        reset();
-    }
-
-    /**
-     * Public constructor makes a copy from another instance.
-     *
-     * @param that another CellAttributes instance
-     * @see #reset()
-     */
-    public CellAttributes(final CellAttributes that) {
-        setTo(that);
     }
 
     /**

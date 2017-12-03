@@ -44,19 +44,14 @@ import static jexer.TKeypress.*;
  */
 public final class TButton extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The shortcut and button text.
      */
     private MnemonicString mnemonic;
-
-    /**
-     * Get the mnemonic string for this button.
-     *
-     * @return mnemonic string
-     */
-    public MnemonicString getMnemonic() {
-        return mnemonic;
-    }
 
     /**
      * Remember mouse state.
@@ -73,16 +68,9 @@ public final class TButton extends TWidget {
      */
     private TAction action;
 
-    /**
-     * Act as though the button was pressed.  This is useful for other UI
-     * elements to get the same action as if the user clicked the button.
-     */
-    public void dispatch() {
-        if (action != null) {
-            action.DO();
-            inButtonPress = false;
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Private constructor.
@@ -122,6 +110,10 @@ public final class TButton extends TWidget {
         this.action = action;
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Returns true if the mouse is currently on the button.
      *
@@ -140,55 +132,6 @@ public final class TButton extends TWidget {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Draw a button with a shadow.
-     */
-    @Override
-    public void draw() {
-        CellAttributes buttonColor;
-        CellAttributes menuMnemonicColor;
-        CellAttributes shadowColor = new CellAttributes();
-        shadowColor.setTo(getWindow().getBackground());
-        shadowColor.setForeColor(Color.BLACK);
-        shadowColor.setBold(false);
-
-        if (!isEnabled()) {
-            buttonColor = getTheme().getColor("tbutton.disabled");
-            menuMnemonicColor = getTheme().getColor("tbutton.disabled");
-        } else if (isAbsoluteActive()) {
-            buttonColor = getTheme().getColor("tbutton.active");
-            menuMnemonicColor = getTheme().getColor("tbutton.mnemonic.highlighted");
-        } else {
-            buttonColor = getTheme().getColor("tbutton.inactive");
-            menuMnemonicColor = getTheme().getColor("tbutton.mnemonic");
-        }
-
-        if (inButtonPress) {
-            getScreen().putCharXY(1, 0, ' ', buttonColor);
-            getScreen().putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
-            getScreen().putCharXY(getWidth() - 1, 0, ' ', buttonColor);
-        } else {
-            getScreen().putCharXY(0, 0, ' ', buttonColor);
-            getScreen().putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
-            getScreen().putCharXY(getWidth() - 2, 0, ' ', buttonColor);
-
-            getScreen().putCharXY(getWidth() - 1, 0,
-                GraphicsChars.CP437[0xDC], shadowColor);
-            getScreen().hLineXY(1, 1, getWidth() - 1,
-                GraphicsChars.CP437[0xDF], shadowColor);
-        }
-        if (mnemonic.getShortcutIdx() >= 0) {
-            if (inButtonPress) {
-                getScreen().putCharXY(2 + mnemonic.getShortcutIdx(), 0,
-                    mnemonic.getShortcut(), menuMnemonicColor);
-            } else {
-                getScreen().putCharXY(1 + mnemonic.getShortcutIdx(), 0,
-                    mnemonic.getShortcut(), menuMnemonicColor);
-            }
-
-        }
     }
 
     /**
@@ -253,6 +196,83 @@ public final class TButton extends TWidget {
 
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw a button with a shadow.
+     */
+    @Override
+    public void draw() {
+        CellAttributes buttonColor;
+        CellAttributes menuMnemonicColor;
+        CellAttributes shadowColor = new CellAttributes();
+        shadowColor.setTo(getWindow().getBackground());
+        shadowColor.setForeColor(Color.BLACK);
+        shadowColor.setBold(false);
+
+        if (!isEnabled()) {
+            buttonColor = getTheme().getColor("tbutton.disabled");
+            menuMnemonicColor = getTheme().getColor("tbutton.disabled");
+        } else if (isAbsoluteActive()) {
+            buttonColor = getTheme().getColor("tbutton.active");
+            menuMnemonicColor = getTheme().getColor("tbutton.mnemonic.highlighted");
+        } else {
+            buttonColor = getTheme().getColor("tbutton.inactive");
+            menuMnemonicColor = getTheme().getColor("tbutton.mnemonic");
+        }
+
+        if (inButtonPress) {
+            getScreen().putCharXY(1, 0, ' ', buttonColor);
+            getScreen().putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
+            getScreen().putCharXY(getWidth() - 1, 0, ' ', buttonColor);
+        } else {
+            getScreen().putCharXY(0, 0, ' ', buttonColor);
+            getScreen().putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
+            getScreen().putCharXY(getWidth() - 2, 0, ' ', buttonColor);
+
+            getScreen().putCharXY(getWidth() - 1, 0,
+                GraphicsChars.CP437[0xDC], shadowColor);
+            getScreen().hLineXY(1, 1, getWidth() - 1,
+                GraphicsChars.CP437[0xDF], shadowColor);
+        }
+        if (mnemonic.getShortcutIdx() >= 0) {
+            if (inButtonPress) {
+                getScreen().putCharXY(2 + mnemonic.getShortcutIdx(), 0,
+                    mnemonic.getShortcut(), menuMnemonicColor);
+            } else {
+                getScreen().putCharXY(1 + mnemonic.getShortcutIdx(), 0,
+                    mnemonic.getShortcut(), menuMnemonicColor);
+            }
+
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TButton ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the mnemonic string for this button.
+     *
+     * @return mnemonic string
+     */
+    public MnemonicString getMnemonic() {
+        return mnemonic;
+    }
+
+    /**
+     * Act as though the button was pressed.  This is useful for other UI
+     * elements to get the same action as if the user clicked the button.
+     */
+    public void dispatch() {
+        if (action != null) {
+            action.DO();
+            inButtonPress = false;
+        }
     }
 
 }

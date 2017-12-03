@@ -46,10 +46,18 @@ import java.util.TreeMap;
  */
 public final class ColorTheme {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The current theme colors.
      */
     private SortedMap<String, CellAttributes> colors;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor sets the theme to the default.
@@ -58,6 +66,10 @@ public final class ColorTheme {
         colors = new TreeMap<String, CellAttributes>();
         setDefaultTheme();
     }
+
+    // ------------------------------------------------------------------------
+    // ColorTheme -------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Retrieve the CellAttributes for a named theme color.
@@ -454,6 +466,11 @@ public final class ColorTheme {
         color.setBackColor(Color.BLUE);
         color.setBold(false);
         colors.put("ttreeview.inactive", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("ttreeview.selected.inactive", color);
 
         // TList
         color = new CellAttributes();
@@ -479,6 +496,11 @@ public final class ColorTheme {
         color.setBackColor(Color.BLUE);
         color.setBold(false);
         colors.put("tlist.inactive", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("tlist.selected.inactive", color);
 
         // TStatusBar
         color = new CellAttributes();

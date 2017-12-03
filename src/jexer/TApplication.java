@@ -77,7 +77,7 @@ public class TApplication implements Runnable {
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TApplication.class.getName());
 
     // ------------------------------------------------------------------------
-    // Public constants -------------------------------------------------------
+    // Constants --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
@@ -117,8 +117,154 @@ public class TApplication implements Runnable {
     }
 
     // ------------------------------------------------------------------------
-    // Primary/secondary event handlers ---------------------------------------
+    // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * The primary event handler thread.
+     */
+    private volatile WidgetEventHandler primaryEventHandler;
+
+    /**
+     * The secondary event handler thread.
+     */
+    private volatile WidgetEventHandler secondaryEventHandler;
+
+    /**
+     * The widget receiving events from the secondary event handler thread.
+     */
+    private volatile TWidget secondaryEventReceiver;
+
+    /**
+     * Access to the physical screen, keyboard, and mouse.
+     */
+    private Backend backend;
+
+    /**
+     * Actual mouse coordinate X.
+     */
+    private int mouseX;
+
+    /**
+     * Actual mouse coordinate Y.
+     */
+    private int mouseY;
+
+    /**
+     * Old version of mouse coordinate X.
+     */
+    private int oldMouseX;
+
+    /**
+     * Old version mouse coordinate Y.
+     */
+    private int oldMouseY;
+
+    /**
+     * The last mouse up click time, used to determine if this is a mouse
+     * double-click.
+     */
+    private long lastMouseUpTime;
+
+    /**
+     * The amount of millis between mouse up events to assume a double-click.
+     */
+    private long doubleClickTime = 250;
+
+    /**
+     * Event queue that is filled by run().
+     */
+    private List<TInputEvent> fillEventQueue;
+
+    /**
+     * Event queue that will be drained by either primary or secondary
+     * Thread.
+     */
+    private List<TInputEvent> drainEventQueue;
+
+    /**
+     * Top-level menus in this application.
+     */
+    private List<TMenu> menus;
+
+    /**
+     * Stack of activated sub-menus in this application.
+     */
+    private List<TMenu> subMenus;
+
+    /**
+     * The currently active menu.
+     */
+    private TMenu activeMenu = null;
+
+    /**
+     * Active keyboard accelerators.
+     */
+    private Map<TKeypress, TMenuItem> accelerators;
+
+    /**
+     * All menu items.
+     */
+    private List<TMenuItem> menuItems;
+
+    /**
+     * Windows and widgets pull colors from this ColorTheme.
+     */
+    private ColorTheme theme;
+
+    /**
+     * The top-level windows (but not menus).
+     */
+    private List<TWindow> windows;
+
+    /**
+     * The currently acive window.
+     */
+    private TWindow activeWindow = null;
+
+    /**
+     * Timers that are being ticked.
+     */
+    private List<TTimer> timers;
+
+    /**
+     * When true, the application has been started.
+     */
+    private volatile boolean started = false;
+
+    /**
+     * When true, exit the application.
+     */
+    private volatile boolean quit = false;
+
+    /**
+     * When true, repaint the entire screen.
+     */
+    private volatile boolean repaint = true;
+
+    /**
+     * Y coordinate of the top edge of the desktop.  For now this is a
+     * constant.  Someday it would be nice to have a multi-line menu or
+     * toolbars.
+     */
+    private static final int desktopTop = 1;
+
+    /**
+     * Y coordinate of the bottom edge of the desktop.
+     */
+    private int desktopBottom;
+
+    /**
+     * An optional TDesktop background window that is drawn underneath
+     * everything else.
+     */
+    private TDesktop desktop;
+
+    /**
+     * If true, focus follows mouse: windows automatically raised if the
+     * mouse passes over them.
+     */
+    private boolean focusFollowsMouse = false;
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -262,313 +408,6 @@ public class TApplication implements Runnable {
 
             } // while (true) (main runnable loop)
         }
-    }
-
-    /**
-     * The primary event handler thread.
-     */
-    private volatile WidgetEventHandler primaryEventHandler;
-
-    /**
-     * The secondary event handler thread.
-     */
-    private volatile WidgetEventHandler secondaryEventHandler;
-
-    /**
-     * The widget receiving events from the secondary event handler thread.
-     */
-    private volatile TWidget secondaryEventReceiver;
-
-    /**
-     * Wake the sleeping active event handler.
-     */
-    private void wakeEventHandler() {
-        if (!started) {
-            return;
-        }
-
-        if (secondaryEventHandler != null) {
-            synchronized (secondaryEventHandler) {
-                secondaryEventHandler.notify();
-            }
-        } else {
-            assert (primaryEventHandler != null);
-            synchronized (primaryEventHandler) {
-                primaryEventHandler.notify();
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // TApplication attributes ------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Access to the physical screen, keyboard, and mouse.
-     */
-    private Backend backend;
-
-    /**
-     * Get the Backend.
-     *
-     * @return the Backend
-     */
-    public final Backend getBackend() {
-        return backend;
-    }
-
-    /**
-     * Get the Screen.
-     *
-     * @return the Screen
-     */
-    public final Screen getScreen() {
-        if (backend instanceof TWindowBackend) {
-            // We are being rendered to a TWindow.  We can't use its
-            // getScreen() method because that is how it is rendering to a
-            // hardware backend somewhere.  Instead use its getOtherScreen()
-            // method.
-            return ((TWindowBackend) backend).getOtherScreen();
-        } else {
-            return backend.getScreen();
-        }
-    }
-
-    /**
-     * Actual mouse coordinate X.
-     */
-    private int mouseX;
-
-    /**
-     * Actual mouse coordinate Y.
-     */
-    private int mouseY;
-
-    /**
-     * Old version of mouse coordinate X.
-     */
-    private int oldMouseX;
-
-    /**
-     * Old version mouse coordinate Y.
-     */
-    private int oldMouseY;
-
-    /**
-     * The last mouse up click time, used to determine if this is a mouse
-     * double-click.
-     */
-    private long lastMouseUpTime;
-
-    /**
-     * The amount of millis between mouse up events to assume a double-click.
-     */
-    private long doubleClickTime = 250;
-
-    /**
-     * Event queue that is filled by run().
-     */
-    private List<TInputEvent> fillEventQueue;
-
-    /**
-     * Event queue that will be drained by either primary or secondary
-     * Thread.
-     */
-    private List<TInputEvent> drainEventQueue;
-
-    /**
-     * Top-level menus in this application.
-     */
-    private List<TMenu> menus;
-
-    /**
-     * Stack of activated sub-menus in this application.
-     */
-    private List<TMenu> subMenus;
-
-    /**
-     * The currently active menu.
-     */
-    private TMenu activeMenu = null;
-
-    /**
-     * Active keyboard accelerators.
-     */
-    private Map<TKeypress, TMenuItem> accelerators;
-
-    /**
-     * All menu items.
-     */
-    private List<TMenuItem> menuItems;
-
-    /**
-     * Windows and widgets pull colors from this ColorTheme.
-     */
-    private ColorTheme theme;
-
-    /**
-     * Get the color theme.
-     *
-     * @return the theme
-     */
-    public final ColorTheme getTheme() {
-        return theme;
-    }
-
-    /**
-     * The top-level windows (but not menus).
-     */
-    private List<TWindow> windows;
-
-    /**
-     * The currently acive window.
-     */
-    private TWindow activeWindow = null;
-
-    /**
-     * Timers that are being ticked.
-     */
-    private List<TTimer> timers;
-
-    /**
-     * When true, the application has been started.
-     */
-    private volatile boolean started = false;
-
-    /**
-     * When true, exit the application.
-     */
-    private volatile boolean quit = false;
-
-    /**
-     * When true, repaint the entire screen.
-     */
-    private volatile boolean repaint = true;
-
-    /**
-     * Repaint the screen on the next update.
-     */
-    public void doRepaint() {
-        repaint = true;
-        wakeEventHandler();
-    }
-
-    /**
-     * Y coordinate of the top edge of the desktop.  For now this is a
-     * constant.  Someday it would be nice to have a multi-line menu or
-     * toolbars.
-     */
-    private static final int desktopTop = 1;
-
-    /**
-     * Get Y coordinate of the top edge of the desktop.
-     *
-     * @return Y coordinate of the top edge of the desktop
-     */
-    public final int getDesktopTop() {
-        return desktopTop;
-    }
-
-    /**
-     * Y coordinate of the bottom edge of the desktop.
-     */
-    private int desktopBottom;
-
-    /**
-     * Get Y coordinate of the bottom edge of the desktop.
-     *
-     * @return Y coordinate of the bottom edge of the desktop
-     */
-    public final int getDesktopBottom() {
-        return desktopBottom;
-    }
-
-    /**
-     * An optional TDesktop background window that is drawn underneath
-     * everything else.
-     */
-    private TDesktop desktop;
-
-    /**
-     * Set the TDesktop instance.
-     *
-     * @param desktop a TDesktop instance, or null to remove the one that is
-     * set
-     */
-    public final void setDesktop(final TDesktop desktop) {
-        if (this.desktop != null) {
-            this.desktop.onClose();
-        }
-        this.desktop = desktop;
-    }
-
-    /**
-     * Get the TDesktop instance.
-     *
-     * @return the desktop, or null if it is not set
-     */
-    public final TDesktop getDesktop() {
-        return desktop;
-    }
-
-    /**
-     * Get the current active window.
-     *
-     * @return the active window, or null if it is not set
-     */
-    public final TWindow getActiveWindow() {
-        return activeWindow;
-    }
-
-    /**
-     * Get a (shallow) copy of the window list.
-     *
-     * @return a copy of the list of windows for this application
-     */
-    public final List<TWindow> getAllWindows() {
-        List<TWindow> result = new LinkedList<TWindow>();
-        result.addAll(windows);
-        return result;
-    }
-
-    /**
-     * If true, focus follows mouse: windows automatically raised if the
-     * mouse passes over them.
-     */
-    private boolean focusFollowsMouse = false;
-
-    /**
-     * Get focusFollowsMouse flag.
-     *
-     * @return true if focus follows mouse: windows automatically raised if
-     * the mouse passes over them
-     */
-    public boolean getFocusFollowsMouse() {
-        return focusFollowsMouse;
-    }
-
-    /**
-     * Set focusFollowsMouse flag.
-     *
-     * @param focusFollowsMouse if true, focus follows mouse: windows
-     * automatically raised if the mouse passes over them
-     */
-    public void setFocusFollowsMouse(final boolean focusFollowsMouse) {
-        this.focusFollowsMouse = focusFollowsMouse;
-    }
-
-    // ------------------------------------------------------------------------
-    // General behavior -------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Display the about dialog.
-     */
-    protected void showAboutDialog() {
-        messageBox(i18n.getString("aboutDialogTitle"),
-            MessageFormat.format(i18n.getString("aboutDialogText"),
-                this.getClass().getPackage().getImplementationVersion()),
-            TMessageBox.Type.OK);
     }
 
     // ------------------------------------------------------------------------
@@ -747,223 +586,8 @@ public class TApplication implements Runnable {
     }
 
     // ------------------------------------------------------------------------
-    // Screen refresh loop ----------------------------------------------------
+    // Runnable ---------------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Process background events, and update the screen.
-     */
-    private void finishEventProcessing() {
-        if (debugThreads) {
-            System.err.printf(System.currentTimeMillis() + " " +
-                Thread.currentThread() + " finishEventProcessing()\n");
-        }
-
-        // Process timers and call doIdle()'s
-        doIdle();
-
-        // Update the screen
-        synchronized (getScreen()) {
-            drawAll();
-        }
-
-        if (debugThreads) {
-            System.err.printf(System.currentTimeMillis() + " " +
-                Thread.currentThread() + " finishEventProcessing() END\n");
-        }
-    }
-
-    /**
-     * Invert the cell color at a position.  This is used to track the mouse.
-     *
-     * @param x column position
-     * @param y row position
-     */
-    private void invertCell(final int x, final int y) {
-        if (debugThreads) {
-            System.err.printf("%d %s invertCell() %d %d\n",
-                System.currentTimeMillis(), Thread.currentThread(), x, y);
-        }
-        CellAttributes attr = getScreen().getAttrXY(x, y);
-        attr.setForeColor(attr.getForeColor().invert());
-        attr.setBackColor(attr.getBackColor().invert());
-        getScreen().putAttrXY(x, y, attr, false);
-    }
-
-    /**
-     * Draw everything.
-     */
-    private void drawAll() {
-        boolean menuIsActive = false;
-
-        if (debugThreads) {
-            System.err.printf("%d %s drawAll() enter\n",
-                System.currentTimeMillis(), Thread.currentThread());
-        }
-
-        if (!repaint) {
-            if (debugThreads) {
-                System.err.printf("%d %s drawAll() !repaint\n",
-                    System.currentTimeMillis(), Thread.currentThread());
-            }
-            synchronized (getScreen()) {
-                if ((oldMouseX != mouseX) || (oldMouseY != mouseY)) {
-                    // The only thing that has happened is the mouse moved.
-                    // Clear the old position and draw the new position.
-                    invertCell(oldMouseX, oldMouseY);
-                    invertCell(mouseX, mouseY);
-                    oldMouseX = mouseX;
-                    oldMouseY = mouseY;
-                }
-                if (getScreen().isDirty()) {
-                    backend.flushScreen();
-                }
-                return;
-            }
-        }
-
-        if (debugThreads) {
-            System.err.printf("%d %s drawAll() REDRAW\n",
-                System.currentTimeMillis(), Thread.currentThread());
-        }
-
-        // If true, the cursor is not visible
-        boolean cursor = false;
-
-        // Start with a clean screen
-        getScreen().clear();
-
-        // Draw the desktop
-        if (desktop != null) {
-            desktop.drawChildren();
-        }
-
-        // Draw each window in reverse Z order
-        List<TWindow> sorted = new LinkedList<TWindow>(windows);
-        Collections.sort(sorted);
-        TWindow topLevel = null;
-        if (sorted.size() > 0) {
-            topLevel = sorted.get(0);
-        }
-        Collections.reverse(sorted);
-        for (TWindow window: sorted) {
-            if (window.isShown()) {
-                window.drawChildren();
-            }
-        }
-
-        // Draw the blank menubar line - reset the screen clipping first so
-        // it won't trim it out.
-        getScreen().resetClipping();
-        getScreen().hLineXY(0, 0, getScreen().getWidth(), ' ',
-            theme.getColor("tmenu"));
-        // Now draw the menus.
-        int x = 1;
-        for (TMenu menu: menus) {
-            CellAttributes menuColor;
-            CellAttributes menuMnemonicColor;
-            if (menu.isActive()) {
-                menuIsActive = true;
-                menuColor = theme.getColor("tmenu.highlighted");
-                menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
-                topLevel = menu;
-            } else {
-                menuColor = theme.getColor("tmenu");
-                menuMnemonicColor = theme.getColor("tmenu.mnemonic");
-            }
-            // Draw the menu title
-            getScreen().hLineXY(x, 0, menu.getTitle().length() + 2, ' ',
-                menuColor);
-            getScreen().putStringXY(x + 1, 0, menu.getTitle(), menuColor);
-            // Draw the highlight character
-            getScreen().putCharXY(x + 1 + menu.getMnemonic().getShortcutIdx(),
-                0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
-
-            if (menu.isActive()) {
-                menu.drawChildren();
-                // Reset the screen clipping so we can draw the next title.
-                getScreen().resetClipping();
-            }
-            x += menu.getTitle().length() + 2;
-        }
-
-        for (TMenu menu: subMenus) {
-            // Reset the screen clipping so we can draw the next sub-menu.
-            getScreen().resetClipping();
-            menu.drawChildren();
-        }
-
-        // Draw the status bar of the top-level window
-        TStatusBar statusBar = null;
-        if (topLevel != null) {
-            statusBar = topLevel.getStatusBar();
-        }
-        if (statusBar != null) {
-            getScreen().resetClipping();
-            statusBar.setWidth(getScreen().getWidth());
-            statusBar.setY(getScreen().getHeight() - topLevel.getY());
-            statusBar.draw();
-        } else {
-            CellAttributes barColor = new CellAttributes();
-            barColor.setTo(getTheme().getColor("tstatusbar.text"));
-            getScreen().hLineXY(0, desktopBottom, getScreen().getWidth(), ' ',
-                barColor);
-        }
-
-        // Draw the mouse pointer
-        invertCell(mouseX, mouseY);
-        oldMouseX = mouseX;
-        oldMouseY = mouseY;
-
-        // Place the cursor if it is visible
-        if (!menuIsActive) {
-            TWidget activeWidget = null;
-            if (sorted.size() > 0) {
-                activeWidget = sorted.get(sorted.size() - 1).getActiveChild();
-                if (activeWidget.isCursorVisible()) {
-                    if ((activeWidget.getCursorAbsoluteY() < desktopBottom)
-                        && (activeWidget.getCursorAbsoluteY() > desktopTop)
-                    ) {
-                        getScreen().putCursor(true,
-                            activeWidget.getCursorAbsoluteX(),
-                            activeWidget.getCursorAbsoluteY());
-                        cursor = true;
-                    } else {
-                        getScreen().putCursor(false,
-                            activeWidget.getCursorAbsoluteX(),
-                            activeWidget.getCursorAbsoluteY());
-                        cursor = false;
-                    }
-                }
-            }
-        }
-
-        // Kill the cursor
-        if (!cursor) {
-            getScreen().hideCursor();
-        }
-
-        // Flush the screen contents
-        if (getScreen().isDirty()) {
-            backend.flushScreen();
-        }
-
-        repaint = false;
-    }
-
-    // ------------------------------------------------------------------------
-    // Main loop --------------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Force this application to exit.
-     */
-    public void exit() {
-        quit = true;
-        synchronized (this) {
-            this.notify();
-        }
-    }
 
     /**
      * Run this application until it exits.
@@ -979,9 +603,11 @@ public class TApplication implements Runnable {
             synchronized (this) {
                 boolean doWait = false;
 
-                synchronized (fillEventQueue) {
-                    if (fillEventQueue.size() == 0) {
-                        doWait = true;
+                if (!backend.hasEvents()) {
+                    synchronized (fillEventQueue) {
+                        if (fillEventQueue.size() == 0) {
+                            doWait = true;
+                        }
                     }
                 }
 
@@ -1052,6 +678,162 @@ public class TApplication implements Runnable {
 
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Method that TApplication subclasses can override to handle menu or
+     * posted command events.
+     *
+     * @param command command event
+     * @return if true, this event was consumed
+     */
+    protected boolean onCommand(final TCommandEvent command) {
+        // Default: handle cmExit
+        if (command.equals(cmExit)) {
+            if (messageBox(i18n.getString("exitDialogTitle"),
+                    i18n.getString("exitDialogText"),
+                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
+                exit();
+            }
+            return true;
+        }
+
+        if (command.equals(cmShell)) {
+            openTerminal(0, 0, TWindow.RESIZABLE);
+            return true;
+        }
+
+        if (command.equals(cmTile)) {
+            tileWindows();
+            return true;
+        }
+        if (command.equals(cmCascade)) {
+            cascadeWindows();
+            return true;
+        }
+        if (command.equals(cmCloseAll)) {
+            closeAllWindows();
+            return true;
+        }
+
+        if (command.equals(cmMenu)) {
+            if (!modalWindowActive() && (activeMenu == null)) {
+                if (menus.size() > 0) {
+                    menus.get(0).setActive(true);
+                    activeMenu = menus.get(0);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Method that TApplication subclasses can override to handle menu
+     * events.
+     *
+     * @param menu menu event
+     * @return if true, this event was consumed
+     */
+    protected boolean onMenu(final TMenuEvent menu) {
+
+        // Default: handle MID_EXIT
+        if (menu.getId() == TMenu.MID_EXIT) {
+            if (messageBox(i18n.getString("exitDialogTitle"),
+                    i18n.getString("exitDialogText"),
+                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
+                exit();
+            }
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_SHELL) {
+            openTerminal(0, 0, TWindow.RESIZABLE);
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_TILE) {
+            tileWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_CASCADE) {
+            cascadeWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_CLOSE_ALL) {
+            closeAllWindows();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_ABOUT) {
+            showAboutDialog();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_REPAINT) {
+            doRepaint();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Method that TApplication subclasses can override to handle keystrokes.
+     *
+     * @param keypress keystroke event
+     * @return if true, this event was consumed
+     */
+    protected boolean onKeypress(final TKeypressEvent keypress) {
+        // Default: only menu shortcuts
+
+        // Process Alt-F, Alt-E, etc. menu shortcut keys
+        if (!keypress.getKey().isFnKey()
+            && keypress.getKey().isAlt()
+            && !keypress.getKey().isCtrl()
+            && (activeMenu == null)
+            && !modalWindowActive()
+        ) {
+
+            assert (subMenus.size() == 0);
+
+            for (TMenu menu: menus) {
+                if (Character.toLowerCase(menu.getMnemonic().getShortcut())
+                    == Character.toLowerCase(keypress.getKey().getChar())
+                ) {
+                    activeMenu = menu;
+                    menu.setActive(true);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Process background events, and update the screen.
+     */
+    private void finishEventProcessing() {
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " finishEventProcessing()\n");
+        }
+
+        // Process timers and call doIdle()'s
+        doIdle();
+
+        // Update the screen
+        synchronized (getScreen()) {
+            drawAll();
+        }
+
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " finishEventProcessing() END\n");
+        }
+    }
+
     /**
      * Peek at certain application-level events, add to eventQueue, and wake
      * up the consuming Thread.
@@ -1105,6 +887,11 @@ public class TApplication implements Runnable {
 
                 // We are dirty, redraw the screen.
                 doRepaint();
+
+                /*
+                System.err.println("New screen: " + resize.getWidth() +
+                    " x " + resize.getHeight());
+                */
                 return;
             }
 
@@ -1421,6 +1208,355 @@ public class TApplication implements Runnable {
         }
         if (desktop != null) {
             desktop.onIdle();
+        }
+    }
+
+    /**
+     * Wake the sleeping active event handler.
+     */
+    private void wakeEventHandler() {
+        if (!started) {
+            return;
+        }
+
+        if (secondaryEventHandler != null) {
+            synchronized (secondaryEventHandler) {
+                secondaryEventHandler.notify();
+            }
+        } else {
+            assert (primaryEventHandler != null);
+            synchronized (primaryEventHandler) {
+                primaryEventHandler.notify();
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TApplication -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the Backend.
+     *
+     * @return the Backend
+     */
+    public final Backend getBackend() {
+        return backend;
+    }
+
+    /**
+     * Get the Screen.
+     *
+     * @return the Screen
+     */
+    public final Screen getScreen() {
+        if (backend instanceof TWindowBackend) {
+            // We are being rendered to a TWindow.  We can't use its
+            // getScreen() method because that is how it is rendering to a
+            // hardware backend somewhere.  Instead use its getOtherScreen()
+            // method.
+            return ((TWindowBackend) backend).getOtherScreen();
+        } else {
+            return backend.getScreen();
+        }
+    }
+
+    /**
+     * Get the color theme.
+     *
+     * @return the theme
+     */
+    public final ColorTheme getTheme() {
+        return theme;
+    }
+
+    /**
+     * Repaint the screen on the next update.
+     */
+    public void doRepaint() {
+        repaint = true;
+        wakeEventHandler();
+    }
+
+    /**
+     * Get Y coordinate of the top edge of the desktop.
+     *
+     * @return Y coordinate of the top edge of the desktop
+     */
+    public final int getDesktopTop() {
+        return desktopTop;
+    }
+
+    /**
+     * Get Y coordinate of the bottom edge of the desktop.
+     *
+     * @return Y coordinate of the bottom edge of the desktop
+     */
+    public final int getDesktopBottom() {
+        return desktopBottom;
+    }
+
+    /**
+     * Set the TDesktop instance.
+     *
+     * @param desktop a TDesktop instance, or null to remove the one that is
+     * set
+     */
+    public final void setDesktop(final TDesktop desktop) {
+        if (this.desktop != null) {
+            this.desktop.onClose();
+        }
+        this.desktop = desktop;
+    }
+
+    /**
+     * Get the TDesktop instance.
+     *
+     * @return the desktop, or null if it is not set
+     */
+    public final TDesktop getDesktop() {
+        return desktop;
+    }
+
+    /**
+     * Get the current active window.
+     *
+     * @return the active window, or null if it is not set
+     */
+    public final TWindow getActiveWindow() {
+        return activeWindow;
+    }
+
+    /**
+     * Get a (shallow) copy of the window list.
+     *
+     * @return a copy of the list of windows for this application
+     */
+    public final List<TWindow> getAllWindows() {
+        List<TWindow> result = new LinkedList<TWindow>();
+        result.addAll(windows);
+        return result;
+    }
+
+    /**
+     * Get focusFollowsMouse flag.
+     *
+     * @return true if focus follows mouse: windows automatically raised if
+     * the mouse passes over them
+     */
+    public boolean getFocusFollowsMouse() {
+        return focusFollowsMouse;
+    }
+
+    /**
+     * Set focusFollowsMouse flag.
+     *
+     * @param focusFollowsMouse if true, focus follows mouse: windows
+     * automatically raised if the mouse passes over them
+     */
+    public void setFocusFollowsMouse(final boolean focusFollowsMouse) {
+        this.focusFollowsMouse = focusFollowsMouse;
+    }
+
+    /**
+     * Display the about dialog.
+     */
+    protected void showAboutDialog() {
+        messageBox(i18n.getString("aboutDialogTitle"),
+            MessageFormat.format(i18n.getString("aboutDialogText"),
+                this.getClass().getPackage().getImplementationVersion()),
+            TMessageBox.Type.OK);
+    }
+
+    // ------------------------------------------------------------------------
+    // Screen refresh loop ----------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Invert the cell color at a position.  This is used to track the mouse.
+     *
+     * @param x column position
+     * @param y row position
+     */
+    private void invertCell(final int x, final int y) {
+        if (debugThreads) {
+            System.err.printf("%d %s invertCell() %d %d\n",
+                System.currentTimeMillis(), Thread.currentThread(), x, y);
+        }
+        CellAttributes attr = getScreen().getAttrXY(x, y);
+        attr.setForeColor(attr.getForeColor().invert());
+        attr.setBackColor(attr.getBackColor().invert());
+        getScreen().putAttrXY(x, y, attr, false);
+    }
+
+    /**
+     * Draw everything.
+     */
+    private void drawAll() {
+        boolean menuIsActive = false;
+
+        if (debugThreads) {
+            System.err.printf("%d %s drawAll() enter\n",
+                System.currentTimeMillis(), Thread.currentThread());
+        }
+
+        if (!repaint) {
+            if (debugThreads) {
+                System.err.printf("%d %s drawAll() !repaint\n",
+                    System.currentTimeMillis(), Thread.currentThread());
+            }
+            synchronized (getScreen()) {
+                if ((oldMouseX != mouseX) || (oldMouseY != mouseY)) {
+                    // The only thing that has happened is the mouse moved.
+                    // Clear the old position and draw the new position.
+                    invertCell(oldMouseX, oldMouseY);
+                    invertCell(mouseX, mouseY);
+                    oldMouseX = mouseX;
+                    oldMouseY = mouseY;
+                }
+                if (getScreen().isDirty()) {
+                    backend.flushScreen();
+                }
+                return;
+            }
+        }
+
+        if (debugThreads) {
+            System.err.printf("%d %s drawAll() REDRAW\n",
+                System.currentTimeMillis(), Thread.currentThread());
+        }
+
+        // If true, the cursor is not visible
+        boolean cursor = false;
+
+        // Start with a clean screen
+        getScreen().clear();
+
+        // Draw the desktop
+        if (desktop != null) {
+            desktop.drawChildren();
+        }
+
+        // Draw each window in reverse Z order
+        List<TWindow> sorted = new LinkedList<TWindow>(windows);
+        Collections.sort(sorted);
+        TWindow topLevel = null;
+        if (sorted.size() > 0) {
+            topLevel = sorted.get(0);
+        }
+        Collections.reverse(sorted);
+        for (TWindow window: sorted) {
+            if (window.isShown()) {
+                window.drawChildren();
+            }
+        }
+
+        // Draw the blank menubar line - reset the screen clipping first so
+        // it won't trim it out.
+        getScreen().resetClipping();
+        getScreen().hLineXY(0, 0, getScreen().getWidth(), ' ',
+            theme.getColor("tmenu"));
+        // Now draw the menus.
+        int x = 1;
+        for (TMenu menu: menus) {
+            CellAttributes menuColor;
+            CellAttributes menuMnemonicColor;
+            if (menu.isActive()) {
+                menuIsActive = true;
+                menuColor = theme.getColor("tmenu.highlighted");
+                menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
+                topLevel = menu;
+            } else {
+                menuColor = theme.getColor("tmenu");
+                menuMnemonicColor = theme.getColor("tmenu.mnemonic");
+            }
+            // Draw the menu title
+            getScreen().hLineXY(x, 0, menu.getTitle().length() + 2, ' ',
+                menuColor);
+            getScreen().putStringXY(x + 1, 0, menu.getTitle(), menuColor);
+            // Draw the highlight character
+            getScreen().putCharXY(x + 1 + menu.getMnemonic().getShortcutIdx(),
+                0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
+
+            if (menu.isActive()) {
+                menu.drawChildren();
+                // Reset the screen clipping so we can draw the next title.
+                getScreen().resetClipping();
+            }
+            x += menu.getTitle().length() + 2;
+        }
+
+        for (TMenu menu: subMenus) {
+            // Reset the screen clipping so we can draw the next sub-menu.
+            getScreen().resetClipping();
+            menu.drawChildren();
+        }
+
+        // Draw the status bar of the top-level window
+        TStatusBar statusBar = null;
+        if (topLevel != null) {
+            statusBar = topLevel.getStatusBar();
+        }
+        if (statusBar != null) {
+            getScreen().resetClipping();
+            statusBar.setWidth(getScreen().getWidth());
+            statusBar.setY(getScreen().getHeight() - topLevel.getY());
+            statusBar.draw();
+        } else {
+            CellAttributes barColor = new CellAttributes();
+            barColor.setTo(getTheme().getColor("tstatusbar.text"));
+            getScreen().hLineXY(0, desktopBottom, getScreen().getWidth(), ' ',
+                barColor);
+        }
+
+        // Draw the mouse pointer
+        invertCell(mouseX, mouseY);
+        oldMouseX = mouseX;
+        oldMouseY = mouseY;
+
+        // Place the cursor if it is visible
+        if (!menuIsActive) {
+            TWidget activeWidget = null;
+            if (sorted.size() > 0) {
+                activeWidget = sorted.get(sorted.size() - 1).getActiveChild();
+                if (activeWidget.isCursorVisible()) {
+                    if ((activeWidget.getCursorAbsoluteY() < desktopBottom)
+                        && (activeWidget.getCursorAbsoluteY() > desktopTop)
+                    ) {
+                        getScreen().putCursor(true,
+                            activeWidget.getCursorAbsoluteX(),
+                            activeWidget.getCursorAbsoluteY());
+                        cursor = true;
+                    } else {
+                        getScreen().putCursor(false,
+                            activeWidget.getCursorAbsoluteX(),
+                            activeWidget.getCursorAbsoluteY());
+                        cursor = false;
+                    }
+                }
+            }
+        }
+
+        // Kill the cursor
+        if (!cursor) {
+            getScreen().hideCursor();
+        }
+
+        // Flush the screen contents
+        if (getScreen().isDirty()) {
+            backend.flushScreen();
+        }
+
+        repaint = false;
+    }
+
+    /**
+     * Force this application to exit.
+     */
+    public void exit() {
+        quit = true;
+        synchronized (this) {
+            this.notify();
         }
     }
 
@@ -1770,7 +1906,7 @@ public class TApplication implements Runnable {
      *
      * @param window new window to add
      */
-    public final void addWindow(final TWindow window) {
+    public final void addWindowToApplication(final TWindow window) {
 
         // Do not add menu windows to the window list.
         if (window instanceof TMenu) {
@@ -1816,7 +1952,9 @@ public class TApplication implements Runnable {
             }
 
             if (((window.flags & TWindow.CENTERED) == 0)
-                && smartWindowPlacement) {
+                && ((window.flags & TWindow.ABSOLUTEXY) == 0)
+                && (smartWindowPlacement == true)
+            ) {
 
                 doSmartPlacement(window);
             }
@@ -2575,139 +2713,6 @@ public class TApplication implements Runnable {
             getString("helpMenuStatus"));
         statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
         return helpMenu;
-    }
-
-    // ------------------------------------------------------------------------
-    // Event handlers ---------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Method that TApplication subclasses can override to handle menu or
-     * posted command events.
-     *
-     * @param command command event
-     * @return if true, this event was consumed
-     */
-    protected boolean onCommand(final TCommandEvent command) {
-        // Default: handle cmExit
-        if (command.equals(cmExit)) {
-            if (messageBox(i18n.getString("exitDialogTitle"),
-                    i18n.getString("exitDialogText"),
-                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
-                exit();
-            }
-            return true;
-        }
-
-        if (command.equals(cmShell)) {
-            openTerminal(0, 0, TWindow.RESIZABLE);
-            return true;
-        }
-
-        if (command.equals(cmTile)) {
-            tileWindows();
-            return true;
-        }
-        if (command.equals(cmCascade)) {
-            cascadeWindows();
-            return true;
-        }
-        if (command.equals(cmCloseAll)) {
-            closeAllWindows();
-            return true;
-        }
-
-        if (command.equals(cmMenu)) {
-            if (!modalWindowActive() && (activeMenu == null)) {
-                if (menus.size() > 0) {
-                    menus.get(0).setActive(true);
-                    activeMenu = menus.get(0);
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Method that TApplication subclasses can override to handle menu
-     * events.
-     *
-     * @param menu menu event
-     * @return if true, this event was consumed
-     */
-    protected boolean onMenu(final TMenuEvent menu) {
-
-        // Default: handle MID_EXIT
-        if (menu.getId() == TMenu.MID_EXIT) {
-            if (messageBox(i18n.getString("exitDialogTitle"),
-                    i18n.getString("exitDialogText"),
-                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
-                exit();
-            }
-            return true;
-        }
-
-        if (menu.getId() == TMenu.MID_SHELL) {
-            openTerminal(0, 0, TWindow.RESIZABLE);
-            return true;
-        }
-
-        if (menu.getId() == TMenu.MID_TILE) {
-            tileWindows();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_CASCADE) {
-            cascadeWindows();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_CLOSE_ALL) {
-            closeAllWindows();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_ABOUT) {
-            showAboutDialog();
-            return true;
-        }
-        if (menu.getId() == TMenu.MID_REPAINT) {
-            doRepaint();
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Method that TApplication subclasses can override to handle keystrokes.
-     *
-     * @param keypress keystroke event
-     * @return if true, this event was consumed
-     */
-    protected boolean onKeypress(final TKeypressEvent keypress) {
-        // Default: only menu shortcuts
-
-        // Process Alt-F, Alt-E, etc. menu shortcut keys
-        if (!keypress.getKey().isFnKey()
-            && keypress.getKey().isAlt()
-            && !keypress.getKey().isCtrl()
-            && (activeMenu == null)
-            && !modalWindowActive()
-        ) {
-
-            assert (subMenus.size() == 0);
-
-            for (TMenu menu: menus) {
-                if (Character.toLowerCase(menu.getMnemonic().getShortcut())
-                    == Character.toLowerCase(keypress.getKey().getChar())
-                ) {
-                    activeMenu = menu;
-                    menu.setActive(true);
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     // ------------------------------------------------------------------------

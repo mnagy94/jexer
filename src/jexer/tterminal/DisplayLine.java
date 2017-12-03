@@ -35,15 +35,67 @@ import jexer.bits.CellAttributes;
  * This represents a single line of the display buffer.
  */
 public final class DisplayLine {
+
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Maximum line length.
      */
     private static final int MAX_LINE_LENGTH = 256;
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The characters/attributes of the line.
      */
     private Cell [] chars;
+
+    /**
+     * Double-width line flag.
+     */
+    private boolean doubleWidth = false;
+
+    /**
+     * Double height line flag.  Valid values are:
+     *
+     * <p><pre>
+     *   0 = single height
+     *   1 = top half double height
+     *   2 = bottom half double height
+     * </pre>
+     */
+    private int doubleHeight = 0;
+
+    /**
+     * DECSCNM - reverse video.  We copy the flag to the line so that
+     * reverse-mode scrollback lines still show inverted colors correctly.
+     */
+    private boolean reverseColor = false;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor sets everything to drawing attributes.
+     *
+     * @param attr current drawing attributes
+     */
+    public DisplayLine(final CellAttributes attr) {
+        chars = new Cell[MAX_LINE_LENGTH];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = new Cell();
+            chars[i].setTo(attr);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // DisplayLine ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get the Cell at a specific column.
@@ -65,11 +117,6 @@ public final class DisplayLine {
     }
 
     /**
-     * Double-width line flag.
-     */
-    private boolean doubleWidth = false;
-
-    /**
      * Get double width flag.
      *
      * @return double width
@@ -86,17 +133,6 @@ public final class DisplayLine {
     public void setDoubleWidth(final boolean doubleWidth) {
         this.doubleWidth = doubleWidth;
     }
-
-    /**
-     * Double height line flag.  Valid values are:
-     *
-     * <p><pre>
-     *   0 = single height
-     *   1 = top half double height
-     *   2 = bottom half double height
-     * </pre>
-     */
-    private int doubleHeight = 0;
 
     /**
      * Get double height flag.
@@ -117,12 +153,6 @@ public final class DisplayLine {
     }
 
     /**
-     * DECSCNM - reverse video.  We copy the flag to the line so that
-     * reverse-mode scrollback lines still show inverted colors correctly.
-     */
-    private boolean reverseColor = false;
-
-    /**
      * Get reverse video flag.
      *
      * @return reverse video
@@ -138,19 +168,6 @@ public final class DisplayLine {
      */
     public void setReverseColor(final boolean reverseColor) {
         this.reverseColor = reverseColor;
-    }
-
-    /**
-     * Public constructor sets everything to drawing attributes.
-     *
-     * @param attr current drawing attributes
-     */
-    public DisplayLine(final CellAttributes attr) {
-        chars = new Cell[MAX_LINE_LENGTH];
-        for (int i = 0; i < chars.length; i++) {
-            chars[i] = new Cell();
-            chars[i].setTo(attr);
-        }
     }
 
     /**

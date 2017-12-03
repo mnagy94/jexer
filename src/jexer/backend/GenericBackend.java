@@ -39,10 +39,32 @@ import jexer.event.TInputEvent;
  */
 public abstract class GenericBackend implements Backend {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The session information.
      */
     protected SessionInfo sessionInfo;
+
+    /**
+     * The screen to draw on.
+     */
+    protected Screen screen;
+
+    /**
+     * Input events are processed by this Terminal.
+     */
+    protected TerminalReader terminal;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // Backend ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Getter for sessionInfo.
@@ -52,11 +74,6 @@ public abstract class GenericBackend implements Backend {
     public final SessionInfo getSessionInfo() {
         return sessionInfo;
     }
-
-    /**
-     * The screen to draw on.
-     */
-    protected Screen screen;
 
     /**
      * Getter for screen.
@@ -75,9 +92,13 @@ public abstract class GenericBackend implements Backend {
     }
 
     /**
-     * Input events are processed by this Terminal.
+     * Check if there are events in the queue.
+     *
+     * @return if true, getEvents() has something to return to the application
      */
-    protected TerminalReader terminal;
+    public boolean hasEvents() {
+        return terminal.hasEvents();
+    }
 
     /**
      * Get keyboard, mouse, and screen resize events.

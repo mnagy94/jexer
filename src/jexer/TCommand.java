@@ -35,6 +35,10 @@ package jexer;
  */
 public class TCommand {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Immediately abort the application (e.g. remote side closed
      * connection).
@@ -131,10 +135,39 @@ public class TCommand {
      */
     public static final int SAVE                = 30;
 
+    public static final TCommand cmAbort        = new TCommand(ABORT);
+    public static final TCommand cmExit         = new TCommand(EXIT);
+    public static final TCommand cmQuit         = new TCommand(EXIT);
+    public static final TCommand cmOpen         = new TCommand(OPEN);
+    public static final TCommand cmShell        = new TCommand(SHELL);
+    public static final TCommand cmCut          = new TCommand(CUT);
+    public static final TCommand cmCopy         = new TCommand(COPY);
+    public static final TCommand cmPaste        = new TCommand(PASTE);
+    public static final TCommand cmClear        = new TCommand(CLEAR);
+    public static final TCommand cmTile         = new TCommand(TILE);
+    public static final TCommand cmCascade      = new TCommand(CASCADE);
+    public static final TCommand cmCloseAll     = new TCommand(CLOSE_ALL);
+    public static final TCommand cmWindowMove   = new TCommand(WINDOW_MOVE);
+    public static final TCommand cmWindowZoom   = new TCommand(WINDOW_ZOOM);
+    public static final TCommand cmWindowNext   = new TCommand(WINDOW_NEXT);
+    public static final TCommand cmWindowPrevious = new TCommand(WINDOW_PREVIOUS);
+    public static final TCommand cmWindowClose  = new TCommand(WINDOW_CLOSE);
+    public static final TCommand cmHelp         = new TCommand(HELP);
+    public static final TCommand cmSave         = new TCommand(SAVE);
+    public static final TCommand cmMenu         = new TCommand(MENU);
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Type of command, one of EXIT, CASCADE, etc.
      */
     private int type;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Protected constructor.  Subclasses can be used to define new commands.
@@ -144,6 +177,10 @@ public class TCommand {
     protected TCommand(final int type) {
         this.type = type;
     }
+
+    // ------------------------------------------------------------------------
+    // TCommand ---------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Make human-readable description of this TCommand.
@@ -180,26 +217,5 @@ public class TCommand {
     public int hashCode() {
         return type;
     }
-
-    public static final TCommand cmAbort        = new TCommand(ABORT);
-    public static final TCommand cmExit         = new TCommand(EXIT);
-    public static final TCommand cmQuit         = new TCommand(EXIT);
-    public static final TCommand cmOpen         = new TCommand(OPEN);
-    public static final TCommand cmShell        = new TCommand(SHELL);
-    public static final TCommand cmCut          = new TCommand(CUT);
-    public static final TCommand cmCopy         = new TCommand(COPY);
-    public static final TCommand cmPaste        = new TCommand(PASTE);
-    public static final TCommand cmClear        = new TCommand(CLEAR);
-    public static final TCommand cmTile         = new TCommand(TILE);
-    public static final TCommand cmCascade      = new TCommand(CASCADE);
-    public static final TCommand cmCloseAll     = new TCommand(CLOSE_ALL);
-    public static final TCommand cmWindowMove   = new TCommand(WINDOW_MOVE);
-    public static final TCommand cmWindowZoom   = new TCommand(WINDOW_ZOOM);
-    public static final TCommand cmWindowNext   = new TCommand(WINDOW_NEXT);
-    public static final TCommand cmWindowPrevious = new TCommand(WINDOW_PREVIOUS);
-    public static final TCommand cmWindowClose  = new TCommand(WINDOW_CLOSE);
-    public static final TCommand cmHelp         = new TCommand(HELP);
-    public static final TCommand cmSave         = new TCommand(SAVE);
-    public static final TCommand cmMenu         = new TCommand(MENU);
 
 }

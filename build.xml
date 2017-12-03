@@ -30,10 +30,6 @@
 
 <project name="jexer" basedir="." default="jar">
 
-  <!-- I test with gcj because it is Java 1.5 and has better warnings
-       for unused imports. -->
-  <property name="build.compiler" value="gcj"/>
-
   <property name="version"       value="0.0.6"/>
   <property name="src.dir"       value="src"/>
   <property name="resources.dir" value="resources"/>
@@ -94,7 +90,6 @@
         version="true"
         use="true"
         access="protected"
-        failonwarning="true"
         windowtitle="Jexer - Java Text User Interface - API docs">
 
       <fileset dir="${src.dir}" defaultexcludes="yes">

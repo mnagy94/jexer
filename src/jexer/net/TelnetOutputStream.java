@@ -38,6 +38,10 @@ import static jexer.net.TelnetSocket.*;
  */
 public final class TelnetOutputStream extends OutputStream {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The root TelnetSocket that has my telnet protocol state.
      */
@@ -47,6 +51,15 @@ public final class TelnetOutputStream extends OutputStream {
      * The raw socket's OutputStream.
      */
     private OutputStream output;
+
+    /**
+     * When true, the last byte the caller passed to write() was a CR.
+     */
+    private boolean writeCR = false;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Package private constructor.
@@ -59,7 +72,9 @@ public final class TelnetOutputStream extends OutputStream {
         this.output = output;
     }
 
-    // OutputStream interface -------------------------------------------------
+    // ------------------------------------------------------------------------
+    // OutputStrem ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Closes this output stream and releases any system resources associated
@@ -135,6 +150,10 @@ public final class TelnetOutputStream extends OutputStream {
         writeImpl(bytes, 0, 1);
     }
 
+    // ------------------------------------------------------------------------
+    // TelnetOutputStrem ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Writes b.length bytes from the specified byte array to this output
      * stream.  Note package private access.
@@ -145,13 +164,6 @@ public final class TelnetOutputStream extends OutputStream {
     void rawWrite(final byte[] b) throws IOException {
         output.write(b, 0, b.length);
     }
-
-    // Telnet protocol --------------------------------------------------------
-
-    /**
-     * When true, the last byte the caller passed to write() was a CR.
-     */
-    private boolean writeCR = false;
 
     /**
      * Writes len bytes from the specified byte array starting at offset off

@@ -34,6 +34,9 @@ import java.util.ResourceBundle;
 
 import jexer.bits.GraphicsChars;
 import jexer.event.TKeypressEvent;
+import jexer.ttree.TDirectoryTreeItem;
+import jexer.ttree.TTreeItem;
+import jexer.ttree.TTreeViewWidget;
 import static jexer.TKeypress.*;
 
 /**
@@ -59,6 +62,10 @@ public final class TFileOpenBox extends TWindow {
      */
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TFileOpenBox.class.getName());
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * TFileOpenBox can be called for either Open or Save actions.
      */
@@ -74,24 +81,19 @@ public final class TFileOpenBox extends TWindow {
         SAVE
     }
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * String to return, or null if the user canceled.
      */
     private String filename = null;
 
     /**
-     * Get the return string.
-     *
-     * @return the filename the user selected, or null if they canceled.
-     */
-    public String getFilename() {
-        return filename;
-    }
-
-    /**
      * The left-side tree view pane.
      */
-    private TTreeView treeView;
+    private TTreeViewWidget treeView;
 
     /**
      * The data behind treeView.
@@ -113,31 +115,9 @@ public final class TFileOpenBox extends TWindow {
      */
     private TButton openButton;
 
-    /**
-     * See if there is a valid filename to return.  If the filename is a
-     * directory, then
-     *
-     * @param newFilename the filename to check and return
-     * @throws IOException of a java.io operation throws
-     */
-    private void checkFilename(final String newFilename) throws IOException {
-        File newFile = new File(newFilename);
-        if (newFile.exists()) {
-            if (newFile.isFile()) {
-                filename = newFilename;
-                getApplication().closeWindow(this);
-                return;
-            }
-            if (newFile.isDirectory()) {
-                treeViewRoot = new TDirectoryTreeItem(treeView, newFilename,
-                    true);
-                treeView.setTreeRoot(treeViewRoot, true);
-                treeView.reflowData();
-                openButton.setEnabled(false);
-                directoryList.setPath(newFilename);
-            }
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  The file open box will be centered on screen.
@@ -168,7 +148,7 @@ public final class TFileOpenBox extends TWindow {
         entryField.onKeypress(new TKeypressEvent(kbEnd));
 
         // Add directory treeView
-        treeView = addTreeView(1, 3, 30, getHeight() - 6,
+        treeView = addTreeViewWidget(1, 3, 30, getHeight() - 6,
             new TAction() {
                 public void DO() {
                     TTreeItem item = treeView.getSelected();
@@ -176,7 +156,7 @@ public final class TFileOpenBox extends TWindow {
                     try {
                         directoryList.setPath(selectedDir.getCanonicalPath());
                         openButton.setEnabled(false);
-                        activate(directoryList);
+                        activate(treeView);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -250,15 +230,9 @@ public final class TFileOpenBox extends TWindow {
         getApplication().yield();
     }
 
-    /**
-     * Draw me on screen.
-     */
-    @Override
-    public void draw() {
-        super.draw();
-        getScreen().vLineXY(33, 4, getHeight() - 6, GraphicsChars.WINDOW_SIDE,
-            getBackground());
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle keystrokes.
@@ -275,8 +249,86 @@ public final class TFileOpenBox extends TWindow {
             return;
         }
 
+        if (treeView.isActive()) {
+            if ((keypress.equals(kbEnter))
+                || (keypress.equals(kbUp))
+                || (keypress.equals(kbDown))
+                || (keypress.equals(kbPgUp))
+                || (keypress.equals(kbPgDn))
+                || (keypress.equals(kbHome))
+                || (keypress.equals(kbEnd))
+            ) {
+                // Tree view will be changing, update the directory list.
+                super.onKeypress(keypress);
+
+                // This is the same action as treeView's enter.
+                TTreeItem item = treeView.getSelected();
+                File selectedDir = ((TDirectoryTreeItem) item).getFile();
+                try {
+                    directoryList.setPath(selectedDir.getCanonicalPath());
+                    openButton.setEnabled(false);
+                    activate(treeView);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                return;
+            }
+        }
+
         // Pass to my parent
         super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw me on screen.
+     */
+    @Override
+    public void draw() {
+        super.draw();
+        getScreen().vLineXY(33, 4, getHeight() - 6, GraphicsChars.WINDOW_SIDE,
+            getBackground());
+    }
+
+    // ------------------------------------------------------------------------
+    // TFileOpenBox -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the return string.
+     *
+     * @return the filename the user selected, or null if they canceled.
+     */
+    public String getFilename() {
+        return filename;
+    }
+
+    /**
+     * See if there is a valid filename to return.  If the filename is a
+     * directory, then
+     *
+     * @param newFilename the filename to check and return
+     * @throws IOException of a java.io operation throws
+     */
+    private void checkFilename(final String newFilename) throws IOException {
+        File newFile = new File(newFilename);
+        if (newFile.exists()) {
+            if (newFile.isFile()) {
+                filename = newFilename;
+                getApplication().closeWindow(this);
+                return;
+            }
+            if (newFile.isDirectory()) {
+                treeViewRoot = new TDirectoryTreeItem(treeView,
+                    newFilename, true);
+                treeView.setTreeRoot(treeViewRoot, true);
+                openButton.setEnabled(false);
+                directoryList.setPath(newFilename);
+            }
+        }
     }
 
 }

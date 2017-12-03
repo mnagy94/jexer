@@ -33,10 +33,44 @@ package jexer.bits;
  */
 public final class Cell extends CellAttributes {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The character at this cell.
      */
     private char ch;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor sets default values of the cell to blank.
+     *
+     * @see #isBlank()
+     * @see #reset()
+     */
+    public Cell() {
+        reset();
+    }
+
+    /**
+     * Public constructor sets the character.  Attributes are the same as
+     * default.
+     *
+     * @param ch character to set to
+     * @see #reset()
+     */
+    public Cell(final char ch) {
+        reset();
+        this.ch = ch;
+    }
+
+    // ------------------------------------------------------------------------
+    // Cell -------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Getter for cell character.
@@ -147,28 +181,6 @@ public final class Cell extends CellAttributes {
      */
     public void setAttr(final CellAttributes that) {
         super.setTo(that);
-    }
-
-    /**
-     * Public constructor sets default values of the cell to blank.
-     *
-     * @see #isBlank()
-     * @see #reset()
-     */
-    public Cell() {
-        reset();
-    }
-
-    /**
-     * Public constructor sets the character.  Attributes are the same as
-     * default.
-     *
-     * @param ch character to set to
-     * @see #reset()
-     */
-    public Cell(final char ch) {
-        reset();
-        this.ch = ch;
     }
 
     /**

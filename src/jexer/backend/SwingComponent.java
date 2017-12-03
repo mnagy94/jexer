@@ -52,26 +52,14 @@ import javax.swing.JFrame;
  */
 class SwingComponent {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * If true, use triple buffering when drawing to a JFrame.
      */
     public static boolean tripleBuffer = true;
-
-    /**
-     * Get the BufferStrategy object needed for triple-buffering.
-     *
-     * @return the BufferStrategy
-     * @throws IllegalArgumentException if this function is called when
-     * not rendering to a JFrame
-     */
-    public BufferStrategy getBufferStrategy() {
-        if (frame != null) {
-            return frame.getBufferStrategy();
-        } else {
-            throw new IllegalArgumentException("BufferStrategy not used " +
-                "for JComponent access");
-        }
-    }
 
     /**
      * The frame reference, if we are drawing to a JFrame.
@@ -83,23 +71,9 @@ class SwingComponent {
      */
     private JComponent component;
 
-    /**
-     * Get the JFrame reference.
-     *
-     * @return the frame, or null if this is drawing to a JComponent
-     */
-    public JFrame getFrame() {
-        return frame;
-    }
-
-    /**
-     * Get the JComponent reference.
-     *
-     * @return the component, or null if this is drawing to a JFrame
-     */
-    public JComponent getComponent() {
-        return component;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Construct using a JFrame.
@@ -119,6 +93,44 @@ class SwingComponent {
     public SwingComponent(final JComponent component) {
         this.component = component;
         setupComponent();
+    }
+
+    // ------------------------------------------------------------------------
+    // SwingComponent ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the BufferStrategy object needed for triple-buffering.
+     *
+     * @return the BufferStrategy
+     * @throws IllegalArgumentException if this function is called when
+     * not rendering to a JFrame
+     */
+    public BufferStrategy getBufferStrategy() {
+        if (frame != null) {
+            return frame.getBufferStrategy();
+        } else {
+            throw new IllegalArgumentException("BufferStrategy not used " +
+                "for JComponent access");
+        }
+    }
+
+    /**
+     * Get the JFrame reference.
+     *
+     * @return the frame, or null if this is drawing to a JComponent
+     */
+    public JFrame getFrame() {
+        return frame;
+    }
+
+    /**
+     * Get the JComponent reference.
+     *
+     * @return the component, or null if this is drawing to a JFrame
+     */
+    public JComponent getComponent() {
+        return component;
     }
 
     /**

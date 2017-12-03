@@ -37,6 +37,10 @@ import javax.swing.JComponent;
  */
 public final class SwingBackend extends GenericBackend {
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Public constructor.  The window will be 80x25 with font size 20 pts.
      */
@@ -126,6 +130,10 @@ public final class SwingBackend extends GenericBackend {
         // SwingTerminal is the screen too
         screen = (SwingTerminal) terminal;
     }
+
+    // ------------------------------------------------------------------------
+    // SwingBackend -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Set to a new font, and resize the screen to match its dimensions.

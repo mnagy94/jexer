@@ -38,6 +38,10 @@ import jexer.event.TInputEvent;
  */
 public class MultiBackend implements Backend {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The screen to use.
      */
@@ -47,6 +51,10 @@ public class MultiBackend implements Backend {
      * The list of backends to use.
      */
     private List<Backend> backends = new LinkedList<Backend>();
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor requires one backend.  Note that this backend's
@@ -63,35 +71,9 @@ public class MultiBackend implements Backend {
         }
     }
 
-    /**
-     * Add a backend to the list.
-     *
-     * @param backend the backend to add
-     */
-    public void addBackend(final Backend backend) {
-        backends.add(backend);
-        if (backend instanceof TWindowBackend) {
-            multiScreen.addScreen(((TWindowBackend) backend).getOtherScreen());
-        } else {
-            multiScreen.addScreen(backend.getScreen());
-        }
-    }
-
-    /**
-     * Remove a backend from the list.
-     *
-     * @param backend the backend to remove
-     */
-    public void removeBackend(final Backend backend) {
-        if (backends.size() > 1) {
-            if (backend instanceof TWindowBackend) {
-                multiScreen.removeScreen(((TWindowBackend) backend).getOtherScreen());
-            } else {
-                multiScreen.removeScreen(backend.getScreen());
-            }
-            backends.remove(backend);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Backend ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Getter for sessionInfo.
@@ -119,6 +101,20 @@ public class MultiBackend implements Backend {
         for (Backend backend: backends) {
             backend.flushScreen();
         }
+    }
+
+    /**
+     * Check if there are events in the queue.
+     *
+     * @return if true, getEvents() has something to return to the application
+     */
+    public boolean hasEvents() {
+        for (Backend backend: backends) {
+            if (backend.hasEvents()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -163,6 +159,40 @@ public class MultiBackend implements Backend {
     public void setListener(final Object listener) {
         for (Backend backend: backends) {
             backend.setListener(listener);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // MultiBackend -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Add a backend to the list.
+     *
+     * @param backend the backend to add
+     */
+    public void addBackend(final Backend backend) {
+        backends.add(backend);
+        if (backend instanceof TWindowBackend) {
+            multiScreen.addScreen(((TWindowBackend) backend).getOtherScreen());
+        } else {
+            multiScreen.addScreen(backend.getScreen());
+        }
+    }
+
+    /**
+     * Remove a backend from the list.
+     *
+     * @param backend the backend to remove
+     */
+    public void removeBackend(final Backend backend) {
+        if (backends.size() > 1) {
+            if (backend instanceof TWindowBackend) {
+                multiScreen.removeScreen(((TWindowBackend) backend).getOtherScreen());
+            } else {
+                multiScreen.removeScreen(backend.getScreen());
+            }
+            backends.remove(backend);
         }
     }
 

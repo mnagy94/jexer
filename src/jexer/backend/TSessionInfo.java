@@ -34,6 +34,10 @@ package jexer.backend;
  */
 public final class TSessionInfo implements SessionInfo {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * User name.
      */
@@ -53,6 +57,32 @@ public final class TSessionInfo implements SessionInfo {
      * Text window height.
      */
     private int windowHeight = 24;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     */
+    public TSessionInfo() {
+        this(80, 24);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param width the number of columns
+     * @param height the number of rows
+     */
+    public TSessionInfo(final int width, final int height) {
+        this.windowWidth        = width;
+        this.windowHeight       = height;
+    }
+
+    // ------------------------------------------------------------------------
+    // SessionInfo ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Username getter.
@@ -113,24 +143,6 @@ public final class TSessionInfo implements SessionInfo {
      */
     public void queryWindowSize() {
         // NOP
-    }
-
-    /**
-     * Public constructor.
-     */
-    public TSessionInfo() {
-        this(80, 24);
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param width the number of columns
-     * @param height the number of rows
-     */
-    public TSessionInfo(final int width, final int height) {
-        this.windowWidth        = width;
-        this.windowHeight       = height;
     }
 
 }

@@ -59,6 +59,27 @@ import static jexer.TKeypress.*;
 public final class ECMA48Terminal extends LogicalScreen
                                   implements TerminalReader, Runnable {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * States in the input parser.
+     */
+    private enum ParseState {
+        GROUND,
+        ESCAPE,
+        ESCAPE_INTERMEDIATE,
+        CSI_ENTRY,
+        CSI_PARAM,
+        MOUSE,
+        MOUSE_SGR,
+    }
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Emit debugging to stderr.
      */
@@ -74,15 +95,6 @@ public final class ECMA48Terminal extends LogicalScreen
      * The session information.
      */
     private SessionInfo sessionInfo;
-
-    /**
-     * Getter for sessionInfo.
-     *
-     * @return the SessionInfo
-     */
-    public SessionInfo getSessionInfo() {
-        return sessionInfo;
-    }
 
     /**
      * The event queue, filled up by a thread reading on input.
@@ -103,20 +115,7 @@ public final class ECMA48Terminal extends LogicalScreen
      * Parameters being collected.  E.g. if the string is \033[1;3m, then
      * params[0] will be 1 and params[1] will be 3.
      */
-    private ArrayList<String> params;
-
-    /**
-     * States in the input parser.
-     */
-    private enum ParseState {
-        GROUND,
-        ESCAPE,
-        ESCAPE_INTERMEDIATE,
-        CSI_ENTRY,
-        CSI_PARAM,
-        MOUSE,
-        MOUSE_SGR,
-    }
+    private List<String> params;
 
     /**
      * Current parsing state.
@@ -194,101 +193,9 @@ public final class ECMA48Terminal extends LogicalScreen
      */
     private Object listener;
 
-    /**
-     * Set listener to a different Object.
-     *
-     * @param listener the new listening object that run() wakes up on new
-     * input
-     */
-    public void setListener(final Object listener) {
-        this.listener = listener;
-    }
-
-    /**
-     * Get the output writer.
-     *
-     * @return the Writer
-     */
-    public PrintWriter getOutput() {
-        return output;
-    }
-
-    /**
-     * Check if there are events in the queue.
-     *
-     * @return if true, getEvents() has something to return to the backend
-     */
-    public boolean hasEvents() {
-        synchronized (eventQueue) {
-            return (eventQueue.size() > 0);
-        }
-    }
-
-    /**
-     * Call 'stty' to set cooked mode.
-     *
-     * <p>Actually executes '/bin/sh -c stty sane cooked &lt; /dev/tty'
-     */
-    private void sttyCooked() {
-        doStty(false);
-    }
-
-    /**
-     * Call 'stty' to set raw mode.
-     *
-     * <p>Actually executes '/bin/sh -c stty -ignbrk -brkint -parmrk -istrip
-     * -inlcr -igncr -icrnl -ixon -opost -echo -echonl -icanon -isig -iexten
-     * -parenb cs8 min 1 &lt; /dev/tty'
-     */
-    private void sttyRaw() {
-        doStty(true);
-    }
-
-    /**
-     * Call 'stty' to set raw or cooked mode.
-     *
-     * @param mode if true, set raw mode, otherwise set cooked mode
-     */
-    private void doStty(final boolean mode) {
-        String [] cmdRaw = {
-            "/bin/sh", "-c", "stty -ignbrk -brkint -parmrk -istrip -inlcr -igncr -icrnl -ixon -opost -echo -echonl -icanon -isig -iexten -parenb cs8 min 1 < /dev/tty"
-        };
-        String [] cmdCooked = {
-            "/bin/sh", "-c", "stty sane cooked < /dev/tty"
-        };
-        try {
-            Process process;
-            if (mode) {
-                process = Runtime.getRuntime().exec(cmdRaw);
-            } else {
-                process = Runtime.getRuntime().exec(cmdCooked);
-            }
-            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
-            String line = in.readLine();
-            if ((line != null) && (line.length() > 0)) {
-                System.err.println("WEIRD?! Normal output from stty: " + line);
-            }
-            while (true) {
-                BufferedReader err = new BufferedReader(new InputStreamReader(process.getErrorStream(), "UTF-8"));
-                line = err.readLine();
-                if ((line != null) && (line.length() > 0)) {
-                    System.err.println("Error output from stty: " + line);
-                }
-                try {
-                    process.waitFor();
-                    break;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            int rc = process.exitValue();
-            if (rc != 0) {
-                System.err.println("stty returned error code: " + rc);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Constructor sets up state for getEvent().
@@ -517,6 +424,73 @@ public final class ECMA48Terminal extends LogicalScreen
         this(listener, input, reader, writer, false);
     }
 
+    // ------------------------------------------------------------------------
+    // LogicalScreen ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    @Override
+    public void setTitle(final String title) {
+        output.write(getSetTitleString(title));
+        flush();
+    }
+
+    /**
+     * Push the logical screen to the physical device.
+     */
+    @Override
+    public void flushPhysical() {
+        String result = flushString();
+        if ((cursorVisible)
+            && (cursorY >= 0)
+            && (cursorX >= 0)
+            && (cursorY <= height - 1)
+            && (cursorX <= width - 1)
+        ) {
+            result += cursor(true);
+            result += gotoXY(cursorX, cursorY);
+        } else {
+            result += cursor(false);
+        }
+        output.write(result);
+        flush();
+    }
+
+    // ------------------------------------------------------------------------
+    // TerminalReader ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if there are events in the queue.
+     *
+     * @return if true, getEvents() has something to return to the backend
+     */
+    public boolean hasEvents() {
+        synchronized (eventQueue) {
+            return (eventQueue.size() > 0);
+        }
+    }
+
+    /**
+     * Return any events in the IO queue.
+     *
+     * @param queue list to append new events to
+     */
+    public void getEvents(final List<TInputEvent> queue) {
+        synchronized (eventQueue) {
+            if (eventQueue.size() > 0) {
+                synchronized (queue) {
+                    queue.addAll(eventQueue);
+                }
+                eventQueue.clear();
+            }
+        }
+    }
+
     /**
      * Restore terminal to normal state.
      */
@@ -555,6 +529,195 @@ public final class ECMA48Terminal extends LogicalScreen
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener) {
+        this.listener = listener;
+    }
+
+    // ------------------------------------------------------------------------
+    // Runnable ---------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Read function runs on a separate thread.
+     */
+    public void run() {
+        boolean done = false;
+        // available() will often return > 1, so we need to read in chunks to
+        // stay caught up.
+        char [] readBuffer = new char[128];
+        List<TInputEvent> events = new LinkedList<TInputEvent>();
+
+        while (!done && !stopReaderThread) {
+            try {
+                // We assume that if inputStream has bytes available, then
+                // input won't block on read().
+                int n = inputStream.available();
+
+                /*
+                System.err.printf("inputStream.available(): %d\n", n);
+                System.err.flush();
+                */
+
+                if (n > 0) {
+                    if (readBuffer.length < n) {
+                        // The buffer wasn't big enough, make it huger
+                        readBuffer = new char[readBuffer.length * 2];
+                    }
+
+                    // System.err.printf("BEFORE read()\n"); System.err.flush();
+
+                    int rc = input.read(readBuffer, 0, readBuffer.length);
+
+                    /*
+                    System.err.printf("AFTER read() %d\n", rc);
+                    System.err.flush();
+                    */
+
+                    if (rc == -1) {
+                        // This is EOF
+                        done = true;
+                    } else {
+                        for (int i = 0; i < rc; i++) {
+                            int ch = readBuffer[i];
+                            processChar(events, (char)ch);
+                        }
+                        getIdleEvents(events);
+                        if (events.size() > 0) {
+                            // Add to the queue for the backend thread to
+                            // be able to obtain.
+                            synchronized (eventQueue) {
+                                eventQueue.addAll(events);
+                            }
+                            if (listener != null) {
+                                synchronized (listener) {
+                                    listener.notifyAll();
+                                }
+                            }
+                            events.clear();
+                        }
+                    }
+                } else {
+                    getIdleEvents(events);
+                    if (events.size() > 0) {
+                        synchronized (eventQueue) {
+                            eventQueue.addAll(events);
+                        }
+                        if (listener != null) {
+                            synchronized (listener) {
+                                listener.notifyAll();
+                            }
+                        }
+                        events.clear();
+                    }
+
+                    // Wait 20 millis for more data
+                    Thread.sleep(20);
+                }
+                // System.err.println("end while loop"); System.err.flush();
+            } catch (InterruptedException e) {
+                // SQUASH
+            } catch (IOException e) {
+                e.printStackTrace();
+                done = true;
+            }
+        } // while ((done == false) && (stopReaderThread == false))
+        // System.err.println("*** run() exiting..."); System.err.flush();
+    }
+
+    // ------------------------------------------------------------------------
+    // ECMA48Terminal ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Getter for sessionInfo.
+     *
+     * @return the SessionInfo
+     */
+    public SessionInfo getSessionInfo() {
+        return sessionInfo;
+    }
+
+    /**
+     * Get the output writer.
+     *
+     * @return the Writer
+     */
+    public PrintWriter getOutput() {
+        return output;
+    }
+
+    /**
+     * Call 'stty' to set cooked mode.
+     *
+     * <p>Actually executes '/bin/sh -c stty sane cooked &lt; /dev/tty'
+     */
+    private void sttyCooked() {
+        doStty(false);
+    }
+
+    /**
+     * Call 'stty' to set raw mode.
+     *
+     * <p>Actually executes '/bin/sh -c stty -ignbrk -brkint -parmrk -istrip
+     * -inlcr -igncr -icrnl -ixon -opost -echo -echonl -icanon -isig -iexten
+     * -parenb cs8 min 1 &lt; /dev/tty'
+     */
+    private void sttyRaw() {
+        doStty(true);
+    }
+
+    /**
+     * Call 'stty' to set raw or cooked mode.
+     *
+     * @param mode if true, set raw mode, otherwise set cooked mode
+     */
+    private void doStty(final boolean mode) {
+        String [] cmdRaw = {
+            "/bin/sh", "-c", "stty -ignbrk -brkint -parmrk -istrip -inlcr -igncr -icrnl -ixon -opost -echo -echonl -icanon -isig -iexten -parenb cs8 min 1 < /dev/tty"
+        };
+        String [] cmdCooked = {
+            "/bin/sh", "-c", "stty sane cooked < /dev/tty"
+        };
+        try {
+            Process process;
+            if (mode) {
+                process = Runtime.getRuntime().exec(cmdRaw);
+            } else {
+                process = Runtime.getRuntime().exec(cmdCooked);
+            }
+            BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
+            String line = in.readLine();
+            if ((line != null) && (line.length() > 0)) {
+                System.err.println("WEIRD?! Normal output from stty: " + line);
+            }
+            while (true) {
+                BufferedReader err = new BufferedReader(new InputStreamReader(process.getErrorStream(), "UTF-8"));
+                line = err.readLine();
+                if ((line != null) && (line.length() > 0)) {
+                    System.err.println("Error output from stty: " + line);
+                }
+                try {
+                    process.waitFor();
+                    break;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            int rc = process.exitValue();
+            if (rc != 0) {
+                System.err.println("stty returned error code: " + rc);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -761,37 +924,6 @@ public final class ECMA48Terminal extends LogicalScreen
             System.err.printf("flushString(): %s\n", result);
         }
         return result;
-    }
-
-    /**
-     * Push the logical screen to the physical device.
-     */
-    @Override
-    public void flushPhysical() {
-        String result = flushString();
-        if ((cursorVisible)
-            && (cursorY >= 0)
-            && (cursorX >= 0)
-            && (cursorY <= height - 1)
-            && (cursorX <= width - 1)
-        ) {
-            result += cursor(true);
-            result += gotoXY(cursorX, cursorY);
-        } else {
-            result += cursor(false);
-        }
-        output.write(result);
-        flush();
-    }
-
-    /**
-     * Set the window title.
-     *
-     * @param title the new title
-     */
-    public void setTitle(final String title) {
-        output.write(getSetTitleString(title));
-        flush();
     }
 
     /**
@@ -1106,22 +1238,6 @@ public final class ECMA48Terminal extends LogicalScreen
         return new TMouseEvent(eventType, x, y, x, y,
             eventMouse1, eventMouse2, eventMouse3,
             eventMouseWheelUp, eventMouseWheelDown);
-    }
-
-    /**
-     * Return any events in the IO queue.
-     *
-     * @param queue list to append new events to
-     */
-    public void getEvents(final List<TInputEvent> queue) {
-        synchronized (eventQueue) {
-            if (eventQueue.size() > 0) {
-                synchronized (queue) {
-                    queue.addAll(eventQueue);
-                }
-                eventQueue.clear();
-            }
-        }
     }
 
     /**
@@ -1893,93 +2009,6 @@ public final class ECMA48Terminal extends LogicalScreen
             return "\033[?1002;1003;1005;1006h\033[?1049h";
         }
         return "\033[?1002;1003;1006;1005l\033[?1049l";
-    }
-
-    /**
-     * Read function runs on a separate thread.
-     */
-    public void run() {
-        boolean done = false;
-        // available() will often return > 1, so we need to read in chunks to
-        // stay caught up.
-        char [] readBuffer = new char[128];
-        List<TInputEvent> events = new LinkedList<TInputEvent>();
-
-        while (!done && !stopReaderThread) {
-            try {
-                // We assume that if inputStream has bytes available, then
-                // input won't block on read().
-                int n = inputStream.available();
-
-                /*
-                System.err.printf("inputStream.available(): %d\n", n);
-                System.err.flush();
-                */
-
-                if (n > 0) {
-                    if (readBuffer.length < n) {
-                        // The buffer wasn't big enough, make it huger
-                        readBuffer = new char[readBuffer.length * 2];
-                    }
-
-                    // System.err.printf("BEFORE read()\n"); System.err.flush();
-
-                    int rc = input.read(readBuffer, 0, readBuffer.length);
-
-                    /*
-                    System.err.printf("AFTER read() %d\n", rc);
-                    System.err.flush();
-                    */
-
-                    if (rc == -1) {
-                        // This is EOF
-                        done = true;
-                    } else {
-                        for (int i = 0; i < rc; i++) {
-                            int ch = readBuffer[i];
-                            processChar(events, (char)ch);
-                        }
-                        getIdleEvents(events);
-                        if (events.size() > 0) {
-                            // Add to the queue for the backend thread to
-                            // be able to obtain.
-                            synchronized (eventQueue) {
-                                eventQueue.addAll(events);
-                            }
-                            if (listener != null) {
-                                synchronized (listener) {
-                                    listener.notifyAll();
-                                }
-                            }
-                            events.clear();
-                        }
-                    }
-                } else {
-                    getIdleEvents(events);
-                    if (events.size() > 0) {
-                        synchronized (eventQueue) {
-                            eventQueue.addAll(events);
-                        }
-                        if (listener != null) {
-                            synchronized (listener) {
-                                listener.notifyAll();
-                            }
-                        }
-                        events.clear();
-                    }
-
-                    // Wait 20 millis for more data
-                    Thread.sleep(20);
-                }
-                // System.err.println("end while loop"); System.err.flush();
-            } catch (InterruptedException e) {
-                // SQUASH
-            } catch (IOException e) {
-                e.printStackTrace();
-                done = true;
-            }
-        } // while ((done == false) && (stopReaderThread == false))
-        // System.err.println("*** run() exiting..."); System.err.flush();
     }
 
 }

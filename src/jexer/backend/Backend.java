@@ -61,6 +61,13 @@ public interface Backend {
     public void flushScreen();
 
     /**
+     * Check if there are events in the queue.
+     *
+     * @return if true, getEvents() has something to return to the application
+     */
+    public boolean hasEvents();
+
+    /**
      * Classes must provide an implementation to get keyboard, mouse, and
      * screen resize events.
      *

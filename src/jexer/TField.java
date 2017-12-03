@@ -39,30 +39,14 @@ import static jexer.TKeypress.*;
  */
 public class TField extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Field text.
      */
     protected String text = "";
-
-    /**
-     * Get field text.
-     *
-     * @return field text
-     */
-    public final String getText() {
-        return text;
-    }
-
-    /**
-     * Set field text.
-     *
-     * @param text the new field text
-     */
-    public final void setText(String text) {
-        this.text = text;
-        position = 0;
-        windowStart = 0;
-    }
 
     /**
      * If true, only allow enough characters that will fit in the width.  If
@@ -99,6 +83,10 @@ public class TField extends TWidget {
      * The action to perform when the text is updated.
      */
     protected TAction updateAction;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -157,6 +145,10 @@ public class TField extends TWidget {
         this.updateAction = updateAction;
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Returns true if the mouse is currently on the field.
      *
@@ -172,80 +164,6 @@ public class TField extends TWidget {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Dispatch to the action function.
-     *
-     * @param enter if true, the user pressed Enter, else this was an update
-     * to the text.
-     */
-    protected void dispatch(final boolean enter) {
-        if (enter) {
-            if (enterAction != null) {
-                enterAction.DO();
-            }
-        } else {
-            if (updateAction != null) {
-                updateAction.DO();
-            }
-        }
-    }
-
-    /**
-     * Draw the text field.
-     */
-    @Override
-    public void draw() {
-        CellAttributes fieldColor;
-
-        if (isAbsoluteActive()) {
-            fieldColor = getTheme().getColor("tfield.active");
-        } else {
-            fieldColor = getTheme().getColor("tfield.inactive");
-        }
-
-        int end = windowStart + getWidth();
-        if (end > text.length()) {
-            end = text.length();
-        }
-        getScreen().hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
-        getScreen().putStringXY(0, 0, text.substring(windowStart, end),
-            fieldColor);
-
-        // Fix the cursor, it will be rendered by TApplication.drawAll().
-        updateCursor();
-    }
-
-    /**
-     * Update the visible cursor position to match the location of position
-     * and windowStart.
-     */
-    protected void updateCursor() {
-        if ((position > getWidth()) && fixed) {
-            setCursorX(getWidth());
-        } else if ((position - windowStart == getWidth()) && !fixed) {
-            setCursorX(getWidth() - 1);
-        } else {
-            setCursorX(position - windowStart);
-        }
-    }
-
-    /**
-     * Normalize windowStart such that most of the field data if visible.
-     */
-    protected void normalizeWindowStart() {
-        if (fixed) {
-            // windowStart had better be zero, there is nothing to do here.
-            assert (windowStart == 0);
-            return;
-        }
-        windowStart = position - (getWidth() - 1);
-        if (windowStart < 0) {
-            windowStart = 0;
-        }
-
-        updateCursor();
     }
 
     /**
@@ -417,6 +335,108 @@ public class TField extends TWidget {
 
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the text field.
+     */
+    @Override
+    public void draw() {
+        CellAttributes fieldColor;
+
+        if (isAbsoluteActive()) {
+            fieldColor = getTheme().getColor("tfield.active");
+        } else {
+            fieldColor = getTheme().getColor("tfield.inactive");
+        }
+
+        int end = windowStart + getWidth();
+        if (end > text.length()) {
+            end = text.length();
+        }
+        getScreen().hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
+        getScreen().putStringXY(0, 0, text.substring(windowStart, end),
+            fieldColor);
+
+        // Fix the cursor, it will be rendered by TApplication.drawAll().
+        updateCursor();
+    }
+
+    // ------------------------------------------------------------------------
+    // TField -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get field text.
+     *
+     * @return field text
+     */
+    public final String getText() {
+        return text;
+    }
+
+    /**
+     * Set field text.
+     *
+     * @param text the new field text
+     */
+    public final void setText(String text) {
+        this.text = text;
+        position = 0;
+        windowStart = 0;
+    }
+
+    /**
+     * Dispatch to the action function.
+     *
+     * @param enter if true, the user pressed Enter, else this was an update
+     * to the text.
+     */
+    protected void dispatch(final boolean enter) {
+        if (enter) {
+            if (enterAction != null) {
+                enterAction.DO();
+            }
+        } else {
+            if (updateAction != null) {
+                updateAction.DO();
+            }
+        }
+    }
+
+    /**
+     * Update the visible cursor position to match the location of position
+     * and windowStart.
+     */
+    protected void updateCursor() {
+        if ((position > getWidth()) && fixed) {
+            setCursorX(getWidth());
+        } else if ((position - windowStart == getWidth()) && !fixed) {
+            setCursorX(getWidth() - 1);
+        } else {
+            setCursorX(position - windowStart);
+        }
+    }
+
+    /**
+     * Normalize windowStart such that most of the field data if visible.
+     */
+    protected void normalizeWindowStart() {
+        if (fixed) {
+            // windowStart had better be zero, there is nothing to do here.
+            assert (windowStart == 0);
+            return;
+        }
+        windowStart = position - (getWidth() - 1);
+        if (windowStart < 0) {
+            windowStart = 0;
+        }
+
+        updateCursor();
     }
 
     /**

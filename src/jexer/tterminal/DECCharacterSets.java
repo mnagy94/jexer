@@ -34,11 +34,9 @@ package jexer.tterminal;
  */
 public final class DECCharacterSets {
 
-    /**
-     * Private constructor prevents accidental creation of this class.
-     */
-    private DECCharacterSets() {
-    }
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * US - Normal "international" (ASCII).
@@ -369,5 +367,15 @@ public final class DECCharacterSets {
         0x2500, 0x2500, 0x23BC, 0x23BC, 0x2080, 0x2081, 0x2082, 0x2083,
         0x2084, 0x2085, 0x2086, 0x2087, 0x2088, 0x2089, 0x00B6, 0x0020
     };
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Private constructor prevents accidental creation of this class.
+     */
+    private DECCharacterSets() {
+    }
 
 }

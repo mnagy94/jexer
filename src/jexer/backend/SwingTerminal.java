@@ -54,8 +54,10 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.ImageIcon;
 import javax.swing.SwingUtilities;
 
 import jexer.TKeypress;
@@ -84,14 +86,19 @@ public final class SwingTerminal extends LogicalScreen
                                             MouseListener, MouseMotionListener,
                                             MouseWheelListener, WindowListener {
 
-    /**
-     * The Swing component or frame to draw to.
-     */
-    private SwingComponent swing;
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-    // Screen -----------------------------------------------------------------
-    // ------------------------------------------------------------------------
+    /**
+     * The icon image location.
+     */
+    private static final String ICONFILE = "jexer_logo_128.png";
+
+    /**
+     * The terminus font resource filename.
+     */
+    private static final String FONTFILE = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
 
     /**
      * Cursor style to draw.
@@ -113,17 +120,9 @@ public final class SwingTerminal extends LogicalScreen
         OUTLINE
     }
 
-    /**
-     * A cache of previously-rendered glyphs for blinking text, when it is
-     * not visible.
-     */
-    private HashMap<Cell, BufferedImage> glyphCacheBlink;
-
-    /**
-     * A cache of previously-rendered glyphs for non-blinking, or
-     * blinking-and-visible, text.
-     */
-    private HashMap<Cell, BufferedImage> glyphCache;
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     // Colors to map DOS colors to AWT colors.
     private static Color MYBLACK;
@@ -149,36 +148,21 @@ public final class SwingTerminal extends LogicalScreen
     private static boolean dosColors = false;
 
     /**
-     * Setup Swing colors to match DOS color palette.
+     * The Swing component or frame to draw to.
      */
-    private static void setDOSColors() {
-        if (dosColors) {
-            return;
-        }
-        MYBLACK         = new Color(0x00, 0x00, 0x00);
-        MYRED           = new Color(0xa8, 0x00, 0x00);
-        MYGREEN         = new Color(0x00, 0xa8, 0x00);
-        MYYELLOW        = new Color(0xa8, 0x54, 0x00);
-        MYBLUE          = new Color(0x00, 0x00, 0xa8);
-        MYMAGENTA       = new Color(0xa8, 0x00, 0xa8);
-        MYCYAN          = new Color(0x00, 0xa8, 0xa8);
-        MYWHITE         = new Color(0xa8, 0xa8, 0xa8);
-        MYBOLD_BLACK    = new Color(0x54, 0x54, 0x54);
-        MYBOLD_RED      = new Color(0xfc, 0x54, 0x54);
-        MYBOLD_GREEN    = new Color(0x54, 0xfc, 0x54);
-        MYBOLD_YELLOW   = new Color(0xfc, 0xfc, 0x54);
-        MYBOLD_BLUE     = new Color(0x54, 0x54, 0xfc);
-        MYBOLD_MAGENTA  = new Color(0xfc, 0x54, 0xfc);
-        MYBOLD_CYAN     = new Color(0x54, 0xfc, 0xfc);
-        MYBOLD_WHITE    = new Color(0xfc, 0xfc, 0xfc);
-
-        dosColors = true;
-    }
+    private SwingComponent swing;
 
     /**
-     * The terminus font resource filename.
+     * A cache of previously-rendered glyphs for blinking text, when it is
+     * not visible.
      */
-    private static final String FONTFILE = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
+    private Map<Cell, BufferedImage> glyphCacheBlink;
+
+    /**
+     * A cache of previously-rendered glyphs for non-blinking, or
+     * blinking-and-visible, text.
+     */
+    private Map<Cell, BufferedImage> glyphCache;
 
     /**
      * If true, we were successful getting Terminus.
@@ -247,17 +231,6 @@ public final class SwingTerminal extends LogicalScreen
     private long blinkMillis = 500;
 
     /**
-     * Get the number of millis to wait before switching the blink from
-     * visible to invisible.
-     *
-     * @return the number of milli to wait before switching the blink from
-     * visible to invisible
-     */
-    public long getBlinkMillis() {
-        return blinkMillis;
-    }
-
-    /**
      * If true, the cursor should be visible right now based on the blink
      * time.
      */
@@ -268,6 +241,445 @@ public final class SwingTerminal extends LogicalScreen
      * from invisible to visible.
      */
     private long lastBlinkTime = 0;
+
+    /**
+     * The session information.
+     */
+    private SwingSessionInfo sessionInfo;
+
+    /**
+     * The listening object that run() wakes up on new input.
+     */
+    private Object listener;
+
+    /**
+     * The event queue, filled up by a thread reading on input.
+     */
+    private List<TInputEvent> eventQueue;
+
+    /**
+     * The last reported mouse X position.
+     */
+    private int oldMouseX = -1;
+
+    /**
+     * The last reported mouse Y position.
+     */
+    private int oldMouseY = -1;
+
+    /**
+     * true if mouse1 was down.  Used to report mouse1 on the release event.
+     */
+    private boolean mouse1 = false;
+
+    /**
+     * true if mouse2 was down.  Used to report mouse2 on the release event.
+     */
+    private boolean mouse2 = false;
+
+    /**
+     * true if mouse3 was down.  Used to report mouse3 on the release event.
+     */
+    private boolean mouse3 = false;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor creates a new JFrame to render to.
+     *
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @param fontSize the size in points.  Good values to pick are: 16, 20,
+     * 22, and 24.
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     */
+    public SwingTerminal(final int windowWidth, final int windowHeight,
+        final int fontSize, final Object listener) {
+
+        this.fontSize = fontSize;
+
+        setDOSColors();
+
+        // Figure out my cursor style.
+        String cursorStyleString = System.getProperty(
+            "jexer.Swing.cursorStyle", "underline").toLowerCase();
+        if (cursorStyleString.equals("underline")) {
+            cursorStyle = CursorStyle.UNDERLINE;
+        } else if (cursorStyleString.equals("outline")) {
+            cursorStyle = CursorStyle.OUTLINE;
+        } else if (cursorStyleString.equals("block")) {
+            cursorStyle = CursorStyle.BLOCK;
+        }
+
+        // Pull the system property for triple buffering.
+        if (System.getProperty("jexer.Swing.tripleBuffer") != null) {
+            if (System.getProperty("jexer.Swing.tripleBuffer").equals("true")) {
+                SwingComponent.tripleBuffer = true;
+            } else {
+                SwingComponent.tripleBuffer = false;
+            }
+        }
+
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+
+                    JFrame frame = new JFrame() {
+
+                        /**
+                         * Serializable version.
+                         */
+                        private static final long serialVersionUID = 1;
+
+                        /**
+                         * The code that performs the actual drawing.
+                         */
+                        public SwingTerminal screen = null;
+
+                        /*
+                         * Anonymous class initializer saves the screen
+                         * reference, so that paint() and the like call out
+                         * to SwingTerminal.
+                         */
+                        {
+                            this.screen = SwingTerminal.this;
+                        }
+
+                        /**
+                         * Update redraws the whole screen.
+                         *
+                         * @param gr the Swing Graphics context
+                         */
+                        @Override
+                        public void update(final Graphics gr) {
+                            // The default update clears the area.  Don't do
+                            // that, instead just paint it directly.
+                            paint(gr);
+                        }
+
+                        /**
+                         * Paint redraws the whole screen.
+                         *
+                         * @param gr the Swing Graphics context
+                         */
+                        @Override
+                        public void paint(final Graphics gr) {
+                            if (screen != null) {
+                                screen.paint(gr);
+                            }
+                        }
+                    };
+
+                    // Set icon
+                    ClassLoader loader = Thread.currentThread().
+                        getContextClassLoader();
+                    frame.setIconImage((new ImageIcon(loader.
+                                getResource(ICONFILE))).getImage());
+
+                    // Get the Swing component
+                    SwingTerminal.this.swing = new SwingComponent(frame);
+
+                    // Hang onto top and left for drawing.
+                    Insets insets = SwingTerminal.this.swing.getInsets();
+                    SwingTerminal.this.left = insets.left;
+                    SwingTerminal.this.top = insets.top;
+
+                    // Load the font so that we can set sessionInfo.
+                    getDefaultFont();
+
+                    // Get the default cols x rows and set component size
+                    // accordingly.
+                    SwingTerminal.this.sessionInfo =
+                        new SwingSessionInfo(SwingTerminal.this.swing,
+                            SwingTerminal.this.textWidth,
+                            SwingTerminal.this.textHeight,
+                            windowWidth, windowHeight);
+
+                    SwingTerminal.this.setDimensions(sessionInfo.getWindowWidth(),
+                        sessionInfo.getWindowHeight());
+
+                    SwingTerminal.this.resizeToScreen();
+                    SwingTerminal.this.swing.setVisible(true);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        this.listener    = listener;
+        mouse1           = false;
+        mouse2           = false;
+        mouse3           = false;
+        eventQueue       = new LinkedList<TInputEvent>();
+
+        // Add listeners to Swing.
+        swing.addKeyListener(this);
+        swing.addWindowListener(this);
+        swing.addComponentListener(this);
+        swing.addMouseListener(this);
+        swing.addMouseMotionListener(this);
+        swing.addMouseWheelListener(this);
+    }
+
+    /**
+     * Public constructor renders to an existing JComponent.
+     *
+     * @param component the Swing component to render to
+     * @param windowWidth the number of text columns to start with
+     * @param windowHeight the number of text rows to start with
+     * @param fontSize the size in points.  Good values to pick are: 16, 20,
+     * 22, and 24.
+     * @param listener the object this backend needs to wake up when new
+     * input comes in
+     */
+    public SwingTerminal(final JComponent component, final int windowWidth,
+        final int windowHeight, final int fontSize, final Object listener) {
+
+        this.fontSize = fontSize;
+
+        setDOSColors();
+
+        // Figure out my cursor style.
+        String cursorStyleString = System.getProperty(
+            "jexer.Swing.cursorStyle", "underline").toLowerCase();
+        if (cursorStyleString.equals("underline")) {
+            cursorStyle = CursorStyle.UNDERLINE;
+        } else if (cursorStyleString.equals("outline")) {
+            cursorStyle = CursorStyle.OUTLINE;
+        } else if (cursorStyleString.equals("block")) {
+            cursorStyle = CursorStyle.BLOCK;
+        }
+
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+
+                    JComponent newComponent = new JComponent() {
+
+                        /**
+                         * Serializable version.
+                         */
+                        private static final long serialVersionUID = 1;
+
+                        /**
+                         * The code that performs the actual drawing.
+                         */
+                        public SwingTerminal screen = null;
+
+                        /*
+                         * Anonymous class initializer saves the screen
+                         * reference, so that paint() and the like call out
+                         * to SwingTerminal.
+                         */
+                        {
+                            this.screen = SwingTerminal.this;
+                        }
+
+                        /**
+                         * Update redraws the whole screen.
+                         *
+                         * @param gr the Swing Graphics context
+                         */
+                        @Override
+                        public void update(final Graphics gr) {
+                            // The default update clears the area.  Don't do
+                            // that, instead just paint it directly.
+                            paint(gr);
+                        }
+
+                        /**
+                         * Paint redraws the whole screen.
+                         *
+                         * @param gr the Swing Graphics context
+                         */
+                        @Override
+                        public void paint(final Graphics gr) {
+                            if (screen != null) {
+                                screen.paint(gr);
+                            }
+                        }
+                    };
+                    component.setLayout(new BorderLayout());
+                    component.add(newComponent);
+
+                    // Allow key events to be received
+                    component.setFocusable(true);
+
+                    // Get the Swing component
+                    SwingTerminal.this.swing = new SwingComponent(component);
+
+                    // Hang onto top and left for drawing.
+                    Insets insets = SwingTerminal.this.swing.getInsets();
+                    SwingTerminal.this.left = insets.left;
+                    SwingTerminal.this.top = insets.top;
+
+                    // Load the font so that we can set sessionInfo.
+                    getDefaultFont();
+
+                    // Get the default cols x rows and set component size
+                    // accordingly.
+                    SwingTerminal.this.sessionInfo =
+                        new SwingSessionInfo(SwingTerminal.this.swing,
+                            SwingTerminal.this.textWidth,
+                            SwingTerminal.this.textHeight);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        this.listener    = listener;
+        mouse1           = false;
+        mouse2           = false;
+        mouse3           = false;
+        eventQueue       = new LinkedList<TInputEvent>();
+
+        // Add listeners to Swing.
+        swing.addKeyListener(this);
+        swing.addWindowListener(this);
+        swing.addComponentListener(this);
+        swing.addMouseListener(this);
+        swing.addMouseMotionListener(this);
+        swing.addMouseWheelListener(this);
+    }
+
+    // ------------------------------------------------------------------------
+    // LogicalScreen ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the window title.
+     *
+     * @param title the new title
+     */
+    @Override
+    public void setTitle(final String title) {
+        swing.setTitle(title);
+    }
+
+    /**
+     * Push the logical screen to the physical device.
+     */
+    @Override
+    public void flushPhysical() {
+        // See if it is time to flip the blink time.
+        long nowTime = System.currentTimeMillis();
+        if (nowTime >= blinkMillis + lastBlinkTime) {
+            lastBlinkTime = nowTime;
+            cursorBlinkVisible = !cursorBlinkVisible;
+            // System.err.println("New lastBlinkTime: " + lastBlinkTime);
+        }
+
+        if ((swing.getFrame() != null)
+            && (swing.getBufferStrategy() != null)
+        ) {
+            do {
+                do {
+                    drawToSwing();
+                } while (swing.getBufferStrategy().contentsRestored());
+
+                swing.getBufferStrategy().show();
+                Toolkit.getDefaultToolkit().sync();
+            } while (swing.getBufferStrategy().contentsLost());
+
+        } else {
+            // Non-triple-buffered, call drawToSwing() once
+            drawToSwing();
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TerminalReader ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if there are events in the queue.
+     *
+     * @return if true, getEvents() has something to return to the backend
+     */
+    public boolean hasEvents() {
+        synchronized (eventQueue) {
+            return (eventQueue.size() > 0);
+        }
+    }
+
+    /**
+     * Return any events in the IO queue.
+     *
+     * @param queue list to append new events to
+     */
+    public void getEvents(final List<TInputEvent> queue) {
+        synchronized (eventQueue) {
+            if (eventQueue.size() > 0) {
+                synchronized (queue) {
+                    queue.addAll(eventQueue);
+                }
+                eventQueue.clear();
+            }
+        }
+    }
+
+    /**
+     * Restore terminal to normal state.
+     */
+    public void closeTerminal() {
+        shutdown();
+    }
+
+    /**
+     * Set listener to a different Object.
+     *
+     * @param listener the new listening object that run() wakes up on new
+     * input
+     */
+    public void setListener(final Object listener) {
+        this.listener = listener;
+    }
+
+    // ------------------------------------------------------------------------
+    // SwingTerminal ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Setup Swing colors to match DOS color palette.
+     */
+    private static void setDOSColors() {
+        if (dosColors) {
+            return;
+        }
+        MYBLACK         = new Color(0x00, 0x00, 0x00);
+        MYRED           = new Color(0xa8, 0x00, 0x00);
+        MYGREEN         = new Color(0x00, 0xa8, 0x00);
+        MYYELLOW        = new Color(0xa8, 0x54, 0x00);
+        MYBLUE          = new Color(0x00, 0x00, 0xa8);
+        MYMAGENTA       = new Color(0xa8, 0x00, 0xa8);
+        MYCYAN          = new Color(0x00, 0xa8, 0xa8);
+        MYWHITE         = new Color(0xa8, 0xa8, 0xa8);
+        MYBOLD_BLACK    = new Color(0x54, 0x54, 0x54);
+        MYBOLD_RED      = new Color(0xfc, 0x54, 0x54);
+        MYBOLD_GREEN    = new Color(0x54, 0xfc, 0x54);
+        MYBOLD_YELLOW   = new Color(0xfc, 0xfc, 0x54);
+        MYBOLD_BLUE     = new Color(0x54, 0x54, 0xfc);
+        MYBOLD_MAGENTA  = new Color(0xfc, 0x54, 0xfc);
+        MYBOLD_CYAN     = new Color(0x54, 0xfc, 0xfc);
+        MYBOLD_WHITE    = new Color(0xfc, 0xfc, 0xfc);
+
+        dosColors = true;
+    }
+
+    /**
+     * Get the number of millis to wait before switching the blink from
+     * visible to invisible.
+     *
+     * @return the number of milli to wait before switching the blink from
+     * visible to invisible
+     */
+    public long getBlinkMillis() {
+        return blinkMillis;
+    }
 
     /**
      * Get the font size in points.
@@ -309,8 +721,7 @@ public final class SwingTerminal extends LogicalScreen
      */
     public void getDefaultFont() {
         try {
-            ClassLoader loader = Thread.currentThread().
-            getContextClassLoader();
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
             InputStream in = loader.getResourceAsStream(FONTFILE);
             Font terminusRoot = Font.createFont(Font.TRUETYPE_FONT, in);
             Font terminus = terminusRoot.deriveFont(Font.PLAIN, fontSize);
@@ -695,6 +1106,13 @@ public final class SwingTerminal extends LogicalScreen
              */
         }
 
+        if ((swing.getBufferStrategy() != null)
+            && (SwingUtilities.isEventDispatchThread())
+        ) {
+            // System.err.println("paint(), skip first paint on swing thread");
+            return;
+        }
+
         int xCellMin = 0;
         int xCellMax = width;
         int yCellMin = 0;
@@ -771,37 +1189,6 @@ public final class SwingTerminal extends LogicalScreen
      */
     public void shutdown() {
         swing.dispose();
-    }
-
-    /**
-     * Push the logical screen to the physical device.
-     */
-    @Override
-    public void flushPhysical() {
-        // See if it is time to flip the blink time.
-        long nowTime = System.currentTimeMillis();
-        if (nowTime >= blinkMillis + lastBlinkTime) {
-            lastBlinkTime = nowTime;
-            cursorBlinkVisible = !cursorBlinkVisible;
-            // System.err.println("New lastBlinkTime: " + lastBlinkTime);
-        }
-
-        if ((swing.getFrame() != null)
-            && (swing.getBufferStrategy() != null)
-        ) {
-            do {
-                do {
-                    drawToSwing();
-                } while (swing.getBufferStrategy().contentsRestored());
-
-                swing.getBufferStrategy().show();
-                Toolkit.getDefaultToolkit().sync();
-            } while (swing.getBufferStrategy().contentsLost());
-
-        } else {
-            // Non-triple-buffered, call drawToSwing() once
-            drawToSwing();
-        }
     }
 
     /**
@@ -945,7 +1332,14 @@ public final class SwingTerminal extends LogicalScreen
      * @return text cell column position
      */
     public int textColumn(final int x) {
-        return ((x - left) / textWidth);
+        int column = ((x - left) / textWidth);
+        if (column < 0) {
+            column = 0;
+        }
+        if (column > width - 1) {
+            column = width - 1;
+        }
+        return column;
     }
 
     /**
@@ -955,26 +1349,15 @@ public final class SwingTerminal extends LogicalScreen
      * @return text cell row position
      */
     public int textRow(final int y) {
-        return ((y - top) / textHeight);
+        int row = ((y - top) / textHeight);
+        if (row < 0) {
+            row = 0;
+        }
+        if (row > height - 1) {
+            row = height - 1;
+        }
+        return row;
     }
-
-    /**
-     * Set the window title.
-     *
-     * @param title the new title
-     */
-    public void setTitle(final String title) {
-        swing.setTitle(title);
-    }
-
-    // ------------------------------------------------------------------------
-    // TerminalReader ---------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * The session information.
-     */
-    private SwingSessionInfo sessionInfo;
 
     /**
      * Getter for sessionInfo.
@@ -985,338 +1368,9 @@ public final class SwingTerminal extends LogicalScreen
         return sessionInfo;
     }
 
-    /**
-     * The listening object that run() wakes up on new input.
-     */
-    private Object listener;
-
-    /**
-     * Set listener to a different Object.
-     *
-     * @param listener the new listening object that run() wakes up on new
-     * input
-     */
-    public void setListener(final Object listener) {
-        this.listener = listener;
-    }
-
-    /**
-     * The event queue, filled up by a thread reading on input.
-     */
-    private List<TInputEvent> eventQueue;
-
-    /**
-     * The last reported mouse X position.
-     */
-    private int oldMouseX = -1;
-
-    /**
-     * The last reported mouse Y position.
-     */
-    private int oldMouseY = -1;
-
-    /**
-     * true if mouse1 was down.  Used to report mouse1 on the release event.
-     */
-    private boolean mouse1 = false;
-
-    /**
-     * true if mouse2 was down.  Used to report mouse2 on the release event.
-     */
-    private boolean mouse2 = false;
-
-    /**
-     * true if mouse3 was down.  Used to report mouse3 on the release event.
-     */
-    private boolean mouse3 = false;
-
-    /**
-     * Public constructor creates a new JFrame to render to.
-     *
-     * @param windowWidth the number of text columns to start with
-     * @param windowHeight the number of text rows to start with
-     * @param fontSize the size in points.  Good values to pick are: 16, 20,
-     * 22, and 24.
-     * @param listener the object this backend needs to wake up when new
-     * input comes in
-     */
-    public SwingTerminal(final int windowWidth, final int windowHeight,
-        final int fontSize, final Object listener) {
-
-        this.fontSize = fontSize;
-
-        setDOSColors();
-
-        // Figure out my cursor style.
-        String cursorStyleString = System.getProperty(
-            "jexer.Swing.cursorStyle", "underline").toLowerCase();
-        if (cursorStyleString.equals("underline")) {
-            cursorStyle = CursorStyle.UNDERLINE;
-        } else if (cursorStyleString.equals("outline")) {
-            cursorStyle = CursorStyle.OUTLINE;
-        } else if (cursorStyleString.equals("block")) {
-            cursorStyle = CursorStyle.BLOCK;
-        }
-
-        // Pull the system property for triple buffering.
-        if (System.getProperty("jexer.Swing.tripleBuffer") != null) {
-            if (System.getProperty("jexer.Swing.tripleBuffer").equals("true")) {
-                SwingComponent.tripleBuffer = true;
-            } else {
-                SwingComponent.tripleBuffer = false;
-            }
-        }
-
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-
-                    JFrame frame = new JFrame() {
-
-                        /**
-                         * Serializable version.
-                         */
-                        private static final long serialVersionUID = 1;
-
-                        /**
-                         * The code that performs the actual drawing.
-                         */
-                        public SwingTerminal screen = null;
-
-                        /*
-                         * Anonymous class initializer saves the screen
-                         * reference, so that paint() and the like call out
-                         * to SwingTerminal.
-                         */
-                        {
-                            this.screen = SwingTerminal.this;
-                        }
-
-                        /**
-                         * Update redraws the whole screen.
-                         *
-                         * @param gr the Swing Graphics context
-                         */
-                        @Override
-                        public void update(final Graphics gr) {
-                            // The default update clears the area.  Don't do
-                            // that, instead just paint it directly.
-                            paint(gr);
-                        }
-
-                        /**
-                         * Paint redraws the whole screen.
-                         *
-                         * @param gr the Swing Graphics context
-                         */
-                        @Override
-                        public void paint(final Graphics gr) {
-                            if (screen != null) {
-                                screen.paint(gr);
-                            }
-                        }
-                    };
-
-                    // Get the Swing component
-                    SwingTerminal.this.swing = new SwingComponent(frame);
-
-                    // Hang onto top and left for drawing.
-                    Insets insets = SwingTerminal.this.swing.getInsets();
-                    SwingTerminal.this.left = insets.left;
-                    SwingTerminal.this.top = insets.top;
-
-                    // Load the font so that we can set sessionInfo.
-                    getDefaultFont();
-
-                    // Get the default cols x rows and set component size
-                    // accordingly.
-                    SwingTerminal.this.sessionInfo =
-                        new SwingSessionInfo(SwingTerminal.this.swing,
-                            SwingTerminal.this.textWidth,
-                            SwingTerminal.this.textHeight,
-                            windowWidth, windowHeight);
-
-                    SwingTerminal.this.setDimensions(sessionInfo.getWindowWidth(),
-                        sessionInfo.getWindowHeight());
-
-                    SwingTerminal.this.resizeToScreen();
-                    SwingTerminal.this.swing.setVisible(true);
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        this.listener    = listener;
-        mouse1           = false;
-        mouse2           = false;
-        mouse3           = false;
-        eventQueue       = new LinkedList<TInputEvent>();
-
-        // Add listeners to Swing.
-        swing.addKeyListener(this);
-        swing.addWindowListener(this);
-        swing.addComponentListener(this);
-        swing.addMouseListener(this);
-        swing.addMouseMotionListener(this);
-        swing.addMouseWheelListener(this);
-    }
-
-    /**
-     * Public constructor renders to an existing JComponent.
-     *
-     * @param component the Swing component to render to
-     * @param windowWidth the number of text columns to start with
-     * @param windowHeight the number of text rows to start with
-     * @param fontSize the size in points.  Good values to pick are: 16, 20,
-     * 22, and 24.
-     * @param listener the object this backend needs to wake up when new
-     * input comes in
-     */
-    public SwingTerminal(final JComponent component, final int windowWidth,
-        final int windowHeight, final int fontSize, final Object listener) {
-
-        this.fontSize = fontSize;
-
-        setDOSColors();
-
-        // Figure out my cursor style.
-        String cursorStyleString = System.getProperty(
-            "jexer.Swing.cursorStyle", "underline").toLowerCase();
-        if (cursorStyleString.equals("underline")) {
-            cursorStyle = CursorStyle.UNDERLINE;
-        } else if (cursorStyleString.equals("outline")) {
-            cursorStyle = CursorStyle.OUTLINE;
-        } else if (cursorStyleString.equals("block")) {
-            cursorStyle = CursorStyle.BLOCK;
-        }
-
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-
-                    JComponent newComponent = new JComponent() {
-
-                        /**
-                         * Serializable version.
-                         */
-                        private static final long serialVersionUID = 1;
-
-                        /**
-                         * The code that performs the actual drawing.
-                         */
-                        public SwingTerminal screen = null;
-
-                        /*
-                         * Anonymous class initializer saves the screen
-                         * reference, so that paint() and the like call out
-                         * to SwingTerminal.
-                         */
-                        {
-                            this.screen = SwingTerminal.this;
-                        }
-
-                        /**
-                         * Update redraws the whole screen.
-                         *
-                         * @param gr the Swing Graphics context
-                         */
-                        @Override
-                        public void update(final Graphics gr) {
-                            // The default update clears the area.  Don't do
-                            // that, instead just paint it directly.
-                            paint(gr);
-                        }
-
-                        /**
-                         * Paint redraws the whole screen.
-                         *
-                         * @param gr the Swing Graphics context
-                         */
-                        @Override
-                        public void paint(final Graphics gr) {
-                            if (screen != null) {
-                                screen.paint(gr);
-                            }
-                        }
-                    };
-                    component.setLayout(new BorderLayout());
-                    component.add(newComponent);
-
-                    // Allow key events to be received
-                    component.setFocusable(true);
-
-                    // Get the Swing component
-                    SwingTerminal.this.swing = new SwingComponent(component);
-
-                    // Hang onto top and left for drawing.
-                    Insets insets = SwingTerminal.this.swing.getInsets();
-                    SwingTerminal.this.left = insets.left;
-                    SwingTerminal.this.top = insets.top;
-
-                    // Load the font so that we can set sessionInfo.
-                    getDefaultFont();
-
-                    // Get the default cols x rows and set component size
-                    // accordingly.
-                    SwingTerminal.this.sessionInfo =
-                        new SwingSessionInfo(SwingTerminal.this.swing,
-                            SwingTerminal.this.textWidth,
-                            SwingTerminal.this.textHeight);
-                }
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        this.listener    = listener;
-        mouse1           = false;
-        mouse2           = false;
-        mouse3           = false;
-        eventQueue       = new LinkedList<TInputEvent>();
-
-        // Add listeners to Swing.
-        swing.addKeyListener(this);
-        swing.addWindowListener(this);
-        swing.addComponentListener(this);
-        swing.addMouseListener(this);
-        swing.addMouseMotionListener(this);
-        swing.addMouseWheelListener(this);
-    }
-
-    /**
-     * Check if there are events in the queue.
-     *
-     * @return if true, getEvents() has something to return to the backend
-     */
-    public boolean hasEvents() {
-        synchronized (eventQueue) {
-            return (eventQueue.size() > 0);
-        }
-    }
-
-    /**
-     * Return any events in the IO queue.
-     *
-     * @param queue list to append new events to
-     */
-    public void getEvents(final List<TInputEvent> queue) {
-        synchronized (eventQueue) {
-            if (eventQueue.size() > 0) {
-                synchronized (queue) {
-                    queue.addAll(eventQueue);
-                }
-                eventQueue.clear();
-            }
-        }
-    }
-
-    /**
-     * Restore terminal to normal state.
-     */
-    public void closeTerminal() {
-        shutdown();
-    }
+    // ------------------------------------------------------------------------
+    // KeyListener ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Pass Swing keystrokes into the event queue.
@@ -1550,6 +1604,10 @@ public final class SwingTerminal extends LogicalScreen
         }
     }
 
+    // ------------------------------------------------------------------------
+    // WindowListener ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Pass window events into the event queue.
      *
@@ -1625,6 +1683,10 @@ public final class SwingTerminal extends LogicalScreen
         // Ignore
     }
 
+    // ------------------------------------------------------------------------
+    // ComponentListener ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Pass component events into the event queue.
      *
@@ -1672,6 +1734,10 @@ public final class SwingTerminal extends LogicalScreen
                 sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
             eventQueue.add(windowResize);
             resetBlinkTimer();
+            /*
+            System.err.println("Add resize event: " + windowResize.getWidth() +
+                " x " + windowResize.getHeight());
+             */
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1679,6 +1745,10 @@ public final class SwingTerminal extends LogicalScreen
             }
         }
     }
+
+    // ------------------------------------------------------------------------
+    // MouseMotionListener ----------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Pass mouse events into the event queue.
@@ -1747,6 +1817,10 @@ public final class SwingTerminal extends LogicalScreen
             }
         }
     }
+
+    // ------------------------------------------------------------------------
+    // MouseListener ----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Pass mouse events into the event queue.
@@ -1861,6 +1935,10 @@ public final class SwingTerminal extends LogicalScreen
             }
         }
     }
+
+    // ------------------------------------------------------------------------
+    // MouseWheelListener -----------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Pass mouse events into the event queue.

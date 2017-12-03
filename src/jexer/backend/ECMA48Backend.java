@@ -40,6 +40,10 @@ import java.io.UnsupportedEncodingException;
  */
 public final class ECMA48Backend extends GenericBackend {
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Public constructor will use System.in and System.out and UTF-8
      * encoding. On non-Windows systems System.in will be put in raw mode;
@@ -160,6 +164,5 @@ public final class ECMA48Backend extends GenericBackend {
 
         this(listener, input, reader, writer, false);
     }
-
 
 }

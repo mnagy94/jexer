@@ -26,7 +26,7 @@
  * @author Kevin Lamonte [kevin.lamonte@gmail.com]
  * @version 1
  */
-package jexer;
+package jexer.ttree;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,10 +34,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.LinkedList;
 
+import jexer.TWidget;
+import jexer.ttree.TTreeViewWidget;
+
 /**
  * TDirectoryTreeItem is a single item in a disk directory tree view.
  */
 public class TDirectoryTreeItem extends TTreeItem {
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * File corresponding to this list item.
@@ -45,105 +52,23 @@ public class TDirectoryTreeItem extends TTreeItem {
     private File file;
 
     /**
-     * Get the File corresponding to this list item.
-     *
-     * @return the File
+     * The TTreeViewWidget containing this directory tree.
      */
-    public final File getFile() {
-        return file;
-    }
+    private TTreeViewWidget treeViewWidget;
 
-    /**
-     * Called when this item is expanded or collapsed.  this.expanded will be
-     * true if this item was just expanded from a mouse click or keypress.
-     */
-    @Override
-    public final void onExpand() {
-        // System.err.printf("onExpand() %s\n", file);
-
-        if (file == null) {
-            return;
-        }
-        getChildren().clear();
-
-        // Make sure we can read it before trying to.
-        if (file.canRead()) {
-            setSelectable(true);
-        } else {
-            setSelectable(false);
-        }
-        assert (file.isDirectory());
-        setExpandable(true);
-
-        if (!isExpanded() || !isExpandable()) {
-            getTreeView().reflowData();
-            return;
-        }
-
-        for (File f: file.listFiles()) {
-            // System.err.printf("   -> file %s %s\n", file, file.getName());
-
-            if (f.getName().startsWith(".")) {
-                // Hide dot-files
-                continue;
-            }
-            if (!f.isDirectory()) {
-                continue;
-            }
-
-            try {
-                TDirectoryTreeItem item = new TDirectoryTreeItem(getTreeView(),
-                    f.getCanonicalPath(), false, false);
-
-                item.level = this.level + 1;
-                getChildren().add(item);
-            } catch (IOException e) {
-                continue;
-            }
-        }
-        Collections.sort(getChildren());
-
-        getTreeView().reflowData();
-    }
-
-    /**
-     * Add a child item.  This method should never be used, it will throw an
-     * IllegalArgumentException every time.
-     *
-     * @param text text for this item
-     * @param expanded if true, have it expanded immediately
-     * @return the new item
-     * @throws IllegalArgumentException if this function is called
-     */
-    @Override
-    public final TTreeItem addChild(final String text,
-        final boolean expanded) throws IllegalArgumentException {
-
-        throw new IllegalArgumentException("Do not call addChild(), use onExpand() instead");
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
      *
-     * @param view root TTreeView
-     * @param text text for this item
-     * @throws IOException if a java.io operation throws
-     */
-    public TDirectoryTreeItem(final TTreeView view,
-        final String text) throws IOException {
-
-        this(view, text, false, true);
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param view root TTreeView
+     * @param view root TTreeViewWidget
      * @param text text for this item
      * @param expanded if true, have it expanded immediately
      * @throws IOException if a java.io operation throws
      */
-    public TDirectoryTreeItem(final TTreeView view, final String text,
+    public TDirectoryTreeItem(final TTreeViewWidget view, final String text,
         final boolean expanded) throws IOException {
 
         this(view, text, expanded, true);
@@ -152,17 +77,19 @@ public class TDirectoryTreeItem extends TTreeItem {
     /**
      * Public constructor.
      *
-     * @param view root TTreeView
+     * @param view root TTreeViewWidget
      * @param text text for this item
      * @param expanded if true, have it expanded immediately
      * @param openParents if true, expand all paths up the root path and
      * return the root path entry
      * @throws IOException if a java.io operation throws
      */
-    public TDirectoryTreeItem(final TTreeView view, final String text,
+    public TDirectoryTreeItem(final TTreeViewWidget view, final String text,
         final boolean expanded, final boolean openParents) throws IOException {
 
-        super(view, text, false);
+        super(view.getTreeView(), text, false);
+
+        this.treeViewWidget = view;
 
         List<String> parentFiles = new LinkedList<String>();
         boolean oldExpanded = expanded;
@@ -209,9 +136,74 @@ public class TDirectoryTreeItem extends TTreeItem {
                 }
             }
             unselect();
-            getTreeView().setSelected(childFile);
+            getTreeView().setSelected(childFile, true);
             setExpanded(oldExpanded);
         }
-        getTreeView().reflowData();
+
+        view.reflowData();
     }
+
+    // ------------------------------------------------------------------------
+    // TTreeItem --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the File corresponding to this list item.
+     *
+     * @return the File
+     */
+    public final File getFile() {
+        return file;
+    }
+
+    /**
+     * Called when this item is expanded or collapsed.  this.expanded will be
+     * true if this item was just expanded from a mouse click or keypress.
+     */
+    @Override
+    public final void onExpand() {
+        // System.err.printf("onExpand() %s\n", file);
+
+        if (file == null) {
+            return;
+        }
+        getChildren().clear();
+
+        // Make sure we can read it before trying to.
+        if (file.canRead()) {
+            setSelectable(true);
+        } else {
+            setSelectable(false);
+        }
+        assert (file.isDirectory());
+        setExpandable(true);
+
+        if (!isExpanded() || !isExpandable()) {
+            return;
+        }
+
+        for (File f: file.listFiles()) {
+            // System.err.printf("   -> file %s %s\n", file, file.getName());
+
+            if (f.getName().startsWith(".")) {
+                // Hide dot-files
+                continue;
+            }
+            if (!f.isDirectory()) {
+                continue;
+            }
+
+            try {
+                TDirectoryTreeItem item = new TDirectoryTreeItem(treeViewWidget,
+                    f.getCanonicalPath(), false, false);
+
+                item.level = this.level + 1;
+                getChildren().add(item);
+            } catch (IOException e) {
+                continue;
+            }
+        }
+        Collections.sort(getChildren());
+    }
+
 }

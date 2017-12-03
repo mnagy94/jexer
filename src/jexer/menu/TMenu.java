@@ -51,47 +51,9 @@ public final class TMenu extends TWindow {
      */
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TMenu.class.getName());
 
-    /**
-     * If true, this is a sub-menu.  Note package private access.
-     */
-    boolean isSubMenu = false;
-
-    /**
-     * The X position of the menu's title.
-     */
-    private int titleX;
-
-    /**
-     * Set the menu title X position.
-     *
-     * @param titleX the position
-     */
-    public void setTitleX(final int titleX) {
-        this.titleX = titleX;
-    }
-
-    /**
-     * Get the menu title X position.
-     *
-     * @return the position
-     */
-    public int getTitleX() {
-        return titleX;
-    }
-
-    /**
-     * The shortcut and title.
-     */
-    private MnemonicString mnemonic;
-
-    /**
-     * Get the mnemonic string.
-     *
-     * @return the full mnemonic string
-     */
-    public MnemonicString getMnemonic() {
-        return mnemonic;
-    }
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     // Reserved menu item IDs
     public static final int MID_UNUSED          = -1;
@@ -108,15 +70,21 @@ public final class TMenu extends TWindow {
     public static final int MID_PASTE           = 12;
     public static final int MID_CLEAR           = 13;
 
+    // Search menu
+    public static final int MID_FIND            = 20;
+    public static final int MID_REPLACE         = 21;
+    public static final int MID_SEARCH_AGAIN    = 22;
+    public static final int MID_GOTO_LINE       = 23;
+
     // Window menu
-    public static final int MID_TILE            = 20;
-    public static final int MID_CASCADE         = 21;
-    public static final int MID_CLOSE_ALL       = 22;
-    public static final int MID_WINDOW_MOVE     = 23;
-    public static final int MID_WINDOW_ZOOM     = 24;
-    public static final int MID_WINDOW_NEXT     = 25;
-    public static final int MID_WINDOW_PREVIOUS = 26;
-    public static final int MID_WINDOW_CLOSE    = 27;
+    public static final int MID_TILE            = 30;
+    public static final int MID_CASCADE         = 31;
+    public static final int MID_CLOSE_ALL       = 32;
+    public static final int MID_WINDOW_MOVE     = 33;
+    public static final int MID_WINDOW_ZOOM     = 34;
+    public static final int MID_WINDOW_NEXT     = 35;
+    public static final int MID_WINDOW_PREVIOUS = 36;
+    public static final int MID_WINDOW_CLOSE    = 37;
 
     // Help menu
     public static final int MID_HELP_CONTENTS           = 40;
@@ -129,6 +97,29 @@ public final class TMenu extends TWindow {
 
     // Other
     public static final int MID_REPAINT         = 50;
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * If true, this is a sub-menu.  Note package private access.
+     */
+    boolean isSubMenu = false;
+
+    /**
+     * The X position of the menu's title.
+     */
+    private int titleX;
+
+    /**
+     * The shortcut and title.
+     */
+    private MnemonicString mnemonic;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -158,46 +149,9 @@ public final class TMenu extends TWindow {
         setActive(false);
     }
 
-    /**
-     * Draw a top-level menu with title and menu items.
-     */
-    @Override
-    public void draw() {
-        CellAttributes background = getTheme().getColor("tmenu");
-
-        assert (isAbsoluteActive());
-
-        // Fill in the interior background
-        for (int i = 0; i < getHeight(); i++) {
-            hLineXY(0, i, getWidth(), ' ', background);
-        }
-
-        // Draw the box
-        char cTopLeft;
-        char cTopRight;
-        char cBottomLeft;
-        char cBottomRight;
-        char cHSide;
-
-        cTopLeft = GraphicsChars.ULCORNER;
-        cTopRight = GraphicsChars.URCORNER;
-        cBottomLeft = GraphicsChars.LLCORNER;
-        cBottomRight = GraphicsChars.LRCORNER;
-        cHSide = GraphicsChars.SINGLE_BAR;
-
-        // Place the corner characters
-        putCharXY(1, 0, cTopLeft, background);
-        putCharXY(getWidth() - 2, 0, cTopRight, background);
-        putCharXY(1, getHeight() - 1, cBottomLeft, background);
-        putCharXY(getWidth() - 2, getHeight() - 1, cBottomRight, background);
-
-        // Draw the box lines
-        hLineXY(1 + 1, 0, getWidth() - 4, cHSide, background);
-        hLineXY(1 + 1, getHeight() - 1, getWidth() - 4, cHSide, background);
-
-        // Draw a shadow
-        getScreen().drawBoxShadow(0, 0, getWidth(), getHeight());
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle mouse button presses.
@@ -345,6 +299,82 @@ public final class TMenu extends TWindow {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw a top-level menu with title and menu items.
+     */
+    @Override
+    public void draw() {
+        CellAttributes background = getTheme().getColor("tmenu");
+
+        assert (isAbsoluteActive());
+
+        // Fill in the interior background
+        for (int i = 0; i < getHeight(); i++) {
+            hLineXY(0, i, getWidth(), ' ', background);
+        }
+
+        // Draw the box
+        char cTopLeft;
+        char cTopRight;
+        char cBottomLeft;
+        char cBottomRight;
+        char cHSide;
+
+        cTopLeft = GraphicsChars.ULCORNER;
+        cTopRight = GraphicsChars.URCORNER;
+        cBottomLeft = GraphicsChars.LLCORNER;
+        cBottomRight = GraphicsChars.LRCORNER;
+        cHSide = GraphicsChars.SINGLE_BAR;
+
+        // Place the corner characters
+        putCharXY(1, 0, cTopLeft, background);
+        putCharXY(getWidth() - 2, 0, cTopRight, background);
+        putCharXY(1, getHeight() - 1, cBottomLeft, background);
+        putCharXY(getWidth() - 2, getHeight() - 1, cBottomRight, background);
+
+        // Draw the box lines
+        hLineXY(1 + 1, 0, getWidth() - 4, cHSide, background);
+        hLineXY(1 + 1, getHeight() - 1, getWidth() - 4, cHSide, background);
+
+        // Draw a shadow
+        getScreen().drawBoxShadow(0, 0, getWidth(), getHeight());
+    }
+
+    // ------------------------------------------------------------------------
+    // TMenu ------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the menu title X position.
+     *
+     * @param titleX the position
+     */
+    public void setTitleX(final int titleX) {
+        this.titleX = titleX;
+    }
+
+    /**
+     * Get the menu title X position.
+     *
+     * @return the position
+     */
+    public int getTitleX() {
+        return titleX;
+    }
+
+    /**
+     * Get the mnemonic string.
+     *
+     * @return the full mnemonic string
+     */
+    public MnemonicString getMnemonic() {
+        return mnemonic;
+    }
+
     /**
      * Convenience function to add a menu item.
      *
@@ -400,11 +430,27 @@ public final class TMenu extends TWindow {
     private TMenuItem addItemInternal(final int id, final String label,
         final TKeypress key) {
 
+        return addItemInternal(id, label, key, true);
+    }
+
+    /**
+     * Convenience function to add a custom menu item.
+     *
+     * @param id menu item ID.  Must be greater than 1024.
+     * @param label menu item label
+     * @param key global keyboard accelerator
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    private TMenuItem addItemInternal(final int id, final String label,
+        final TKeypress key, final boolean enabled) {
+
         int newY = getChildren().size() + 1;
         assert (newY < getHeight());
 
         TMenuItem menuItem = new TMenuItem(this, id, 1, newY, label);
         menuItem.setKey(key);
+        menuItem.setEnabled(enabled);
         setHeight(getHeight() + 1);
         if (menuItem.getWidth() + 2 > getWidth()) {
             setWidth(menuItem.getWidth() + 2);
@@ -426,6 +472,18 @@ public final class TMenu extends TWindow {
      * @return the new menu item
      */
     public TMenuItem addDefaultItem(final int id) {
+        return addDefaultItem(id, true);
+    }
+
+    /**
+     * Convenience function to add one of the default menu items.
+     *
+     * @param id menu item ID.  Must be between 0 (inclusive) and 1023
+     * (inclusive).
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    public TMenuItem addDefaultItem(final int id, final boolean enabled) {
         assert (id >= 0);
         assert (id < 1024);
 
@@ -463,6 +521,20 @@ public final class TMenu extends TWindow {
         case MID_CLEAR:
             label = i18n.getString("menuClear");
             // key = kbDel;
+            break;
+
+        case MID_FIND:
+            label = i18n.getString("menuFind");
+            break;
+        case MID_REPLACE:
+            label = i18n.getString("menuReplace");
+            break;
+        case MID_SEARCH_AGAIN:
+            label = i18n.getString("menuSearchAgain");
+            break;
+        case MID_GOTO_LINE:
+            label = i18n.getString("menuGotoLine");
+            key = kbCtrlL;
             break;
 
         case MID_TILE:
@@ -528,7 +600,7 @@ public final class TMenu extends TWindow {
             throw new IllegalArgumentException("Invalid menu ID: " + id);
         }
 
-        return addItemInternal(id, label, key);
+        return addItemInternal(id, label, key, enabled);
     }
 
     /**

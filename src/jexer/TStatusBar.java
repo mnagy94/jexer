@@ -29,6 +29,7 @@
 package jexer;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
@@ -40,6 +41,25 @@ import jexer.event.TMouseEvent;
  * TStatusBar implements a status line with clickable buttons.
  */
 public final class TStatusBar extends TWidget {
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Remember mouse state.
+     */
+    private TMouseEvent mouse;
+
+    /**
+     * The text to display on the right side of the shortcut keys.
+     */
+    private String text = null;
+
+    /**
+     * The shortcut keys.
+     */
+    private List<TStatusBarKey> keys = new ArrayList<TStatusBarKey>();
 
     /**
      * A single shortcut key.
@@ -98,48 +118,9 @@ public final class TStatusBar extends TWidget {
 
     }
 
-    /**
-     * Remember mouse state.
-     */
-    private TMouseEvent mouse;
-
-    /**
-     * The text to display on the right side of the shortcut keys.
-     */
-    private String text = null;
-
-    /**
-     * The shortcut keys.
-     */
-    private ArrayList<TStatusBarKey> keys = new ArrayList<TStatusBarKey>();
-
-    /**
-     * Add a key to this status bar.
-     *
-     * @param key the key to trigger on
-     * @param cmd the command event to issue when key is pressed or this item
-     * is clicked
-     * @param label the label for this action
-     */
-    public void addShortcutKeypress(final TKeypress key, final TCommand cmd,
-        final String label) {
-
-        TStatusBarKey newKey = new TStatusBarKey(key, cmd, label);
-        if (keys.size() > 0) {
-            TStatusBarKey oldKey = keys.get(keys.size() - 1);
-            newKey.x = oldKey.x + oldKey.width();
-        }
-        keys.add(newKey);
-    }
-
-    /**
-     * Set the text to display on the right side of the shortcut keys.
-     *
-     * @param text the new text
-     */
-    public void setText(final String text) {
-        this.text = text;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -164,56 +145,9 @@ public final class TStatusBar extends TWidget {
         this(parent, "");
     }
 
-    /**
-     * Draw the bar.
-     */
-    @Override
-    public void draw() {
-        CellAttributes barColor = new CellAttributes();
-        barColor.setTo(getTheme().getColor("tstatusbar.text"));
-        CellAttributes keyColor = new CellAttributes();
-        keyColor.setTo(getTheme().getColor("tstatusbar.button"));
-        CellAttributes selectedColor = new CellAttributes();
-        selectedColor.setTo(getTheme().getColor("tstatusbar.selected"));
-
-        // Status bar is weird.  Its draw() method is called directly by
-        // TApplication after everything is drawn, and after
-        // Screen.resetClipping().  So at this point we are drawing in
-        // absolute coordinates, not relative to our TWindow.
-        int row = getScreen().getHeight() - 1;
-        int width = getScreen().getWidth();
-
-        getScreen().hLineXY(0, row, width, ' ', barColor);
-
-        int col = 0;
-        for (TStatusBarKey key: keys) {
-            String keyStr = key.key.toString();
-            if (key.selected) {
-                getScreen().putCharXY(col++, row, ' ', selectedColor);
-                getScreen().putStringXY(col, row, keyStr, selectedColor);
-                col += keyStr.length();
-                getScreen().putCharXY(col++, row, ' ', selectedColor);
-                getScreen().putStringXY(col, row, key.label, selectedColor);
-                col += key.label.length();
-                getScreen().putCharXY(col++, row, ' ', selectedColor);
-            } else {
-                getScreen().putCharXY(col++, row, ' ', barColor);
-                getScreen().putStringXY(col, row, keyStr, keyColor);
-                col += keyStr.length() + 1;
-                getScreen().putStringXY(col, row, key.label, barColor);
-                col += key.label.length();
-                getScreen().putCharXY(col++, row, ' ', barColor);
-            }
-        }
-        if (text.length() > 0) {
-            if (keys.size() > 0) {
-                getScreen().putCharXY(col++, row, GraphicsChars.VERTICAL_BAR,
-                    barColor);
-            }
-            getScreen().putCharXY(col++, row, ' ', barColor);
-            getScreen().putStringXY(col, row, text, barColor);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle keypresses.
@@ -300,6 +234,93 @@ public final class TStatusBar extends TWidget {
                 key.selected = false;
             }
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the bar.
+     */
+    @Override
+    public void draw() {
+        CellAttributes barColor = new CellAttributes();
+        barColor.setTo(getTheme().getColor("tstatusbar.text"));
+        CellAttributes keyColor = new CellAttributes();
+        keyColor.setTo(getTheme().getColor("tstatusbar.button"));
+        CellAttributes selectedColor = new CellAttributes();
+        selectedColor.setTo(getTheme().getColor("tstatusbar.selected"));
+
+        // Status bar is weird.  Its draw() method is called directly by
+        // TApplication after everything is drawn, and after
+        // Screen.resetClipping().  So at this point we are drawing in
+        // absolute coordinates, not relative to our TWindow.
+        int row = getScreen().getHeight() - 1;
+        int width = getScreen().getWidth();
+
+        getScreen().hLineXY(0, row, width, ' ', barColor);
+
+        int col = 0;
+        for (TStatusBarKey key: keys) {
+            String keyStr = key.key.toString();
+            if (key.selected) {
+                getScreen().putCharXY(col++, row, ' ', selectedColor);
+                getScreen().putStringXY(col, row, keyStr, selectedColor);
+                col += keyStr.length();
+                getScreen().putCharXY(col++, row, ' ', selectedColor);
+                getScreen().putStringXY(col, row, key.label, selectedColor);
+                col += key.label.length();
+                getScreen().putCharXY(col++, row, ' ', selectedColor);
+            } else {
+                getScreen().putCharXY(col++, row, ' ', barColor);
+                getScreen().putStringXY(col, row, keyStr, keyColor);
+                col += keyStr.length() + 1;
+                getScreen().putStringXY(col, row, key.label, barColor);
+                col += key.label.length();
+                getScreen().putCharXY(col++, row, ' ', barColor);
+            }
+        }
+        if (text.length() > 0) {
+            if (keys.size() > 0) {
+                getScreen().putCharXY(col++, row, GraphicsChars.VERTICAL_BAR,
+                    barColor);
+            }
+            getScreen().putCharXY(col++, row, ' ', barColor);
+            getScreen().putStringXY(col, row, text, barColor);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TStatusBar -------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Add a key to this status bar.
+     *
+     * @param key the key to trigger on
+     * @param cmd the command event to issue when key is pressed or this item
+     * is clicked
+     * @param label the label for this action
+     */
+    public void addShortcutKeypress(final TKeypress key, final TCommand cmd,
+        final String label) {
+
+        TStatusBarKey newKey = new TStatusBarKey(key, cmd, label);
+        if (keys.size() > 0) {
+            TStatusBarKey oldKey = keys.get(keys.size() - 1);
+            newKey.x = oldKey.x + oldKey.width();
+        }
+        keys.add(newKey);
+    }
+
+    /**
+     * Set the text to display on the right side of the shortcut keys.
+     *
+     * @param text the new text
+     */
+    public void setText(final String text) {
+        this.text = text;
     }
 
 }

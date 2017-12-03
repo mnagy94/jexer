@@ -90,6 +90,10 @@ import static jexer.TKeypress.*;
  */
 public class ECMA48 implements Runnable {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The emulator can emulate several kinds of terminals.
      */
@@ -114,6 +118,624 @@ public class ECMA48 implements Runnable {
          */
         XTERM
     }
+
+    /**
+     * Parser character scan states.
+     */
+    private enum ScanState {
+        GROUND,
+        ESCAPE,
+        ESCAPE_INTERMEDIATE,
+        CSI_ENTRY,
+        CSI_PARAM,
+        CSI_INTERMEDIATE,
+        CSI_IGNORE,
+        DCS_ENTRY,
+        DCS_INTERMEDIATE,
+        DCS_PARAM,
+        DCS_PASSTHROUGH,
+        DCS_IGNORE,
+        SOSPMAPC_STRING,
+        OSC_STRING,
+        VT52_DIRECT_CURSOR_ADDRESS
+    }
+
+    /**
+     * The selected number pad mode (DECKPAM, DECKPNM).  We record this, but
+     * can't really use it in keypress() because we do not see number pad
+     * events from TKeypress.
+     */
+    private enum KeypadMode {
+        Application,
+        Numeric
+    }
+
+    /**
+     * Arrow keys can emit three different sequences (DECCKM or VT52
+     * submode).
+     */
+    private enum ArrowKeyMode {
+        VT52,
+        ANSI,
+        VT100
+    }
+
+    /**
+     * Available character sets for GL, GR, G0, G1, G2, G3.
+     */
+    private enum CharacterSet {
+        US,
+        UK,
+        DRAWING,
+        ROM,
+        ROM_SPECIAL,
+        VT52_GRAPHICS,
+        DEC_SUPPLEMENTAL,
+        NRC_DUTCH,
+        NRC_FINNISH,
+        NRC_FRENCH,
+        NRC_FRENCH_CA,
+        NRC_GERMAN,
+        NRC_ITALIAN,
+        NRC_NORWEGIAN,
+        NRC_SPANISH,
+        NRC_SWEDISH,
+        NRC_SWISS
+    }
+
+    /**
+     * Single-shift states used by the C1 control characters SS2 (0x8E) and
+     * SS3 (0x8F).
+     */
+    private enum Singleshift {
+        NONE,
+        SS2,
+        SS3
+    }
+
+    /**
+     * VT220+ lockshift states.
+     */
+    private enum LockshiftMode {
+        NONE,
+        G1_GR,
+        G2_GR,
+        G2_GL,
+        G3_GR,
+        G3_GL
+    }
+
+    /**
+     * XTERM mouse reporting protocols.
+     */
+    private enum MouseProtocol {
+        OFF,
+        X10,
+        NORMAL,
+        BUTTONEVENT,
+        ANYEVENT
+    }
+
+    /**
+     * XTERM mouse reporting encodings.
+     */
+    private enum MouseEncoding {
+        X10,
+        UTF8,
+        SGR
+    }
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The enclosing listening object.
+     */
+    private DisplayListener displayListener;
+
+    /**
+     * When true, the reader thread is expected to exit.
+     */
+    private volatile boolean stopReaderThread = false;
+
+    /**
+     * The reader thread.
+     */
+    private Thread readerThread = null;
+
+    /**
+     * The type of emulator to be.
+     */
+    private DeviceType type = DeviceType.VT102;
+
+    /**
+     * The scrollback buffer characters + attributes.
+     */
+    private volatile List<DisplayLine> scrollback;
+
+    /**
+     * The raw display buffer characters + attributes.
+     */
+    private volatile List<DisplayLine> display;
+
+    /**
+     * The terminal's input.  For type == XTERM, this is an InputStreamReader
+     * with UTF-8 encoding.
+     */
+    private Reader input;
+
+    /**
+     * The terminal's raw InputStream.  This is used for type != XTERM.
+     */
+    private volatile TimeoutInputStream inputStream;
+
+    /**
+     * The terminal's output.  For type == XTERM, this wraps an
+     * OutputStreamWriter with UTF-8 encoding.
+     */
+    private Writer output;
+
+    /**
+     * The terminal's raw OutputStream.  This is used for type != XTERM.
+     */
+    private OutputStream outputStream;
+
+    /**
+     * Current scanning state.
+     */
+    private ScanState scanState;
+
+    /**
+     * Which mouse protocol is active.
+     */
+    private MouseProtocol mouseProtocol = MouseProtocol.OFF;
+
+    /**
+     * Which mouse encoding is active.
+     */
+    private MouseEncoding mouseEncoding = MouseEncoding.X10;
+
+    /**
+     * Physical display width.  We start at 80x24, but the user can resize us
+     * bigger/smaller.
+     */
+    private int width;
+
+    /**
+     * Physical display height.  We start at 80x24, but the user can resize
+     * us bigger/smaller.
+     */
+    private int height;
+
+    /**
+     * Top margin of the scrolling region.
+     */
+    private int scrollRegionTop;
+
+    /**
+     * Bottom margin of the scrolling region.
+     */
+    private int scrollRegionBottom;
+
+    /**
+     * Right margin column number.  This can be selected by the remote side
+     * to be 80/132 (rightMargin values 79/131), or it can be (width - 1).
+     */
+    private int rightMargin;
+
+    /**
+     * Last character printed.
+     */
+    private char repCh;
+
+    /**
+     * VT100-style line wrapping: a character is placed in column 80 (or
+     * 132), but the line does NOT wrap until another character is written to
+     * column 1 of the next line, after which the cursor moves to column 2.
+     */
+    private boolean wrapLineFlag;
+
+    /**
+     * VT220 single shift flag.
+     */
+    private Singleshift singleshift = Singleshift.NONE;
+
+    /**
+     * true = insert characters, false = overwrite.
+     */
+    private boolean insertMode = false;
+
+    /**
+     * VT52 mode as selected by DECANM.  True means VT52, false means
+     * ANSI. Default is ANSI.
+     */
+    private boolean vt52Mode = false;
+
+    /**
+     * Visible cursor (DECTCEM).
+     */
+    private boolean cursorVisible = true;
+
+    /**
+     * Screen title as set by the xterm OSC sequence.  Lots of applications
+     * send a screenTitle regardless of whether it is an xterm client or not.
+     */
+    private String screenTitle = "";
+
+    /**
+     * Parameter characters being collected.
+     */
+    private List<Integer> csiParams;
+
+    /**
+     * Non-csi collect buffer.
+     */
+    private StringBuilder collectBuffer;
+
+    /**
+     * When true, use the G1 character set.
+     */
+    private boolean shiftOut = false;
+
+    /**
+     * Horizontal tab stop locations.
+     */
+    private List<Integer> tabStops;
+
+    /**
+     * S8C1T.  True means 8bit controls, false means 7bit controls.
+     */
+    private boolean s8c1t = false;
+
+    /**
+     * Printer mode.  True means send all output to printer, which discards
+     * it.
+     */
+    private boolean printerControllerMode = false;
+
+    /**
+     * LMN line mode.  If true, linefeed() puts the cursor on the first
+     * column of the next line.  If false, linefeed() puts the cursor one
+     * line down on the current line.  The default is false.
+     */
+    private boolean newLineMode = false;
+
+    /**
+     * Whether arrow keys send ANSI, VT100, or VT52 sequences.
+     */
+    private ArrowKeyMode arrowKeyMode;
+
+    /**
+     * Whether number pad keys send VT100 or VT52, application or numeric
+     * sequences.
+     */
+    @SuppressWarnings("unused")
+    private KeypadMode keypadMode;
+
+    /**
+     * When true, the terminal is in 132-column mode (DECCOLM).
+     */
+    private boolean columns132 = false;
+
+    /**
+     * true = reverse video.  Set by DECSCNM.
+     */
+    private boolean reverseVideo = false;
+
+    /**
+     * false = echo characters locally.
+     */
+    private boolean fullDuplex = true;
+
+    /**
+     * The current terminal state.
+     */
+    private SaveableState currentState;
+
+    /**
+     * The last saved terminal state.
+     */
+    private SaveableState savedState;
+
+    /**
+     * DECSC/DECRC save/restore a subset of the total state.  This class
+     * encapsulates those specific flags/modes.
+     */
+    private class SaveableState {
+
+        /**
+         * When true, cursor positions are relative to the scrolling region.
+         */
+        public boolean originMode = false;
+
+        /**
+         * The current editing X position.
+         */
+        public int cursorX = 0;
+
+        /**
+         * The current editing Y position.
+         */
+        public int cursorY = 0;
+
+        /**
+         * Which character set is currently selected in G0.
+         */
+        public CharacterSet g0Charset = CharacterSet.US;
+
+        /**
+         * Which character set is currently selected in G1.
+         */
+        public CharacterSet g1Charset = CharacterSet.DRAWING;
+
+        /**
+         * Which character set is currently selected in G2.
+         */
+        public CharacterSet g2Charset = CharacterSet.US;
+
+        /**
+         * Which character set is currently selected in G3.
+         */
+        public CharacterSet g3Charset = CharacterSet.US;
+
+        /**
+         * Which character set is currently selected in GR.
+         */
+        public CharacterSet grCharset = CharacterSet.DRAWING;
+
+        /**
+         * The current drawing attributes.
+         */
+        public CellAttributes attr;
+
+        /**
+         * GL lockshift mode.
+         */
+        public LockshiftMode glLockshift = LockshiftMode.NONE;
+
+        /**
+         * GR lockshift mode.
+         */
+        public LockshiftMode grLockshift = LockshiftMode.NONE;
+
+        /**
+         * Line wrap.
+         */
+        public boolean lineWrap = true;
+
+        /**
+         * Reset to defaults.
+         */
+        public void reset() {
+            originMode          = false;
+            cursorX             = 0;
+            cursorY             = 0;
+            g0Charset           = CharacterSet.US;
+            g1Charset           = CharacterSet.DRAWING;
+            g2Charset           = CharacterSet.US;
+            g3Charset           = CharacterSet.US;
+            grCharset           = CharacterSet.DRAWING;
+            attr                = new CellAttributes();
+            glLockshift         = LockshiftMode.NONE;
+            grLockshift         = LockshiftMode.NONE;
+            lineWrap            = true;
+        }
+
+        /**
+         * Copy attributes from another instance.
+         *
+         * @param that the other instance to match
+         */
+        public void setTo(final SaveableState that) {
+            this.originMode     = that.originMode;
+            this.cursorX        = that.cursorX;
+            this.cursorY        = that.cursorY;
+            this.g0Charset      = that.g0Charset;
+            this.g1Charset      = that.g1Charset;
+            this.g2Charset      = that.g2Charset;
+            this.g3Charset      = that.g3Charset;
+            this.grCharset      = that.grCharset;
+            this.attr           = new CellAttributes();
+            this.attr.setTo(that.attr);
+            this.glLockshift    = that.glLockshift;
+            this.grLockshift    = that.grLockshift;
+            this.lineWrap       = that.lineWrap;
+        }
+
+        /**
+         * Public constructor.
+         */
+        public SaveableState() {
+            reset();
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     *
+     * @param type one of the DeviceType constants to select VT100, VT102,
+     * VT220, or XTERM
+     * @param inputStream an InputStream connected to the remote side.  For
+     * type == XTERM, inputStream is converted to a Reader with UTF-8
+     * encoding.
+     * @param outputStream an OutputStream connected to the remote user.  For
+     * type == XTERM, outputStream is converted to a Writer with UTF-8
+     * encoding.
+     * @param displayListener a callback to the outer display, or null for
+     * default VT100 behavior
+     * @throws UnsupportedEncodingException if an exception is thrown when
+     * creating the InputStreamReader
+     */
+    public ECMA48(final DeviceType type, final InputStream inputStream,
+        final OutputStream outputStream, final DisplayListener displayListener)
+        throws UnsupportedEncodingException {
+
+        assert (inputStream != null);
+        assert (outputStream != null);
+
+        csiParams         = new ArrayList<Integer>();
+        tabStops          = new ArrayList<Integer>();
+        scrollback        = new LinkedList<DisplayLine>();
+        display           = new LinkedList<DisplayLine>();
+
+        this.type         = type;
+        if (inputStream instanceof TimeoutInputStream) {
+            this.inputStream  = (TimeoutInputStream)inputStream;
+        } else {
+            this.inputStream  = new TimeoutInputStream(inputStream, 2000);
+        }
+        if (type == DeviceType.XTERM) {
+            this.input    = new InputStreamReader(this.inputStream, "UTF-8");
+            this.output   = new OutputStreamWriter(new
+                BufferedOutputStream(outputStream), "UTF-8");
+            this.outputStream = null;
+        } else {
+            this.output       = null;
+            this.outputStream = new BufferedOutputStream(outputStream);
+        }
+        this.displayListener  = displayListener;
+
+        reset();
+        for (int i = 0; i < height; i++) {
+            display.add(new DisplayLine(currentState.attr));
+        }
+
+        // Spin up the input reader
+        readerThread = new Thread(this);
+        readerThread.start();
+    }
+
+    // ------------------------------------------------------------------------
+    // Runnable ---------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Read function runs on a separate thread.
+     */
+    public final void run() {
+        boolean utf8 = false;
+        boolean done = false;
+
+        if (type == DeviceType.XTERM) {
+            utf8 = true;
+        }
+
+        // available() will often return > 1, so we need to read in chunks to
+        // stay caught up.
+        char [] readBufferUTF8 = null;
+        byte [] readBuffer = null;
+        if (utf8) {
+            readBufferUTF8 = new char[128];
+        } else {
+            readBuffer = new byte[128];
+        }
+
+        while (!done && !stopReaderThread) {
+            try {
+                int n = inputStream.available();
+
+                // System.err.printf("available() %d\n", n); System.err.flush();
+                if (utf8) {
+                    if (readBufferUTF8.length < n) {
+                        // The buffer wasn't big enough, make it huger
+                        int newSizeHalf = Math.max(readBufferUTF8.length,
+                            n);
+
+                        readBufferUTF8 = new char[newSizeHalf * 2];
+                    }
+                } else {
+                    if (readBuffer.length < n) {
+                        // The buffer wasn't big enough, make it huger
+                        int newSizeHalf = Math.max(readBuffer.length, n);
+                        readBuffer = new byte[newSizeHalf * 2];
+                    }
+                }
+                if (n == 0) {
+                    try {
+                        Thread.sleep(2);
+                    } catch (InterruptedException e) {
+                        // SQUASH
+                    }
+                    continue;
+                }
+
+                int rc = -1;
+                try {
+                    if (utf8) {
+                        rc = input.read(readBufferUTF8, 0,
+                            readBufferUTF8.length);
+                    } else {
+                        rc = inputStream.read(readBuffer, 0,
+                            readBuffer.length);
+                    }
+                } catch (ReadTimeoutException e) {
+                    rc = 0;
+                }
+
+                // System.err.printf("read() %d\n", rc); System.err.flush();
+                if (rc == -1) {
+                    // This is EOF
+                    done = true;
+                } else {
+                    // Don't step on UI events
+                    synchronized (this) {
+                        for (int i = 0; i < rc; i++) {
+                            int ch = 0;
+                            if (utf8) {
+                                ch = readBufferUTF8[i];
+                            } else {
+                                ch = readBuffer[i];
+                            }
+
+                            consume((char)ch);
+                        }
+                    }
+                    // Permit my enclosing UI to know that I updated.
+                    if (displayListener != null) {
+                        displayListener.displayChanged();
+                    }
+                }
+                // System.err.println("end while loop"); System.err.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+                done = true;
+            }
+
+        } // while ((done == false) && (stopReaderThread == false))
+
+        // Let the rest of the world know that I am done.
+        stopReaderThread = true;
+
+        try {
+            inputStream.cancelRead();
+            inputStream.close();
+            inputStream = null;
+        } catch (IOException e) {
+            // SQUASH
+        }
+        try {
+            input.close();
+            input = null;
+        } catch (IOException e) {
+            // SQUASH
+        }
+
+        // Permit my enclosing UI to know that I updated.
+        if (displayListener != null) {
+            displayListener.displayChanged();
+        }
+
+        // System.err.println("*** run() exiting..."); System.err.flush();
+    }
+
+    // ------------------------------------------------------------------------
+    // ECMA48 -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Return the proper primary Device Attributes string.
@@ -305,21 +927,6 @@ public class ECMA48 implements Runnable {
     }
 
     /**
-     * The enclosing listening object.
-     */
-    private DisplayListener displayListener;
-
-    /**
-     * When true, the reader thread is expected to exit.
-     */
-    private volatile boolean stopReaderThread = false;
-
-    /**
-     * The reader thread.
-     */
-    private Thread readerThread = null;
-
-    /**
      * See if the reader thread is still running.
      *
      * @return if true, we are still connected to / reading from the remote
@@ -328,11 +935,6 @@ public class ECMA48 implements Runnable {
     public final boolean isReading() {
         return (!stopReaderThread);
     }
-
-    /**
-     * The type of emulator to be.
-     */
-    private DeviceType type = DeviceType.VT102;
 
     /**
      * Obtain a new blank display line for an external user
@@ -345,11 +947,6 @@ public class ECMA48 implements Runnable {
     }
 
     /**
-     * The scrollback buffer characters + attributes.
-     */
-    private volatile List<DisplayLine> scrollback;
-
-    /**
      * Get the scrollback buffer.
      *
      * @return the scrollback buffer
@@ -359,11 +956,6 @@ public class ECMA48 implements Runnable {
     }
 
     /**
-     * The raw display buffer characters + attributes.
-     */
-    private volatile List<DisplayLine> display;
-
-    /**
      * Get the display buffer.
      *
      * @return the display buffer
@@ -371,155 +963,6 @@ public class ECMA48 implements Runnable {
     public final List<DisplayLine> getDisplayBuffer() {
         return display;
     }
-
-    /**
-     * The terminal's input.  For type == XTERM, this is an InputStreamReader
-     * with UTF-8 encoding.
-     */
-    private Reader input;
-
-    /**
-     * The terminal's raw InputStream.  This is used for type != XTERM.
-     */
-    private volatile TimeoutInputStream inputStream;
-
-    /**
-     * The terminal's output.  For type == XTERM, this wraps an
-     * OutputStreamWriter with UTF-8 encoding.
-     */
-    private Writer output;
-
-    /**
-     * The terminal's raw OutputStream.  This is used for type != XTERM.
-     */
-    private OutputStream outputStream;
-
-    /**
-     * Parser character scan states.
-     */
-    enum ScanState {
-        GROUND,
-        ESCAPE,
-        ESCAPE_INTERMEDIATE,
-        CSI_ENTRY,
-        CSI_PARAM,
-        CSI_INTERMEDIATE,
-        CSI_IGNORE,
-        DCS_ENTRY,
-        DCS_INTERMEDIATE,
-        DCS_PARAM,
-        DCS_PASSTHROUGH,
-        DCS_IGNORE,
-        SOSPMAPC_STRING,
-        OSC_STRING,
-        VT52_DIRECT_CURSOR_ADDRESS
-    }
-
-    /**
-     * Current scanning state.
-     */
-    private ScanState scanState;
-
-    /**
-     * The selected number pad mode (DECKPAM, DECKPNM).  We record this, but
-     * can't really use it in keypress() because we do not see number pad
-     * events from TKeypress.
-     */
-    private enum KeypadMode {
-        Application,
-        Numeric
-    }
-
-    /**
-     * Arrow keys can emit three different sequences (DECCKM or VT52
-     * submode).
-     */
-    private enum ArrowKeyMode {
-        VT52,
-        ANSI,
-        VT100
-    }
-
-    /**
-     * Available character sets for GL, GR, G0, G1, G2, G3.
-     */
-    private enum CharacterSet {
-        US,
-        UK,
-        DRAWING,
-        ROM,
-        ROM_SPECIAL,
-        VT52_GRAPHICS,
-        DEC_SUPPLEMENTAL,
-        NRC_DUTCH,
-        NRC_FINNISH,
-        NRC_FRENCH,
-        NRC_FRENCH_CA,
-        NRC_GERMAN,
-        NRC_ITALIAN,
-        NRC_NORWEGIAN,
-        NRC_SPANISH,
-        NRC_SWEDISH,
-        NRC_SWISS
-    }
-
-    /**
-     * Single-shift states used by the C1 control characters SS2 (0x8E) and
-     * SS3 (0x8F).
-     */
-    private enum Singleshift {
-        NONE,
-        SS2,
-        SS3
-    }
-
-    /**
-     * VT220+ lockshift states.
-     */
-    private enum LockshiftMode {
-        NONE,
-        G1_GR,
-        G2_GR,
-        G2_GL,
-        G3_GR,
-        G3_GL
-    }
-
-    /**
-     * XTERM mouse reporting protocols.
-     */
-    private enum MouseProtocol {
-        OFF,
-        X10,
-        NORMAL,
-        BUTTONEVENT,
-        ANYEVENT
-    }
-
-    /**
-     * Which mouse protocol is active.
-     */
-    private MouseProtocol mouseProtocol = MouseProtocol.OFF;
-
-    /**
-     * XTERM mouse reporting encodings.
-     */
-    private enum MouseEncoding {
-        X10,
-        UTF8,
-        SGR
-    }
-
-    /**
-     * Which mouse encoding is active.
-     */
-    private MouseEncoding mouseEncoding = MouseEncoding.X10;
-
-    /**
-     * Physical display width.  We start at 80x24, but the user can resize us
-     * bigger/smaller.
-     */
-    private int width;
 
     /**
      * Get the display width.
@@ -545,12 +988,6 @@ public class ECMA48 implements Runnable {
             savedState.cursorX = width - 1;
         }
     }
-
-    /**
-     * Physical display height.  We start at 80x24, but the user can resize
-     * us bigger/smaller.
-     */
-    private int height;
 
     /**
      * Get the display height.
@@ -593,55 +1030,6 @@ public class ECMA48 implements Runnable {
     }
 
     /**
-     * Top margin of the scrolling region.
-     */
-    private int scrollRegionTop;
-
-    /**
-     * Bottom margin of the scrolling region.
-     */
-    private int scrollRegionBottom;
-
-    /**
-     * Right margin column number.  This can be selected by the remote side
-     * to be 80/132 (rightMargin values 79/131), or it can be (width - 1).
-     */
-    private int rightMargin;
-
-    /**
-     * Last character printed.
-     */
-    private char repCh;
-
-    /**
-     * VT100-style line wrapping: a character is placed in column 80 (or
-     * 132), but the line does NOT wrap until another character is written to
-     * column 1 of the next line, after which the cursor moves to column 2.
-     */
-    private boolean wrapLineFlag;
-
-    /**
-     * VT220 single shift flag.
-     */
-    private Singleshift singleshift = Singleshift.NONE;
-
-    /**
-     * true = insert characters, false = overwrite.
-     */
-    private boolean insertMode = false;
-
-    /**
-     * VT52 mode as selected by DECANM.  True means VT52, false means
-     * ANSI. Default is ANSI.
-     */
-    private boolean vt52Mode = false;
-
-    /**
-     * Visible cursor (DECTCEM).
-     */
-    private boolean cursorVisible = true;
-
-    /**
      * Get visible cursor flag.
      *
      * @return if true, the cursor is visible
@@ -649,12 +1037,6 @@ public class ECMA48 implements Runnable {
     public final boolean isCursorVisible() {
         return cursorVisible;
     }
-
-    /**
-     * Screen title as set by the xterm OSC sequence.  Lots of applications
-     * send a screenTitle regardless of whether it is an xterm client or not.
-     */
-    private String screenTitle = "";
 
     /**
      * Get the screen title as set by the xterm OSC sequence.  Lots of
@@ -668,201 +1050,13 @@ public class ECMA48 implements Runnable {
     }
 
     /**
-     * Parameter characters being collected.
-     */
-    private List<Integer> csiParams;
-
-    /**
-     * Non-csi collect buffer.
-     */
-    private StringBuilder collectBuffer;
-
-    /**
-     * When true, use the G1 character set.
-     */
-    private boolean shiftOut = false;
-
-    /**
-     * Horizontal tab stop locations.
-     */
-    private List<Integer> tabStops;
-
-    /**
-     * S8C1T.  True means 8bit controls, false means 7bit controls.
-     */
-    private boolean s8c1t = false;
-
-    /**
-     * Printer mode.  True means send all output to printer, which discards
-     * it.
-     */
-    private boolean printerControllerMode = false;
-
-    /**
-     * LMN line mode.  If true, linefeed() puts the cursor on the first
-     * column of the next line.  If false, linefeed() puts the cursor one
-     * line down on the current line.  The default is false.
-     */
-    private boolean newLineMode = false;
-
-    /**
-     * Whether arrow keys send ANSI, VT100, or VT52 sequences.
-     */
-    private ArrowKeyMode arrowKeyMode;
-
-    /**
-     * Whether number pad keys send VT100 or VT52, application or numeric
-     * sequences.
-     */
-    @SuppressWarnings("unused")
-    private KeypadMode keypadMode;
-
-    /**
-     * When true, the terminal is in 132-column mode (DECCOLM).
-     */
-    private boolean columns132 = false;
-
-    /**
      * Get 132 columns value.
      *
      * @return if true, the terminal is in 132 column mode
      */
     public final boolean isColumns132() {
-                return columns132;
-        }
-
-    /**
-     * true = reverse video.  Set by DECSCNM.
-     */
-    private boolean reverseVideo = false;
-
-    /**
-     * false = echo characters locally.
-     */
-    private boolean fullDuplex = true;
-
-    /**
-     * DECSC/DECRC save/restore a subset of the total state.  This class
-     * encapsulates those specific flags/modes.
-     */
-    private class SaveableState {
-
-        /**
-         * When true, cursor positions are relative to the scrolling region.
-         */
-        public boolean originMode = false;
-
-        /**
-         * The current editing X position.
-         */
-        public int cursorX = 0;
-
-        /**
-         * The current editing Y position.
-         */
-        public int cursorY = 0;
-
-        /**
-         * Which character set is currently selected in G0.
-         */
-        public CharacterSet g0Charset = CharacterSet.US;
-
-        /**
-         * Which character set is currently selected in G1.
-         */
-        public CharacterSet g1Charset = CharacterSet.DRAWING;
-
-        /**
-         * Which character set is currently selected in G2.
-         */
-        public CharacterSet g2Charset = CharacterSet.US;
-
-        /**
-         * Which character set is currently selected in G3.
-         */
-        public CharacterSet g3Charset = CharacterSet.US;
-
-        /**
-         * Which character set is currently selected in GR.
-         */
-        public CharacterSet grCharset = CharacterSet.DRAWING;
-
-        /**
-         * The current drawing attributes.
-         */
-        public CellAttributes attr;
-
-        /**
-         * GL lockshift mode.
-         */
-        public LockshiftMode glLockshift = LockshiftMode.NONE;
-
-        /**
-         * GR lockshift mode.
-         */
-        public LockshiftMode grLockshift = LockshiftMode.NONE;
-
-        /**
-         * Line wrap.
-         */
-        public boolean lineWrap = true;
-
-        /**
-         * Reset to defaults.
-         */
-        public void reset() {
-            originMode          = false;
-            cursorX             = 0;
-            cursorY             = 0;
-            g0Charset           = CharacterSet.US;
-            g1Charset           = CharacterSet.DRAWING;
-            g2Charset           = CharacterSet.US;
-            g3Charset           = CharacterSet.US;
-            grCharset           = CharacterSet.DRAWING;
-            attr                = new CellAttributes();
-            glLockshift         = LockshiftMode.NONE;
-            grLockshift         = LockshiftMode.NONE;
-            lineWrap            = true;
-        }
-
-        /**
-         * Copy attributes from another instance.
-         *
-         * @param that the other instance to match
-         */
-        public void setTo(final SaveableState that) {
-            this.originMode     = that.originMode;
-            this.cursorX        = that.cursorX;
-            this.cursorY        = that.cursorY;
-            this.g0Charset      = that.g0Charset;
-            this.g1Charset      = that.g1Charset;
-            this.g2Charset      = that.g2Charset;
-            this.g3Charset      = that.g3Charset;
-            this.grCharset      = that.grCharset;
-            this.attr           = new CellAttributes();
-            this.attr.setTo(that.attr);
-            this.glLockshift    = that.glLockshift;
-            this.grLockshift    = that.grLockshift;
-            this.lineWrap       = that.lineWrap;
-        }
-
-        /**
-         * Public constructor.
-         */
-        public SaveableState() {
-            reset();
-        }
+        return columns132;
     }
-
-    /**
-     * The current terminal state.
-     */
-    private SaveableState currentState;
-
-    /**
-     * The last saved terminal state.
-     */
-    private SaveableState savedState;
 
     /**
      * Clear the CSI parameters and flags.
@@ -930,61 +1124,6 @@ public class ECMA48 implements Runnable {
 
         // Clear CSI stuff
         toGround();
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param type one of the DeviceType constants to select VT100, VT102,
-     * VT220, or XTERM
-     * @param inputStream an InputStream connected to the remote side.  For
-     * type == XTERM, inputStream is converted to a Reader with UTF-8
-     * encoding.
-     * @param outputStream an OutputStream connected to the remote user.  For
-     * type == XTERM, outputStream is converted to a Writer with UTF-8
-     * encoding.
-     * @param displayListener a callback to the outer display, or null for
-     * default VT100 behavior
-     * @throws UnsupportedEncodingException if an exception is thrown when
-     * creating the InputStreamReader
-     */
-    public ECMA48(final DeviceType type, final InputStream inputStream,
-        final OutputStream outputStream, final DisplayListener displayListener)
-        throws UnsupportedEncodingException {
-
-        assert (inputStream != null);
-        assert (outputStream != null);
-
-        csiParams         = new ArrayList<Integer>();
-        tabStops          = new ArrayList<Integer>();
-        scrollback        = new LinkedList<DisplayLine>();
-        display           = new LinkedList<DisplayLine>();
-
-        this.type         = type;
-        if (inputStream instanceof TimeoutInputStream) {
-            this.inputStream  = (TimeoutInputStream)inputStream;
-        } else {
-            this.inputStream  = new TimeoutInputStream(inputStream, 2000);
-        }
-        if (type == DeviceType.XTERM) {
-            this.input    = new InputStreamReader(this.inputStream, "UTF-8");
-            this.output   = new OutputStreamWriter(new
-                BufferedOutputStream(outputStream), "UTF-8");
-            this.outputStream = null;
-        } else {
-            this.output       = null;
-            this.outputStream = new BufferedOutputStream(outputStream);
-        }
-        this.displayListener  = displayListener;
-
-        reset();
-        for (int i = 0; i < height; i++) {
-            display.add(new DisplayLine(currentState.attr));
-        }
-
-        // Spin up the input reader
-        readerThread = new Thread(this);
-        readerThread.start();
     }
 
     /**
@@ -6013,125 +6152,6 @@ public class ECMA48 implements Runnable {
      */
     public final int getCursorY() {
         return currentState.cursorY;
-    }
-
-    /**
-     * Read function runs on a separate thread.
-     */
-    public final void run() {
-        boolean utf8 = false;
-        boolean done = false;
-
-        if (type == DeviceType.XTERM) {
-            utf8 = true;
-        }
-
-        // available() will often return > 1, so we need to read in chunks to
-        // stay caught up.
-        char [] readBufferUTF8 = null;
-        byte [] readBuffer = null;
-        if (utf8) {
-            readBufferUTF8 = new char[128];
-        } else {
-            readBuffer = new byte[128];
-        }
-
-        while (!done && !stopReaderThread) {
-            try {
-                int n = inputStream.available();
-
-                // System.err.printf("available() %d\n", n); System.err.flush();
-                if (utf8) {
-                    if (readBufferUTF8.length < n) {
-                        // The buffer wasn't big enough, make it huger
-                        int newSizeHalf = Math.max(readBufferUTF8.length,
-                            n);
-
-                        readBufferUTF8 = new char[newSizeHalf * 2];
-                    }
-                } else {
-                    if (readBuffer.length < n) {
-                        // The buffer wasn't big enough, make it huger
-                        int newSizeHalf = Math.max(readBuffer.length, n);
-                        readBuffer = new byte[newSizeHalf * 2];
-                    }
-                }
-                if (n == 0) {
-                    try {
-                        Thread.sleep(2);
-                    } catch (InterruptedException e) {
-                        // SQUASH
-                    }
-                    continue;
-                }
-
-                int rc = -1;
-                try {
-                    if (utf8) {
-                        rc = input.read(readBufferUTF8, 0,
-                            readBufferUTF8.length);
-                    } else {
-                        rc = inputStream.read(readBuffer, 0,
-                            readBuffer.length);
-                    }
-                } catch (ReadTimeoutException e) {
-                    rc = 0;
-                }
-
-                // System.err.printf("read() %d\n", rc); System.err.flush();
-                if (rc == -1) {
-                    // This is EOF
-                    done = true;
-                } else {
-                    // Don't step on UI events
-                    synchronized (this) {
-                        for (int i = 0; i < rc; i++) {
-                            int ch = 0;
-                            if (utf8) {
-                                ch = readBufferUTF8[i];
-                            } else {
-                                ch = readBuffer[i];
-                            }
-
-                            consume((char)ch);
-                        }
-                    }
-                    // Permit my enclosing UI to know that I updated.
-                    if (displayListener != null) {
-                        displayListener.displayChanged();
-                    }
-                }
-                // System.err.println("end while loop"); System.err.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-                done = true;
-            }
-
-        } // while ((done == false) && (stopReaderThread == false))
-
-        // Let the rest of the world know that I am done.
-        stopReaderThread = true;
-
-        try {
-            inputStream.cancelRead();
-            inputStream.close();
-            inputStream = null;
-        } catch (IOException e) {
-            // SQUASH
-        }
-        try {
-            input.close();
-            input = null;
-        } catch (IOException e) {
-            // SQUASH
-        }
-
-        // Permit my enclosing UI to know that I updated.
-        if (displayListener != null) {
-            displayListener.displayChanged();
-        }
-
-        // System.err.println("*** run() exiting..."); System.err.flush();
     }
 
 }

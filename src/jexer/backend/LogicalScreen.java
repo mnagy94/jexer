@@ -37,6 +37,10 @@ import jexer.bits.GraphicsChars;
  */
 public class LogicalScreen implements Screen {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Width of the visible window.
      */
@@ -53,6 +57,84 @@ public class LogicalScreen implements Screen {
     private int offsetX;
 
     /**
+     * Drawing offset for y.
+     */
+    private int offsetY;
+
+    /**
+     * Ignore anything drawn right of clipRight.
+     */
+    private int clipRight;
+
+    /**
+     * Ignore anything drawn below clipBottom.
+     */
+    private int clipBottom;
+
+    /**
+     * Ignore anything drawn left of clipLeft.
+     */
+    private int clipLeft;
+
+    /**
+     * Ignore anything drawn above clipTop.
+     */
+    private int clipTop;
+
+    /**
+     * The physical screen last sent out on flush().
+     */
+    protected Cell [][] physical;
+
+    /**
+     * The logical screen being rendered to.
+     */
+    protected Cell [][] logical;
+
+    /**
+     * Set if the user explicitly wants to redraw everything starting with a
+     * ECMATerminal.clearAll().
+     */
+    protected boolean reallyCleared;
+
+    /**
+     * If true, the cursor is visible and should be placed onscreen at
+     * (cursorX, cursorY) during a call to flushPhysical().
+     */
+    protected boolean cursorVisible;
+
+    /**
+     * Cursor X position if visible.
+     */
+    protected int cursorX;
+
+    /**
+     * Cursor Y position if visible.
+     */
+    protected int cursorY;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.  Sets everything to not-bold, white-on-black.
+     */
+    protected LogicalScreen() {
+        offsetX  = 0;
+        offsetY  = 0;
+        width    = 80;
+        height   = 24;
+        logical  = null;
+        physical = null;
+        reallocate(width, height);
+    }
+
+    // ------------------------------------------------------------------------
+    // Screen -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
      * Set drawing offset for x.
      *
      * @param offsetX new drawing offset
@@ -62,11 +144,6 @@ public class LogicalScreen implements Screen {
     }
 
     /**
-     * Drawing offset for y.
-     */
-    private int offsetY;
-
-    /**
      * Set drawing offset for y.
      *
      * @param offsetY new drawing offset
@@ -74,11 +151,6 @@ public class LogicalScreen implements Screen {
     public final void setOffsetY(final int offsetY) {
         this.offsetY = offsetY;
     }
-
-    /**
-     * Ignore anything drawn right of clipRight.
-     */
-    private int clipRight;
 
     /**
      * Get right drawing clipping boundary.
@@ -99,11 +171,6 @@ public class LogicalScreen implements Screen {
     }
 
     /**
-     * Ignore anything drawn below clipBottom.
-     */
-    private int clipBottom;
-
-    /**
      * Get bottom drawing clipping boundary.
      *
      * @return drawing boundary
@@ -120,11 +187,6 @@ public class LogicalScreen implements Screen {
     public final void setClipBottom(final int clipBottom) {
         this.clipBottom = clipBottom;
     }
-
-    /**
-     * Ignore anything drawn left of clipLeft.
-     */
-    private int clipLeft;
 
     /**
      * Get left drawing clipping boundary.
@@ -145,11 +207,6 @@ public class LogicalScreen implements Screen {
     }
 
     /**
-     * Ignore anything drawn above clipTop.
-     */
-    private int clipTop;
-
-    /**
      * Get top drawing clipping boundary.
      *
      * @return drawing boundary
@@ -166,16 +223,6 @@ public class LogicalScreen implements Screen {
     public final void setClipTop(final int clipTop) {
         this.clipTop = clipTop;
     }
-
-    /**
-     * The physical screen last sent out on flush().
-     */
-    protected Cell [][] physical;
-
-    /**
-     * The logical screen being rendered to.
-     */
-    protected Cell [][] logical;
 
     /**
      * Get dirty flag.
@@ -199,28 +246,6 @@ public class LogicalScreen implements Screen {
 
         return false;
     }
-
-    /**
-     * Set if the user explicitly wants to redraw everything starting with a
-     * ECMATerminal.clearAll().
-     */
-    protected boolean reallyCleared;
-
-    /**
-     * If true, the cursor is visible and should be placed onscreen at
-     * (cursorX, cursorY) during a call to flushPhysical().
-     */
-    protected boolean cursorVisible;
-
-    /**
-     * Cursor X position if visible.
-     */
-    protected int cursorX;
-
-    /**
-     * Cursor Y position if visible.
-     */
-    protected int cursorY;
 
     /**
      * Get the attributes at one location.
@@ -492,50 +517,6 @@ public class LogicalScreen implements Screen {
     }
 
     /**
-     * Reallocate screen buffers.
-     *
-     * @param width new width
-     * @param height new height
-     */
-    private synchronized void reallocate(final int width, final int height) {
-        if (logical != null) {
-            for (int row = 0; row < this.height; row++) {
-                for (int col = 0; col < this.width; col++) {
-                    logical[col][row] = null;
-                }
-            }
-            logical = null;
-        }
-        logical = new Cell[width][height];
-        if (physical != null) {
-            for (int row = 0; row < this.height; row++) {
-                for (int col = 0; col < this.width; col++) {
-                    physical[col][row] = null;
-                }
-            }
-            physical = null;
-        }
-        physical = new Cell[width][height];
-
-        for (int row = 0; row < height; row++) {
-            for (int col = 0; col < width; col++) {
-                physical[col][row] = new Cell();
-                logical[col][row] = new Cell();
-            }
-        }
-
-        this.width = width;
-        this.height = height;
-
-        clipLeft = 0;
-        clipTop = 0;
-        clipRight = width;
-        clipBottom = height;
-
-        reallyCleared = true;
-    }
-
-    /**
      * Change the width.  Everything on-screen will be destroyed and must be
      * redrawn.
      *
@@ -585,19 +566,6 @@ public class LogicalScreen implements Screen {
     }
 
     /**
-     * Public constructor.  Sets everything to not-bold, white-on-black.
-     */
-    protected LogicalScreen() {
-        offsetX  = 0;
-        offsetY  = 0;
-        width    = 80;
-        height   = 24;
-        logical  = null;
-        physical = null;
-        reallocate(width, height);
-    }
-
-    /**
      * Reset screen to not-bold, white-on-black.  Also flushes the offset and
      * clip variables.
      */
@@ -627,17 +595,6 @@ public class LogicalScreen implements Screen {
      */
     public final void clear() {
         reset();
-    }
-
-    /**
-     * Clear the physical screen.
-     */
-    public final void clearPhysical() {
-        for (int row = 0; row < height; row++) {
-            for (int col = 0; col < width; col++) {
-                physical[col][row].reset();
-            }
-        }
     }
 
     /**
@@ -851,5 +808,64 @@ public class LogicalScreen implements Screen {
      * @param title the new title
      */
     public void setTitle(final String title) {}
+
+    // ------------------------------------------------------------------------
+    // LogicalScreen ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Reallocate screen buffers.
+     *
+     * @param width new width
+     * @param height new height
+     */
+    private synchronized void reallocate(final int width, final int height) {
+        if (logical != null) {
+            for (int row = 0; row < this.height; row++) {
+                for (int col = 0; col < this.width; col++) {
+                    logical[col][row] = null;
+                }
+            }
+            logical = null;
+        }
+        logical = new Cell[width][height];
+        if (physical != null) {
+            for (int row = 0; row < this.height; row++) {
+                for (int col = 0; col < this.width; col++) {
+                    physical[col][row] = null;
+                }
+            }
+            physical = null;
+        }
+        physical = new Cell[width][height];
+
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                physical[col][row] = new Cell();
+                logical[col][row] = new Cell();
+            }
+        }
+
+        this.width = width;
+        this.height = height;
+
+        clipLeft = 0;
+        clipTop = 0;
+        clipRight = width;
+        clipBottom = height;
+
+        reallyCleared = true;
+    }
+
+    /**
+     * Clear the physical screen.
+     */
+    public final void clearPhysical() {
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                physical[col][row].reset();
+            }
+        }
+    }
 
 }

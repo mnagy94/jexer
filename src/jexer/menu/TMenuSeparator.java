@@ -36,6 +36,10 @@ import jexer.bits.GraphicsChars;
  */
 public final class TMenuSeparator extends TMenuItem {
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Package private constructor.
      *
@@ -49,6 +53,10 @@ public final class TMenuSeparator extends TMenuItem {
         setActive(false);
         setWidth(parent.getWidth() - 2);
     }
+
+    // ------------------------------------------------------------------------
+    // TMenuItem --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Draw a menu separator.

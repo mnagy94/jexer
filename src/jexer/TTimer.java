@@ -35,6 +35,10 @@ import java.util.Date;
  */
 public final class TTimer {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * If true, re-schedule after every tick.  Note package private access.
      */
@@ -49,6 +53,36 @@ public final class TTimer {
      * The next time this timer needs to be ticked.
      */
     private Date nextTick;
+
+    /**
+     * The action to perfom on a tick.
+     */
+    private TAction action;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Package private constructor.
+     *
+     * @param duration number of milliseconds to wait between ticks
+     * @param recurring if true, re-schedule this timer after every tick
+     * @param action to perform on next tick
+     */
+    TTimer(final long duration, final boolean recurring, final TAction action) {
+
+        this.recurring = recurring;
+        this.duration  = duration;
+        this.action    = action;
+
+        Date now = new Date();
+        nextTick = new Date(now.getTime() + duration);
+    }
+
+    // ------------------------------------------------------------------------
+    // TTimer -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get the next time this timer needs to be ticked.  Note package private
@@ -70,11 +104,6 @@ public final class TTimer {
     }
 
     /**
-     * The action to perfom on a tick.
-     */
-    private TAction action;
-
-    /**
      * Tick this timer.  Note package private access.
      */
     void tick() {
@@ -86,23 +115,6 @@ public final class TTimer {
         if (recurring) {
             nextTick = new Date(ticked.getTime() + duration);
         }
-    }
-
-    /**
-     * Package private constructor.
-     *
-     * @param duration number of milliseconds to wait between ticks
-     * @param recurring if true, re-schedule this timer after every tick
-     * @param action to perform on next tick
-     */
-    TTimer(final long duration, final boolean recurring, final TAction action) {
-
-        this.recurring = recurring;
-        this.duration  = duration;
-        this.action    = action;
-
-        Date now = new Date();
-        nextTick = new Date(now.getTime() + duration);
     }
 
 }

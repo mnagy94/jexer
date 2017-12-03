@@ -40,6 +40,10 @@ import java.util.StringTokenizer;
  */
 public final class TTYSessionInfo implements SessionInfo {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * User name.
      */
@@ -64,6 +68,24 @@ public final class TTYSessionInfo implements SessionInfo {
      * Time at which the window size was refreshed.
      */
     private long lastQueryWindowTime;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     */
+    public TTYSessionInfo() {
+        // Populate lang and user from the environment
+        username = System.getProperty("user.name");
+        language = System.getProperty("user.language");
+        queryWindowSize();
+    }
+
+    // ------------------------------------------------------------------------
+    // SessionInfo ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Username getter.
@@ -99,54 +121,6 @@ public final class TTYSessionInfo implements SessionInfo {
      */
     public void setLanguage(final String language) {
         this.language = language;
-    }
-
-    /**
-     * Call 'stty size' to obtain the tty window size.  windowWidth and
-     * windowHeight are set automatically.
-     */
-    private void sttyWindowSize() {
-        String [] cmd = {
-            "/bin/sh", "-c", "stty size < /dev/tty"
-        };
-        try {
-            Process process = Runtime.getRuntime().exec(cmd);
-            BufferedReader in = new BufferedReader(
-                new InputStreamReader(process.getInputStream(), "UTF-8"));
-            String line = in.readLine();
-            if ((line != null) && (line.length() > 0)) {
-                StringTokenizer tokenizer = new StringTokenizer(line);
-                int rc = Integer.parseInt(tokenizer.nextToken());
-                if (rc > 0) {
-                    windowHeight = rc;
-                }
-                rc = Integer.parseInt(tokenizer.nextToken());
-                if (rc > 0) {
-                    windowWidth = rc;
-                }
-            }
-            while (true) {
-                BufferedReader err = new BufferedReader(
-                        new InputStreamReader(process.getErrorStream(),
-                            "UTF-8"));
-                line = err.readLine();
-                if ((line != null) && (line.length() > 0)) {
-                    System.err.println("Error output from stty: " + line);
-                }
-                try {
-                    process.waitFor();
-                    break;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            int rc = process.exitValue();
-            if (rc != 0) {
-                System.err.println("stty returned error code: " + rc);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -199,13 +173,56 @@ public final class TTYSessionInfo implements SessionInfo {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // TTYSessionInfo ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
-     * Public constructor.
+     * Call 'stty size' to obtain the tty window size.  windowWidth and
+     * windowHeight are set automatically.
      */
-    public TTYSessionInfo() {
-        // Populate lang and user from the environment
-        username = System.getProperty("user.name");
-        language = System.getProperty("user.language");
-        queryWindowSize();
+    private void sttyWindowSize() {
+        String [] cmd = {
+            "/bin/sh", "-c", "stty size < /dev/tty"
+        };
+        try {
+            Process process = Runtime.getRuntime().exec(cmd);
+            BufferedReader in = new BufferedReader(
+                new InputStreamReader(process.getInputStream(), "UTF-8"));
+            String line = in.readLine();
+            if ((line != null) && (line.length() > 0)) {
+                StringTokenizer tokenizer = new StringTokenizer(line);
+                int rc = Integer.parseInt(tokenizer.nextToken());
+                if (rc > 0) {
+                    windowHeight = rc;
+                }
+                rc = Integer.parseInt(tokenizer.nextToken());
+                if (rc > 0) {
+                    windowWidth = rc;
+                }
+            }
+            while (true) {
+                BufferedReader err = new BufferedReader(
+                        new InputStreamReader(process.getErrorStream(),
+                            "UTF-8"));
+                line = err.readLine();
+                if ((line != null) && (line.length() > 0)) {
+                    System.err.println("Error output from stty: " + line);
+                }
+                try {
+                    process.waitFor();
+                    break;
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            int rc = process.exitValue();
+            if (rc != 0) {
+                System.err.println("stty returned error code: " + rc);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
 }

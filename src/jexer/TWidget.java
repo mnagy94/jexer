@@ -41,6 +41,9 @@ import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.menu.TMenu;
+import jexer.ttree.TTreeItem;
+import jexer.ttree.TTreeView;
+import jexer.ttree.TTreeViewWidget;
 import static jexer.TKeypress.*;
 
 /**
@@ -50,7 +53,7 @@ import static jexer.TKeypress.*;
 public abstract class TWidget implements Comparable<TWidget> {
 
     // ------------------------------------------------------------------------
-    // Common widget attributes -----------------------------------------------
+    // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
@@ -59,6 +62,481 @@ public abstract class TWidget implements Comparable<TWidget> {
      * may contain a TScrollBar.
      */
     private TWidget parent = null;
+
+    /**
+     * Child widgets that this widget contains.
+     */
+    private List<TWidget> children;
+
+    /**
+     * The currently active child widget that will receive keypress events.
+     */
+    private TWidget activeChild = null;
+
+    /**
+     * If true, this widget will receive events.
+     */
+    private boolean active = false;
+
+    /**
+     * The window that this widget draws to.
+     */
+    private TWindow window = null;
+
+    /**
+     * Absolute X position of the top-left corner.
+     */
+    private int x = 0;
+
+    /**
+     * Absolute Y position of the top-left corner.
+     */
+    private int y = 0;
+
+    /**
+     * Width.
+     */
+    private int width = 0;
+
+    /**
+     * Height.
+     */
+    private int height = 0;
+
+    /**
+     * My tab order inside a window or containing widget.
+     */
+    private int tabOrder = 0;
+
+    /**
+     * If true, this widget can be tabbed to or receive events.
+     */
+    private boolean enabled = true;
+
+    /**
+     * If true, this widget has a cursor.
+     */
+    private boolean cursorVisible = false;
+
+    /**
+     * Cursor column position in relative coordinates.
+     */
+    private int cursorX = 0;
+
+    /**
+     * Cursor row position in relative coordinates.
+     */
+    private int cursorY = 0;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Default constructor for subclasses.
+     */
+    protected TWidget() {
+        children = new ArrayList<TWidget>();
+    }
+
+    /**
+     * Protected constructor.
+     *
+     * @param parent parent widget
+     */
+    protected TWidget(final TWidget parent) {
+        this(parent, true);
+    }
+
+    /**
+     * Protected constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     */
+    protected TWidget(final TWidget parent, final int x, final int y,
+        final int width, final int height) {
+
+        this(parent, true, x, y, width, height);
+    }
+
+    /**
+     * Protected constructor used by subclasses that are disabled by default.
+     *
+     * @param parent parent widget
+     * @param enabled if true assume enabled
+     */
+    protected TWidget(final TWidget parent, final boolean enabled) {
+        this.enabled = enabled;
+        this.parent = parent;
+        this.window = parent.window;
+        children = new ArrayList<TWidget>();
+
+        // Do not add TStatusBars, they are drawn by TApplication
+        if (this instanceof TStatusBar) {
+        } else {
+            parent.addChild(this);
+        }
+    }
+
+    /**
+     * Protected constructor used by subclasses that are disabled by default.
+     *
+     * @param parent parent widget
+     * @param enabled if true assume enabled
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     */
+    protected TWidget(final TWidget parent, final boolean enabled,
+        final int x, final int y, final int width, final int height) {
+
+        this.enabled = enabled;
+        this.parent = parent;
+        this.window = parent.window;
+        children = new ArrayList<TWidget>();
+
+        // Do not add TStatusBars, they are drawn by TApplication
+        if (this instanceof TStatusBar) {
+        } else {
+            parent.addChild(this);
+        }
+
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+
+    /**
+     * Backdoor access for TWindow's constructor.  ONLY TWindow USES THIS.
+     *
+     * @param window the top-level window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of window
+     * @param height height of window
+     */
+    protected final void setupForTWindow(final TWindow window,
+        final int x, final int y, final int width, final int height) {
+
+        this.parent = window;
+        this.window = window;
+        this.x      = x;
+        this.y      = y;
+        this.width  = width;
+        this.height = height;
+    }
+
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if a mouse press/release event coordinate is contained in this
+     * widget.
+     *
+     * @param mouse a mouse-based event
+     * @return whether or not a mouse click would be sent to this widget
+     */
+    public final boolean mouseWouldHit(final TMouseEvent mouse) {
+
+        if (!enabled) {
+            return false;
+        }
+
+        if ((this instanceof TTreeItem)
+            && ((y < 0) || (y > parent.getHeight() - 1))
+        ) {
+            return false;
+        }
+
+        if ((mouse.getAbsoluteX() >= getAbsoluteX())
+            && (mouse.getAbsoluteX() <  getAbsoluteX() + width)
+            && (mouse.getAbsoluteY() >= getAbsoluteY())
+            && (mouse.getAbsoluteY() <  getAbsoluteY() + height)
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Method that subclasses can override to handle keystrokes.
+     *
+     * @param keypress keystroke event
+     */
+    public void onKeypress(final TKeypressEvent keypress) {
+
+        if ((children.size() == 0)
+            || (this instanceof TTreeView)
+            || (this instanceof TText)
+        ) {
+
+            // Defaults:
+            //   tab / shift-tab - switch to next/previous widget
+            //   left-arrow or up-arrow: same as shift-tab
+            if ((keypress.equals(kbTab))
+                || (keypress.equals(kbDown))
+            ) {
+                parent.switchWidget(true);
+                return;
+            } else if ((keypress.equals(kbShiftTab))
+                || (keypress.equals(kbBackTab))
+                || (keypress.equals(kbUp))
+            ) {
+                parent.switchWidget(false);
+                return;
+            }
+        }
+
+        if ((children.size() == 0)
+            && !(this instanceof TTreeView)
+        ) {
+
+            // Defaults:
+            //   right-arrow or down-arrow: same as tab
+            if (keypress.equals(kbRight)) {
+                parent.switchWidget(true);
+                return;
+            } else if (keypress.equals(kbLeft)) {
+                parent.switchWidget(false);
+                return;
+            }
+        }
+
+        // If I have any buttons on me AND this is an Alt-key that matches
+        // its mnemonic, send it an Enter keystroke
+        for (TWidget widget: children) {
+            if (widget instanceof TButton) {
+                TButton button = (TButton) widget;
+                if (button.isEnabled()
+                    && !keypress.getKey().isFnKey()
+                    && keypress.getKey().isAlt()
+                    && !keypress.getKey().isCtrl()
+                    && (Character.toLowerCase(button.getMnemonic().getShortcut())
+                        == Character.toLowerCase(keypress.getKey().getChar()))
+                ) {
+
+                    widget.onKeypress(new TKeypressEvent(kbEnter));
+                    return;
+                }
+            }
+        }
+
+        // Dispatch the keypress to an active widget
+        for (TWidget widget: children) {
+            if (widget.active) {
+                widget.onKeypress(keypress);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle mouse button presses.
+     *
+     * @param mouse mouse button event
+     */
+    public void onMouseDown(final TMouseEvent mouse) {
+        // Default: do nothing, pass to children instead
+        for (int i = children.size() - 1 ; i >= 0 ; i--) {
+            TWidget widget = children.get(i);
+            if (widget.mouseWouldHit(mouse)) {
+                // Dispatch to this child, also activate it
+                activate(widget);
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+                widget.onMouseDown(mouse);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle mouse button releases.
+     *
+     * @param mouse mouse button event
+     */
+    public void onMouseUp(final TMouseEvent mouse) {
+        // Default: do nothing, pass to children instead
+        for (int i = children.size() - 1 ; i >= 0 ; i--) {
+            TWidget widget = children.get(i);
+            if (widget.mouseWouldHit(mouse)) {
+                // Dispatch to this child, also activate it
+                activate(widget);
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+                widget.onMouseUp(mouse);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle mouse movements.
+     *
+     * @param mouse mouse motion event
+     */
+    public void onMouseMotion(final TMouseEvent mouse) {
+        // Default: do nothing, pass it on to ALL of my children.  This way
+        // the children can see the mouse "leaving" their area.
+        for (TWidget widget: children) {
+            // Set x and y relative to the child's coordinates
+            mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+            mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+            widget.onMouseMotion(mouse);
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle mouse button
+     * double-clicks.
+     *
+     * @param mouse mouse button event
+     */
+    public void onMouseDoubleClick(final TMouseEvent mouse) {
+        // Default: do nothing, pass to children instead
+        for (int i = children.size() - 1 ; i >= 0 ; i--) {
+            TWidget widget = children.get(i);
+            if (widget.mouseWouldHit(mouse)) {
+                // Dispatch to this child, also activate it
+                activate(widget);
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
+                widget.onMouseDoubleClick(mouse);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle window/screen resize
+     * events.
+     *
+     * @param resize resize event
+     */
+    public void onResize(final TResizeEvent resize) {
+        // Default: change my width/height.
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            width = resize.getWidth();
+            height = resize.getHeight();
+        } else {
+            // Let children see the screen resize
+            for (TWidget widget: children) {
+                widget.onResize(resize);
+            }
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle posted command events.
+     *
+     * @param command command event
+     */
+    public void onCommand(final TCommandEvent command) {
+        // Default: do nothing, pass to children instead
+        for (TWidget widget: children) {
+            widget.onCommand(command);
+        }
+    }
+
+    /**
+     * Method that subclasses can override to handle menu or posted menu
+     * events.
+     *
+     * @param menu menu event
+     */
+    public void onMenu(final TMenuEvent menu) {
+        // Default: do nothing, pass to children instead
+        for (TWidget widget: children) {
+            widget.onMenu(menu);
+        }
+    }
+
+    /**
+     * Method that subclasses can override to do processing when the UI is
+     * idle.  Note that repainting is NOT assumed.  To get a refresh after
+     * onIdle, call doRepaint().
+     */
+    public void onIdle() {
+        // Default: do nothing, pass to children instead
+        for (TWidget widget: children) {
+            widget.onIdle();
+        }
+    }
+
+    /**
+     * Consume event.  Subclasses that want to intercept all events in one go
+     * can override this method.
+     *
+     * @param event keyboard, mouse, resize, command, or menu event
+     */
+    public void handleEvent(final TInputEvent event) {
+        /*
+        System.err.printf("TWidget (%s) event: %s\n", this.getClass().getName(),
+            event);
+        */
+
+        if (!enabled) {
+            // Discard event
+            // System.err.println("   -- discard --");
+            return;
+        }
+
+        if (event instanceof TKeypressEvent) {
+            onKeypress((TKeypressEvent) event);
+        } else if (event instanceof TMouseEvent) {
+
+            TMouseEvent mouse = (TMouseEvent) event;
+
+            switch (mouse.getType()) {
+
+            case MOUSE_DOWN:
+                onMouseDown(mouse);
+                break;
+
+            case MOUSE_UP:
+                onMouseUp(mouse);
+                break;
+
+            case MOUSE_MOTION:
+                onMouseMotion(mouse);
+                break;
+
+            case MOUSE_DOUBLE_CLICK:
+                onMouseDoubleClick(mouse);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Invalid mouse event type: "
+                    + mouse.getType());
+            }
+        } else if (event instanceof TResizeEvent) {
+            onResize((TResizeEvent) event);
+        } else if (event instanceof TCommandEvent) {
+            onCommand((TCommandEvent) event);
+        } else if (event instanceof TMenuEvent) {
+            onMenu((TMenuEvent) event);
+        }
+
+        // Do nothing else
+        return;
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get parent widget.
@@ -70,11 +548,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Child widgets that this widget contains.
-     */
-    private List<TWidget> children;
-
-    /**
      * Get the list of child widgets that this widget contains.
      *
      * @return the list of child widgets
@@ -82,16 +555,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     public List<TWidget> getChildren() {
         return children;
     }
-
-    /**
-     * The currently active child widget that will receive keypress events.
-     */
-    private TWidget activeChild = null;
-
-    /**
-     * If true, this widget will receive events.
-     */
-    private boolean active = false;
 
     /**
      * Get active flag.
@@ -112,11 +575,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * The window that this widget draws to.
-     */
-    private TWindow window = null;
-
-    /**
      * Get the window this widget is on.
      *
      * @return the window
@@ -124,11 +582,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     public final TWindow getWindow() {
         return window;
     }
-
-    /**
-     * Absolute X position of the top-left corner.
-     */
-    private int x = 0;
 
     /**
      * Get X position.
@@ -149,11 +602,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Absolute Y position of the top-left corner.
-     */
-    private int y = 0;
-
-    /**
      * Get Y position.
      *
      * @return absolute Y position of the top-left corner
@@ -172,11 +620,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Width.
-     */
-    private int width = 0;
-
-    /**
      * Get the width.
      *
      * @return widget width
@@ -193,11 +636,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     public final void setWidth(final int width) {
         this.width = width;
     }
-
-    /**
-     * Height.
-     */
-    private int height = 0;
 
     /**
      * Get the height.
@@ -233,16 +671,6 @@ public abstract class TWidget implements Comparable<TWidget> {
         setWidth(width);
         setHeight(height);
     }
-
-    /**
-     * My tab order inside a window or containing widget.
-     */
-    private int tabOrder = 0;
-
-    /**
-     * If true, this widget can be tabbed to or receive events.
-     */
-    private boolean enabled = true;
 
     /**
      * Get enabled flag.
@@ -283,11 +711,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * If true, this widget has a cursor.
-     */
-    private boolean cursorVisible = false;
-
-    /**
      * Set visible cursor flag.
      *
      * @param cursorVisible if true, this widget has a cursor
@@ -325,11 +748,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Cursor column position in relative coordinates.
-     */
-    private int cursorX = 0;
-
-    /**
      * Get cursor X value.
      *
      * @return cursor column position in relative coordinates
@@ -348,11 +766,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Cursor row position in relative coordinates.
-     */
-    private int cursorY = 0;
-
-    /**
      * Get cursor Y value.
      *
      * @return cursor row position in relative coordinates
@@ -369,10 +782,6 @@ public abstract class TWidget implements Comparable<TWidget> {
     public final void setCursorY(final int cursorY) {
         this.cursorY = cursorY;
     }
-
-    // ------------------------------------------------------------------------
-    // TApplication integration -----------------------------------------------
-    // ------------------------------------------------------------------------
 
     /**
      * Get this TWidget's parent TApplication.
@@ -574,114 +983,6 @@ public abstract class TWidget implements Comparable<TWidget> {
         window.getApplication().doRepaint();
     }
 
-    // ------------------------------------------------------------------------
-    // Constructors -----------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Default constructor for subclasses.
-     */
-    protected TWidget() {
-        children = new ArrayList<TWidget>();
-    }
-
-    /**
-     * Protected constructor.
-     *
-     * @param parent parent widget
-     */
-    protected TWidget(final TWidget parent) {
-        this(parent, true);
-    }
-
-    /**
-     * Protected constructor.
-     *
-     * @param parent parent widget
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param width width of widget
-     * @param height height of widget
-     */
-    protected TWidget(final TWidget parent, final int x, final int y,
-        final int width, final int height) {
-
-        this(parent, true, x, y, width, height);
-    }
-
-    /**
-     * Protected constructor used by subclasses that are disabled by default.
-     *
-     * @param parent parent widget
-     * @param enabled if true assume enabled
-     */
-    protected TWidget(final TWidget parent, final boolean enabled) {
-        this.enabled = enabled;
-        this.parent = parent;
-        this.window = parent.window;
-        children = new ArrayList<TWidget>();
-
-        // Do not add TStatusBars, they are drawn by TApplication
-        if (this instanceof TStatusBar) {
-        } else {
-            parent.addChild(this);
-        }
-    }
-
-    /**
-     * Protected constructor used by subclasses that are disabled by default.
-     *
-     * @param parent parent widget
-     * @param enabled if true assume enabled
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param width width of widget
-     * @param height height of widget
-     */
-    protected TWidget(final TWidget parent, final boolean enabled,
-        final int x, final int y, final int width, final int height) {
-
-        this.enabled = enabled;
-        this.parent = parent;
-        this.window = parent.window;
-        children = new ArrayList<TWidget>();
-
-        // Do not add TStatusBars, they are drawn by TApplication
-        if (this instanceof TStatusBar) {
-        } else {
-            parent.addChild(this);
-        }
-
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-    }
-
-    /**
-     * Backdoor access for TWindow's constructor.  ONLY TWindow USES THIS.
-     *
-     * @param window the top-level window
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param width width of window
-     * @param height height of window
-     */
-    protected final void setupForTWindow(final TWindow window,
-        final int x, final int y, final int width, final int height) {
-
-        this.parent = window;
-        this.window = window;
-        this.x      = x;
-        this.y      = y;
-        this.width  = width;
-        this.height = height;
-    }
-
-    // ------------------------------------------------------------------------
-    // General behavior -------------------------------------------------------
-    // ------------------------------------------------------------------------
-
     /**
      * Add a child widget to my list of children.  We set its tabOrder to 0
      * and increment the tabOrder of all other children.
@@ -829,288 +1130,6 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         // No active children, return me
         return this;
-    }
-
-    // ------------------------------------------------------------------------
-    // Event handlers ---------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Check if a mouse press/release event coordinate is contained in this
-     * widget.
-     *
-     * @param mouse a mouse-based event
-     * @return whether or not a mouse click would be sent to this widget
-     */
-    public final boolean mouseWouldHit(final TMouseEvent mouse) {
-
-        if (!enabled) {
-            return false;
-        }
-
-        if ((mouse.getAbsoluteX() >= getAbsoluteX())
-            && (mouse.getAbsoluteX() <  getAbsoluteX() + width)
-            && (mouse.getAbsoluteY() >= getAbsoluteY())
-            && (mouse.getAbsoluteY() <  getAbsoluteY() + height)
-        ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Method that subclasses can override to handle keystrokes.
-     *
-     * @param keypress keystroke event
-     */
-    public void onKeypress(final TKeypressEvent keypress) {
-
-        if ((children.size() == 0)
-            || (this instanceof TTreeView)
-            || (this instanceof TText)
-        ) {
-
-            // Defaults:
-            //   tab / shift-tab - switch to next/previous widget
-            //   right-arrow or down-arrow: same as tab
-            //   left-arrow or up-arrow: same as shift-tab
-            if ((keypress.equals(kbTab))
-                || (keypress.equals(kbRight))
-                || (keypress.equals(kbDown))
-            ) {
-                parent.switchWidget(true);
-                return;
-            } else if ((keypress.equals(kbShiftTab))
-                || (keypress.equals(kbBackTab))
-                || (keypress.equals(kbLeft))
-                || (keypress.equals(kbUp))
-            ) {
-                parent.switchWidget(false);
-                return;
-            }
-        }
-
-        // If I have any buttons on me AND this is an Alt-key that matches
-        // its mnemonic, send it an Enter keystroke
-        for (TWidget widget: children) {
-            if (widget instanceof TButton) {
-                TButton button = (TButton) widget;
-                if (button.isEnabled()
-                    && !keypress.getKey().isFnKey()
-                    && keypress.getKey().isAlt()
-                    && !keypress.getKey().isCtrl()
-                    && (Character.toLowerCase(button.getMnemonic().getShortcut())
-                        == Character.toLowerCase(keypress.getKey().getChar()))
-                ) {
-
-                    widget.handleEvent(new TKeypressEvent(kbEnter));
-                    return;
-                }
-            }
-        }
-
-        // Dispatch the keypress to an active widget
-        for (TWidget widget: children) {
-            if (widget.active) {
-                widget.handleEvent(keypress);
-                return;
-            }
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle mouse button presses.
-     *
-     * @param mouse mouse button event
-     */
-    public void onMouseDown(final TMouseEvent mouse) {
-        // Default: do nothing, pass to children instead
-        for (int i = children.size() - 1 ; i >= 0 ; i--) {
-            TWidget widget = children.get(i);
-            if (widget.mouseWouldHit(mouse)) {
-                // Dispatch to this child, also activate it
-                activate(widget);
-
-                // Set x and y relative to the child's coordinates
-                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
-                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
-                widget.handleEvent(mouse);
-                return;
-            }
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle mouse button releases.
-     *
-     * @param mouse mouse button event
-     */
-    public void onMouseUp(final TMouseEvent mouse) {
-        // Default: do nothing, pass to children instead
-        for (int i = children.size() - 1 ; i >= 0 ; i--) {
-            TWidget widget = children.get(i);
-            if (widget.mouseWouldHit(mouse)) {
-                // Dispatch to this child, also activate it
-                activate(widget);
-
-                // Set x and y relative to the child's coordinates
-                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
-                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
-                widget.handleEvent(mouse);
-                return;
-            }
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle mouse movements.
-     *
-     * @param mouse mouse motion event
-     */
-    public void onMouseMotion(final TMouseEvent mouse) {
-        // Default: do nothing, pass it on to ALL of my children.  This way
-        // the children can see the mouse "leaving" their area.
-        for (TWidget widget: children) {
-            // Set x and y relative to the child's coordinates
-            mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
-            mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
-            widget.handleEvent(mouse);
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle mouse button
-     * double-clicks.
-     *
-     * @param mouse mouse button event
-     */
-    public void onMouseDoubleClick(final TMouseEvent mouse) {
-        // Default: do nothing, pass to children instead
-        for (int i = children.size() - 1 ; i >= 0 ; i--) {
-            TWidget widget = children.get(i);
-            if (widget.mouseWouldHit(mouse)) {
-                // Dispatch to this child, also activate it
-                activate(widget);
-
-                // Set x and y relative to the child's coordinates
-                mouse.setX(mouse.getAbsoluteX() - widget.getAbsoluteX());
-                mouse.setY(mouse.getAbsoluteY() - widget.getAbsoluteY());
-                widget.handleEvent(mouse);
-                return;
-            }
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle window/screen resize
-     * events.
-     *
-     * @param resize resize event
-     */
-    public void onResize(final TResizeEvent resize) {
-        // Default: change my width/height.
-        if (resize.getType() == TResizeEvent.Type.WIDGET) {
-            width = resize.getWidth();
-            height = resize.getHeight();
-        } else {
-            // Let children see the screen resize
-            for (TWidget widget: children) {
-                widget.onResize(resize);
-            }
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle posted command events.
-     *
-     * @param command command event
-     */
-    public void onCommand(final TCommandEvent command) {
-        // Default: do nothing, pass to children instead
-        for (TWidget widget: children) {
-            widget.onCommand(command);
-        }
-    }
-
-    /**
-     * Method that subclasses can override to handle menu or posted menu
-     * events.
-     *
-     * @param menu menu event
-     */
-    public void onMenu(final TMenuEvent menu) {
-        // Default: do nothing, pass to children instead
-        for (TWidget widget: children) {
-            widget.onMenu(menu);
-        }
-    }
-
-    /**
-     * Method that subclasses can override to do processing when the UI is
-     * idle.  Note that repainting is NOT assumed.  To get a refresh after
-     * onIdle, call doRepaint().
-     */
-    public void onIdle() {
-        // Default: do nothing, pass to children instead
-        for (TWidget widget: children) {
-            widget.onIdle();
-        }
-    }
-
-    /**
-     * Consume event.  Subclasses that want to intercept all events in one go
-     * can override this method.
-     *
-     * @param event keyboard, mouse, resize, command, or menu event
-     */
-    public void handleEvent(final TInputEvent event) {
-        // System.err.printf("TWidget (%s) event: %s\n", this.getClass().getName(),
-        //     event);
-
-        if (!enabled) {
-            // Discard event
-            // System.err.println("   -- discard --");
-            return;
-        }
-
-        if (event instanceof TKeypressEvent) {
-            onKeypress((TKeypressEvent) event);
-        } else if (event instanceof TMouseEvent) {
-
-            TMouseEvent mouse = (TMouseEvent) event;
-
-            switch (mouse.getType()) {
-
-            case MOUSE_DOWN:
-                onMouseDown(mouse);
-                break;
-
-            case MOUSE_UP:
-                onMouseUp(mouse);
-                break;
-
-            case MOUSE_MOTION:
-                onMouseMotion(mouse);
-                break;
-
-            case MOUSE_DOUBLE_CLICK:
-                onMouseDoubleClick(mouse);
-                break;
-
-            default:
-                throw new IllegalArgumentException("Invalid mouse event type: "
-                    + mouse.getType());
-            }
-        } else if (event instanceof TResizeEvent) {
-            onResize((TResizeEvent) event);
-        } else if (event instanceof TCommandEvent) {
-            onCommand((TCommandEvent) event);
-        } else if (event instanceof TMenuEvent) {
-            onMenu((TMenuEvent) event);
-        }
-
-        // Do nothing else
-        return;
     }
 
     // ------------------------------------------------------------------------
@@ -1421,7 +1440,8 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Convenience function to add a tree view to this container/window.
+     * Convenience function to add a scrollable tree view to this
+     * container/window.
      *
      * @param x column relative to parent
      * @param y row relative to parent
@@ -1429,14 +1449,15 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param height height of tree view
      * @return the new tree view
      */
-    public final TTreeView addTreeView(final int x, final int y,
+    public final TTreeViewWidget addTreeViewWidget(final int x, final int y,
         final int width, final int height) {
 
-        return new TTreeView(this, x, y, width, height);
+        return new TTreeViewWidget(this, x, y, width, height);
     }
 
     /**
-     * Convenience function to add a tree view to this container/window.
+     * Convenience function to add a scrollable tree view to this
+     * container/window.
      *
      * @param x column relative to parent
      * @param y row relative to parent
@@ -1445,10 +1466,10 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param action action to perform when an item is selected
      * @return the new tree view
      */
-    public final TTreeView addTreeView(final int x, final int y,
+    public final TTreeViewWidget addTreeViewWidget(final int x, final int y,
         final int width, final int height, final TAction action) {
 
-        return new TTreeView(this, x, y, width, height, action);
+        return new TTreeViewWidget(this, x, y, width, height, action);
     }
 
     /**

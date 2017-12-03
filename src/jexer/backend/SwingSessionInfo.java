@@ -37,6 +37,10 @@ import java.awt.Insets;
  */
 public final class SwingSessionInfo implements SessionInfo {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The Swing JFrame or JComponent.
      */
@@ -71,6 +75,48 @@ public final class SwingSessionInfo implements SessionInfo {
      * Text window height.
      */
     private int windowHeight = 25;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     *
+     * @param swing the Swing JFrame or JComponent
+     * @param textWidth the width of a cell in pixels
+     * @param textHeight the height of a cell in pixels
+     */
+    public SwingSessionInfo(final SwingComponent swing, final int textWidth,
+        final int textHeight) {
+
+        this.swing      = swing;
+        this.textWidth  = textWidth;
+        this.textHeight = textHeight;
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param swing the Swing JFrame or JComponent
+     * @param textWidth the width of a cell in pixels
+     * @param textHeight the height of a cell in pixels
+     * @param width the number of columns
+     * @param height the number of rows
+     */
+    public SwingSessionInfo(final SwingComponent swing, final int textWidth,
+        final int textHeight, final int width, final int height) {
+
+        this.swing              = swing;
+        this.textWidth          = textWidth;
+        this.textHeight         = textHeight;
+        this.windowWidth        = width;
+        this.windowHeight       = height;
+    }
+
+    // ------------------------------------------------------------------------
+    // SessionInfo ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Username getter.
@@ -127,53 +173,6 @@ public final class SwingSessionInfo implements SessionInfo {
     }
 
     /**
-     * Set the dimensions of a single text cell.
-     *
-     * @param textWidth the width of a cell in pixels
-     * @param textHeight the height of a cell in pixels
-     */
-    public void setTextCellDimensions(final int textWidth,
-        final int textHeight) {
-
-        this.textWidth  = textWidth;
-        this.textHeight = textHeight;
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param swing the Swing JFrame or JComponent
-     * @param textWidth the width of a cell in pixels
-     * @param textHeight the height of a cell in pixels
-     */
-    public SwingSessionInfo(final SwingComponent swing, final int textWidth,
-        final int textHeight) {
-
-        this.swing      = swing;
-        this.textWidth  = textWidth;
-        this.textHeight = textHeight;
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param swing the Swing JFrame or JComponent
-     * @param textWidth the width of a cell in pixels
-     * @param textHeight the height of a cell in pixels
-     * @param width the number of columns
-     * @param height the number of rows
-     */
-    public SwingSessionInfo(final SwingComponent swing, final int textWidth,
-        final int textHeight, final int width, final int height) {
-
-        this.swing              = swing;
-        this.textWidth          = textWidth;
-        this.textHeight         = textHeight;
-        this.windowWidth        = width;
-        this.windowHeight       = height;
-    }
-
-    /**
      * Re-query the text window size.
      */
     public void queryWindowSize() {
@@ -189,6 +188,23 @@ public final class SwingSessionInfo implements SessionInfo {
             windowWidth, windowHeight);
         */
 
+    }
+
+    // ------------------------------------------------------------------------
+    // SwingSessionInfo -------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the dimensions of a single text cell.
+     *
+     * @param textWidth the width of a cell in pixels
+     * @param textHeight the height of a cell in pixels
+     */
+    public void setTextCellDimensions(final int textWidth,
+        final int textHeight) {
+
+        this.textWidth  = textWidth;
+        this.textHeight = textHeight;
     }
 
 }

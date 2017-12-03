@@ -28,21 +28,13 @@
  */
 package jexer;
 
-import static jexer.TKeypress.kbDown;
-import static jexer.TKeypress.kbEnd;
-import static jexer.TKeypress.kbHome;
-import static jexer.TKeypress.kbLeft;
-import static jexer.TKeypress.kbPgDn;
-import static jexer.TKeypress.kbPgUp;
-import static jexer.TKeypress.kbRight;
-import static jexer.TKeypress.kbUp;
-
 import java.util.LinkedList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
+import static jexer.TKeypress.*;
 
 /**
  * TText implements a simple scrollable text area. It reflows automatically on
@@ -224,19 +216,19 @@ public final class TText extends TScrollableWidget {
         for (String p : paragraphs) {
             switch (justification) {
             case LEFT:
-                lines.addAll(jexer.bits.StringJustifier.left(p,
+                lines.addAll(jexer.bits.StringUtils.left(p,
                         getWidth() - 1));
                 break;
             case CENTER:
-                lines.addAll(jexer.bits.StringJustifier.center(p,
+                lines.addAll(jexer.bits.StringUtils.center(p,
                         getWidth() - 1));
                 break;
             case RIGHT:
-                lines.addAll(jexer.bits.StringJustifier.right(p,
+                lines.addAll(jexer.bits.StringUtils.right(p,
                         getWidth() - 1));
                 break;
             case FULL:
-                lines.addAll(jexer.bits.StringJustifier.full(p,
+                lines.addAll(jexer.bits.StringUtils.full(p,
                         getWidth() - 1));
                 break;
             }

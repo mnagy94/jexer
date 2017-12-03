@@ -39,31 +39,14 @@ import static jexer.TKeypress.*;
  */
 public final class TRadioButton extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * RadioButton state, true means selected.
      */
     private boolean selected = false;
-
-    /**
-     * Get RadioButton state, true means selected.
-     *
-     * @return if true then this is the one button in the group that is
-     * selected
-     */
-    public boolean isSelected() {
-        return selected;
-    }
-
-    /**
-     * Set RadioButton state, true means selected.  Note package private
-     * access.
-     *
-     * @param selected if true then this is the one button in the group that
-     * is selected
-     */
-    void setSelected(final boolean selected) {
-        this.selected = selected;
-    }
 
     /**
      * Label for this radio button.
@@ -76,15 +59,9 @@ public final class TRadioButton extends TWidget {
      */
     private int id;
 
-    /**
-     * Get ID for this radio button.  Buttons start counting at 1 in the
-     * RadioGroup.
-     *
-     * @return the ID
-     */
-    public int getId() {
-        return id;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -108,6 +85,10 @@ public final class TRadioButton extends TWidget {
         setCursorX(1);
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Returns true if the mouse is currently on the radio button.
      *
@@ -122,30 +103,6 @@ public final class TRadioButton extends TWidget {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Draw a radio button with label.
-     */
-    @Override
-    public void draw() {
-        CellAttributes radioButtonColor;
-
-        if (isAbsoluteActive()) {
-            radioButtonColor = getTheme().getColor("tradiobutton.active");
-        } else {
-            radioButtonColor = getTheme().getColor("tradiobutton.inactive");
-        }
-
-        getScreen().putCharXY(0, 0, '(', radioButtonColor);
-        if (selected) {
-            getScreen().putCharXY(1, 0, GraphicsChars.CP437[0x07],
-                radioButtonColor);
-        } else {
-            getScreen().putCharXY(1, 0, ' ', radioButtonColor);
-        }
-        getScreen().putCharXY(2, 0, ')', radioButtonColor);
-        getScreen().putStringXY(4, 0, label, radioButtonColor);
     }
 
     /**
@@ -182,6 +139,69 @@ public final class TRadioButton extends TWidget {
 
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw a radio button with label.
+     */
+    @Override
+    public void draw() {
+        CellAttributes radioButtonColor;
+
+        if (isAbsoluteActive()) {
+            radioButtonColor = getTheme().getColor("tradiobutton.active");
+        } else {
+            radioButtonColor = getTheme().getColor("tradiobutton.inactive");
+        }
+
+        getScreen().putCharXY(0, 0, '(', radioButtonColor);
+        if (selected) {
+            getScreen().putCharXY(1, 0, GraphicsChars.CP437[0x07],
+                radioButtonColor);
+        } else {
+            getScreen().putCharXY(1, 0, ' ', radioButtonColor);
+        }
+        getScreen().putCharXY(2, 0, ')', radioButtonColor);
+        getScreen().putStringXY(4, 0, label, radioButtonColor);
+    }
+
+    // ------------------------------------------------------------------------
+    // TRadioButton -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get RadioButton state, true means selected.
+     *
+     * @return if true then this is the one button in the group that is
+     * selected
+     */
+    public boolean isSelected() {
+        return selected;
+    }
+
+    /**
+     * Set RadioButton state, true means selected.  Note package private
+     * access.
+     *
+     * @param selected if true then this is the one button in the group that
+     * is selected
+     */
+    void setSelected(final boolean selected) {
+        this.selected = selected;
+    }
+
+    /**
+     * Get ID for this radio button.  Buttons start counting at 1 in the
+     * RadioGroup.
+     *
+     * @return the ID
+     */
+    public int getId() {
+        return id;
     }
 
 }

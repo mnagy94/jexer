@@ -73,8 +73,9 @@ class MyApplication extends TApplication {
         addFileMenu();
         addWindowMenu();
 
-        // Add a custom window, see below for its code.
-        addWindow(new MyWindow(this));
+        // Add a custom window, see below for its code.  The TWindow
+        // constructor will add it to this application.
+        new MyWindow(this);
     }
 
     public static void main(String [] args) {

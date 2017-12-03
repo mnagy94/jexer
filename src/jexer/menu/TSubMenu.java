@@ -40,10 +40,18 @@ import static jexer.TKeypress.*;
  */
 public final class TSubMenu extends TMenuItem {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The menu window.  Note package private access.
      */
     TMenu menu;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Package private constructor.
@@ -67,28 +75,9 @@ public final class TSubMenu extends TMenuItem {
         this.menu.isSubMenu = true;
     }
 
-    /**
-     * Draw the menu title.
-     */
-    @Override
-    public void draw() {
-        super.draw();
-
-        CellAttributes menuColor;
-        if (isAbsoluteActive()) {
-            menuColor = getTheme().getColor("tmenu.highlighted");
-        } else {
-            if (isEnabled()) {
-                menuColor = getTheme().getColor("tmenu");
-            } else {
-                menuColor = getTheme().getColor("tmenu.disabled");
-            }
-        }
-
-        // Add the arrow
-        getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.CP437[0x10],
-            menuColor);
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle keystrokes.
@@ -151,6 +140,33 @@ public final class TSubMenu extends TMenuItem {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // TMenuItem --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the menu title.
+     */
+    @Override
+    public void draw() {
+        super.draw();
+
+        CellAttributes menuColor;
+        if (isAbsoluteActive()) {
+            menuColor = getTheme().getColor("tmenu.highlighted");
+        } else {
+            if (isEnabled()) {
+                menuColor = getTheme().getColor("tmenu");
+            } else {
+                menuColor = getTheme().getColor("tmenu.disabled");
+            }
+        }
+
+        // Add the arrow
+        getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.CP437[0x10],
+            menuColor);
+    }
+
     /**
      * Override dispatch() to do nothing.
      */
@@ -178,6 +194,10 @@ public final class TSubMenu extends TMenuItem {
         // Menu not active, return me
         return this;
     }
+
+    // ------------------------------------------------------------------------
+    // TSubMenu ---------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Convenience function to add a custom menu item.
@@ -232,6 +252,5 @@ public final class TSubMenu extends TMenuItem {
     public TSubMenu addSubMenu(final String title) {
         return menu.addSubMenu(title);
     }
-
 
 }

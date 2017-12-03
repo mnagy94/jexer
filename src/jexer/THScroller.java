@@ -37,30 +37,14 @@ import jexer.event.TMouseEvent;
  */
 public final class THScroller extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Value that corresponds to being on the left edge of the scroll bar.
      */
     private int leftValue = 0;
-
-    /**
-     * Get the value that corresponds to being on the left edge of the scroll
-     * bar.
-     *
-     * @return the scroll value
-     */
-    public int getLeftValue() {
-        return leftValue;
-    }
-
-    /**
-     * Set the value that corresponds to being on the left edge of the
-     * scroll bar.
-     *
-     * @param leftValue the new scroll value
-     */
-    public void setLeftValue(final int leftValue) {
-        this.leftValue = leftValue;
-    }
 
     /**
      * Value that corresponds to being on the right edge of the scroll bar.
@@ -68,47 +52,9 @@ public final class THScroller extends TWidget {
     private int rightValue = 100;
 
     /**
-     * Get the value that corresponds to being on the right edge of the
-     * scroll bar.
-     *
-     * @return the scroll value
-     */
-    public int getRightValue() {
-        return rightValue;
-    }
-
-    /**
-     * Set the value that corresponds to being on the right edge of the
-     * scroll bar.
-     *
-     * @param rightValue the new scroll value
-     */
-    public void setRightValue(final int rightValue) {
-        this.rightValue = rightValue;
-    }
-
-    /**
      * Current value of the scroll.
      */
     private int value = 0;
-
-    /**
-     * Get current value of the scroll.
-     *
-     * @return the scroll value
-     */
-    public int getValue() {
-        return value;
-    }
-
-    /**
-     * Set current value of the scroll.
-     *
-     * @param value the new scroll value
-     */
-    public void setValue(final int value) {
-        this.value = value;
-    }
 
     /**
      * The increment for clicking on an arrow.
@@ -116,52 +62,18 @@ public final class THScroller extends TWidget {
     private int smallChange = 1;
 
     /**
-     * Get the increment for clicking on an arrow.
-     *
-     * @return the increment value
-     */
-    public int getSmallChange() {
-        return smallChange;
-    }
-
-    /**
-     * Set the increment for clicking on an arrow.
-     *
-     * @param smallChange the new increment value
-     */
-    public void setSmallChange(final int smallChange) {
-        this.smallChange = smallChange;
-    }
-
-    /**
      * The increment for clicking in the bar between the box and an arrow.
      */
     private int bigChange = 20;
 
     /**
-     * Set the increment for clicking in the bar between the box and an
-     * arrow.
-     *
-     * @return the increment value
-     */
-    public int getBigChange() {
-        return bigChange;
-    }
-
-    /**
-     * Set the increment for clicking in the bar between the box and an
-     * arrow.
-     *
-     * @param bigChange the new increment value
-     */
-    public void setBigChange(final int bigChange) {
-        this.bigChange = bigChange;
-    }
-
-    /**
      * When true, the user is dragging the scroll box.
      */
     private boolean inScroll = false;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -178,104 +90,9 @@ public final class THScroller extends TWidget {
         super(parent, x, y, width, 1);
     }
 
-    /**
-     * Compute the position of the scroll box (a.k.a. grip, thumb).
-     *
-     * @return Y position of the box, between 1 and width - 2
-     */
-    private int boxPosition() {
-        return (getWidth() - 3) * (value - leftValue) / (rightValue - leftValue) + 1;
-    }
-
-    /**
-     * Draw a horizontal scroll bar.
-     */
-    @Override
-    public void draw() {
-        CellAttributes arrowColor = getTheme().getColor("tscroller.arrows");
-        CellAttributes barColor = getTheme().getColor("tscroller.bar");
-        getScreen().putCharXY(0, 0, GraphicsChars.CP437[0x11], arrowColor);
-        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0x10],
-            arrowColor);
-
-        // Place the box
-        if (rightValue > leftValue) {
-            getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.CP437[0xB1],
-                barColor);
-            getScreen().putCharXY(boxPosition(), 0, GraphicsChars.BOX,
-                arrowColor);
-        } else {
-            getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.HATCH,
-                barColor);
-        }
-
-    }
-
-    /**
-     * Perform a small step change left.
-     */
-    public void decrement() {
-        if (leftValue == rightValue) {
-            return;
-        }
-        value -= smallChange;
-        if (value < leftValue) {
-            value = leftValue;
-        }
-    }
-
-    /**
-     * Perform a small step change right.
-     */
-    public void increment() {
-        if (leftValue == rightValue) {
-            return;
-        }
-        value += smallChange;
-        if (value > rightValue) {
-            value = rightValue;
-        }
-    }
-
-    /**
-     * Perform a big step change left.
-     */
-    public void bigDecrement() {
-        if (leftValue == rightValue) {
-            return;
-        }
-        value -= bigChange;
-        if (value < leftValue) {
-            value = leftValue;
-        }
-    }
-
-    /**
-     * Perform a big step change right.
-     */
-    public void bigIncrement() {
-        if (rightValue == leftValue) {
-            return;
-        }
-        value += bigChange;
-        if (value > rightValue) {
-            value = rightValue;
-        }
-    }
-
-    /**
-     * Go to the left edge of the scroller.
-     */
-    public void toLeft() {
-        value = leftValue;
-    }
-
-    /**
-     * Go to the right edge of the scroller.
-     */
-    public void toRight() {
-        value = rightValue;
-    }
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Handle mouse button releases.
@@ -356,6 +173,12 @@ public final class THScroller extends TWidget {
             // Recompute value based on new box position
             value = (rightValue - leftValue)
                 * (mouse.getX()) / (getWidth() - 3) + leftValue;
+            if (value > rightValue) {
+                value = rightValue;
+            }
+            if (value < leftValue) {
+                value = leftValue;
+            }
             return;
         }
         inScroll = false;
@@ -380,6 +203,209 @@ public final class THScroller extends TWidget {
             return;
         }
 
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw a horizontal scroll bar.
+     */
+    @Override
+    public void draw() {
+        CellAttributes arrowColor = getTheme().getColor("tscroller.arrows");
+        CellAttributes barColor = getTheme().getColor("tscroller.bar");
+        getScreen().putCharXY(0, 0, GraphicsChars.CP437[0x11], arrowColor);
+        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0x10],
+            arrowColor);
+
+        // Place the box
+        if (rightValue > leftValue) {
+            getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.CP437[0xB1],
+                barColor);
+            getScreen().putCharXY(boxPosition(), 0, GraphicsChars.BOX,
+                arrowColor);
+        } else {
+            getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.HATCH,
+                barColor);
+        }
+
+    }
+
+    // ------------------------------------------------------------------------
+    // THScroller -------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the value that corresponds to being on the left edge of the scroll
+     * bar.
+     *
+     * @return the scroll value
+     */
+    public int getLeftValue() {
+        return leftValue;
+    }
+
+    /**
+     * Set the value that corresponds to being on the left edge of the
+     * scroll bar.
+     *
+     * @param leftValue the new scroll value
+     */
+    public void setLeftValue(final int leftValue) {
+        this.leftValue = leftValue;
+    }
+
+    /**
+     * Get the value that corresponds to being on the right edge of the
+     * scroll bar.
+     *
+     * @return the scroll value
+     */
+    public int getRightValue() {
+        return rightValue;
+    }
+
+    /**
+     * Set the value that corresponds to being on the right edge of the
+     * scroll bar.
+     *
+     * @param rightValue the new scroll value
+     */
+    public void setRightValue(final int rightValue) {
+        this.rightValue = rightValue;
+    }
+
+    /**
+     * Get current value of the scroll.
+     *
+     * @return the scroll value
+     */
+    public int getValue() {
+        return value;
+    }
+
+    /**
+     * Set current value of the scroll.
+     *
+     * @param value the new scroll value
+     */
+    public void setValue(final int value) {
+        this.value = value;
+    }
+
+    /**
+     * Get the increment for clicking on an arrow.
+     *
+     * @return the increment value
+     */
+    public int getSmallChange() {
+        return smallChange;
+    }
+
+    /**
+     * Set the increment for clicking on an arrow.
+     *
+     * @param smallChange the new increment value
+     */
+    public void setSmallChange(final int smallChange) {
+        this.smallChange = smallChange;
+    }
+
+    /**
+     * Set the increment for clicking in the bar between the box and an
+     * arrow.
+     *
+     * @return the increment value
+     */
+    public int getBigChange() {
+        return bigChange;
+    }
+
+    /**
+     * Set the increment for clicking in the bar between the box and an
+     * arrow.
+     *
+     * @param bigChange the new increment value
+     */
+    public void setBigChange(final int bigChange) {
+        this.bigChange = bigChange;
+    }
+
+    /**
+     * Compute the position of the scroll box (a.k.a. grip, thumb).
+     *
+     * @return Y position of the box, between 1 and width - 2
+     */
+    private int boxPosition() {
+        return (getWidth() - 3) * (value - leftValue) / (rightValue - leftValue) + 1;
+    }
+
+    /**
+     * Perform a small step change left.
+     */
+    public void decrement() {
+        if (leftValue == rightValue) {
+            return;
+        }
+        value -= smallChange;
+        if (value < leftValue) {
+            value = leftValue;
+        }
+    }
+
+    /**
+     * Perform a small step change right.
+     */
+    public void increment() {
+        if (leftValue == rightValue) {
+            return;
+        }
+        value += smallChange;
+        if (value > rightValue) {
+            value = rightValue;
+        }
+    }
+
+    /**
+     * Perform a big step change left.
+     */
+    public void bigDecrement() {
+        if (leftValue == rightValue) {
+            return;
+        }
+        value -= bigChange;
+        if (value < leftValue) {
+            value = leftValue;
+        }
+    }
+
+    /**
+     * Perform a big step change right.
+     */
+    public void bigIncrement() {
+        if (rightValue == leftValue) {
+            return;
+        }
+        value += bigChange;
+        if (value > rightValue) {
+            value = rightValue;
+        }
+    }
+
+    /**
+     * Go to the left edge of the scroller.
+     */
+    public void toLeft() {
+        value = leftValue;
+    }
+
+    /**
+     * Go to the right edge of the scroller.
+     */
+    public void toRight() {
+        value = rightValue;
     }
 
 }

@@ -40,15 +40,9 @@ import java.net.Socket;
  */
 public final class TelnetSocket extends Socket {
 
-    /**
-     * The telnet-aware socket InputStream.
-     */
-    private TelnetInputStream input;
-
-    /**
-     * The telnet-aware socket OutputStream.
-     */
-    private TelnetOutputStream output;
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     // Telnet protocol special characters.  Note package private access.
     static final int TELNET_SE         = 240;
@@ -70,6 +64,21 @@ public final class TelnetSocket extends Socket {
     static final int C_NUL             = 0x00;
     static final int C_LF              = 0x0A;
     static final int C_CR              = 0x0D;
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The telnet-aware socket InputStream.
+     */
+    private TelnetInputStream input;
+
+    /**
+     * The telnet-aware socket OutputStream.
+     */
+    private TelnetOutputStream output;
+
 
     /**
      * If true, this is a server socket (i.e. created by accept()).
@@ -126,14 +135,9 @@ public final class TelnetSocket extends Socket {
      */
     String terminalSpeed = "";
 
-    /**
-     * See if telnet server/client is in ASCII mode.
-     *
-     * @return if true, this connection is in ASCII mode
-     */
-    public boolean isAscii() {
-        return (!binaryMode);
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Creates a Socket that knows the telnet protocol.  Note package private
@@ -145,7 +149,9 @@ public final class TelnetSocket extends Socket {
         super();
     }
 
-    // Socket interface -------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // Socket -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Returns an input stream for this socket.
@@ -179,6 +185,19 @@ public final class TelnetSocket extends Socket {
             input.telnetSendOptions();
         }
         return output;
+    }
+
+    // ------------------------------------------------------------------------
+    // TelnetSocket -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * See if telnet server/client is in ASCII mode.
+     *
+     * @return if true, this connection is in ASCII mode
+     */
+    public boolean isAscii() {
+        return (!binaryMode);
     }
 
 }

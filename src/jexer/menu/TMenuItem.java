@@ -43,6 +43,10 @@ import static jexer.TKeypress.*;
  */
 public class TMenuItem extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Label for this menu item.
      */
@@ -55,27 +59,9 @@ public class TMenuItem extends TWidget {
     private int id = TMenu.MID_UNUSED;
 
     /**
-     * Get the menu item ID.
-     *
-     * @return the id
-     */
-    public final int getId() {
-        return id;
-    }
-
-    /**
      * When true, this item can be checked or unchecked.
      */
     private boolean checkable = false;
-
-    /**
-     * Set checkable flag.
-     *
-     * @param checkable if true, this menu item can be checked/unchecked
-     */
-    public final void setCheckable(final boolean checkable) {
-        this.checkable = checkable;
-    }
 
     /**
      * When true, this item is checked.
@@ -93,40 +79,9 @@ public class TMenuItem extends TWidget {
      */
     private MnemonicString mnemonic;
 
-    /**
-     * Get the mnemonic string for this menu item.
-     *
-     * @return mnemonic string
-     */
-    public final MnemonicString getMnemonic() {
-        return mnemonic;
-    }
-
-    /**
-     * Get a global accelerator key for this menu item.
-     *
-     * @return global keyboard accelerator, or null if no key is associated
-     * with this item
-     */
-    public final TKeypress getKey() {
-        return key;
-    }
-
-    /**
-     * Set a global accelerator key for this menu item.
-     *
-     * @param key global keyboard accelerator
-     */
-    public final void setKey(final TKeypress key) {
-        this.key = key;
-
-        if (key != null) {
-            int newWidth = (label.length() + 4 + key.toString().length() + 2);
-            if (newWidth > getWidth()) {
-                setWidth(newWidth);
-            }
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Package private constructor.
@@ -190,6 +145,10 @@ public class TMenuItem extends TWidget {
 
     }
 
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Returns true if the mouse is currently on the menu item.
      *
@@ -205,6 +164,39 @@ public class TMenuItem extends TWidget {
         }
         return false;
     }
+
+    /**
+     * Handle mouse button releases.
+     *
+     * @param mouse mouse button release event
+     */
+    @Override
+    public void onMouseUp(final TMouseEvent mouse) {
+        if ((mouseOnMenuItem(mouse)) && (mouse.isMouse1())) {
+            dispatch();
+            return;
+        }
+    }
+
+    /**
+     * Handle keystrokes.
+     *
+     * @param keypress keystroke event
+     */
+    @Override
+    public void onKeypress(final TKeypressEvent keypress) {
+        if (keypress.equals(kbEnter)) {
+            dispatch();
+            return;
+        }
+
+        // Pass to parent for the things we don't care about.
+        super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Draw a menu item with label.
@@ -249,6 +241,63 @@ public class TMenuItem extends TWidget {
 
     }
 
+    // ------------------------------------------------------------------------
+    // TMenuItem --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the menu item ID.
+     *
+     * @return the id
+     */
+    public final int getId() {
+        return id;
+    }
+
+    /**
+     * Set checkable flag.
+     *
+     * @param checkable if true, this menu item can be checked/unchecked
+     */
+    public final void setCheckable(final boolean checkable) {
+        this.checkable = checkable;
+    }
+
+    /**
+     * Get the mnemonic string for this menu item.
+     *
+     * @return mnemonic string
+     */
+    public final MnemonicString getMnemonic() {
+        return mnemonic;
+    }
+
+    /**
+     * Get a global accelerator key for this menu item.
+     *
+     * @return global keyboard accelerator, or null if no key is associated
+     * with this item
+     */
+    public final TKeypress getKey() {
+        return key;
+    }
+
+    /**
+     * Set a global accelerator key for this menu item.
+     *
+     * @param key global keyboard accelerator
+     */
+    public final void setKey(final TKeypress key) {
+        this.key = key;
+
+        if (key != null) {
+            int newWidth = (label.length() + 4 + key.toString().length() + 2);
+            if (newWidth > getWidth()) {
+                setWidth(newWidth);
+            }
+        }
+    }
+
     /**
      * Dispatch event(s) due to selection or click.
      */
@@ -261,32 +310,4 @@ public class TMenuItem extends TWidget {
         }
     }
 
-    /**
-     * Handle mouse button releases.
-     *
-     * @param mouse mouse button release event
-     */
-    @Override
-    public void onMouseUp(final TMouseEvent mouse) {
-        if ((mouseOnMenuItem(mouse)) && (mouse.isMouse1())) {
-            dispatch();
-            return;
-        }
-    }
-
-    /**
-     * Handle keystrokes.
-     *
-     * @param keypress keystroke event
-     */
-    @Override
-    public void onKeypress(final TKeypressEvent keypress) {
-        if (keypress.equals(kbEnter)) {
-            dispatch();
-            return;
-        }
-
-        // Pass to parent for the things we don't care about.
-        super.onKeypress(keypress);
-    }
 }

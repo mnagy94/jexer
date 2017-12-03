@@ -32,10 +32,15 @@ import java.util.List;
 import java.util.LinkedList;
 
 /**
- * StringJustifier contains methods to convert one or more long lines of
- * strings into justified text paragraphs.
+ * StringUtils contains methods to:
+ *
+ *    - Convert one or more long lines of strings into justified text
+ *      paragraphs.
+ *
+ *    - Unescape C0 control codes.
+ *
  */
-public final class StringJustifier {
+public final class StringUtils {
 
     /**
      * Left-justify a string into a list of lines.
@@ -235,6 +240,47 @@ public final class StringJustifier {
         }
 
         return result;
+    }
+
+    /**
+     * Convert raw strings into escaped strings that be splatted on the
+     * screen.
+     *
+     * @param str the string
+     * @return a string that can be passed into Screen.putStringXY()
+     */
+    public static String unescape(final String str) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            if ((ch < 0x20) || (ch == 0x7F)) {
+                switch (ch) {
+                case '\b':
+                    sb.append("\\b");
+                    continue;
+                case '\f':
+                    sb.append("\\f");
+                    continue;
+                case '\n':
+                    sb.append("\\n");
+                    continue;
+                case '\r':
+                    sb.append("\\r");
+                    continue;
+                case '\t':
+                    sb.append("\\t");
+                    continue;
+                case 0x7f:
+                    sb.append("^?");
+                    continue;
+                default:
+                    sb.append(' ');
+                    continue;
+                }
+            }
+            sb.append(ch);
+        }
+        return sb.toString();
     }
 
 }
