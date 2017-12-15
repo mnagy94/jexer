@@ -32,7 +32,7 @@ package jexer.backend;
  * TSessionInfo provides a default session implementation.  The username is
  * blank, language is "en_US", with a 80x24 text window.
  */
-public final class TSessionInfo implements SessionInfo {
+public class TSessionInfo implements SessionInfo {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

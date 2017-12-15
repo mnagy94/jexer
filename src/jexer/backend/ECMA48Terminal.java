@@ -56,8 +56,8 @@ import static jexer.TKeypress.*;
  * This class reads keystrokes and mouse events and emits output to ANSI
  * X3.64 / ECMA-48 type terminals e.g. xterm, linux, vt100, ansi.sys, etc.
  */
-public final class ECMA48Terminal extends LogicalScreen
-                                  implements TerminalReader, Runnable {
+public class ECMA48Terminal extends LogicalScreen
+                            implements TerminalReader, Runnable {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -86,8 +86,9 @@ public final class ECMA48Terminal extends LogicalScreen
     private boolean debugToStderr = false;
 
     /**
-     * If true, emit T.416-style RGB colors.  This is a) expensive in
-     * bandwidth, and b) potentially terrible looking for non-xterms.
+     * If true, emit T.416-style RGB colors for normal system colors.  This
+     * is a) expensive in bandwidth, and b) potentially terrible looking for
+     * non-xterms.
      */
     private static boolean doRgbColor = false;
 
@@ -797,6 +798,7 @@ public final class ECMA48Terminal extends LogicalScreen
                 // Now emit only the modified attributes
                 if ((lCell.getForeColor() != lastAttr.getForeColor())
                     && (lCell.getBackColor() != lastAttr.getBackColor())
+                    && (!lCell.isRGB())
                     && (lCell.isBold() == lastAttr.isBold())
                     && (lCell.isReverse() == lastAttr.isReverse())
                     && (lCell.isUnderline() == lastAttr.isUnderline())
@@ -809,8 +811,25 @@ public final class ECMA48Terminal extends LogicalScreen
                     if (debugToStderr) {
                         System.err.printf("1 Change only fore/back colors\n");
                     }
+
+                } else if (lCell.isRGB()
+                    && (lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
+                    && (lCell.getBackColorRGB() != lastAttr.getBackColorRGB())
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+                    // Both colors changed, attributes the same
+                    sb.append(colorRGB(lCell.getForeColorRGB(),
+                            lCell.getBackColorRGB()));
+
+                    if (debugToStderr) {
+                        System.err.printf("1 Change only fore/back colors (RGB)\n");
+                    }
                 } else if ((lCell.getForeColor() != lastAttr.getForeColor())
                     && (lCell.getBackColor() != lastAttr.getBackColor())
+                    && (!lCell.isRGB())
                     && (lCell.isBold() != lastAttr.isBold())
                     && (lCell.isReverse() != lastAttr.isReverse())
                     && (lCell.isUnderline() != lastAttr.isUnderline())
@@ -828,6 +847,7 @@ public final class ECMA48Terminal extends LogicalScreen
                     }
                 } else if ((lCell.getForeColor() != lastAttr.getForeColor())
                     && (lCell.getBackColor() == lastAttr.getBackColor())
+                    && (!lCell.isRGB())
                     && (lCell.isBold() == lastAttr.isBold())
                     && (lCell.isReverse() == lastAttr.isReverse())
                     && (lCell.isUnderline() == lastAttr.isUnderline())
@@ -841,8 +861,25 @@ public final class ECMA48Terminal extends LogicalScreen
                     if (debugToStderr) {
                         System.err.printf("3 Change foreColor\n");
                     }
+                } else if (lCell.isRGB()
+                    && (lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
+                    && (lCell.getBackColorRGB() == lastAttr.getBackColorRGB())
+                    && (lCell.getForeColorRGB() >= 0)
+                    && (lCell.getBackColorRGB() >= 0)
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+                    // Attributes same, foreColor different
+                    sb.append(colorRGB(lCell.getForeColorRGB(), true));
+
+                    if (debugToStderr) {
+                        System.err.printf("3 Change foreColor (RGB)\n");
+                    }
                 } else if ((lCell.getForeColor() == lastAttr.getForeColor())
                     && (lCell.getBackColor() != lastAttr.getBackColor())
+                    && (!lCell.isRGB())
                     && (lCell.isBold() == lastAttr.isBold())
                     && (lCell.isReverse() == lastAttr.isReverse())
                     && (lCell.isUnderline() == lastAttr.isUnderline())
@@ -855,8 +892,24 @@ public final class ECMA48Terminal extends LogicalScreen
                     if (debugToStderr) {
                         System.err.printf("4 Change backColor\n");
                     }
+                } else if (lCell.isRGB()
+                    && (lCell.getForeColorRGB() == lastAttr.getForeColorRGB())
+                    && (lCell.getBackColorRGB() != lastAttr.getBackColorRGB())
+                    && (lCell.isBold() == lastAttr.isBold())
+                    && (lCell.isReverse() == lastAttr.isReverse())
+                    && (lCell.isUnderline() == lastAttr.isUnderline())
+                    && (lCell.isBlink() == lastAttr.isBlink())
+                ) {
+                    // Attributes same, foreColor different
+                    sb.append(colorRGB(lCell.getBackColorRGB(), false));
+
+                    if (debugToStderr) {
+                        System.err.printf("4 Change backColor (RGB)\n");
+                    }
                 } else if ((lCell.getForeColor() == lastAttr.getForeColor())
                     && (lCell.getBackColor() == lastAttr.getBackColor())
+                    && (lCell.getForeColorRGB() == lastAttr.getForeColorRGB())
+                    && (lCell.getBackColorRGB() == lastAttr.getBackColorRGB())
                     && (lCell.isBold() == lastAttr.isBold())
                     && (lCell.isReverse() == lastAttr.isReverse())
                     && (lCell.isUnderline() == lastAttr.isUnderline())
@@ -871,16 +924,29 @@ public final class ECMA48Terminal extends LogicalScreen
                     }
                 } else {
                     // Just reset everything again
-                    sb.append(color(lCell.getForeColor(),
-                            lCell.getBackColor(),
-                            lCell.isBold(),
-                            lCell.isReverse(),
-                            lCell.isBlink(),
-                            lCell.isUnderline()));
+                    if (!lCell.isRGB()) {
+                        sb.append(color(lCell.getForeColor(),
+                                lCell.getBackColor(),
+                                lCell.isBold(),
+                                lCell.isReverse(),
+                                lCell.isBlink(),
+                                lCell.isUnderline()));
 
-                    if (debugToStderr) {
-                        System.err.printf("6 Change all attributes\n");
+                        if (debugToStderr) {
+                            System.err.printf("6 Change all attributes\n");
+                        }
+                    } else {
+                        sb.append(colorRGB(lCell.getForeColorRGB(),
+                                lCell.getBackColorRGB(),
+                                lCell.isBold(),
+                                lCell.isReverse(),
+                                lCell.isBlink(),
+                                lCell.isUnderline()));
+                        if (debugToStderr) {
+                            System.err.printf("6 Change all attributes (RGB)\n");
+                        }
                     }
+
                 }
                 // Emit the character
                 sb.append(lCell.getChar());
@@ -1697,6 +1763,55 @@ public final class ECMA48Terminal extends LogicalScreen
     /**
      * Create a T.416 RGB parameter sequence for a single color change.
      *
+     * @param colorRGB a 24-bit RGB value for foreground color
+     * @param foreground if true, this is a foreground color
+     * @return the string to emit to an ANSI / ECMA-style terminal,
+     * e.g. "\033[42m"
+     */
+    private String colorRGB(final int colorRGB, final boolean foreground) {
+
+        int colorRed     = (colorRGB >> 16) & 0xFF;
+        int colorGreen   = (colorRGB >>  8) & 0xFF;
+        int colorBlue    =  colorRGB        & 0xFF;
+
+        StringBuilder sb = new StringBuilder();
+        if (foreground) {
+            sb.append("\033[38;2;");
+        } else {
+            sb.append("\033[48;2;");
+        }
+        sb.append(String.format("%d;%d;%dm", colorRed, colorGreen, colorBlue));
+        return sb.toString();
+    }
+
+    /**
+     * Create a T.416 RGB parameter sequence for both foreground and
+     * background color change.
+     *
+     * @param foreColorRGB a 24-bit RGB value for foreground color
+     * @param backColorRGB a 24-bit RGB value for foreground color
+     * @return the string to emit to an ANSI / ECMA-style terminal,
+     * e.g. "\033[42m"
+     */
+    private String colorRGB(final int foreColorRGB, final int backColorRGB) {
+        int foreColorRed     = (foreColorRGB >> 16) & 0xFF;
+        int foreColorGreen   = (foreColorRGB >>  8) & 0xFF;
+        int foreColorBlue    =  foreColorRGB        & 0xFF;
+        int backColorRed     = (backColorRGB >> 16) & 0xFF;
+        int backColorGreen   = (backColorRGB >>  8) & 0xFF;
+        int backColorBlue    =  backColorRGB        & 0xFF;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("\033[38;2;%d;%d;%dm",
+                foreColorRed, foreColorGreen, foreColorBlue));
+        sb.append(String.format("\033[48;2;%d;%d;%dm",
+                backColorRed, backColorGreen, backColorBlue));
+        return sb.toString();
+    }
+
+    /**
+     * Create a T.416 RGB parameter sequence for a single color change.
+     *
      * @param bold if true, set bold
      * @param color one of the Color.WHITE, Color.BLUE, etc. constants
      * @param foreground if true, this is a foreground color
@@ -1912,6 +2027,77 @@ public final class ECMA48Terminal extends LogicalScreen
         }
         sb.append(String.format("%d;%dm", ecmaForeColor, ecmaBackColor));
         sb.append(rgbColor(bold, foreColor, backColor));
+        return sb.toString();
+    }
+
+    /**
+     * Create a SGR parameter sequence for foreground, background, and
+     * several attributes.  This sequence first resets all attributes to
+     * default, then sets attributes as per the parameters.
+     *
+     * @param foreColorRGB a 24-bit RGB value for foreground color
+     * @param backColorRGB a 24-bit RGB value for foreground color
+     * @param bold if true, set bold
+     * @param reverse if true, set reverse
+     * @param blink if true, set blink
+     * @param underline if true, set underline
+     * @return the string to emit to an ANSI / ECMA-style terminal,
+     * e.g. "\033[0;1;31;42m"
+     */
+    private String colorRGB(final int foreColorRGB, final int backColorRGB,
+        final boolean bold, final boolean reverse, final boolean blink,
+        final boolean underline) {
+
+        int foreColorRed     = (foreColorRGB >> 16) & 0xFF;
+        int foreColorGreen   = (foreColorRGB >>  8) & 0xFF;
+        int foreColorBlue    =  foreColorRGB        & 0xFF;
+        int backColorRed     = (backColorRGB >> 16) & 0xFF;
+        int backColorGreen   = (backColorRGB >>  8) & 0xFF;
+        int backColorBlue    =  backColorRGB        & 0xFF;
+
+        StringBuilder sb = new StringBuilder();
+        if        (  bold &&  reverse &&  blink && !underline ) {
+            sb.append("\033[0;1;7;5;");
+        } else if (  bold &&  reverse && !blink && !underline ) {
+            sb.append("\033[0;1;7;");
+        } else if ( !bold &&  reverse &&  blink && !underline ) {
+            sb.append("\033[0;7;5;");
+        } else if (  bold && !reverse &&  blink && !underline ) {
+            sb.append("\033[0;1;5;");
+        } else if (  bold && !reverse && !blink && !underline ) {
+            sb.append("\033[0;1;");
+        } else if ( !bold &&  reverse && !blink && !underline ) {
+            sb.append("\033[0;7;");
+        } else if ( !bold && !reverse &&  blink && !underline) {
+            sb.append("\033[0;5;");
+        } else if (  bold &&  reverse &&  blink &&  underline ) {
+            sb.append("\033[0;1;7;5;4;");
+        } else if (  bold &&  reverse && !blink &&  underline ) {
+            sb.append("\033[0;1;7;4;");
+        } else if ( !bold &&  reverse &&  blink &&  underline ) {
+            sb.append("\033[0;7;5;4;");
+        } else if (  bold && !reverse &&  blink &&  underline ) {
+            sb.append("\033[0;1;5;4;");
+        } else if (  bold && !reverse && !blink &&  underline ) {
+            sb.append("\033[0;1;4;");
+        } else if ( !bold &&  reverse && !blink &&  underline ) {
+            sb.append("\033[0;7;4;");
+        } else if ( !bold && !reverse &&  blink &&  underline) {
+            sb.append("\033[0;5;4;");
+        } else if ( !bold && !reverse && !blink &&  underline) {
+            sb.append("\033[0;4;");
+        } else {
+            assert (!bold && !reverse && !blink && !underline);
+            sb.append("\033[0;");
+        }
+
+        sb.append("m\033[38;2;");
+        sb.append(String.format("%d;%d;%d", foreColorRed, foreColorGreen,
+                foreColorBlue));
+        sb.append("m\033[48;2;");
+        sb.append(String.format("%d;%d;%d", backColorRed, backColorGreen,
+                backColorBlue));
+        sb.append("m");
         return sb.toString();
     }
 

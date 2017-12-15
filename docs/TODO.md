@@ -7,11 +7,6 @@ Roadmap
 
 0.0.6
 
-- New widgets:
-  - TSpinner
-  - TComboBox
-  - TCalendar
-
 - TEditor
   - Horizontal scrollbar integration
   - True tokenization and syntax highlighting: Java, C, Clojure, XML
@@ -55,7 +50,14 @@ Roadmap
 - TEditor:
   - Undo / Redo support
 
-0.1.0: BETA RELEASE and BUG HUNT
+0.1.0: LET'S GET PRETTY
+
+- TChart:
+  - Bar chart
+  - XY chart
+  - Time series chart
+
+0.1.1: BETA RELEASE and BUG HUNT
 
 - Verify vttest in multiple tterminals.
 

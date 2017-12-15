@@ -33,7 +33,7 @@ import java.util.Date;
 /**
  * TTimer implements a simple timer.
  */
-public final class TTimer {
+public class TTimer {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

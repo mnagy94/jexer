@@ -34,7 +34,7 @@ import jexer.bits.GraphicsChars;
 /**
  * TField implements an editable text field.
  */
-public final class TPasswordField extends TField {
+public class TPasswordField extends TField {
 
     /**
      * Public constructor.

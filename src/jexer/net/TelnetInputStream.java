@@ -40,8 +40,7 @@ import static jexer.net.TelnetSocket.*;
 /**
  * TelnetInputStream works with TelnetSocket to perform the telnet protocol.
  */
-public final class TelnetInputStream extends InputStream
-        implements SessionInfo {
+public class TelnetInputStream extends InputStream implements SessionInfo {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

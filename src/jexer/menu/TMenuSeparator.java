@@ -34,7 +34,7 @@ import jexer.bits.GraphicsChars;
 /**
  * TMenuSeparator is a special case menu item.
  */
-public final class TMenuSeparator extends TMenuItem {
+public class TMenuSeparator extends TMenuItem {
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------

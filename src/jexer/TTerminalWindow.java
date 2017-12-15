@@ -417,8 +417,18 @@ public class TTerminalWindow extends TScrollableWindow
                     boolean reverse = line.isReverseColor() ^ ch.isReverse();
                     newCell.setReverse(false);
                     if (reverse) {
-                        newCell.setBackColor(ch.getForeColor());
-                        newCell.setForeColor(ch.getBackColor());
+                        if (ch.getForeColorRGB() < 0) {
+                            newCell.setBackColor(ch.getForeColor());
+                            newCell.setBackColorRGB(-1);
+                        } else {
+                            newCell.setBackColorRGB(ch.getForeColorRGB());
+                        }
+                        if (ch.getBackColorRGB() < 0) {
+                            newCell.setForeColor(ch.getBackColor());
+                            newCell.setForeColorRGB(-1);
+                        } else {
+                            newCell.setForeColorRGB(ch.getBackColorRGB());
+                        }
                     }
                     if (line.isDoubleWidth()) {
                         getScreen().putCharXY((i * 2) + 1, row, newCell);

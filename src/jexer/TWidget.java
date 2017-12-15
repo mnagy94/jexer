@@ -58,8 +58,8 @@ public abstract class TWidget implements Comparable<TWidget> {
 
     /**
      * Every widget has a parent widget that it may be "contained" in.  For
-     * example, a TWindow might contain several TTextFields, or a TComboBox
-     * may contain a TScrollBar.
+     * example, a TWindow might contain several TFields, or a TComboBox may
+     * contain a TList that itself contains a TVScroller.
      */
     private TWidget parent = null;
 
@@ -112,6 +112,11 @@ public abstract class TWidget implements Comparable<TWidget> {
      * If true, this widget can be tabbed to or receive events.
      */
     private boolean enabled = true;
+
+    /**
+     * If true, this widget will be rendered.
+     */
+    private boolean visible = true;
 
     /**
      * If true, this widget has a cursor.
@@ -711,6 +716,24 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Set visible flag.
+     *
+     * @param visible if true, this widget will be drawn
+     */
+    public final void setVisible(final boolean visible) {
+        this.visible = visible;
+    }
+
+    /**
+     * See if this widget is visible.
+     *
+     * @return if true, this widget will be drawn
+     */
+    public final boolean isVisible() {
+        return visible;
+    }
+
+    /**
      * Set visible cursor flag.
      *
      * @param cursorVisible if true, this widget has a cursor
@@ -972,14 +995,16 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         // Continue down the chain
         for (TWidget widget: children) {
-            widget.drawChildren();
+            if (widget.isVisible()) {
+                widget.drawChildren();
+            }
         }
     }
 
     /**
      * Repaint the screen on the next update.
      */
-    public void doRepaint() {
+    public final void doRepaint() {
         window.getApplication().doRepaint();
     }
 
@@ -1165,12 +1190,29 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Convenience function to add a label to this container/window.
+     *
+     * @param text label
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param colorKey ColorTheme key color to use for foreground text.
+     * Default is "tlabel"
+     * @param useWindowBackground if true, use the window's background color
+     * @return the new label
+     */
+    public final TLabel addLabel(final String text, final int x, final int y,
+        final String colorKey, final boolean useWindowBackground) {
+
+        return new TLabel(this, text, x, y, colorKey, useWindowBackground);
+    }
+
+    /**
      * Convenience function to add a button to this container/window.
      *
      * @param text label on the button
      * @param x column relative to parent
      * @param y row relative to parent
-     * @param action to call when button is pressed
+     * @param action action to call when button is pressed
      * @return the new button
      */
     public final TButton addButton(final String text, final int x, final int y,
@@ -1188,10 +1230,64 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param checked initial check state
      * @return the new checkbox
      */
-    public final TCheckbox addCheckbox(final int x, final int y,
+    public final TCheckBox addCheckBox(final int x, final int y,
         final String label, final boolean checked) {
 
-        return new TCheckbox(this, x, y, label, checked);
+        return new TCheckBox(this, x, y, label, checked);
+    }
+
+    /**
+     * Convenience function to add a combobox to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width visible combobox width, including the down-arrow
+     * @param values the possible values for the box, shown in the drop-down
+     * @param valuesIndex the initial index in values, or -1 for no default
+     * value
+     * @param valuesHeight the height of the values drop-down when it is
+     * visible
+     * @param updateAction action to call when a new value is selected from
+     * the list or enter is pressed in the edit field
+     * @return the new combobox
+     */
+    public final TComboBox addComboBox(final int x, final int y,
+        final int width, final List<String> values, final int valuesIndex,
+        final int valuesHeight, final TAction updateAction) {
+
+        return new TComboBox(this, x, y, width, values, valuesIndex,
+            valuesHeight, updateAction);
+    }
+
+    /**
+     * Convenience function to add a spinner to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param upAction action to call when the up arrow is clicked or pressed
+     * @param downAction action to call when the down arrow is clicked or
+     * pressed
+     * @return the new spinner
+     */
+    public final TSpinner addSpinner(final int x, final int y,
+        final TAction upAction, final TAction downAction) {
+
+        return new TSpinner(this, x, y, upAction, downAction);
+    }
+
+    /**
+     * Convenience function to add a calendar to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param updateAction action to call when the user changes the value of
+     * the calendar
+     * @return the new calendar
+     */
+    public final TCalendar addCalendar(final int x, final int y,
+        final TAction updateAction) {
+
+        return new TCalendar(this, x, y, updateAction);
     }
 
     /**

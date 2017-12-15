@@ -38,7 +38,7 @@ import static jexer.TKeypress.*;
 /**
  * TSubMenu is a special case menu item that wraps another TMenu.
  */
-public final class TSubMenu extends TMenuItem {
+public class TSubMenu extends TMenuItem {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

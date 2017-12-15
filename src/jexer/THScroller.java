@@ -35,7 +35,7 @@ import jexer.event.TMouseEvent;
 /**
  * THScroller implements a simple horizontal scroll bar.
  */
-public final class THScroller extends TWidget {
+public class THScroller extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

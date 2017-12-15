@@ -42,7 +42,7 @@ package jexer;
  * </pre>
  *
  */
-public final class TInputBox extends TMessageBox {
+public class TInputBox extends TMessageBox {
 
     /**
      * The input field.

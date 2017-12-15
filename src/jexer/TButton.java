@@ -42,7 +42,7 @@ import static jexer.TKeypress.*;
  *
  * @see TAction#DO()
  */
-public final class TButton extends TWidget {
+public class TButton extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

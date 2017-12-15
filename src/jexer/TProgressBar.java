@@ -34,7 +34,7 @@ import jexer.bits.GraphicsChars;
 /**
  * TProgressBar implements a simple progress bar.
  */
-public final class TProgressBar extends TWidget {
+public class TProgressBar extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

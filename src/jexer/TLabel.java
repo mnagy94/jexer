@@ -33,7 +33,7 @@ import jexer.bits.CellAttributes;
 /**
  * TLabel implements a simple label.
  */
-public final class TLabel extends TWidget {
+public class TLabel extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -48,6 +48,11 @@ public final class TLabel extends TWidget {
      * Label color.
      */
     private String colorKey;
+
+    /**
+     * If true, use the window's background color.
+     */
+    private boolean useWindowBackground = true;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -79,11 +84,28 @@ public final class TLabel extends TWidget {
     public TLabel(final TWidget parent, final String text, final int x,
         final int y, final String colorKey) {
 
+        this(parent, text, x, y, colorKey, true);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param text label on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param colorKey ColorTheme key color to use for foreground text
+     * @param useWindowBackground if true, use the window's background color
+     */
+    public TLabel(final TWidget parent, final String text, final int x,
+        final int y, final String colorKey, final boolean useWindowBackground) {
+
         // Set parent and window
         super(parent, false, x, y, text.length(), 1);
 
         this.label = text;
         this.colorKey = colorKey;
+        this.useWindowBackground = useWindowBackground;
     }
 
     // ------------------------------------------------------------------------
@@ -98,9 +120,10 @@ public final class TLabel extends TWidget {
         // Setup my color
         CellAttributes color = new CellAttributes();
         color.setTo(getTheme().getColor(colorKey));
-        CellAttributes background = getWindow().getBackground();
-        color.setBackColor(background.getBackColor());
-
+        if (useWindowBackground) {
+            CellAttributes background = getWindow().getBackground();
+            color.setBackColor(background.getBackColor());
+        }
         getScreen().putStringXY(0, 0, label, color);
     }
 

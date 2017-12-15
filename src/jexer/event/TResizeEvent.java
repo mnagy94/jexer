@@ -31,7 +31,7 @@ package jexer.event;
 /**
  * This class encapsulates a screen or window resize event.
  */
-public final class TResizeEvent extends TInputEvent {
+public class TResizeEvent extends TInputEvent {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

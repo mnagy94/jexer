@@ -35,7 +35,7 @@ import javax.swing.JComponent;
  * This class uses standard Swing calls to handle screen, keyboard, and mouse
  * I/O.
  */
-public final class SwingBackend extends GenericBackend {
+public class SwingBackend extends GenericBackend {
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------

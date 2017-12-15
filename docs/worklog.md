@@ -1,6 +1,53 @@
 Jexer Work Log
 ==============
 
+December 15, 2017
+
+We now have 24-bit RGB colors working with Swing backend.
+EMCA48Terminal isn't happy though, let's try to fix that...  still no
+dice.  So RGB is there for ECMA48 backend, but it sometimes flickers
+or disappears.  I'm not sure yet where the fault lies.  Ah, found it!
+Cell.isBlank() wasn't checking RGB.
+
+Well, I do say it is rather pretty now.  Let's get this committed and
+uploaded.
+
+December 14, 2017
+
+TComboBox is stubbed in, and it was quite simple: just a TField and
+TList, and a teeny bit of glue.  Along the way I renamed TCheckbox to
+TCheckBox, which was almost more work than TComboBox.  Heh.  Things
+are starting to come together indeed.
+
+TSpinner is in.  Now working on TCalendar...  ...and TCalendar is in!
+
+December 13, 2017
+
+A user noticed that the example code given in the README.md caused the
+main window to freeze when clicking close.  Turns out that was due to
+the addWindow(new TWindow(...)) line, which led to TWindow appearing
+in TApplication's window list twice.  Fixed the README, and then made
+TApplication.addWindow a package private function plus a check to
+ensure it isn't added twice.
+
+On the home front, my main box is now a Fedora 26 running Plasma
+desktop.  That ate a few weekends getting used to.  Current-era Linux
+is pretty nice, systemd so far (cross fingers) isn't creating any real
+problems, audio and wifi worked out of the box (thanks to Intel
+chipsets), and I can finally have all of my books and references on
+the same box as dev.  So woohoo!
+
+SwingTerminal is getting the insets wrong, which is a bit aggravating.
+So let's add adjustable insets in SwingComponent with a default
+2-pixel border around the whole thing, which I can tweak for my
+laptop.  Done!
+
+Alright, so where are we?  Well, I will have some time in the evenings
+over the next couple weeks to put into projects.  This one will get a
+little bit of love, probably a new widget or two; Qodem might get
+libssh2 + mdebtls support in Windows if those aren't too involved;
+Jermit will get a little more push towards a Kermit implementation.
+
 October 17, 2017
 
 I finally gave up the ghost on using gcj as the default compiler due

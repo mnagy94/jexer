@@ -40,7 +40,7 @@ import jexer.event.TMouseEvent;
 /**
  * TStatusBar implements a status line with clickable buttons.
  */
-public final class TStatusBar extends TWidget {
+public class TStatusBar extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

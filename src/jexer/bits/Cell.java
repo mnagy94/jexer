@@ -114,6 +114,7 @@ public final class Cell extends CellAttributes {
             && !isReverse()
             && !isUnderline()
             && !isProtect()
+            && !isRGB()
             && (ch == ' ')
         ) {
             return true;

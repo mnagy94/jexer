@@ -35,7 +35,7 @@ import java.awt.Insets;
  * Swing to support queryWindowSize().  The username is blank, language is
  * "en_US", with a 80x25 text window.
  */
-public final class SwingSessionInfo implements SessionInfo {
+public class SwingSessionInfo implements SessionInfo {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

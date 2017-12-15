@@ -439,6 +439,11 @@ public class ECMA48 implements Runnable {
     private SaveableState savedState;
 
     /**
+     * The 88- or 256-color support RGB colors.
+     */
+    private List<Integer> colors88;
+
+    /**
      * DECSC/DECRC save/restore a subset of the total state.  This class
      * encapsulates those specific flags/modes.
      */
@@ -1078,6 +1083,99 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Reset the 88- or 256-colors.
+     */
+    private void resetColors() {
+        colors88 = new ArrayList<Integer>(256);
+        for (int i = 0; i < 256; i++) {
+            colors88.add(0);
+        }
+
+        // Set default system colors.
+        colors88.set(0, 0x00000000);
+        colors88.set(1, 0x00a80000);
+        colors88.set(2, 0x0000a800);
+        colors88.set(3, 0x00a85400);
+        colors88.set(4, 0x000000a8);
+        colors88.set(5, 0x00a800a8);
+        colors88.set(6, 0x0000a8a8);
+        colors88.set(7, 0x00a8a8a8);
+
+        colors88.set(8, 0x00545454);
+        colors88.set(9, 0x00fc5454);
+        colors88.set(10, 0x0054fc54);
+        colors88.set(11, 0x00fcfc54);
+        colors88.set(12, 0x005454fc);
+        colors88.set(13, 0x00fc54fc);
+        colors88.set(14, 0x0054fcfc);
+        colors88.set(15, 0x00fcfcfc);
+    }
+
+    /**
+     * Get the RGB value of one of the indexed colors.
+     *
+     * @param index the color index
+     * @return the RGB value
+     */
+    private int get88Color(final int index) {
+        // System.err.print("get88Color: " + index);
+        if ((index < 0) || (index > colors88.size())) {
+            // System.err.println(" -- UNKNOWN");
+            return 0;
+        }
+        // System.err.printf(" %08x\n", colors88.get(index));
+        return colors88.get(index);
+    }
+
+    /**
+     * Set one of the indexed colors to a color specification.
+     *
+     * @param index the color index
+     * @param spec the specification, typically something like "rgb:aa/bb/cc"
+     */
+    private void set88Color(final int index, final String spec) {
+        // System.err.println("set88Color: " + index + " '" + spec + "'");
+
+        if ((index < 0) || (index > colors88.size())) {
+            return;
+        }
+        if (spec.startsWith("rgb:")) {
+            String [] rgbTokens = spec.substring(4).split("/");
+            if (rgbTokens.length == 3) {
+                try {
+                    int rgb = (Integer.parseInt(rgbTokens[0], 16) << 16);
+                    rgb |= Integer.parseInt(rgbTokens[1], 16) << 8;
+                    rgb |= Integer.parseInt(rgbTokens[2], 16);
+                    // System.err.printf("  set to %08x\n", rgb);
+                    colors88.set(index, rgb);
+                } catch (NumberFormatException e) {
+                    // SQUASH
+                }
+            }
+            return;
+        }
+
+        if (spec.toLowerCase().equals("black")) {
+            colors88.set(index, 0x00000000);
+        } else if (spec.toLowerCase().equals("red")) {
+            colors88.set(index, 0x00a80000);
+        } else if (spec.toLowerCase().equals("green")) {
+            colors88.set(index, 0x0000a800);
+        } else if (spec.toLowerCase().equals("yellow")) {
+            colors88.set(index, 0x00a85400);
+        } else if (spec.toLowerCase().equals("blue")) {
+            colors88.set(index, 0x000000a8);
+        } else if (spec.toLowerCase().equals("magenta")) {
+            colors88.set(index, 0x00a800a8);
+        } else if (spec.toLowerCase().equals("cyan")) {
+            colors88.set(index, 0x0000a8a8);
+        } else if (spec.toLowerCase().equals("white")) {
+            colors88.set(index, 0x00a8a8a8);
+        }
+
+    }
+
+    /**
      * Reset the emulation state.
      */
     private void reset() {
@@ -1121,6 +1219,9 @@ public class ECMA48 implements Runnable {
 
         // Tab stops
         resetTabStops();
+
+        // Reset extra colors
+        resetColors();
 
         // Clear CSI stuff
         toGround();
@@ -3529,7 +3630,86 @@ public class ECMA48 implements Runnable {
             return;
         }
 
+        int sgrColorMode = -1;
+        boolean idx88Color = false;
+        boolean rgbColor = false;
+        int rgbRed = -1;
+        int rgbGreen = -1;
+
         for (Integer i: csiParams) {
+
+            if ((sgrColorMode == 38) || (sgrColorMode == 48)) {
+
+                assert (type == DeviceType.XTERM);
+
+                if (idx88Color) {
+                    /*
+                     * Indexed color mode, we now have the index number.
+                     */
+                    if (sgrColorMode == 38) {
+                        currentState.attr.setForeColorRGB(get88Color(i));
+                    } else {
+                        assert (sgrColorMode == 48);
+                        currentState.attr.setBackColorRGB(get88Color(i));
+                    }
+                    sgrColorMode = -1;
+                    idx88Color = false;
+                    continue;
+                }
+
+                if (rgbColor) {
+                    /*
+                     * RGB color mode, we are collecting tokens.
+                     */
+                    if (rgbRed == -1) {
+                        rgbRed = i & 0xFF;
+                    } else if (rgbGreen == -1) {
+                        rgbGreen = i & 0xFF;
+                    } else {
+                        int rgb = rgbRed << 16;
+                        rgb |= rgbGreen << 8;
+                        rgb |= i & 0xFF;
+
+                        // System.err.printf("RGB: %08x\n", rgb);
+
+                        if (sgrColorMode == 38) {
+                            currentState.attr.setForeColorRGB(rgb);
+                        } else {
+                            assert (sgrColorMode == 48);
+                            currentState.attr.setBackColorRGB(rgb);
+                        }
+                        rgbRed = -1;
+                        rgbGreen = -1;
+                        sgrColorMode = -1;
+                        rgbColor = false;
+                    }
+                    continue;
+                }
+
+                switch (i) {
+
+                case 2:
+                    /*
+                     * RGB color mode.
+                     */
+                    rgbColor = true;
+                    break;
+
+                case 5:
+                    /*
+                     * Indexed color mode.
+                     */
+                    idx88Color = true;
+                    break;
+
+                default:
+                    /*
+                     * This is neither indexed nor RGB color.  Bail out.
+                     */
+                    return;
+                }
+
+            } // if ((sgrColorMode == 38) || (sgrColorMode == 48))
 
             switch (i) {
 
@@ -3569,6 +3749,72 @@ public class ECMA48 implements Runnable {
                 case 8:
                     // Invisible
                     // TODO
+                    break;
+
+                case 90:
+                    // Set black foreground
+                    currentState.attr.setForeColorRGB(get88Color(8));
+                    break;
+                case 91:
+                    // Set red foreground
+                    currentState.attr.setForeColorRGB(get88Color(9));
+                    break;
+                case 92:
+                    // Set green foreground
+                    currentState.attr.setForeColorRGB(get88Color(10));
+                    break;
+                case 93:
+                    // Set yellow foreground
+                    currentState.attr.setForeColorRGB(get88Color(11));
+                    break;
+                case 94:
+                    // Set blue foreground
+                    currentState.attr.setForeColorRGB(get88Color(12));
+                    break;
+                case 95:
+                    // Set magenta foreground
+                    currentState.attr.setForeColorRGB(get88Color(13));
+                    break;
+                case 96:
+                    // Set cyan foreground
+                    currentState.attr.setForeColorRGB(get88Color(14));
+                    break;
+                case 97:
+                    // Set white foreground
+                    currentState.attr.setForeColorRGB(get88Color(15));
+                    break;
+
+                case 100:
+                    // Set black background
+                    currentState.attr.setBackColorRGB(get88Color(8));
+                    break;
+                case 101:
+                    // Set red background
+                    currentState.attr.setBackColorRGB(get88Color(9));
+                    break;
+                case 102:
+                    // Set green background
+                    currentState.attr.setBackColorRGB(get88Color(10));
+                    break;
+                case 103:
+                    // Set yellow background
+                    currentState.attr.setBackColorRGB(get88Color(11));
+                    break;
+                case 104:
+                    // Set blue background
+                    currentState.attr.setBackColorRGB(get88Color(12));
+                    break;
+                case 105:
+                    // Set magenta background
+                    currentState.attr.setBackColorRGB(get88Color(13));
+                    break;
+                case 106:
+                    // Set cyan background
+                    currentState.attr.setBackColorRGB(get88Color(14));
+                    break;
+                case 107:
+                    // Set white background
+                    currentState.attr.setBackColorRGB(get88Color(15));
                     break;
 
                 default:
@@ -3615,34 +3861,42 @@ public class ECMA48 implements Runnable {
             case 30:
                 // Set black foreground
                 currentState.attr.setForeColor(Color.BLACK);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 31:
                 // Set red foreground
                 currentState.attr.setForeColor(Color.RED);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 32:
                 // Set green foreground
                 currentState.attr.setForeColor(Color.GREEN);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 33:
                 // Set yellow foreground
                 currentState.attr.setForeColor(Color.YELLOW);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 34:
                 // Set blue foreground
                 currentState.attr.setForeColor(Color.BLUE);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 35:
                 // Set magenta foreground
                 currentState.attr.setForeColor(Color.MAGENTA);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 36:
                 // Set cyan foreground
                 currentState.attr.setForeColor(Color.CYAN);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 37:
                 // Set white foreground
                 currentState.attr.setForeColor(Color.WHITE);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 38:
                 if (type == DeviceType.XTERM) {
@@ -3652,21 +3906,28 @@ public class ECMA48 implements Runnable {
                      * permits these ISO-8613-3 SGR sequences to be separated
                      * by colons rather than semicolons.)
                      *
-                     * We will not support any of these additional color
-                     * codes at this time:
+                     * We will support only the following:
                      *
-                     * 1. http://invisible-island.net/ncurses/ncurses.faq.html#xterm_16MegaColors
-                     *    has a detailed discussion of the current state of
-                     *    RGB in various terminals, the point of which is
-                     *    that none of them really do the same thing despite
-                     *    all appearing to be "xterm".
+                     * 1. Indexed color mode (88- or 256-color modes).
                      *
-                     * 2. As seen in
-                     *    https://bugs.kde.org/show_bug.cgi?id=107487#c3,
-                     *    even supporting just the "indexed mode" of these
-                     *    sequences (which could align easily with existing
-                     *    SGR colors) is assumed to mean full support of
-                     *    24-bit RGB.  So it is all or nothing.
+                     * 2. Direct RGB.
+                     *
+                     * These cover most of the use cases in the real world.
+                     *
+                     * HOWEVER, note that this is an awful broken "standard",
+                     * with no way to do it "right".  See
+                     * http://invisible-island.net/ncurses/ncurses.faq.html#xterm_16MegaColors
+                     * for a detailed discussion of the current state of RGB
+                     * in various terminals, the point of which is that none
+                     * of them really do the same thing despite all appearing
+                     * to be "xterm".
+                     *
+                     * Also see
+                     * https://bugs.kde.org/show_bug.cgi?id=107487#c3 .
+                     * where it is assumed that supporting just the "indexed
+                     * mode" of these sequences (which could align easily
+                     * with existing SGR colors) is assumed to mean full
+                     * support of 24-bit RGB.  So it is all or nothing.
                      *
                      * Finally, these sequences break the assumptions of
                      * standard ECMA-48 style parsers as pointed out at
@@ -3674,7 +3935,8 @@ public class ECMA48 implements Runnable {
                      * Therefore in order to keep a clean display, we cannot
                      * parse anything else in this sequence.
                      */
-                    return;
+                    sgrColorMode = 38;
+                    continue;
                 } else {
                     // Underscore on, default foreground color
                     currentState.attr.setUnderline(true);
@@ -3685,38 +3947,47 @@ public class ECMA48 implements Runnable {
                 // Underscore off, default foreground color
                 currentState.attr.setUnderline(false);
                 currentState.attr.setForeColor(Color.WHITE);
+                currentState.attr.setForeColorRGB(-1);
                 break;
             case 40:
                 // Set black background
                 currentState.attr.setBackColor(Color.BLACK);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 41:
                 // Set red background
                 currentState.attr.setBackColor(Color.RED);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 42:
                 // Set green background
                 currentState.attr.setBackColor(Color.GREEN);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 43:
                 // Set yellow background
                 currentState.attr.setBackColor(Color.YELLOW);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 44:
                 // Set blue background
                 currentState.attr.setBackColor(Color.BLUE);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 45:
                 // Set magenta background
                 currentState.attr.setBackColor(Color.MAGENTA);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 46:
                 // Set cyan background
                 currentState.attr.setBackColor(Color.CYAN);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 47:
                 // Set white background
                 currentState.attr.setBackColor(Color.WHITE);
+                currentState.attr.setBackColorRGB(-1);
                 break;
             case 48:
                 if (type == DeviceType.XTERM) {
@@ -3726,16 +3997,43 @@ public class ECMA48 implements Runnable {
                      * permits these ISO-8613-3 SGR sequences to be separated
                      * by colons rather than semicolons.)
                      *
-                     * We will not support this at this time.  Also, in order
-                     * to keep a clean display, we cannot parse anything else
-                     * in this sequence.
+                     * We will support only the following:
+                     *
+                     * 1. Indexed color mode (88- or 256-color modes).
+                     *
+                     * 2. Direct RGB.
+                     *
+                     * These cover most of the use cases in the real world.
+                     *
+                     * HOWEVER, note that this is an awful broken "standard",
+                     * with no way to do it "right".  See
+                     * http://invisible-island.net/ncurses/ncurses.faq.html#xterm_16MegaColors
+                     * for a detailed discussion of the current state of RGB
+                     * in various terminals, the point of which is that none
+                     * of them really do the same thing despite all appearing
+                     * to be "xterm".
+                     *
+                     * Also see
+                     * https://bugs.kde.org/show_bug.cgi?id=107487#c3 .
+                     * where it is assumed that supporting just the "indexed
+                     * mode" of these sequences (which could align easily
+                     * with existing SGR colors) is assumed to mean full
+                     * support of 24-bit RGB.  So it is all or nothing.
+                     *
+                     * Finally, these sequences break the assumptions of
+                     * standard ECMA-48 style parsers as pointed out at
+                     * https://bugs.kde.org/show_bug.cgi?id=107487#c11 .
+                     * Therefore in order to keep a clean display, we cannot
+                     * parse anything else in this sequence.
                      */
-                    return;
+                    sgrColorMode = 48;
+                    continue;
                 }
                 break;
             case 49:
                 // Default background
                 currentState.attr.setBackColor(Color.BLACK);
+                currentState.attr.setBackColorRGB(-1);
                 break;
 
             default:
@@ -4186,19 +4484,39 @@ public class ECMA48 implements Runnable {
      * @param xtermChar the character received from the remote side
      */
     private void oscPut(final char xtermChar) {
+        // System.err.println("oscPut: " + xtermChar);
+
         // Collect first
         collectBuffer.append(xtermChar);
 
         // Xterm cases...
-        if (xtermChar == 0x07) {
-            String args = collectBuffer.substring(0,
-                collectBuffer.length() - 1);
+        if ((xtermChar == 0x07)
+            || (collectBuffer.toString().endsWith("\033\\"))
+        ) {
+            String args = null;
+            if (xtermChar == 0x07) {
+                args = collectBuffer.substring(0, collectBuffer.length() - 1);
+            } else {
+                args = collectBuffer.substring(0, collectBuffer.length() - 2);
+            }
+
             String [] p = args.toString().split(";");
             if (p.length > 0) {
                 if ((p[0].equals("0")) || (p[0].equals("2"))) {
                     if (p.length > 1) {
                         // Screen title
                         screenTitle = p[1];
+                    }
+                }
+
+                if (p[0].equals("4")) {
+                    for (int i = 1; i + 1 < p.length; i += 2) {
+                        // Set a color index value
+                        try {
+                            set88Color(Integer.parseInt(p[i]), p[i + 1]);
+                        } catch (NumberFormatException e) {
+                            // SQUASH
+                        }
                     }
                 }
             }
@@ -4236,16 +4554,21 @@ public class ECMA48 implements Runnable {
         // 80-8F, 91-97, 99, 9A, 9C   --> execute, then switch to SCAN_GROUND
 
         // 0x1B == ESCAPE
-        if ((ch == 0x1B)
-            && (scanState != ScanState.DCS_ENTRY)
-            && (scanState != ScanState.DCS_INTERMEDIATE)
-            && (scanState != ScanState.DCS_IGNORE)
-            && (scanState != ScanState.DCS_PARAM)
-            && (scanState != ScanState.DCS_PASSTHROUGH)
-        ) {
+        if (ch == 0x1B) {
+            if ((type == DeviceType.XTERM)
+                && (scanState == ScanState.OSC_STRING)
+            ) {
+                // Xterm can pass ESCAPE to its OSC sequence.
+            } else if ((scanState != ScanState.DCS_ENTRY)
+                && (scanState != ScanState.DCS_INTERMEDIATE)
+                && (scanState != ScanState.DCS_IGNORE)
+                && (scanState != ScanState.DCS_PARAM)
+                && (scanState != ScanState.DCS_PASSTHROUGH)
+            ) {
 
-            scanState = ScanState.ESCAPE;
-            return;
+                scanState = ScanState.ESCAPE;
+                return;
+            }
         }
 
         // 0x9B == CSI 8-bit sequence
@@ -6100,7 +6423,7 @@ public class ECMA48 implements Runnable {
 
         case OSC_STRING:
             // Special case for Xterm: OSC can pass control characters
-            if ((ch == 0x9C) || (ch <= 0x07)) {
+            if ((ch == 0x9C) || (ch == 0x07) || (ch == 0x1B)) {
                 oscPut(ch);
             }
 

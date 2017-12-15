@@ -72,6 +72,16 @@ public class CellAttributes {
      */
     private Color backColor;
 
+    /**
+     * Foreground color as 24-bit RGB value.  Negative value means not set.
+     */
+    private int foreColorRGB = -1;
+
+    /**
+     * Background color as 24-bit RGB value.  Negative value means not set.
+     */
+    private int backColorRGB = -1;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -227,17 +237,64 @@ public class CellAttributes {
     }
 
     /**
+     * Getter for foreColor RGB.
+     *
+     * @return foreColor value.  Negative means unset.
+     */
+    public final int getForeColorRGB() {
+        return foreColorRGB;
+    }
+
+    /**
+     * Setter for foreColor RGB.
+     *
+     * @param foreColor new foreColor RGB value
+     */
+    public final void setForeColorRGB(final int foreColorRGB) {
+        this.foreColorRGB = foreColorRGB;
+    }
+
+    /**
+     * Getter for backColor RGB.
+     *
+     * @return backColor value.  Negative means unset.
+     */
+    public final int getBackColorRGB() {
+        return backColorRGB;
+    }
+
+    /**
+     * Setter for backColor RGB.
+     *
+     * @param backColor new backColor RGB value
+     */
+    public final void setBackColorRGB(final int backColorRGB) {
+        this.backColorRGB = backColorRGB;
+    }
+
+    /**
+     * See if this cell uses RGB or ANSI colors.
+     *
+     * @return true if this cell has a RGB color
+     */
+    public final boolean isRGB() {
+        return (foreColorRGB >= 0) || (backColorRGB >= 0);
+    }
+
+    /**
      * Set to default: white foreground on black background, no
      * bold/underline/blink/rever/protect.
      */
     public void reset() {
-        bold      = false;
-        blink     = false;
-        reverse   = false;
-        underline = false;
-        protect   = false;
-        foreColor = Color.WHITE;
-        backColor = Color.BLACK;
+        bold            = false;
+        blink           = false;
+        reverse         = false;
+        underline       = false;
+        protect         = false;
+        foreColor       = Color.WHITE;
+        backColor       = Color.BLACK;
+        foreColorRGB    = -1;
+        backColorRGB    = -1;
     }
 
     /**
@@ -255,6 +312,8 @@ public class CellAttributes {
         CellAttributes that = (CellAttributes) rhs;
         return ((foreColor == that.foreColor)
             && (backColor == that.backColor)
+            && (foreColorRGB == that.foreColorRGB)
+            && (backColorRGB == that.backColorRGB)
             && (bold == that.bold)
             && (reverse == that.reverse)
             && (underline == that.underline)
@@ -279,6 +338,8 @@ public class CellAttributes {
         hash = (B * hash) + (protect ? 1 : 0);
         hash = (B * hash) + foreColor.hashCode();
         hash = (B * hash) + backColor.hashCode();
+        hash = (B * hash) + foreColorRGB;
+        hash = (B * hash) + backColorRGB;
         return hash;
     }
 
@@ -290,13 +351,15 @@ public class CellAttributes {
     public void setTo(final Object rhs) {
         CellAttributes that = (CellAttributes) rhs;
 
-        this.bold      = that.bold;
-        this.blink     = that.blink;
-        this.reverse   = that.reverse;
-        this.underline = that.underline;
-        this.protect   = that.protect;
-        this.foreColor = that.foreColor;
-        this.backColor = that.backColor;
+        this.bold               = that.bold;
+        this.blink              = that.blink;
+        this.reverse            = that.reverse;
+        this.underline          = that.underline;
+        this.protect            = that.protect;
+        this.foreColor          = that.foreColor;
+        this.backColor          = that.backColor;
+        this.foreColorRGB       = that.foreColorRGB;
+        this.backColorRGB       = that.backColorRGB;
     }
 
     /**
@@ -306,6 +369,11 @@ public class CellAttributes {
      */
     @Override
     public String toString() {
+        if ((foreColorRGB >= 0) || (backColorRGB >= 0)) {
+            return String.format("RGB: #%06x on #%06x",
+                (foreColorRGB & 0xFFFFFF),
+                (backColorRGB & 0xFFFFFF));
+        }
         return String.format("%s%s%s on %s", (bold == true ? "bold " : ""),
             (blink == true ? "blink " : ""), foreColor, backColor);
     }

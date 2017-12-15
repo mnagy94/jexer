@@ -33,7 +33,7 @@ package jexer.event;
  * the relative (x,y) ARE MUTABLE: TWidget's onMouse() handlers perform that
  * update during event dispatching.
  */
-public final class TMouseEvent extends TInputEvent {
+public class TMouseEvent extends TInputEvent {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

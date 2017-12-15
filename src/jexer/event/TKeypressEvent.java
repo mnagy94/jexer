@@ -33,7 +33,7 @@ import jexer.TKeypress;
 /**
  * This class encapsulates a keyboard input event.
  */
-public final class TKeypressEvent extends TInputEvent {
+public class TKeypressEvent extends TInputEvent {
 
     /**
      * Keystroke received.

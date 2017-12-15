@@ -34,7 +34,7 @@ package jexer.bits;
  * two '&amp;&amp;' characters, e.g. "&amp;File &amp;&amp; Stuff" would be
  * "File &amp; Stuff" with the first 'F' highlighted.
  */
-public final class MnemonicString {
+public class MnemonicString {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

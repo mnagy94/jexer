@@ -35,7 +35,7 @@ import java.util.List;
 /**
  * TDirectoryList shows the files within a directory.
  */
-public final class TDirectoryList extends TList {
+public class TDirectoryList extends TList {
 
     /**
      * Files in the directory.

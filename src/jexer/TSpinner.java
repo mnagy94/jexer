@@ -35,29 +35,23 @@ import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
 
 /**
- * TRadioButton implements a selectable radio button.
+ * TSpinner implements a simple up/down spinner.  Values can be numer
  */
-public class TRadioButton extends TWidget {
+public class TSpinner extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
-     * RadioButton state, true means selected.
+     * The action to perform when the user clicks on the up arrow.
      */
-    private boolean selected = false;
+    private TAction upAction = null;
 
     /**
-     * Label for this radio button.
+     * The action to perform when the user clicks on the down arrow.
      */
-    private String label;
-
-    /**
-     * ID for this radio button.  Buttons start counting at 1 in the
-     * RadioGroup.
-     */
-    private int id;
+    private TAction downAction = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -69,20 +63,18 @@ public class TRadioButton extends TWidget {
      * @param parent parent widget
      * @param x column relative to parent
      * @param y row relative to parent
-     * @param label label to display next to (right of) the radiobutton
-     * @param id ID for this radio button
+     * @param upAction action to call when the up arrow is clicked or pressed
+     * @param downAction action to call when the down arrow is clicked or
+     * pressed
      */
-    public TRadioButton(final TRadioGroup parent, final int x, final int y,
-        final String label, final int id) {
+    public TSpinner(final TWidget parent, final int x, final int y,
+        final TAction upAction, final TAction downAction) {
 
         // Set parent and window
-        super(parent, x, y, label.length() + 4, 1);
+        super(parent, x, y, 2, 1);
 
-        this.label = label;
-        this.id = id;
-
-        setCursorVisible(true);
-        setCursorX(1);
+        this.upAction = upAction;
+        this.downAction = downAction;
     }
 
     // ------------------------------------------------------------------------
@@ -90,15 +82,14 @@ public class TRadioButton extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * Returns true if the mouse is currently on the radio button.
+     * Returns true if the mouse is currently on the up arrow.
      *
      * @param mouse mouse event
-     * @return if true the mouse is currently on the radio button
+     * @return true if the mouse is currently on the up arrow
      */
-    private boolean mouseOnRadioButton(final TMouseEvent mouse) {
+    private boolean mouseOnUpArrow(final TMouseEvent mouse) {
         if ((mouse.getY() == 0)
-            && (mouse.getX() >= 0)
-            && (mouse.getX() <= 2)
+            && (mouse.getX() == getWidth() - 1)
         ) {
             return true;
         }
@@ -106,18 +97,31 @@ public class TRadioButton extends TWidget {
     }
 
     /**
-     * Handle mouse button presses.
+     * Returns true if the mouse is currently on the down arrow.
      *
-     * @param mouse mouse button press event
+     * @param mouse mouse event
+     * @return true if the mouse is currently on the down arrow
+     */
+    private boolean mouseOnDownArrow(final TMouseEvent mouse) {
+        if ((mouse.getY() == 0)
+            && (mouse.getX() == getWidth() - 2)
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Handle mouse checkbox presses.
+     *
+     * @param mouse mouse button down event
      */
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
-        if ((mouseOnRadioButton(mouse)) && (mouse.isMouse1())) {
-            // Switch state
-            selected = !selected;
-            if (selected) {
-                ((TRadioGroup) getParent()).setSelected(this);
-            }
+        if ((mouseOnUpArrow(mouse)) && (mouse.isMouse1())) {
+            up();
+        } else if ((mouseOnDownArrow(mouse)) && (mouse.isMouse1())) {
+            down();
         }
     }
 
@@ -128,12 +132,12 @@ public class TRadioButton extends TWidget {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-
-        if (keypress.equals(kbSpace)) {
-            selected = !selected;
-            if (selected) {
-                ((TRadioGroup) getParent()).setSelected(this);
-            }
+        if (keypress.equals(kbUp)) {
+            up();
+            return;
+        }
+        if (keypress.equals(kbDown)) {
+            down();
             return;
         }
 
@@ -146,62 +150,44 @@ public class TRadioButton extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * Draw a radio button with label.
+     * Draw the spinner arrows.
      */
     @Override
     public void draw() {
-        CellAttributes radioButtonColor;
+        CellAttributes spinnerColor;
 
         if (isAbsoluteActive()) {
-            radioButtonColor = getTheme().getColor("tradiobutton.active");
+            spinnerColor = getTheme().getColor("tspinner.active");
         } else {
-            radioButtonColor = getTheme().getColor("tradiobutton.inactive");
+            spinnerColor = getTheme().getColor("tspinner.inactive");
         }
 
-        getScreen().putCharXY(0, 0, '(', radioButtonColor);
-        if (selected) {
-            getScreen().putCharXY(1, 0, GraphicsChars.CP437[0x07],
-                radioButtonColor);
-        } else {
-            getScreen().putCharXY(1, 0, ' ', radioButtonColor);
-        }
-        getScreen().putCharXY(2, 0, ')', radioButtonColor);
-        getScreen().putStringXY(4, 0, label, radioButtonColor);
+        getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.UPARROW,
+            spinnerColor);
+        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.DOWNARROW,
+            spinnerColor);
     }
 
     // ------------------------------------------------------------------------
-    // TRadioButton -----------------------------------------------------------
+    // TSpinner ---------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
-     * Get RadioButton state, true means selected.
-     *
-     * @return if true then this is the one button in the group that is
-     * selected
+     * Perform the "up" action.
      */
-    public boolean isSelected() {
-        return selected;
+    private void up() {
+        if (upAction != null) {
+            upAction.DO();
+        }
     }
 
     /**
-     * Set RadioButton state, true means selected.  Note package private
-     * access.
-     *
-     * @param selected if true then this is the one button in the group that
-     * is selected
+     * Perform the "down" action.
      */
-    void setSelected(final boolean selected) {
-        this.selected = selected;
-    }
-
-    /**
-     * Get ID for this radio button.  Buttons start counting at 1 in the
-     * RadioGroup.
-     *
-     * @return the ID
-     */
-    public int getId() {
-        return id;
+    private void down() {
+        if (downAction != null) {
+            downAction.DO();
+        }
     }
 
 }

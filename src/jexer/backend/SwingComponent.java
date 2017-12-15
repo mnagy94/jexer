@@ -71,6 +71,17 @@ class SwingComponent {
      */
     private JComponent component;
 
+    /**
+     * An optional border in pixels to add.
+     */
+    private static final int BORDER = 5;
+
+    /**
+     * Adjustable Insets for this component.  This has the effect of adding a
+     * black border around the drawing area.
+     */
+    Insets adjustInsets = new Insets(BORDER, BORDER, BORDER, BORDER);
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -237,11 +248,17 @@ class SwingComponent {
      * @return the value of the insets property
      */
     public Insets getInsets() {
+        Insets swingInsets = null;
         if (frame != null) {
-            return frame.getInsets();
+            swingInsets = frame.getInsets();
         } else {
-            return component.getInsets();
+            swingInsets = component.getInsets();
         }
+        Insets result = new Insets(swingInsets.top + adjustInsets.top,
+            swingInsets.left + adjustInsets.left,
+            swingInsets.bottom + adjustInsets.bottom,
+            swingInsets.right + adjustInsets.right);
+        return result;
     }
 
     /**
@@ -348,12 +365,12 @@ class SwingComponent {
     public void setDimensions(final int width, final int height) {
         // Figure out the thickness of borders and use that to set the final
         // size.
-        Insets insets = getInsets();
-
         if (frame != null) {
+            Insets insets = frame.getInsets();
             frame.setSize(width + insets.left + insets.right,
                 height + insets.top + insets.bottom);
         } else {
+            Insets insets = component.getInsets();
             component.setSize(width + insets.left + insets.right,
                 height + insets.top + insets.bottom);
         }

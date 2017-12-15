@@ -44,7 +44,7 @@ import static jexer.TKeypress.*;
 /**
  * TMenu is a top-level collection of TMenuItems.
  */
-public final class TMenu extends TWindow {
+public class TMenu extends TWindow {
 
     /**
      * Translated strings.

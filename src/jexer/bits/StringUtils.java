@@ -40,7 +40,7 @@ import java.util.LinkedList;
  *    - Unescape C0 control codes.
  *
  */
-public final class StringUtils {
+public class StringUtils {
 
     /**
      * Left-justify a string into a list of lines.

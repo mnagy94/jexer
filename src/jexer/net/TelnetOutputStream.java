@@ -36,7 +36,7 @@ import static jexer.net.TelnetSocket.*;
 /**
  * TelnetOutputStream works with TelnetSocket to perform the telnet protocol.
  */
-public final class TelnetOutputStream extends OutputStream {
+public class TelnetOutputStream extends OutputStream {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

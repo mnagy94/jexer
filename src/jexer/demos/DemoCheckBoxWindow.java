@@ -28,15 +28,28 @@
  */
 package jexer.demos;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jexer.*;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
- * This window demonstates the TRadioGroup, TRadioButton, and TCheckbox
+ * This window demonstates the TRadioGroup, TRadioButton, and TCheckBox
  * widgets.
  */
-public class DemoCheckboxWindow extends TWindow {
+public class DemoCheckBoxWindow extends TWindow {
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Combo box.  Has to be at class scope so that it can be accessed by the
+     * anonymous TAction class.
+     */
+    TComboBox comboBox = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -47,7 +60,7 @@ public class DemoCheckboxWindow extends TWindow {
      *
      * @param parent the main application
      */
-    DemoCheckboxWindow(final TApplication parent) {
+    DemoCheckBoxWindow(final TApplication parent) {
         this(parent, CENTERED | RESIZABLE);
     }
 
@@ -57,18 +70,19 @@ public class DemoCheckboxWindow extends TWindow {
      * @param parent the main application
      * @param flags bitmask of MODAL, CENTERED, or RESIZABLE
      */
-    DemoCheckboxWindow(final TApplication parent, final int flags) {
+    DemoCheckBoxWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, "Radiobuttons and Checkboxes", 0, 0, 60, 15, flags);
+        super(parent, "Radiobuttons, CheckBoxes, and ComboBox",
+            0, 0, 60, 17, flags);
 
         int row = 1;
 
         // Add some widgets
         addLabel("Check box example 1", 1, row);
-        addCheckbox(35, row++, "Checkbox 1", false);
+        addCheckBox(35, row++, "CheckBox 1", false);
         addLabel("Check box example 2", 1, row);
-        addCheckbox(35, row++, "Checkbox 2", true);
+        addCheckBox(35, row++, "CheckBox 2", true);
         row += 2;
 
         TRadioGroup group = addRadioGroup(1, row, "Group 1");
@@ -76,11 +90,37 @@ public class DemoCheckboxWindow extends TWindow {
         group.addRadioButton("Radio option 2");
         group.addRadioButton("Radio option 3");
 
+        List<String> comboValues = new ArrayList<String>();
+        comboValues.add("String 0");
+        comboValues.add("String 1");
+        comboValues.add("String 2");
+        comboValues.add("String 3");
+        comboValues.add("String 4");
+        comboValues.add("String 5");
+        comboValues.add("String 6");
+        comboValues.add("String 7");
+        comboValues.add("String 8");
+        comboValues.add("String 9");
+        comboValues.add("String 10");
+
+        comboBox = addComboBox(35, row, 12, comboValues, 2, 6,
+            new TAction() {
+                public void DO() {
+                    getApplication().messageBox("ComboBox",
+                        "You selected the following value:\n" +
+                        "\n" +
+                        comboBox.getText() +
+                        "\n",
+                        TMessageBox.Type.OK);
+                }
+            }
+        );
+
         addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
             new TAction() {
                 public void DO() {
-                    DemoCheckboxWindow.this.getApplication()
-                        .closeWindow(DemoCheckboxWindow.this);
+                    DemoCheckBoxWindow.this.getApplication()
+                        .closeWindow(DemoCheckBoxWindow.this);
                 }
             }
         );

@@ -44,7 +44,7 @@ import java.util.TreeMap;
  * ColorTheme is a collection of colors keyed by string.  A default theme is
  * also provided that matches the blue-and-white theme used by Turbo Vision.
  */
-public final class ColorTheme {
+public class ColorTheme {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -146,6 +146,37 @@ public final class ColorTheme {
 
         StringTokenizer tokenizer = new StringTokenizer(text);
         token = tokenizer.nextToken();
+
+        if (token.toLowerCase().equals("rgb:")) {
+            // Foreground
+            int foreColorRGB = -1;
+            try {
+                foreColorRGB = Integer.parseInt(tokenizer.nextToken(), 16);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+
+            // "on"
+            if (!tokenizer.nextToken().toLowerCase().equals("on")) {
+                // Invalid line.
+                return;
+            }
+
+            // Background
+            int backColorRGB = -1;
+            try {
+                backColorRGB = Integer.parseInt(tokenizer.nextToken(), 16);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+
+            CellAttributes color = new CellAttributes();
+            color.setForeColorRGB(foreColorRGB);
+            color.setBackColorRGB(backColorRGB);
+            colors.put(key, color);
+            return;
+        }
+
         while (token.equals("bold") || token.equals("blink")) {
             if (token.equals("bold")) {
                 bold = true;
@@ -350,7 +381,7 @@ public final class ColorTheme {
         color.setBold(true);
         colors.put("tfield.active", color);
 
-        // TCheckbox
+        // TCheckBox
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
         color.setBackColor(Color.BLUE);
@@ -361,6 +392,57 @@ public final class ColorTheme {
         color.setBackColor(Color.BLACK);
         color.setBold(true);
         colors.put("tcheckbox.active", color);
+
+        // TComboBox
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("tcombobox.inactive", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLUE);
+        color.setBackColor(Color.CYAN);
+        color.setBold(false);
+        colors.put("tcombobox.active", color);
+
+        // TSpinner
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("tspinner.inactive", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLUE);
+        color.setBackColor(Color.CYAN);
+        color.setBold(false);
+        colors.put("tspinner.active", color);
+
+        // TCalendar
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(false);
+        colors.put("tcalendar.background", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(false);
+        colors.put("tcalendar.day", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.RED);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("tcalendar.day.selected", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLUE);
+        color.setBackColor(Color.CYAN);
+        color.setBold(false);
+        colors.put("tcalendar.arrow", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        colors.put("tcalendar.title", color);
 
         // TRadioButton
         color = new CellAttributes();

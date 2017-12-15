@@ -38,7 +38,7 @@ import java.util.StringTokenizer;
  * the session information.  The username is taken from user.name, language
  * is taken from user.language, and text window size from 'stty size'.
  */
-public final class TTYSessionInfo implements SessionInfo {
+public class TTYSessionInfo implements SessionInfo {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

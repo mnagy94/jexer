@@ -34,7 +34,7 @@ import jexer.bits.CellAttributes;
 /**
  * This represents a single line of the display buffer.
  */
-public final class DisplayLine {
+public class DisplayLine {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

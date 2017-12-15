@@ -33,7 +33,7 @@ import jexer.bits.CellAttributes;
 /**
  * TRadioGroup is a collection of TRadioButtons with a box and label.
  */
-public final class TRadioGroup extends TWidget {
+public class TRadioGroup extends TWidget {
 
     /**
      * Label for this radio button group.

@@ -28,6 +28,8 @@
  */
 package jexer.demos;
 
+import java.util.*;
+
 import jexer.*;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
@@ -36,6 +38,16 @@ import static jexer.TKeypress.*;
  * This window demonstates the TField and TPasswordField widgets.
  */
 public class DemoTextFieldWindow extends TWindow {
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Calendar.  Has to be at class scope so that it can be accessed by the
+     * anonymous TAction class.
+     */
+    TCalendar calendar = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -59,7 +71,7 @@ public class DemoTextFieldWindow extends TWindow {
     DemoTextFieldWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it
         // will be centered on screen.
-        super(parent, "Text Fields", 0, 0, 60, 10, flags);
+        super(parent, "Text Fields", 0, 0, 60, 20, flags);
 
         int row = 1;
 
@@ -75,6 +87,19 @@ public class DemoTextFieldWindow extends TWindow {
         TField selected = addField(35, row++, 40, false,
             "Very very long field text that should be outside the window");
         row += 1;
+
+        calendar = addCalendar(1, row++,
+            new TAction() {
+                public void DO() {
+                    getApplication().messageBox("Calendar",
+                        "You selected the following date:\n" +
+                        "\n" +
+                        new Date(calendar.getValue().getTimeInMillis()) +
+                        "\n",
+                        TMessageBox.Type.OK);
+                }
+            }
+        );
 
         addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
             new TAction() {

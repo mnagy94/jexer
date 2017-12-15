@@ -1384,8 +1384,16 @@ public class TApplication implements Runnable {
                 System.currentTimeMillis(), Thread.currentThread(), x, y);
         }
         CellAttributes attr = getScreen().getAttrXY(x, y);
-        attr.setForeColor(attr.getForeColor().invert());
-        attr.setBackColor(attr.getBackColor().invert());
+        if (attr.getForeColorRGB() < 0) {
+            attr.setForeColor(attr.getForeColor().invert());
+        } else {
+            attr.setForeColorRGB(attr.getForeColorRGB() ^ 0x00ffffff);
+        }
+        if (attr.getBackColorRGB() < 0) {
+            attr.setBackColor(attr.getBackColor().invert());
+        } else {
+            attr.setBackColorRGB(attr.getBackColorRGB() ^ 0x00ffffff);
+        }
         getScreen().putAttrXY(x, y, attr, false);
     }
 
@@ -1902,11 +1910,12 @@ public class TApplication implements Runnable {
     }
 
     /**
-     * Add a window to my window list and make it active.
+     * Add a window to my window list and make it active.  Note package
+     * private access.
      *
      * @param window new window to add
      */
-    public final void addWindowToApplication(final TWindow window) {
+    final void addWindowToApplication(final TWindow window) {
 
         // Do not add menu windows to the window list.
         if (window instanceof TMenu) {
@@ -1919,6 +1928,11 @@ public class TApplication implements Runnable {
         }
 
         synchronized (windows) {
+            if (windows.contains(window)) {
+                throw new IllegalArgumentException("Window " + window +
+                    " is already in window list");
+            }
+
             // Whatever window might be moving/dragging, stop it now.
             for (TWindow w: windows) {
                 if (w.inMovements()) {

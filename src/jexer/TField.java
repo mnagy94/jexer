@@ -384,7 +384,7 @@ public class TField extends TWidget {
      *
      * @param text the new field text
      */
-    public final void setText(String text) {
+    public void setText(final String text) {
         this.text = text;
         position = 0;
         windowStart = 0;

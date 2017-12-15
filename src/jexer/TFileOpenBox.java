@@ -54,7 +54,7 @@ import static jexer.TKeypress.*;
  * </pre>
  *
  */
-public final class TFileOpenBox extends TWindow {
+public class TFileOpenBox extends TWindow {
 
     /**
      * Translated strings.

@@ -38,7 +38,7 @@ import java.io.UnsupportedEncodingException;
  * This class uses an xterm/ANSI X3.64/ECMA-48 type terminal to provide a
  * screen, keyboard, and mouse to TApplication.
  */
-public final class ECMA48Backend extends GenericBackend {
+public class ECMA48Backend extends GenericBackend {
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------

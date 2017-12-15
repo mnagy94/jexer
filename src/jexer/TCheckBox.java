@@ -35,9 +35,9 @@ import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 
 /**
- * TCheckbox implements an on/off checkbox.
+ * TCheckBox implements an on/off checkbox.
  */
-public final class TCheckbox extends TWidget {
+public class TCheckBox extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -66,7 +66,7 @@ public final class TCheckbox extends TWidget {
      * @param label label to display next to (right of) the checkbox
      * @param checked initial check state
      */
-    public TCheckbox(final TWidget parent, final int x, final int y,
+    public TCheckBox(final TWidget parent, final int x, final int y,
         final String label, final boolean checked) {
 
         // Set parent and window
@@ -156,7 +156,7 @@ public final class TCheckbox extends TWidget {
     }
 
     // ------------------------------------------------------------------------
-    // TCheckbox --------------------------------------------------------------
+    // TCheckBox --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**

@@ -33,7 +33,7 @@ package jexer.event;
  * TApplication.getMenuItem(id) can be used to obtain the TMenuItem itself,
  * say for setting enabled/disabled/checked/etc.
  */
-public final class TMenuEvent extends TInputEvent {
+public class TMenuEvent extends TInputEvent {
 
     /**
      * MenuItem ID.

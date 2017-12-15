@@ -31,7 +31,7 @@ package jexer;
 /**
  * This class represents keystrokes.
  */
-public final class TKeypress {
+public class TKeypress {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

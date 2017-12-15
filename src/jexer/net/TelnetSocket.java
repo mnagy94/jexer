@@ -38,7 +38,7 @@ import java.net.Socket;
  * establish an 8-bit clean no echo channel and expose window resize events
  * to the Jexer ECMA48 backend.
  */
-public final class TelnetSocket extends Socket {
+public class TelnetSocket extends Socket {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

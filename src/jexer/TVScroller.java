@@ -35,7 +35,7 @@ import jexer.event.TMouseEvent;
 /**
  * TVScroller implements a simple vertical scroll bar.
  */
-public final class TVScroller extends TWidget {
+public class TVScroller extends TWidget {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

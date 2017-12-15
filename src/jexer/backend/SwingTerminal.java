@@ -80,11 +80,11 @@ import static jexer.TKeypress.*;
  * and uses a SwingComponent wrapper class to call the JFrame or JComponent
  * methods.
  */
-public final class SwingTerminal extends LogicalScreen
-                                 implements TerminalReader,
-                                            ComponentListener, KeyListener,
-                                            MouseListener, MouseMotionListener,
-                                            MouseWheelListener, WindowListener {
+public class SwingTerminal extends LogicalScreen
+                           implements TerminalReader,
+                                      ComponentListener, KeyListener,
+                                      MouseListener, MouseMotionListener,
+                                      MouseWheelListener, WindowListener {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -742,6 +742,15 @@ public final class SwingTerminal extends LogicalScreen
      * @return the Swing Color
      */
     private Color attrToForegroundColor(final CellAttributes attr) {
+        int rgb = attr.getForeColorRGB();
+        if (rgb >= 0) {
+            int red     = (rgb >> 16) & 0xFF;
+            int green   = (rgb >>  8) & 0xFF;
+            int blue    =  rgb        & 0xFF;
+
+            return new Color(red, green, blue);
+        }
+
         if (attr.isBold()) {
             if (attr.getForeColor().equals(jexer.bits.Color.BLACK)) {
                 return MYBOLD_BLACK;
@@ -790,6 +799,15 @@ public final class SwingTerminal extends LogicalScreen
      * @return the Swing Color
      */
     private Color attrToBackgroundColor(final CellAttributes attr) {
+        int rgb = attr.getBackColorRGB();
+        if (rgb >= 0) {
+            int red     = (rgb >> 16) & 0xFF;
+            int green   = (rgb >>  8) & 0xFF;
+            int blue    =  rgb        & 0xFF;
+
+            return new Color(red, green, blue);
+        }
+
         if (attr.getBackColor().equals(jexer.bits.Color.BLACK)) {
             return MYBLACK;
         } else if (attr.getBackColor().equals(jexer.bits.Color.RED)) {
@@ -1106,7 +1124,8 @@ public final class SwingTerminal extends LogicalScreen
              */
         }
 
-        if ((swing.getBufferStrategy() != null)
+        if ((swing.getFrame() != null)
+            && (swing.getBufferStrategy() != null)
             && (SwingUtilities.isEventDispatchThread())
         ) {
             // System.err.println("paint(), skip first paint on swing thread");
