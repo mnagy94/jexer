@@ -164,7 +164,7 @@ public class TEditorWidget extends TWidget {
 
             document.setLineNumber(newLine);
             setCursorY(mouse.getY());
-            if (newX > document.getCurrentLine().getDisplayLength()) {
+            if (newX >= document.getCurrentLine().getDisplayLength()) {
                 document.end();
                 alignCursor();
             } else {

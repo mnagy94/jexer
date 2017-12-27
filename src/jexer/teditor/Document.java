@@ -185,7 +185,11 @@ public class Document {
      * @param cursor the new cursor position
      */
     public void setCursor(final int cursor) {
-        lines.get(lineNumber).setCursor(cursor);
+        if (cursor >= lines.get(lineNumber).getDisplayLength()) {
+            lines.get(lineNumber).end();
+        } else {
+            lines.get(lineNumber).setCursor(cursor);
+        }
     }
 
     /**
@@ -215,7 +219,7 @@ public class Document {
         if (lineNumber < lines.size() - 1) {
             int x = lines.get(lineNumber).getCursor();
             lineNumber++;
-            if (x > lines.get(lineNumber).getDisplayLength()) {
+            if (x >= lines.get(lineNumber).getDisplayLength()) {
                 lines.get(lineNumber).end();
             } else {
                 lines.get(lineNumber).setCursor(x);
@@ -239,7 +243,7 @@ public class Document {
             if (lineNumber > lines.size() - 1) {
                 lineNumber = lines.size() - 1;
             }
-            if (x > lines.get(lineNumber).getDisplayLength()) {
+            if (x >= lines.get(lineNumber).getDisplayLength()) {
                 lines.get(lineNumber).end();
             } else {
                 lines.get(lineNumber).setCursor(x);
@@ -258,7 +262,7 @@ public class Document {
         if (lineNumber > 0) {
             int x = lines.get(lineNumber).getCursor();
             lineNumber--;
-            if (x > lines.get(lineNumber).getDisplayLength()) {
+            if (x >= lines.get(lineNumber).getDisplayLength()) {
                 lines.get(lineNumber).end();
             } else {
                 lines.get(lineNumber).setCursor(x);
@@ -282,7 +286,7 @@ public class Document {
             if (lineNumber < 0) {
                 lineNumber = 0;
             }
-            if (x > lines.get(lineNumber).getDisplayLength()) {
+            if (x >= lines.get(lineNumber).getDisplayLength()) {
                 lines.get(lineNumber).end();
             } else {
                 lines.get(lineNumber).setCursor(x);
