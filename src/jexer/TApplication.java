@@ -1125,8 +1125,14 @@ public class TApplication implements Runnable {
         }
 
         secondaryEventReceiver.handleEvent(event);
-        if (doubleClick != null) {
-            secondaryEventReceiver.handleEvent(doubleClick);
+        // Note that it is possible for secondaryEventReceiver to be null
+        // now, because its handleEvent() might have finished out on the
+        // secondary thread.  So put any extra processing inside a null
+        // check.
+        if (secondaryEventReceiver != null) {
+            if (doubleClick != null) {
+                secondaryEventReceiver.handleEvent(doubleClick);
+            }
         }
     }
 
