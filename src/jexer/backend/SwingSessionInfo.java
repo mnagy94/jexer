@@ -207,4 +207,13 @@ public class SwingSessionInfo implements SessionInfo {
         this.textHeight = textHeight;
     }
 
+    /**
+     * Getter for the underlying Swing component.
+     *
+     * @return the SwingComponent
+     */
+    public SwingComponent getSwingComponent() {
+        return swing;
+    }
+
 }

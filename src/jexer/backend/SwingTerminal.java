@@ -1387,6 +1387,15 @@ public class SwingTerminal extends LogicalScreen
         return sessionInfo;
     }
 
+    /**
+     * Getter for the underlying Swing component.
+     *
+     * @return the SwingComponent
+     */
+    public SwingComponent getSwingComponent() {
+        return swing;
+    }
+
     // ------------------------------------------------------------------------
     // KeyListener ------------------------------------------------------------
     // ------------------------------------------------------------------------

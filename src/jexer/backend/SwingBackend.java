@@ -155,4 +155,13 @@ public class SwingBackend extends GenericBackend {
         return ((SwingTerminal) terminal).getBlinkMillis();
     }
 
+    /**
+     * Getter for the underlying Swing component.
+     *
+     * @return the SwingComponent
+     */
+    public SwingComponent getSwingComponent() {
+        return ((SwingTerminal) terminal).getSwingComponent();
+    }
+
 }
