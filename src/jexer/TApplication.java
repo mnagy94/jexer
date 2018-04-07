@@ -1205,7 +1205,8 @@ public class TApplication implements Runnable {
                     keepTimers.add(timer);
                 }
             }
-            timers = keepTimers;
+            timers.clear();
+            timers.addAll(keepTimers);
         }
 
         // Call onIdle's
