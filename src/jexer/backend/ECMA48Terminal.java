@@ -507,9 +507,12 @@ public class ECMA48Terminal extends LogicalScreen
             e.printStackTrace();
         }
 
-        // Disable mouse reporting and show cursor
-        output.printf("%s%s%s", mouse(false), cursor(true), normal());
-        output.flush();
+        // Disable mouse reporting and show cursor.  Defensive null check
+        // here in case closeTerminal() is called twice.
+        if (output != null) {
+            output.printf("%s%s%s", mouse(false), cursor(true), normal());
+            output.flush();
+        }
 
         if (setRawMode) {
             sttyCooked();
