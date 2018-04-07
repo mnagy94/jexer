@@ -182,25 +182,28 @@ public class TDirectoryTreeItem extends TTreeItem {
             return;
         }
 
-        for (File f: file.listFiles()) {
-            // System.err.printf("   -> file %s %s\n", file, file.getName());
+        File [] listFiles = file.listFiles();
+        if (listFiles != null) {
+            for (File f: listFiles) {
+                // System.err.printf("   -> file %s %s\n", file, file.getName());
 
-            if (f.getName().startsWith(".")) {
-                // Hide dot-files
-                continue;
-            }
-            if (!f.isDirectory()) {
-                continue;
-            }
+                if (f.getName().startsWith(".")) {
+                    // Hide dot-files
+                    continue;
+                }
+                if (!f.isDirectory()) {
+                    continue;
+                }
 
-            try {
-                TDirectoryTreeItem item = new TDirectoryTreeItem(treeViewWidget,
-                    f.getCanonicalPath(), false, false);
+                try {
+                    TDirectoryTreeItem item = new TDirectoryTreeItem(treeViewWidget,
+                        f.getCanonicalPath(), false, false);
 
-                item.level = this.level + 1;
-                getChildren().add(item);
-            } catch (IOException e) {
-                continue;
+                    item.level = this.level + 1;
+                    getChildren().add(item);
+                } catch (IOException e) {
+                    continue;
+                }
             }
         }
         Collections.sort(getChildren());
