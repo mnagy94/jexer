@@ -2862,6 +2862,22 @@ public class TApplication implements Runnable {
     }
 
     /**
+     * Convenience function to spawn an input box.
+     *
+     * @param title window title, will be centered along the top border
+     * @param caption message to display.  Use embedded newlines to get a
+     * multi-line box.
+     * @param text initial text to seed the field with
+     * @param type one of the Type constants.  Default is Type.OK.
+     * @return the new input box
+     */
+    public final TInputBox inputBox(final String title, final String caption,
+        final String text, final TInputBox.Type type) {
+
+        return new TInputBox(this, title, caption, text, type);
+    }
+
+    /**
      * Convenience function to open a terminal window.
      *
      * @param x column relative to parent

@@ -59,7 +59,7 @@ public class DemoMsgBoxWindow extends TWindow {
     DemoMsgBoxWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it
         // will be centered on screen.
-        super(parent, "Message Boxes", 0, 0, 60, 16, flags);
+        super(parent, "Message Boxes", 0, 0, 64, 18, flags);
 
         int row = 1;
 
@@ -137,7 +137,7 @@ public class DemoMsgBoxWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Input box", 1, row);
+        addLabel("Input box 1", 1, row);
         addButton("Open &input box", 35, row,
             new TAction() {
                 public void DO() {
@@ -147,6 +147,24 @@ public class DemoMsgBoxWindow extends TWindow {
 "Note that the InputBox text can span multiple\n" +
 "lines.\n",
                         "some input text");
+                    getApplication().messageBox("Your InputBox Answer",
+                        "You entered: " + in.getText());
+                }
+            }
+        );
+        row += 2;
+
+        addLabel("Input box 2", 1, row);
+        addButton("Cance&llable input box", 35, row,
+            new TAction() {
+                public void DO() {
+                    TInputBox in = getApplication().inputBox("Input Box",
+"This is an example of an InputBox.\n" +
+"\n" +
+"Note that the InputBox text can span multiple\n" +
+"lines.\n" +
+"This one has both OK and Cancel buttons.\n",
+                        "some input text", TInputBox.Type.OKCANCEL);
                     getApplication().messageBox("Your InputBox Answer",
                         "You entered: " + in.getText());
                 }
