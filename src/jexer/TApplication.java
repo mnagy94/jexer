@@ -2063,6 +2063,9 @@ public class TApplication implements Runnable {
                 }
 
                 TWindow w = sorted.get(i);
+                int oldWidth = w.getWidth();
+                int oldHeight = w.getHeight();
+
                 w.setX(logicalX * newWidth);
                 w.setWidth(newWidth);
                 if (i >= ((a - 1) * b)) {
@@ -2071,6 +2074,12 @@ public class TApplication implements Runnable {
                 } else {
                     w.setY((logicalY * newHeight1) + 1);
                     w.setHeight(newHeight1);
+                }
+                if ((w.getWidth() != oldWidth)
+                    || (w.getHeight() != oldHeight)
+                ) {
+                    w.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                            w.getWidth(), w.getHeight()));
                 }
             }
         }
