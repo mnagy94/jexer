@@ -59,6 +59,10 @@ public class TEditorWindow extends TScrollableWindow {
      */
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TEditorWindow.class.getName());
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Hang onto my TEditor so I can resize it with the window.
      */
@@ -69,29 +73,9 @@ public class TEditorWindow extends TScrollableWindow {
      */
     private String filename = "";
 
-    /**
-     * Setup other fields after the editor is created.
-     */
-    private void setupAfterEditor() {
-        hScroller = new THScroller(this, 17, getHeight() - 2, getWidth() - 20);
-        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
-        setMinimumWindowWidth(25);
-        setMinimumWindowHeight(10);
-        setTopValue(1);
-        setBottomValue(editField.getMaximumRowNumber());
-        setLeftValue(1);
-        setRightValue(editField.getMaximumColumnNumber());
-
-        statusBar = newStatusBar(i18n.getString("statusBar"));
-        statusBar.addShortcutKeypress(kbF1, cmHelp,
-            i18n.getString("statusBarHelp"));
-        statusBar.addShortcutKeypress(kbF2, cmSave,
-            i18n.getString("statusBarSave"));
-        statusBar.addShortcutKeypress(kbF3, cmOpen,
-            i18n.getString("statusBarOpen"));
-        statusBar.addShortcutKeypress(kbF10, cmMenu,
-            i18n.getString("statusBarMenu"));
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor sets window title.
@@ -154,38 +138,9 @@ public class TEditorWindow extends TScrollableWindow {
         this(parent, i18n.getString("newTextDocument"));
     }
 
-    /**
-     * Read file data into a string.
-     *
-     * @param file the file to open
-     * @return the file contents
-     * @throws IOException if a java.io operation throws
-     */
-    private String readFileData(final File file) throws IOException {
-        StringBuilder fileContents = new StringBuilder();
-        Scanner scanner = new Scanner(file);
-        String EOL = System.getProperty("line.separator");
-
-        try {
-            while (scanner.hasNextLine()) {
-                fileContents.append(scanner.nextLine() + EOL);
-            }
-            return fileContents.toString();
-        } finally {
-            scanner.close();
-        }
-    }
-
-    /**
-     * Read file data into a string.
-     *
-     * @param filename the file to open
-     * @return the file contents
-     * @throws IOException if a java.io operation throws
-     */
-    private String readFileData(final String filename) throws IOException {
-        return readFileData(new File(filename));
-    }
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Draw the window.
@@ -206,24 +161,6 @@ public class TEditorWindow extends TScrollableWindow {
         if (editField.isDirty()) {
             putCharXY(2, getHeight() - 1, GraphicsChars.OCTOSTAR, borderColor);
         }
-    }
-
-    /**
-     * Check if a mouse press/release/motion event coordinate is over the
-     * editor.
-     *
-     * @param mouse a mouse-based event
-     * @return whether or not the mouse is on the editor
-     */
-    private final boolean mouseOnEditor(final TMouseEvent mouse) {
-        if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
-            && (mouse.getAbsoluteX() <  getAbsoluteX() + getWidth() - 1)
-            && (mouse.getAbsoluteY() >= getAbsoluteY() + 1)
-            && (mouse.getAbsoluteY() <  getAbsoluteY() + getHeight() - 1)
-        ) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -379,6 +316,85 @@ public class TEditorWindow extends TScrollableWindow {
 
         // Didn't handle it, let children get it instead
         super.onCommand(command);
+    }
+
+    // ------------------------------------------------------------------------
+    // TEditorWindow ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Setup other fields after the editor is created.
+     */
+    private void setupAfterEditor() {
+        hScroller = new THScroller(this, 17, getHeight() - 2, getWidth() - 20);
+        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
+        setMinimumWindowWidth(25);
+        setMinimumWindowHeight(10);
+        setTopValue(1);
+        setBottomValue(editField.getMaximumRowNumber());
+        setLeftValue(1);
+        setRightValue(editField.getMaximumColumnNumber());
+
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmSave,
+            i18n.getString("statusBarSave"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmMenu,
+            i18n.getString("statusBarMenu"));
+    }
+
+    /**
+     * Read file data into a string.
+     *
+     * @param file the file to open
+     * @return the file contents
+     * @throws IOException if a java.io operation throws
+     */
+    private String readFileData(final File file) throws IOException {
+        StringBuilder fileContents = new StringBuilder();
+        Scanner scanner = new Scanner(file);
+        String EOL = System.getProperty("line.separator");
+
+        try {
+            while (scanner.hasNextLine()) {
+                fileContents.append(scanner.nextLine() + EOL);
+            }
+            return fileContents.toString();
+        } finally {
+            scanner.close();
+        }
+    }
+
+    /**
+     * Read file data into a string.
+     *
+     * @param filename the file to open
+     * @return the file contents
+     * @throws IOException if a java.io operation throws
+     */
+    private String readFileData(final String filename) throws IOException {
+        return readFileData(new File(filename));
+    }
+
+    /**
+     * Check if a mouse press/release/motion event coordinate is over the
+     * editor.
+     *
+     * @param mouse a mouse-based event
+     * @return whether or not the mouse is on the editor
+     */
+    private final boolean mouseOnEditor(final TMouseEvent mouse) {
+        if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
+            && (mouse.getAbsoluteX() <  getAbsoluteX() + getWidth() - 1)
+            && (mouse.getAbsoluteY() >= getAbsoluteY() + 1)
+            && (mouse.getAbsoluteY() <  getAbsoluteY() + getHeight() - 1)
+        ) {
+            return true;
+        }
+        return false;
     }
 
 }

@@ -45,10 +45,18 @@ import static jexer.TKeypress.*;
  */
 public class TEditorWidget extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The number of lines to scroll on mouse wheel up/down.
      */
     private static final int wheelScrollSize = 3;
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * The document being edited.
@@ -69,6 +77,10 @@ public class TEditorWidget extends TWidget {
      * The leftmost column number in the visible area.  0-based.
      */
     private int leftColumn = 0;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -91,6 +103,10 @@ public class TEditorWidget extends TWidget {
         defaultColor = getTheme().getColor("teditor");
         document = new Document(text, defaultColor);
     }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Draw the text box.
@@ -176,97 +192,6 @@ public class TEditorWidget extends TWidget {
 
         // Pass to children
         super.onMouseDown(mouse);
-    }
-
-    /**
-     * Align visible area with document current line.
-     *
-     * @param topLineIsTop if true, make the top visible line the document
-     * current line if it was off-screen.  If false, make the bottom visible
-     * line the document current line.
-     */
-    private void alignTopLine(final boolean topLineIsTop) {
-        int line = document.getLineNumber();
-
-        if ((line < topLine) || (line > topLine + getHeight() - 1)) {
-            // Need to move topLine to bring document back into view.
-            if (topLineIsTop) {
-                topLine = line - (getHeight() - 1);
-                if (topLine < 0) {
-                    topLine = 0;
-                }
-                assert (topLine >= 0);
-            } else {
-                topLine = line;
-                assert (topLine >= 0);
-            }
-        }
-
-        /*
-        System.err.println("line " + line + " topLine " + topLine);
-        */
-
-        // Document is in view, let's set cursorY
-        assert (line >= topLine);
-        setCursorY(line - topLine);
-        alignCursor();
-    }
-
-    /**
-     * Align document current line with visible area.
-     *
-     * @param topLineIsTop if true, make the top visible line the document
-     * current line if it was off-screen.  If false, make the bottom visible
-     * line the document current line.
-     */
-    private void alignDocument(final boolean topLineIsTop) {
-        int line = document.getLineNumber();
-        int cursor = document.getCursor();
-
-        if ((line < topLine) || (line > topLine + getHeight() - 1)) {
-            // Need to move document to ensure it fits view.
-            if (topLineIsTop) {
-                document.setLineNumber(topLine);
-            } else {
-                document.setLineNumber(topLine + (getHeight() - 1));
-            }
-            if (cursor < document.getCurrentLine().getDisplayLength()) {
-                document.setCursor(cursor);
-            }
-        }
-
-        /*
-        System.err.println("getLineNumber() " + document.getLineNumber() +
-            " topLine " + topLine);
-        */
-
-        // Document is in view, let's set cursorY
-        setCursorY(document.getLineNumber() - topLine);
-        alignCursor();
-    }
-
-    /**
-     * Align visible cursor with document cursor.
-     */
-    private void alignCursor() {
-        int width = getWidth();
-
-        int desiredX = document.getCursor() - leftColumn;
-        if (desiredX < 0) {
-            // We need to push the screen to the left.
-            leftColumn = document.getCursor();
-        } else if (desiredX > width - 1) {
-            // We need to push the screen to the right.
-            leftColumn = document.getCursor() - (width - 1);
-        }
-
-        /*
-        System.err.println("document cursor " + document.getCursor() +
-            " leftColumn " + leftColumn);
-        */
-
-
-        setCursorX(document.getCursor() - leftColumn);
     }
 
     /**
@@ -374,6 +299,101 @@ public class TEditorWidget extends TWidget {
             // Let superclass handle it
             super.onResize(resize);
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // TEditorWidget ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Align visible area with document current line.
+     *
+     * @param topLineIsTop if true, make the top visible line the document
+     * current line if it was off-screen.  If false, make the bottom visible
+     * line the document current line.
+     */
+    private void alignTopLine(final boolean topLineIsTop) {
+        int line = document.getLineNumber();
+
+        if ((line < topLine) || (line > topLine + getHeight() - 1)) {
+            // Need to move topLine to bring document back into view.
+            if (topLineIsTop) {
+                topLine = line - (getHeight() - 1);
+                if (topLine < 0) {
+                    topLine = 0;
+                }
+                assert (topLine >= 0);
+            } else {
+                topLine = line;
+                assert (topLine >= 0);
+            }
+        }
+
+        /*
+        System.err.println("line " + line + " topLine " + topLine);
+        */
+
+        // Document is in view, let's set cursorY
+        assert (line >= topLine);
+        setCursorY(line - topLine);
+        alignCursor();
+    }
+
+    /**
+     * Align document current line with visible area.
+     *
+     * @param topLineIsTop if true, make the top visible line the document
+     * current line if it was off-screen.  If false, make the bottom visible
+     * line the document current line.
+     */
+    private void alignDocument(final boolean topLineIsTop) {
+        int line = document.getLineNumber();
+        int cursor = document.getCursor();
+
+        if ((line < topLine) || (line > topLine + getHeight() - 1)) {
+            // Need to move document to ensure it fits view.
+            if (topLineIsTop) {
+                document.setLineNumber(topLine);
+            } else {
+                document.setLineNumber(topLine + (getHeight() - 1));
+            }
+            if (cursor < document.getCurrentLine().getDisplayLength()) {
+                document.setCursor(cursor);
+            }
+        }
+
+        /*
+        System.err.println("getLineNumber() " + document.getLineNumber() +
+            " topLine " + topLine);
+        */
+
+        // Document is in view, let's set cursorY
+        setCursorY(document.getLineNumber() - topLine);
+        alignCursor();
+    }
+
+    /**
+     * Align visible cursor with document cursor.
+     */
+    private void alignCursor() {
+        int width = getWidth();
+
+        int desiredX = document.getCursor() - leftColumn;
+        if (desiredX < 0) {
+            // We need to push the screen to the left.
+            leftColumn = document.getCursor();
+        } else if (desiredX > width - 1) {
+            // We need to push the screen to the right.
+            leftColumn = document.getCursor() - (width - 1);
+        }
+
+        /*
+        System.err.println("document cursor " + document.getCursor() +
+            " leftColumn " + leftColumn);
+        */
+
+
+        setCursorX(document.getCursor() - leftColumn);
     }
 
     /**

@@ -41,6 +41,10 @@ import jexer.bits.CellAttributes;
  */
 public class Document {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The list of lines.
      */
@@ -71,6 +75,32 @@ public class Document {
      * The text highlighter to use.
      */
     private Highlighter highlighter = new Highlighter();
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Construct a new Document from an existing text string.
+     *
+     * @param str the text string
+     * @param defaultColor the color for unhighlighted text
+     */
+    public Document(final String str, final CellAttributes defaultColor) {
+        this.defaultColor = defaultColor;
+
+        // TODO: set different colors based on file extension
+        highlighter.setJavaColors();
+
+        String [] rawLines = str.split("\n");
+        for (int i = 0; i < rawLines.length; i++) {
+            lines.add(new Line(rawLines[i], this.defaultColor, highlighter));
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // Document ---------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get the overwrite flag.
@@ -189,24 +219,6 @@ public class Document {
             lines.get(lineNumber).end();
         } else {
             lines.get(lineNumber).setCursor(cursor);
-        }
-    }
-
-    /**
-     * Construct a new Document from an existing text string.
-     *
-     * @param str the text string
-     * @param defaultColor the color for unhighlighted text
-     */
-    public Document(final String str, final CellAttributes defaultColor) {
-        this.defaultColor = defaultColor;
-
-        // TODO: set different colors based on file extension
-        highlighter.setJavaColors();
-
-        String [] rawLines = str.split("\n");
-        for (int i = 0; i < rawLines.length; i++) {
-            lines.add(new Line(rawLines[i], this.defaultColor, highlighter));
         }
     }
 

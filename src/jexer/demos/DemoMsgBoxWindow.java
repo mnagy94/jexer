@@ -166,7 +166,8 @@ public class DemoMsgBoxWindow extends TWindow {
 "This one has both OK and Cancel buttons.\n",
                         "some input text", TInputBox.Type.OKCANCEL);
                     getApplication().messageBox("Your InputBox Answer",
-                        "You entered: " + in.getText());
+                        "You entered: " + in.getText() + " and pressed " +
+                        in.getResult());
                 }
             }
         );

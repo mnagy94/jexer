@@ -39,6 +39,10 @@ import jexer.bits.CellAttributes;
  */
 public class Line {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The list of words.
      */
@@ -64,6 +68,42 @@ public class Line {
      * highlighting behavior.
      */
     private StringBuilder rawText;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Construct a new Line from an existing text string, and highlight
+     * certain strings.
+     *
+     * @param str the text string
+     * @param defaultColor the color for unhighlighted text
+     * @param highlighter the highlighter to use
+     */
+    public Line(final String str, final CellAttributes defaultColor,
+        final Highlighter highlighter) {
+
+        this.defaultColor = defaultColor;
+        this.highlighter = highlighter;
+        this.rawText = new StringBuilder(str);
+
+        scanLine();
+    }
+
+    /**
+     * Construct a new Line from an existing text string.
+     *
+     * @param str the text string
+     * @param defaultColor the color for unhighlighted text
+     */
+    public Line(final String str, final CellAttributes defaultColor) {
+        this(str, defaultColor, null);
+    }
+
+    // ------------------------------------------------------------------------
+    // Line -------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get a (shallow) copy of the words in this line.
@@ -143,34 +183,6 @@ public class Line {
         for (Word w: words) {
             w.applyHighlight();
         }
-    }
-
-    /**
-     * Construct a new Line from an existing text string, and highlight
-     * certain strings.
-     *
-     * @param str the text string
-     * @param defaultColor the color for unhighlighted text
-     * @param highlighter the highlighter to use
-     */
-    public Line(final String str, final CellAttributes defaultColor,
-        final Highlighter highlighter) {
-
-        this.defaultColor = defaultColor;
-        this.highlighter = highlighter;
-        this.rawText = new StringBuilder(str);
-
-        scanLine();
-    }
-
-    /**
-     * Construct a new Line from an existing text string.
-     *
-     * @param str the text string
-     * @param defaultColor the color for unhighlighted text
-     */
-    public Line(final String str, final CellAttributes defaultColor) {
-        this(str, defaultColor, null);
     }
 
     /**

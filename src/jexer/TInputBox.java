@@ -44,19 +44,18 @@ package jexer;
  */
 public class TInputBox extends TMessageBox {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The input field.
      */
     private TField field;
 
-    /**
-     * Retrieve the answer text.
-     *
-     * @return the answer text
-     */
-    public String getText() {
-        return field.getText();
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  The input box will be centered on screen.
@@ -114,6 +113,23 @@ public class TInputBox extends TMessageBox {
         // Yield to the secondary thread.  When I come back from the
         // constructor response will already be set.
         getApplication().yield();
+    }
+
+    // ------------------------------------------------------------------------
+    // TMessageBox ------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // TInputBox --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Retrieve the answer text.
+     *
+     * @return the answer text
+     */
+    public String getText() {
+        return field.getText();
     }
 
 }

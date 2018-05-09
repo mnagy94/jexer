@@ -40,6 +40,10 @@ import jexer.bits.CellAttributes;
  */
 public class Word {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The color to render this word as on screen.
      */
@@ -60,6 +64,42 @@ public class Word {
      * with a lot of shorter ones, so start with 3.
      */
     private StringBuilder text = new StringBuilder(3);
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Construct a word with one character.
+     *
+     * @param ch the first character of the word
+     * @param defaultColor the color for unhighlighted text
+     * @param highlighter the highlighter to use
+     */
+    public Word(final char ch, final CellAttributes defaultColor,
+        final Highlighter highlighter) {
+
+        this.defaultColor = defaultColor;
+        this.highlighter = highlighter;
+        text.append(ch);
+    }
+
+    /**
+     * Construct a word with an empty string.
+     *
+     * @param defaultColor the color for unhighlighted text
+     * @param highlighter the highlighter to use
+     */
+    public Word(final CellAttributes defaultColor,
+        final Highlighter highlighter) {
+
+        this.defaultColor = defaultColor;
+        this.highlighter = highlighter;
+    }
+
+    // ------------------------------------------------------------------------
+    // Word -------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get the color used to display this word on screen.
@@ -116,34 +156,6 @@ public class Word {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Construct a word with one character.
-     *
-     * @param ch the first character of the word
-     * @param defaultColor the color for unhighlighted text
-     * @param highlighter the highlighter to use
-     */
-    public Word(final char ch, final CellAttributes defaultColor,
-        final Highlighter highlighter) {
-
-        this.defaultColor = defaultColor;
-        this.highlighter = highlighter;
-        text.append(ch);
-    }
-
-    /**
-     * Construct a word with an empty string.
-     *
-     * @param defaultColor the color for unhighlighted text
-     * @param highlighter the highlighter to use
-     */
-    public Word(final CellAttributes defaultColor,
-        final Highlighter highlighter) {
-
-        this.defaultColor = defaultColor;
-        this.highlighter = highlighter;
     }
 
     /**

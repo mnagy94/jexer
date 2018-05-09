@@ -58,6 +58,10 @@ public class TMessageBox extends TWindow {
      */
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TMessageBox.class.getName());
 
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Message boxes have these supported types.
      */
@@ -84,16 +88,6 @@ public class TMessageBox extends TWindow {
     };
 
     /**
-     * The type of this message box.
-     */
-    private Type type;
-
-    /**
-     * My buttons.
-     */
-    private List<TButton> buttons;
-
-    /**
      * Message boxes have these possible results.
      */
     public enum Result {
@@ -118,6 +112,20 @@ public class TMessageBox extends TWindow {
         NO
     };
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The type of this message box.
+     */
+    private Type type;
+
+    /**
+     * My buttons.
+     */
+    private List<TButton> buttons;
+
     /**
      * Which button was clicked: OK, CANCEL, YES, or NO.
      */
@@ -131,6 +139,10 @@ public class TMessageBox extends TWindow {
     public final Result getResult() {
         return result;
     }
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  The message box will be centered on screen.
@@ -337,6 +349,10 @@ public class TMessageBox extends TWindow {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Handle keystrokes.
      *
@@ -395,7 +411,8 @@ public class TMessageBox extends TWindow {
             break;
 
         default:
-            throw new IllegalArgumentException("Invalid message box type: " + type);
+            throw new IllegalArgumentException("Invalid message box type: " +
+                type);
         }
 
         super.onKeypress(keypress);

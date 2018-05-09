@@ -60,6 +60,10 @@ public class TTerminalWindow extends TScrollableWindow
      */
     private static final ResourceBundle i18n = ResourceBundle.getBundle(TTerminalWindow.class.getName());
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The emulator.
      */
@@ -77,138 +81,9 @@ public class TTerminalWindow extends TScrollableWindow
      */
     private boolean ptypipe = false;
 
-    /**
-     * Claim the keystrokes the emulator will need.
-     */
-    private void addShortcutKeys() {
-        addShortcutKeypress(kbCtrlA);
-        addShortcutKeypress(kbCtrlB);
-        addShortcutKeypress(kbCtrlC);
-        addShortcutKeypress(kbCtrlD);
-        addShortcutKeypress(kbCtrlE);
-        addShortcutKeypress(kbCtrlF);
-        addShortcutKeypress(kbCtrlG);
-        addShortcutKeypress(kbCtrlH);
-        addShortcutKeypress(kbCtrlU);
-        addShortcutKeypress(kbCtrlJ);
-        addShortcutKeypress(kbCtrlK);
-        addShortcutKeypress(kbCtrlL);
-        addShortcutKeypress(kbCtrlM);
-        addShortcutKeypress(kbCtrlN);
-        addShortcutKeypress(kbCtrlO);
-        addShortcutKeypress(kbCtrlP);
-        addShortcutKeypress(kbCtrlQ);
-        addShortcutKeypress(kbCtrlR);
-        addShortcutKeypress(kbCtrlS);
-        addShortcutKeypress(kbCtrlT);
-        addShortcutKeypress(kbCtrlU);
-        addShortcutKeypress(kbCtrlV);
-        addShortcutKeypress(kbCtrlW);
-        addShortcutKeypress(kbCtrlX);
-        addShortcutKeypress(kbCtrlY);
-        addShortcutKeypress(kbCtrlZ);
-        addShortcutKeypress(kbF1);
-        addShortcutKeypress(kbF2);
-        addShortcutKeypress(kbF3);
-        addShortcutKeypress(kbF4);
-        addShortcutKeypress(kbF5);
-        addShortcutKeypress(kbF6);
-        addShortcutKeypress(kbF7);
-        addShortcutKeypress(kbF8);
-        addShortcutKeypress(kbF9);
-        addShortcutKeypress(kbF10);
-        addShortcutKeypress(kbF11);
-        addShortcutKeypress(kbF12);
-        addShortcutKeypress(kbAltA);
-        addShortcutKeypress(kbAltB);
-        addShortcutKeypress(kbAltC);
-        addShortcutKeypress(kbAltD);
-        addShortcutKeypress(kbAltE);
-        addShortcutKeypress(kbAltF);
-        addShortcutKeypress(kbAltG);
-        addShortcutKeypress(kbAltH);
-        addShortcutKeypress(kbAltU);
-        addShortcutKeypress(kbAltJ);
-        addShortcutKeypress(kbAltK);
-        addShortcutKeypress(kbAltL);
-        addShortcutKeypress(kbAltM);
-        addShortcutKeypress(kbAltN);
-        addShortcutKeypress(kbAltO);
-        addShortcutKeypress(kbAltP);
-        addShortcutKeypress(kbAltQ);
-        addShortcutKeypress(kbAltR);
-        addShortcutKeypress(kbAltS);
-        addShortcutKeypress(kbAltT);
-        addShortcutKeypress(kbAltU);
-        addShortcutKeypress(kbAltV);
-        addShortcutKeypress(kbAltW);
-        addShortcutKeypress(kbAltX);
-        addShortcutKeypress(kbAltY);
-        addShortcutKeypress(kbAltZ);
-    }
-
-    /**
-     * Convert a string array to a whitespace-separated string.
-     *
-     * @param array the string array
-     * @return a single string
-     */
-    private String stringArrayToString(final String [] array) {
-        StringBuilder sb = new StringBuilder(array[0].length());
-        for (int i = 0; i < array.length; i++) {
-            sb.append(array[i]);
-            if (i < array.length - 1) {
-                sb.append(' ');
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Spawn the shell.
-     *
-     * @param command the command line to execute
-     */
-    private void spawnShell(final String [] command) {
-
-        /*
-        System.err.printf("spawnShell(): '%s'\n",
-            stringArrayToString(command));
-        */
-
-        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
-        setBottomValue(0);
-
-        // Assume XTERM
-        ECMA48.DeviceType deviceType = ECMA48.DeviceType.XTERM;
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            Map<String, String> env = pb.environment();
-            env.put("TERM", ECMA48.deviceTypeTerm(deviceType));
-            env.put("LANG", ECMA48.deviceTypeLang(deviceType, "en"));
-            env.put("COLUMNS", "80");
-            env.put("LINES", "24");
-            pb.redirectErrorStream(true);
-            shell = pb.start();
-            emulator = new ECMA48(deviceType, shell.getInputStream(),
-                shell.getOutputStream(), this);
-        } catch (IOException e) {
-            messageBox(i18n.getString("errorLaunchingShellTitle"),
-                MessageFormat.format(i18n.getString("errorLaunchingShellText"),
-                    e.getMessage()));
-        }
-
-        // Setup the scroll bars
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
-                getHeight()));
-
-        // Claim the keystrokes the emulator will need.
-        addShortcutKeys();
-
-        // Add shortcut text
-        newStatusBar(i18n.getString("statusBarRunning"));
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor spawns a custom command line.
@@ -321,38 +196,9 @@ public class TTerminalWindow extends TScrollableWindow
         }
     }
 
-    /**
-     * Terminate the child of the 'script' process used on POSIX.  This may
-     * or may not work.
-     */
-    private void terminateShellChildProcess() {
-        int pid = -1;
-        if (shell.getClass().getName().equals("java.lang.UNIXProcess")) {
-            /* get the PID on unix/linux systems */
-            try {
-                Field field = shell.getClass().getDeclaredField("pid");
-                field.setAccessible(true);
-                pid = field.getInt(shell);
-            } catch (Throwable e) {
-                // SQUASH, this didn't work.  Just bail out quietly.
-                return;
-            }
-        }
-        if (pid != -1) {
-            // shell.destroy() works successfully at killing this side of
-            // 'script'.  But we need to make sure the other side (child
-            // process) is also killed.
-            String [] cmdKillIt = {
-                "pkill", "-P", Integer.toString(pid)
-            };
-            try {
-                Runtime.getRuntime().exec(cmdKillIt);
-            } catch (Throwable e) {
-                // SQUASH, this didn't work.  Just bail out quietly.
-                return;
-            }
-        }
-    }
+    // ------------------------------------------------------------------------
+    // TScrollableWindow ------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Draw the display buffer.
@@ -455,123 +301,6 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
-     * Called by emulator when fresh data has come in.
-     */
-    public void displayChanged() {
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
-    }
-
-    /**
-     * Function to call to obtain the display width.
-     *
-     * @return the number of columns in the display
-     */
-    public int getDisplayWidth() {
-        if (ptypipe) {
-            return getWidth() - 2;
-        }
-        return 80;
-    }
-
-    /**
-     * Function to call to obtain the display height.
-     *
-     * @return the number of rows in the display
-     */
-    public int getDisplayHeight() {
-        if (ptypipe) {
-            return getHeight() - 2;
-        }
-        return 24;
-    }
-
-    /**
-     * Handle window close.
-     */
-    @Override
-    public void onClose() {
-        emulator.close();
-        if (shell != null) {
-            terminateShellChildProcess();
-            shell.destroy();
-            shell = null;
-        }
-    }
-
-    /**
-     * Hook for subclasses to be notified of the shell termination.
-     */
-    public void onShellExit() {
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
-    }
-
-    /**
-     * Copy out variables from the emulator that TTerminal has to expose on
-     * screen.
-     */
-    private void readEmulatorState() {
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
-
-            setCursorX(emulator.getCursorX() + 1);
-            setCursorY(emulator.getCursorY() + 1
-                + (getHeight() - 2 - emulator.getHeight())
-                - getVerticalValue());
-            setCursorVisible(emulator.isCursorVisible());
-            if (getCursorX() > getWidth() - 2) {
-                setCursorVisible(false);
-            }
-            if ((getCursorY() > getHeight() - 2) || (getCursorY() < 0)) {
-                setCursorVisible(false);
-            }
-            if (emulator.getScreenTitle().length() > 0) {
-                // Only update the title if the shell is still alive
-                if (shell != null) {
-                    setTitle(emulator.getScreenTitle());
-                }
-            }
-
-            // Check to see if the shell has died.
-            if (!emulator.isReading() && (shell != null)) {
-                try {
-                    int rc = shell.exitValue();
-                    // The emulator exited on its own, all is fine
-                    setTitle(MessageFormat.format(i18n.
-                            getString("windowTitleCompleted"), getTitle(), rc));
-                    shell = null;
-                    emulator.close();
-                    clearShortcutKeypresses();
-                    statusBar.setText(MessageFormat.format(i18n.
-                            getString("statusBarCompleted"), rc));
-                    onShellExit();
-                } catch (IllegalThreadStateException e) {
-                    // The emulator thread has exited, but the shell Process
-                    // hasn't figured that out yet.  Do nothing, we will see
-                    // this in a future tick.
-                }
-            } else if (emulator.isReading() && (shell != null)) {
-                // The shell might be dead, let's check
-                try {
-                    int rc = shell.exitValue();
-                    // If we got here, the shell died.
-                    setTitle(MessageFormat.format(i18n.
-                            getString("windowTitleCompleted"), getTitle(), rc));
-                    shell = null;
-                    emulator.close();
-                    clearShortcutKeypresses();
-                    statusBar.setText(MessageFormat.format(i18n.
-                            getString("statusBarCompleted"), rc));
-                    onShellExit();
-                } catch (IllegalThreadStateException e) {
-                    // The shell is still running, do nothing.
-                }
-            }
-
-        } // synchronized (emulator)
-    }
-
-    /**
      * Handle window/screen resize events.
      *
      * @param resize resize event
@@ -627,28 +356,16 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
-     * Check if a mouse press/release/motion event coordinate is over the
-     * emulator.
-     *
-     * @param mouse a mouse-based event
-     * @return whether or not the mouse is on the emulator
+     * Handle window close.
      */
-    private final boolean mouseOnEmulator(final TMouseEvent mouse) {
-
-        synchronized (emulator) {
-            if (!emulator.isReading()) {
-                return false;
-            }
+    @Override
+    public void onClose() {
+        emulator.close();
+        if (shell != null) {
+            terminateShellChildProcess();
+            shell.destroy();
+            shell = null;
         }
-
-        if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
-            && (mouse.getAbsoluteX() <  getAbsoluteX() + getWidth() - 1)
-            && (mouse.getAbsoluteY() >= getAbsoluteY() + 1)
-            && (mouse.getAbsoluteY() <  getAbsoluteY() + getHeight() - 1)
-        ) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -787,6 +504,305 @@ public class TTerminalWindow extends TScrollableWindow
 
         // Emulator didn't consume it, pass it on
         super.onMouseMotion(mouse);
+    }
+
+    // ------------------------------------------------------------------------
+    // TTerminalWindow --------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Claim the keystrokes the emulator will need.
+     */
+    private void addShortcutKeys() {
+        addShortcutKeypress(kbCtrlA);
+        addShortcutKeypress(kbCtrlB);
+        addShortcutKeypress(kbCtrlC);
+        addShortcutKeypress(kbCtrlD);
+        addShortcutKeypress(kbCtrlE);
+        addShortcutKeypress(kbCtrlF);
+        addShortcutKeypress(kbCtrlG);
+        addShortcutKeypress(kbCtrlH);
+        addShortcutKeypress(kbCtrlU);
+        addShortcutKeypress(kbCtrlJ);
+        addShortcutKeypress(kbCtrlK);
+        addShortcutKeypress(kbCtrlL);
+        addShortcutKeypress(kbCtrlM);
+        addShortcutKeypress(kbCtrlN);
+        addShortcutKeypress(kbCtrlO);
+        addShortcutKeypress(kbCtrlP);
+        addShortcutKeypress(kbCtrlQ);
+        addShortcutKeypress(kbCtrlR);
+        addShortcutKeypress(kbCtrlS);
+        addShortcutKeypress(kbCtrlT);
+        addShortcutKeypress(kbCtrlU);
+        addShortcutKeypress(kbCtrlV);
+        addShortcutKeypress(kbCtrlW);
+        addShortcutKeypress(kbCtrlX);
+        addShortcutKeypress(kbCtrlY);
+        addShortcutKeypress(kbCtrlZ);
+        addShortcutKeypress(kbF1);
+        addShortcutKeypress(kbF2);
+        addShortcutKeypress(kbF3);
+        addShortcutKeypress(kbF4);
+        addShortcutKeypress(kbF5);
+        addShortcutKeypress(kbF6);
+        addShortcutKeypress(kbF7);
+        addShortcutKeypress(kbF8);
+        addShortcutKeypress(kbF9);
+        addShortcutKeypress(kbF10);
+        addShortcutKeypress(kbF11);
+        addShortcutKeypress(kbF12);
+        addShortcutKeypress(kbAltA);
+        addShortcutKeypress(kbAltB);
+        addShortcutKeypress(kbAltC);
+        addShortcutKeypress(kbAltD);
+        addShortcutKeypress(kbAltE);
+        addShortcutKeypress(kbAltF);
+        addShortcutKeypress(kbAltG);
+        addShortcutKeypress(kbAltH);
+        addShortcutKeypress(kbAltU);
+        addShortcutKeypress(kbAltJ);
+        addShortcutKeypress(kbAltK);
+        addShortcutKeypress(kbAltL);
+        addShortcutKeypress(kbAltM);
+        addShortcutKeypress(kbAltN);
+        addShortcutKeypress(kbAltO);
+        addShortcutKeypress(kbAltP);
+        addShortcutKeypress(kbAltQ);
+        addShortcutKeypress(kbAltR);
+        addShortcutKeypress(kbAltS);
+        addShortcutKeypress(kbAltT);
+        addShortcutKeypress(kbAltU);
+        addShortcutKeypress(kbAltV);
+        addShortcutKeypress(kbAltW);
+        addShortcutKeypress(kbAltX);
+        addShortcutKeypress(kbAltY);
+        addShortcutKeypress(kbAltZ);
+    }
+
+    /**
+     * Convert a string array to a whitespace-separated string.
+     *
+     * @param array the string array
+     * @return a single string
+     */
+    private String stringArrayToString(final String [] array) {
+        StringBuilder sb = new StringBuilder(array[0].length());
+        for (int i = 0; i < array.length; i++) {
+            sb.append(array[i]);
+            if (i < array.length - 1) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Spawn the shell.
+     *
+     * @param command the command line to execute
+     */
+    private void spawnShell(final String [] command) {
+
+        /*
+        System.err.printf("spawnShell(): '%s'\n",
+            stringArrayToString(command));
+        */
+
+        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
+        setBottomValue(0);
+
+        // Assume XTERM
+        ECMA48.DeviceType deviceType = ECMA48.DeviceType.XTERM;
+
+        try {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            Map<String, String> env = pb.environment();
+            env.put("TERM", ECMA48.deviceTypeTerm(deviceType));
+            env.put("LANG", ECMA48.deviceTypeLang(deviceType, "en"));
+            env.put("COLUMNS", "80");
+            env.put("LINES", "24");
+            pb.redirectErrorStream(true);
+            shell = pb.start();
+            emulator = new ECMA48(deviceType, shell.getInputStream(),
+                shell.getOutputStream(), this);
+        } catch (IOException e) {
+            messageBox(i18n.getString("errorLaunchingShellTitle"),
+                MessageFormat.format(i18n.getString("errorLaunchingShellText"),
+                    e.getMessage()));
+        }
+
+        // Setup the scroll bars
+        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+                getHeight()));
+
+        // Claim the keystrokes the emulator will need.
+        addShortcutKeys();
+
+        // Add shortcut text
+        newStatusBar(i18n.getString("statusBarRunning"));
+    }
+
+    /**
+     * Terminate the child of the 'script' process used on POSIX.  This may
+     * or may not work.
+     */
+    private void terminateShellChildProcess() {
+        int pid = -1;
+        if (shell.getClass().getName().equals("java.lang.UNIXProcess")) {
+            /* get the PID on unix/linux systems */
+            try {
+                Field field = shell.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                pid = field.getInt(shell);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return;
+            }
+        }
+        if (pid != -1) {
+            // shell.destroy() works successfully at killing this side of
+            // 'script'.  But we need to make sure the other side (child
+            // process) is also killed.
+            String [] cmdKillIt = {
+                "pkill", "-P", Integer.toString(pid)
+            };
+            try {
+                Runtime.getRuntime().exec(cmdKillIt);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return;
+            }
+        }
+    }
+
+    /**
+     * Called by emulator when fresh data has come in.
+     */
+    public void displayChanged() {
+        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+    }
+
+    /**
+     * Function to call to obtain the display width.
+     *
+     * @return the number of columns in the display
+     */
+    public int getDisplayWidth() {
+        if (ptypipe) {
+            return getWidth() - 2;
+        }
+        return 80;
+    }
+
+    /**
+     * Function to call to obtain the display height.
+     *
+     * @return the number of rows in the display
+     */
+    public int getDisplayHeight() {
+        if (ptypipe) {
+            return getHeight() - 2;
+        }
+        return 24;
+    }
+
+    /**
+     * Hook for subclasses to be notified of the shell termination.
+     */
+    public void onShellExit() {
+        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+    }
+
+    /**
+     * Copy out variables from the emulator that TTerminal has to expose on
+     * screen.
+     */
+    private void readEmulatorState() {
+        // Synchronize against the emulator so we don't stomp on its reader
+        // thread.
+        synchronized (emulator) {
+
+            setCursorX(emulator.getCursorX() + 1);
+            setCursorY(emulator.getCursorY() + 1
+                + (getHeight() - 2 - emulator.getHeight())
+                - getVerticalValue());
+            setCursorVisible(emulator.isCursorVisible());
+            if (getCursorX() > getWidth() - 2) {
+                setCursorVisible(false);
+            }
+            if ((getCursorY() > getHeight() - 2) || (getCursorY() < 0)) {
+                setCursorVisible(false);
+            }
+            if (emulator.getScreenTitle().length() > 0) {
+                // Only update the title if the shell is still alive
+                if (shell != null) {
+                    setTitle(emulator.getScreenTitle());
+                }
+            }
+
+            // Check to see if the shell has died.
+            if (!emulator.isReading() && (shell != null)) {
+                try {
+                    int rc = shell.exitValue();
+                    // The emulator exited on its own, all is fine
+                    setTitle(MessageFormat.format(i18n.
+                            getString("windowTitleCompleted"), getTitle(), rc));
+                    shell = null;
+                    emulator.close();
+                    clearShortcutKeypresses();
+                    statusBar.setText(MessageFormat.format(i18n.
+                            getString("statusBarCompleted"), rc));
+                    onShellExit();
+                } catch (IllegalThreadStateException e) {
+                    // The emulator thread has exited, but the shell Process
+                    // hasn't figured that out yet.  Do nothing, we will see
+                    // this in a future tick.
+                }
+            } else if (emulator.isReading() && (shell != null)) {
+                // The shell might be dead, let's check
+                try {
+                    int rc = shell.exitValue();
+                    // If we got here, the shell died.
+                    setTitle(MessageFormat.format(i18n.
+                            getString("windowTitleCompleted"), getTitle(), rc));
+                    shell = null;
+                    emulator.close();
+                    clearShortcutKeypresses();
+                    statusBar.setText(MessageFormat.format(i18n.
+                            getString("statusBarCompleted"), rc));
+                    onShellExit();
+                } catch (IllegalThreadStateException e) {
+                    // The shell is still running, do nothing.
+                }
+            }
+
+        } // synchronized (emulator)
+    }
+
+    /**
+     * Check if a mouse press/release/motion event coordinate is over the
+     * emulator.
+     *
+     * @param mouse a mouse-based event
+     * @return whether or not the mouse is on the emulator
+     */
+    private final boolean mouseOnEmulator(final TMouseEvent mouse) {
+
+        synchronized (emulator) {
+            if (!emulator.isReading()) {
+                return false;
+            }
+        }
+
+        if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
+            && (mouse.getAbsoluteX() <  getAbsoluteX() + getWidth() - 1)
+            && (mouse.getAbsoluteY() >= getAbsoluteY() + 1)
+            && (mouse.getAbsoluteY() <  getAbsoluteY() + getHeight() - 1)
+        ) {
+            return true;
+        }
+        return false;
     }
 
 }

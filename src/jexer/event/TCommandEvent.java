@@ -37,19 +37,18 @@ import jexer.TCommand;
  */
 public class TCommandEvent extends TInputEvent {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Command dispatched.
      */
     private TCommand cmd;
 
-    /**
-     * Get TCommand.
-     *
-     * @return the TCommand
-     */
-    public TCommand getCmd() {
-        return cmd;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public contructor.
@@ -59,6 +58,10 @@ public class TCommandEvent extends TInputEvent {
     public TCommandEvent(final TCommand cmd) {
         this.cmd = cmd;
     }
+
+    // ------------------------------------------------------------------------
+    // TInputEvent ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Comparison check.  All fields must match to return true.
@@ -108,4 +111,18 @@ public class TCommandEvent extends TInputEvent {
     public String toString() {
         return String.format("CommandEvent: %s", cmd.toString());
     }
+
+    // ------------------------------------------------------------------------
+    // TCommandEvent ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get TCommand.
+     *
+     * @return the TCommand
+     */
+    public TCommand getCmd() {
+        return cmd;
+    }
+
 }

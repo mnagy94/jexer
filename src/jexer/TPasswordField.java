@@ -36,6 +36,10 @@ import jexer.bits.GraphicsChars;
  */
 public class TPasswordField extends TField {
 
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Public constructor.
      *
@@ -86,6 +90,10 @@ public class TPasswordField extends TField {
         // Set parent and window
         super(parent, x, y, width, fixed, text, enterAction, updateAction);
     }
+
+    // ------------------------------------------------------------------------
+    // TField -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Draw the text field.

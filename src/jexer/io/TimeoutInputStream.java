@@ -37,6 +37,10 @@ import java.io.InputStream;
  */
 public class TimeoutInputStream extends InputStream {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The wrapped stream.
      */
@@ -54,12 +58,9 @@ public class TimeoutInputStream extends InputStream {
      */
     private volatile boolean cancel = false;
 
-    /**
-     * Request that the current read() operation timeout immediately.
-     */
-    public synchronized void cancelRead() {
-        cancel = true;
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor, at the default timeout of 10000 millis (10
@@ -92,6 +93,10 @@ public class TimeoutInputStream extends InputStream {
         this.stream             = stream;
         this.timeoutMillis      = timeoutMillis;
     }
+
+    // ------------------------------------------------------------------------
+    // InputStream ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Reads the next byte of data from the input stream.
@@ -209,7 +214,9 @@ public class TimeoutInputStream extends InputStream {
                         "on?");
                 }
                 remaining -= rc;
-                return rc;
+                if (remaining == 0) {
+                    return b.length;
+                }
             }
         }
 
@@ -283,7 +290,10 @@ public class TimeoutInputStream extends InputStream {
                         "available, but read() returned -1.  What is going " +
                         "on?");
                 }
-                return rc;
+                remaining -= rc;
+                if (remaining == 0) {
+                    return len;
+                }
             }
         }
 
@@ -360,6 +370,17 @@ public class TimeoutInputStream extends InputStream {
     @Override
     public long skip(final long n) throws IOException {
         return stream.skip(n);
+    }
+
+    // ------------------------------------------------------------------------
+    // TimeoutInputStream -----------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Request that the current read() operation timeout immediately.
+     */
+    public synchronized void cancelRead() {
+        cancel = true;
     }
 
 }

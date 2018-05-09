@@ -30,12 +30,17 @@ package jexer;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * TDirectoryList shows the files within a directory.
  */
 public class TDirectoryList extends TList {
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Files in the directory.
@@ -47,63 +52,9 @@ public class TDirectoryList extends TList {
      */
     private File path;
 
-    /**
-     * Set the new path to display.
-     *
-     * @param path new path to list files for
-     */
-    public void setPath(final String path) {
-        this.path = new File(path);
-
-        List<String> newStrings = new ArrayList<String>();
-        files.clear();
-
-        // Build a list of files in this directory
-        File [] newFiles = this.path.listFiles();
-        if (newFiles != null) {
-            for (int i = 0; i < newFiles.length; i++) {
-                if (newFiles[i].getName().startsWith(".")) {
-                    continue;
-                }
-                if (newFiles[i].isDirectory()) {
-                    continue;
-                }
-                files.add(newFiles[i]);
-                newStrings.add(renderFile(files.size() - 1));
-            }
-        }
-        setList(newStrings);
-
-        // Select the first entry
-        if (getMaxSelectedIndex() >= 0) {
-            setSelectedIndex(0);
-        }
-    }
-
-    /**
-     * Get the path that is being displayed.
-     *
-     * @return the path
-     */
-    public File getPath() {
-        path = files.get(getSelectedIndex());
-        return path;
-    }
-
-    /**
-     * Format one of the entries for drawing on the screen.
-     *
-     * @param index index into files
-     * @return the line to draw
-     */
-    private String renderFile(final int index) {
-        File file = files.get(index);
-        String name = file.getName();
-        if (name.length() > 20) {
-            name = name.substring(0, 17) + "...";
-        }
-        return String.format("%-20s %5dk", name, (file.length() / 1024));
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.
@@ -138,6 +89,73 @@ public class TDirectoryList extends TList {
         super(parent, null, x, y, width, height, action);
         files = new ArrayList<File>();
         setPath(path);
+    }
+
+    // ------------------------------------------------------------------------
+    // TList ------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // TDirectoryList ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the new path to display.
+     *
+     * @param path new path to list files for
+     */
+    public void setPath(final String path) {
+        this.path = new File(path);
+
+        List<String> newStrings = new ArrayList<String>();
+        files.clear();
+
+        // Build a list of files in this directory
+        File [] newFiles = this.path.listFiles();
+        if (newFiles != null) {
+            for (int i = 0; i < newFiles.length; i++) {
+                if (newFiles[i].getName().startsWith(".")) {
+                    continue;
+                }
+                if (newFiles[i].isDirectory()) {
+                    continue;
+                }
+                files.add(newFiles[i]);
+                newStrings.add(renderFile(files.size() - 1));
+            }
+        }
+        Collections.sort(newStrings);
+        setList(newStrings);
+
+        // Select the first entry
+        if (getMaxSelectedIndex() >= 0) {
+            setSelectedIndex(0);
+        }
+    }
+
+    /**
+     * Get the path that is being displayed.
+     *
+     * @return the path
+     */
+    public File getPath() {
+        path = files.get(getSelectedIndex());
+        return path;
+    }
+
+    /**
+     * Format one of the entries for drawing on the screen.
+     *
+     * @param index index into files
+     * @return the line to draw
+     */
+    private String renderFile(final int index) {
+        File file = files.get(index);
+        String name = file.getName();
+        if (name.length() > 20) {
+            name = name.substring(0, 17) + "...";
+        }
+        return String.format("%-20s %5dk", name, (file.length() / 1024));
     }
 
 }

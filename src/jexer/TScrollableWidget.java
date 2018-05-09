@@ -36,6 +36,10 @@ import jexer.event.TResizeEvent;
  */
 public class TScrollableWidget extends TWidget implements Scrollable {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The horizontal scrollbar.
      */
@@ -46,48 +50,9 @@ public class TScrollableWidget extends TWidget implements Scrollable {
      */
     protected TVScroller vScroller = null;
 
-    /**
-     * Place the scrollbars on the edge of this widget, and adjust bigChange
-     * to match the new size.  This is called by onResize().
-     */
-    protected void placeScrollbars() {
-        if (hScroller != null) {
-            hScroller.setY(getHeight() - 1);
-            hScroller.setWidth(getWidth() - 1);
-            hScroller.setBigChange(getWidth() - 1);
-        }
-        if (vScroller != null) {
-            vScroller.setX(getWidth() - 1);
-            vScroller.setHeight(getHeight() - 1);
-            vScroller.setBigChange(getHeight() - 1);
-        }
-    }
-
-    /**
-     * Recompute whatever data is displayed by this widget.
-     */
-    public void reflowData() {
-        // Default: nothing to do
-    }
-
-    /**
-     * Handle window/screen resize events.
-     *
-     * @param event resize event
-     */
-    @Override
-    public void onResize(final TResizeEvent event) {
-        if (event.getType() == TResizeEvent.Type.WIDGET) {
-            setWidth(event.getWidth());
-            setHeight(event.getHeight());
-
-            reflowData();
-            placeScrollbars();
-            return;
-        } else {
-            super.onResize(event);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Protected constructor.
@@ -138,6 +103,57 @@ public class TScrollableWidget extends TWidget implements Scrollable {
         final int x, final int y, final int width, final int height) {
 
         super(parent, enabled, x, y, width, height);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Handle window/screen resize events.
+     *
+     * @param event resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent event) {
+        if (event.getType() == TResizeEvent.Type.WIDGET) {
+            setWidth(event.getWidth());
+            setHeight(event.getHeight());
+
+            reflowData();
+            placeScrollbars();
+            return;
+        } else {
+            super.onResize(event);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TScrollableWidget ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Place the scrollbars on the edge of this widget, and adjust bigChange
+     * to match the new size.  This is called by onResize().
+     */
+    protected void placeScrollbars() {
+        if (hScroller != null) {
+            hScroller.setY(getHeight() - 1);
+            hScroller.setWidth(getWidth() - 1);
+            hScroller.setBigChange(getWidth() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setX(getWidth() - 1);
+            vScroller.setHeight(getHeight() - 1);
+            vScroller.setBigChange(getHeight() - 1);
+        }
+    }
+
+    /**
+     * Recompute whatever data is displayed by this widget.
+     */
+    public void reflowData() {
+        // Default: nothing to do
     }
 
     /**

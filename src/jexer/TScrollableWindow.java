@@ -37,6 +37,10 @@ import jexer.event.TResizeEvent;
  */
 public class TScrollableWindow extends TWindow implements Scrollable {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * The horizontal scrollbar.
      */
@@ -47,45 +51,9 @@ public class TScrollableWindow extends TWindow implements Scrollable {
      */
     protected TVScroller vScroller = null;
 
-    /**
-     * Place the scrollbars on the edge of this widget, and adjust bigChange
-     * to match the new size.  This is called by onResize().
-     */
-    protected void placeScrollbars() {
-        if (hScroller != null) {
-            hScroller.setY(getHeight() - 2);
-            hScroller.setWidth(getWidth() - hScroller.getX() - 3);
-            hScroller.setBigChange(getWidth() - hScroller.getX() - 3);
-        }
-        if (vScroller != null) {
-            vScroller.setX(getWidth() - 2);
-            vScroller.setHeight(getHeight() - 2);
-            vScroller.setBigChange(getHeight() - 2);
-        }
-    }
-
-    /**
-     * Recompute whatever data is displayed by this widget.
-     */
-    public void reflowData() {
-        // Default: nothing to do
-    }
-
-    /**
-     * Handle window/screen resize events.
-     *
-     * @param event resize event
-     */
-    @Override
-    public void onResize(final TResizeEvent event) {
-        if (event.getType() == TResizeEvent.Type.WIDGET) {
-            reflowData();
-            placeScrollbars();
-            return;
-        } else {
-            super.onResize(event);
-        }
-    }
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Public constructor.  Window will be located at (0, 0).
@@ -148,6 +116,72 @@ public class TScrollableWindow extends TWindow implements Scrollable {
         final int flags) {
 
         super(application, title, x, y, width, height, flags);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Handle window/screen resize events.
+     *
+     * @param event resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent event) {
+        if (event.getType() == TResizeEvent.Type.WIDGET) {
+            reflowData();
+            placeScrollbars();
+            return;
+        } else {
+            super.onResize(event);
+        }
+    }
+
+    /**
+     * Maximize window.
+     */
+    @Override
+    public void maximize() {
+        super.maximize();
+        placeScrollbars();
+    }
+
+    /**
+     * Restore (unmaximize) window.
+     */
+    @Override
+    public void restore() {
+        super.restore();
+        placeScrollbars();
+    }
+
+    // ------------------------------------------------------------------------
+    // TScrollableWindow ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Place the scrollbars on the edge of this widget, and adjust bigChange
+     * to match the new size.  This is called by onResize().
+     */
+    protected void placeScrollbars() {
+        if (hScroller != null) {
+            hScroller.setY(getHeight() - 2);
+            hScroller.setWidth(getWidth() - hScroller.getX() - 3);
+            hScroller.setBigChange(getWidth() - hScroller.getX() - 3);
+        }
+        if (vScroller != null) {
+            vScroller.setX(getWidth() - 2);
+            vScroller.setHeight(getHeight() - 2);
+            vScroller.setBigChange(getHeight() - 2);
+        }
+    }
+
+    /**
+     * Recompute whatever data is displayed by this widget.
+     */
+    public void reflowData() {
+        // Default: nothing to do
     }
 
     /**

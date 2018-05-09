@@ -35,6 +35,10 @@ import jexer.bits.CellAttributes;
  */
 public class TRadioGroup extends TWidget {
 
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
     /**
      * Label for this radio button group.
      */
@@ -44,6 +48,55 @@ public class TRadioGroup extends TWidget {
      * Only one of my children can be selected.
      */
     private TRadioButton selectedButton = null;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param label label to display on the group box
+     */
+    public TRadioGroup(final TWidget parent, final int x, final int y,
+        final String label) {
+
+        // Set parent and window
+        super(parent, x, y, label.length() + 4, 2);
+
+        this.label = label;
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw a radio button with label.
+     */
+    @Override
+    public void draw() {
+        CellAttributes radioGroupColor;
+
+        if (isAbsoluteActive()) {
+            radioGroupColor = getTheme().getColor("tradiogroup.active");
+        } else {
+            radioGroupColor = getTheme().getColor("tradiogroup.inactive");
+        }
+
+        getScreen().drawBox(0, 0, getWidth(), getHeight(),
+            radioGroupColor, radioGroupColor, 3, false);
+
+        getScreen().hLineXY(1, 0, label.length() + 2, ' ', radioGroupColor);
+        getScreen().putStringXY(2, 0, label, radioGroupColor);
+    }
+
+    // ------------------------------------------------------------------------
+    // TRadioGroup ------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Get the radio button ID that was selected.
@@ -68,43 +121,6 @@ public class TRadioGroup extends TWidget {
             selectedButton.setSelected(false);
         }
         selectedButton = button;
-    }
-
-    /**
-     * Public constructor.
-     *
-     * @param parent parent widget
-     * @param x column relative to parent
-     * @param y row relative to parent
-     * @param label label to display on the group box
-     */
-    public TRadioGroup(final TWidget parent, final int x, final int y,
-        final String label) {
-
-        // Set parent and window
-        super(parent, x, y, label.length() + 4, 2);
-
-        this.label = label;
-    }
-
-    /**
-     * Draw a radio button with label.
-     */
-    @Override
-    public void draw() {
-        CellAttributes radioGroupColor;
-
-        if (isAbsoluteActive()) {
-            radioGroupColor = getTheme().getColor("tradiogroup.active");
-        } else {
-            radioGroupColor = getTheme().getColor("tradiogroup.inactive");
-        }
-
-        getScreen().drawBox(0, 0, getWidth(), getHeight(),
-            radioGroupColor, radioGroupColor, 3, false);
-
-        getScreen().hLineXY(1, 0, label.length() + 2, ' ', radioGroupColor);
-        getScreen().putStringXY(2, 0, label, radioGroupColor);
     }
 
     /**
