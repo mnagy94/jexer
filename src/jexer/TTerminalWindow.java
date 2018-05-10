@@ -301,6 +301,19 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
+     * Handle window close.
+     */
+    @Override
+    public void onClose() {
+        emulator.close();
+        if (shell != null) {
+            terminateShellChildProcess();
+            shell.destroy();
+            shell = null;
+        }
+    }
+
+    /**
      * Handle window/screen resize events.
      *
      * @param resize resize event
@@ -353,19 +366,6 @@ public class TTerminalWindow extends TScrollableWindow
             setVerticalBigChange(getHeight() - 2);
 
         } // synchronized (emulator)
-    }
-
-    /**
-     * Handle window close.
-     */
-    @Override
-    public void onClose() {
-        emulator.close();
-        if (shell != null) {
-            terminateShellChildProcess();
-            shell.destroy();
-            shell = null;
-        }
     }
 
     /**

@@ -131,15 +131,6 @@ public class TMessageBox extends TWindow {
      */
     private Result result = Result.OK;
 
-    /**
-     * Get the result.
-     *
-     * @return the result: OK, CANCEL, YES, or NO.
-     */
-    public final Result getResult() {
-        return result;
-    }
-
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -416,6 +407,19 @@ public class TMessageBox extends TWindow {
         }
 
         super.onKeypress(keypress);
+    }
+
+    // ------------------------------------------------------------------------
+    // TMessageBox ------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the result.
+     *
+     * @return the result: OK, CANCEL, YES, or NO.
+     */
+    public final Result getResult() {
+        return result;
     }
 
 }
