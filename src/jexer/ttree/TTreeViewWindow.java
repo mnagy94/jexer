@@ -190,6 +190,13 @@ public class TTreeViewWindow extends TScrollableWindow {
             return;
         }
 
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            if (statusBar.statusBarKeypress(keypress)) {
+                return;
+            }
+        }
+
         if (keypress.equals(kbShiftLeft)
             || keypress.equals(kbCtrlLeft)
             || keypress.equals(kbAltLeft)
