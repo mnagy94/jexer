@@ -1,6 +1,13 @@
 Jexer Work Log
 ==============
 
+July 13, 2018
+
+This project isn't dead, I swear!
+
+My meatspace life has been very crazy busy.  But I do hope to be back
+to work on this in another couple months.
+
 December 15, 2017
 
 We now have 24-bit RGB colors working with Swing backend.
