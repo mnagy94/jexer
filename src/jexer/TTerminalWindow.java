@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,7 +31,7 @@ package jexer;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -77,9 +77,14 @@ public class TTerminalWindow extends TScrollableWindow
     /**
      * If true, we are using the ptypipe utility to support dynamic window
      * resizing.  ptypipe is available at
-     * https://github.com/klamonte/ptypipe .
+     * https://gitlab.com/klamonte/ptypipe .
      */
     private boolean ptypipe = false;
+
+    /**
+     * If true, close the window when the shell exits.
+     */
+    private boolean closeOnExit = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -96,7 +101,25 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final String commandLine) {
 
-        this(application, x, y, RESIZABLE, commandLine.split("\\s"));
+        this(application, x, y, RESIZABLE, commandLine.split("\\s"),
+            System.getProperty("jexer.TTerminal.closeOnExit",
+                "false").equals("true"));
+    }
+
+    /**
+     * Public constructor spawns a custom command line.
+     *
+     * @param application TApplication that manages this window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param commandLine the command line to execute
+     * @param closeOnExit if true, close the window when the command exits
+     */
+    public TTerminalWindow(final TApplication application, final int x,
+        final int y, final String commandLine, final boolean closeOnExit) {
+
+        this(application, x, y, RESIZABLE, commandLine.split("\\s"),
+            closeOnExit);
     }
 
     /**
@@ -111,8 +134,29 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final int flags, final String [] command) {
 
+        this(application, x, y, flags, command,
+            System.getProperty("jexer.TTerminal.closeOnExit",
+                "false").equals("true"));
+    }
+
+    /**
+     * Public constructor spawns a custom command line.
+     *
+     * @param application TApplication that manages this window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param command the command line to execute
+     * @param closeOnExit if true, close the window when the command exits
+     */
+    public TTerminalWindow(final TApplication application, final int x,
+        final int y, final int flags, final String [] command,
+        final boolean closeOnExit) {
+
         super(application, i18n.getString("windowTitle"), x, y,
             80 + 2, 24 + 2, flags);
+
+        this.closeOnExit = closeOnExit;
 
         String [] fullCommand;
 
@@ -161,8 +205,28 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final int flags) {
 
+        this(application, x, y, flags,
+            System.getProperty("jexer.TTerminal.closeOnExit",
+                "false").equals("true"));
+
+    }
+
+    /**
+     * Public constructor spawns a shell.
+     *
+     * @param application TApplication that manages this window
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param closeOnExit if true, close the window when the shell exits
+     */
+    public TTerminalWindow(final TApplication application, final int x,
+        final int y, final int flags, final boolean closeOnExit) {
+
         super(application, i18n.getString("windowTitle"), x, y,
             80 + 2, 24 + 2, flags);
+
+        this.closeOnExit = closeOnExit;
 
         String cmdShellWindows = "cmd.exe";
 
@@ -224,7 +288,7 @@ public class TTerminalWindow extends TScrollableWindow
                 + getVerticalValue();
             assert (visibleBottom >= 0);
 
-            List<DisplayLine> preceedingBlankLines = new LinkedList<DisplayLine>();
+            List<DisplayLine> preceedingBlankLines = new ArrayList<DisplayLine>();
             int visibleTop = visibleBottom - visibleHeight;
             if (visibleTop < 0) {
                 for (int i = visibleTop; i < 0; i++) {
@@ -234,11 +298,11 @@ public class TTerminalWindow extends TScrollableWindow
             }
             assert (visibleTop >= 0);
 
-            List<DisplayLine> displayLines = new LinkedList<DisplayLine>();
+            List<DisplayLine> displayLines = new ArrayList<DisplayLine>();
             displayLines.addAll(scrollback);
             displayLines.addAll(display);
 
-            List<DisplayLine> visibleLines = new LinkedList<DisplayLine>();
+            List<DisplayLine> visibleLines = new ArrayList<DisplayLine>();
             visibleLines.addAll(preceedingBlankLines);
             visibleLines.addAll(displayLines.subList(visibleTop,
                     visibleBottom));
@@ -277,10 +341,10 @@ public class TTerminalWindow extends TScrollableWindow
                         }
                     }
                     if (line.isDoubleWidth()) {
-                        getScreen().putCharXY((i * 2) + 1, row, newCell);
-                        getScreen().putCharXY((i * 2) + 2, row, ' ', newCell);
+                        putCharXY((i * 2) + 1, row, newCell);
+                        putCharXY((i * 2) + 2, row, ' ', newCell);
                     } else {
-                        getScreen().putCharXY(i + 1, row, newCell);
+                        putCharXY(i + 1, row, newCell);
                     }
                 }
                 row++;
@@ -292,8 +356,7 @@ public class TTerminalWindow extends TScrollableWindow
             CellAttributes background = new CellAttributes();
             // Fill in the blank lines on bottom
             for (int i = 0; i < visibleHeight; i++) {
-                getScreen().hLineXY(1, i + row, getWidth() - 2, ' ',
-                    background);
+                hLineXY(1, i + row, getWidth() - 2, ' ', background);
             }
 
         } // synchronized (emulator)
@@ -711,6 +774,9 @@ public class TTerminalWindow extends TScrollableWindow
      * Hook for subclasses to be notified of the shell termination.
      */
     public void onShellExit() {
+        if (closeOnExit) {
+            close();
+        }
         getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
     }
 

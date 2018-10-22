@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -115,13 +115,11 @@ public class TPasswordField extends TField {
             end = text.length();
         }
 
-        getScreen().hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
+        hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
         if (showStars) {
-            getScreen().hLineXY(0, 0, getWidth() - 2, '*',
-                fieldColor);
+            hLineXY(0, 0, getWidth() - 2, '*', fieldColor);
         } else {
-            getScreen().putStringXY(0, 0, text.substring(windowStart, end),
-                fieldColor);
+            putStringXY(0, 0, text.substring(windowStart, end), fieldColor);
         }
 
         // Fix the cursor, it will be rendered by TApplication.drawAll().

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,6 +29,7 @@
 package jexer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
@@ -61,14 +62,20 @@ public class TList extends TScrollableWidget {
     private int maxLineWidth;
 
     /**
-     * The action to perform when the user selects an item (clicks or enter).
+     * The action to perform when the user selects an item (double-clicks or
+     * enter).
      */
-    private TAction enterAction = null;
+    protected TAction enterAction = null;
+
+    /**
+     * The action to perform when the user selects an item (single-click).
+     */
+    protected TAction singleClickAction = null;
 
     /**
      * The action to perform when the user navigates with keyboard.
      */
-    private TAction moveAction = null;
+    protected TAction moveAction = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -170,9 +177,11 @@ public class TList extends TScrollableWidget {
         }
 
         if ((mouse.getX() < getWidth() - 1)
-            && (mouse.getY() < getHeight() - 1)) {
+            && (mouse.getY() < getHeight() - 1)
+        ) {
             if (getVerticalValue() + mouse.getY() < strings.size()) {
                 selectedString = getVerticalValue() + mouse.getY();
+                dispatchSingleClick();
             }
             return;
         }
@@ -189,7 +198,8 @@ public class TList extends TScrollableWidget {
     @Override
     public void onMouseDoubleClick(final TMouseEvent mouse) {
         if ((mouse.getX() < getWidth() - 1)
-            && (mouse.getY() < getHeight() - 1)) {
+            && (mouse.getY() < getHeight() - 1)
+        ) {
             if (getVerticalValue() + mouse.getY() < strings.size()) {
                 selectedString = getVerticalValue() + mouse.getY();
                 dispatchEnter();
@@ -329,7 +339,7 @@ public class TList extends TScrollableWidget {
     }
 
     /**
-     * Draw the files list.
+     * Draw the list.
      */
     @Override
     public void draw() {
@@ -355,8 +365,7 @@ public class TList extends TScrollableWidget {
                 color = getTheme().getColor("tlist.inactive");
             }
             String formatString = "%-" + Integer.toString(getWidth() - 1) + "s";
-            getScreen().putStringXY(0, topY, String.format(formatString, line),
-                    color);
+            putStringXY(0, topY, String.format(formatString, line), color);
             topY++;
             if (topY >= getHeight() - 1) {
                 break;
@@ -371,7 +380,7 @@ public class TList extends TScrollableWidget {
 
         // Pad the rest with blank lines
         for (int i = topY; i < getHeight() - 1; i++) {
-            getScreen().hLineXY(0, i, getWidth() - 1, ' ', color);
+            hLineXY(0, i, getWidth() - 1, ' ', color);
         }
     }
 
@@ -419,6 +428,15 @@ public class TList extends TScrollableWidget {
     }
 
     /**
+     * Get a copy of the list of strings to display.
+     *
+     * @return the list of strings
+     */
+    public final List<String> getList() {
+        return new ArrayList<String>(strings);
+    }
+
+    /**
      * Set the new list of strings to display.
      *
      * @param list new list of strings
@@ -448,6 +466,17 @@ public class TList extends TScrollableWidget {
         assert (selectedString < strings.size());
         if (moveAction != null) {
             moveAction.DO();
+        }
+    }
+
+    /**
+     * Perform single-click action.
+     */
+    public void dispatchSingleClick() {
+        assert (selectedString >= 0);
+        assert (selectedString < strings.size());
+        if (singleClickAction != null) {
+            singleClickAction.DO();
         }
     }
 

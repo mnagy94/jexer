@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,10 +28,23 @@
  */
 package jexer.bits;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+
 /**
- * This class represents a single text cell on the screen.
+ * This class represents a single text cell or bit of image on the screen.
  */
 public final class Cell extends CellAttributes {
+
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The special "this cell is unset" (null) value.  This is the Unicode
+     * "not a character" value.
+     */
+    private static final char UNSET_VALUE = (char) 65535;
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -41,6 +54,34 @@ public final class Cell extends CellAttributes {
      * The character at this cell.
      */
     private char ch;
+
+    /**
+     * The image at this cell.
+     */
+    private BufferedImage image = null;
+
+    /**
+     * The image at this cell, inverted.
+     */
+    private BufferedImage invertedImage = null;
+
+    /**
+     * The background color used for the area the image portion might not
+     * cover.
+     */
+    private Color background = null;
+
+    /**
+     * hashCode() needs to call image.hashCode(), which can get quite
+     * expensive.
+     */
+    private int imageHashCode = 0;
+
+    /**
+     * hashCode() needs to call background.hashCode(), which can get quite
+     * expensive.
+     */
+    private int backgroundHashCode = 0;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -72,6 +113,98 @@ public final class Cell extends CellAttributes {
     // Cell -------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
+
+    /**
+     * Set the image data for this cell.
+     *
+     * @param image the image for this cell
+     */
+    public void setImage(final BufferedImage image) {
+        this.image = image;
+        imageHashCode = image.hashCode();
+    }
+
+    /**
+     * Get the image data for this cell.
+     *
+     * @return the image for this cell
+     */
+    public BufferedImage getImage() {
+        if (invertedImage != null) {
+            return invertedImage;
+        }
+        return image;
+    }
+
+    /**
+     * Get the bitmap image background color for this cell.
+     *
+     * @return the bitmap image background color
+     */
+    public Color getBackground() {
+        return background;
+    }
+
+    /**
+     * If true, this cell has image data.
+     *
+     * @return true if this cell is an image rather than a character with
+     * attributes
+     */
+    public boolean isImage() {
+        if (image != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Restore the image in this cell to its normal version, if it has one.
+     */
+    public void restoreImage() {
+        invertedImage = null;
+    }
+
+    /**
+     * If true, this cell has image data, and that data is inverted.
+     *
+     * @return true if this cell is an image rather than a character with
+     * attributes, and the data is inverted
+     */
+    public boolean isInvertedImage() {
+        if ((image != null) && (invertedImage != null)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Invert the image in this cell, if it has one.
+     */
+    public void invertImage() {
+        if (image == null) {
+            return;
+        }
+        if (invertedImage == null) {
+            invertedImage = new BufferedImage(image.getWidth(),
+                image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+
+            int [] rgbArray = image.getRGB(0, 0,
+                image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+
+            for (int i = 0; i < rgbArray.length; i++) {
+                // Set the colors to fully inverted.
+                if (rgbArray[i] != 0x00FFFFFF) {
+                    rgbArray[i] ^= 0x00FFFFFF;
+                }
+                // Also set alpha to non-transparent.
+                rgbArray[i] |= 0xFF000000;
+            }
+            invertedImage.setRGB(0, 0, image.getWidth(), image.getHeight(),
+                rgbArray, 0, image.getWidth());
+        }
+    }
+
     /**
      * Getter for cell character.
      *
@@ -97,6 +230,25 @@ public final class Cell extends CellAttributes {
     public void reset() {
         super.reset();
         ch = ' ';
+        image = null;
+        imageHashCode = 0;
+        invertedImage = null;
+        background = Color.BLACK;
+        backgroundHashCode = 0;
+    }
+
+    /**
+     * UNset this cell.  It will not be equal to any other cell until it has
+     * been assigned attributes and a character.
+     */
+    public void unset() {
+        super.reset();
+        ch = UNSET_VALUE;
+        image = null;
+        imageHashCode = 0;
+        invertedImage = null;
+        background = Color.BLACK;
+        backgroundHashCode = 0;
     }
 
     /**
@@ -107,6 +259,9 @@ public final class Cell extends CellAttributes {
      * @return true if this cell has default attributes.
      */
     public boolean isBlank() {
+        if ((ch == UNSET_VALUE) || (image != null)) {
+            return false;
+        }
         if ((getForeColor().equals(Color.WHITE))
             && (getBackColor().equals(Color.BLACK))
             && !isBold()
@@ -115,6 +270,7 @@ public final class Cell extends CellAttributes {
             && !isUnderline()
             && !isProtect()
             && !isRGB()
+            && !isImage()
             && (ch == ' ')
         ) {
             return true;
@@ -137,6 +293,40 @@ public final class Cell extends CellAttributes {
 
         Cell that = (Cell) rhs;
 
+        // Unsetted cells can never be equal.
+        if ((ch == UNSET_VALUE) || (that.ch == UNSET_VALUE)) {
+            return false;
+        }
+
+        // If this or rhs has an image and the other doesn't, these are not
+        // equal.
+        if ((image != null) && (that.image == null)) {
+            return false;
+        }
+        if ((image == null) && (that.image != null)) {
+            return false;
+        }
+        // If this and rhs have images, both must match.
+        if ((image != null) && (that.image != null)) {
+            if ((invertedImage == null) && (that.invertedImage != null)) {
+                return false;
+            }
+            if ((invertedImage != null) && (that.invertedImage == null)) {
+                return false;
+            }
+            // Either both objects have their image inverted, or neither do.
+            // Now if the images are identical the cells are the same
+            // visually.
+            if (image.equals(that.image)
+                && (background.equals(that.background))
+            ) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // Normal case: character and attributes must match.
         if (ch == that.ch) {
             return super.equals(rhs);
         }
@@ -155,6 +345,17 @@ public final class Cell extends CellAttributes {
         int hash = A;
         hash = (B * hash) + super.hashCode();
         hash = (B * hash) + (int)ch;
+        if (image != null) {
+            /*
+            hash = (B * hash) + image.hashCode();
+            hash = (B * hash) + background.hashCode();
+             */
+            hash = (B * hash) + imageHashCode;
+            hash = (B * hash) + backgroundHashCode;
+        }
+        if (invertedImage != null) {
+            hash = (B * hash) + invertedImage.hashCode();
+        }
         return hash;
     }
 
@@ -167,11 +368,19 @@ public final class Cell extends CellAttributes {
     public void setTo(final Object rhs) {
         // Let this throw a ClassCastException
         CellAttributes thatAttr = (CellAttributes) rhs;
+        this.image = null;
+        this.imageHashCode = 0;
+        this.backgroundHashCode = 0;
         super.setTo(thatAttr);
 
         if (rhs instanceof Cell) {
             Cell that = (Cell) rhs;
             this.ch = that.ch;
+            this.image = that.image;
+            this.invertedImage = that.invertedImage;
+            this.background = that.background;
+            this.imageHashCode = that.imageHashCode;
+            this.backgroundHashCode = that.backgroundHashCode;
         }
     }
 
@@ -181,6 +390,7 @@ public final class Cell extends CellAttributes {
      * @param that a CellAttributes instance
      */
     public void setAttr(final CellAttributes that) {
+        image = null;
         super.setTo(that);
     }
 

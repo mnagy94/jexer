@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,17 +28,26 @@
  */
 package jexer.demos;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ResourceBundle;
+import java.util.Scanner;
 
-import jexer.*;
-import jexer.event.*;
-import jexer.menu.*;
+import jexer.TAction;
+import jexer.TApplication;
+import jexer.TWindow;
+import jexer.event.TMenuEvent;
+import jexer.menu.TMenu;
 
 /**
  * The demo application itself.
  */
 public class DesktopDemoApplication extends TApplication {
+
+    /**
+     * Translated strings.
+     */
+    private static ResourceBundle i18n = ResourceBundle.getBundle(DesktopDemoApplication.class.getName());
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -53,7 +62,7 @@ public class DesktopDemoApplication extends TApplication {
     public DesktopDemoApplication(final BackendType backendType) throws Exception {
         super(backendType);
         addAllWidgets();
-        getBackend().setTitle("Jexer Demo Application");
+        getBackend().setTitle(i18n.getString("applicationTitle"));
     }
 
     // ------------------------------------------------------------------------
@@ -119,14 +128,14 @@ public class DesktopDemoApplication extends TApplication {
         final DesktopDemo desktop = new DesktopDemo(this);
         setDesktop(desktop);
 
-        desktop.addButton("&Remove HATCH", 2, 5,
+        desktop.addButton(i18n.getString("removeHatch"), 2, 5,
             new TAction() {
                 public void DO() {
                     desktop.drawHatch = false;
                 }
             }
         );
-        desktop.addButton("&Show HATCH", 2, 8,
+        desktop.addButton(i18n.getString("showHatch"), 2, 8,
             new TAction() {
                 public void DO() {
                     desktop.drawHatch = true;
@@ -134,58 +143,60 @@ public class DesktopDemoApplication extends TApplication {
             }
         );
 
-        final TWindow windowA = addWindow("Window A", 25, 14);
-        final TWindow windowB = addWindow("Window B", 25, 14);
-        windowA.addButton("&Show Window B", 2, 2,
+        final TWindow windowA = addWindow(i18n.getString("windowATitle"),
+            25, 14);
+        final TWindow windowB = addWindow(i18n.getString("windowBTitle"),
+            25, 14);
+        windowA.addButton(i18n.getString("showWindowB"), 2, 2,
             new TAction() {
                 public void DO() {
                     windowB.show();
                 }
             }
         );
-        windowA.addButton("H&ide Window B", 2, 4,
+        windowA.addButton(i18n.getString("hideWindowB"), 2, 4,
             new TAction() {
                 public void DO() {
                     windowB.hide();
                 }
             }
         );
-        windowA.addButton("&Maximize Window B", 2, 6,
+        windowA.addButton(i18n.getString("maximizeWindowB"), 2, 6,
             new TAction() {
                 public void DO() {
                     windowB.maximize();
                 }
             }
         );
-        windowA.addButton("&Restore Window B", 2, 8,
+        windowA.addButton(i18n.getString("restoreWindowB"), 2, 8,
             new TAction() {
                 public void DO() {
                     windowB.restore();
                 }
             }
         );
-        windowB.addButton("&Show Window A", 2, 2,
+        windowB.addButton(i18n.getString("showWindowA"), 2, 2,
             new TAction() {
                 public void DO() {
                     windowA.show();
                 }
             }
         );
-        windowB.addButton("H&ide Window A", 2, 4,
+        windowB.addButton(i18n.getString("hideWindowA"), 2, 4,
             new TAction() {
                 public void DO() {
                     windowA.hide();
                 }
             }
         );
-        windowB.addButton("&Maximize Window A", 2, 6,
+        windowB.addButton(i18n.getString("maximizeWindowA"), 2, 6,
             new TAction() {
                 public void DO() {
                     windowA.maximize();
                 }
             }
         );
-        windowB.addButton("&Restore Window A", 2, 8,
+        windowB.addButton(i18n.getString("restoreWindowA"), 2, 8,
             new TAction() {
                 public void DO() {
                     windowA.restore();
@@ -193,40 +204,41 @@ public class DesktopDemoApplication extends TApplication {
             }
         );
 
-        desktop.addButton("S&how Window B", 25, 2,
+        desktop.addButton(i18n.getString("showWindowB"), 25, 2,
             new TAction() {
                 public void DO() {
                     windowB.show();
                 }
             }
         );
-        desktop.addButton("H&ide Window B", 25, 5,
+        desktop.addButton(i18n.getString("hideWindowB"), 25, 5,
             new TAction() {
                 public void DO() {
                     windowB.hide();
                 }
             }
         );
-        desktop.addButton("Sh&ow Window A", 25, 8,
+        desktop.addButton(i18n.getString("showWindowA"), 25, 8,
             new TAction() {
                 public void DO() {
                     windowA.show();
                 }
             }
         );
-        desktop.addButton("Hid&e Window A", 25, 11,
+        desktop.addButton(i18n.getString("hideWindowA"), 25, 11,
             new TAction() {
                 public void DO() {
                     windowA.hide();
                 }
             }
         );
-        desktop.addButton("&Create Window C", 25, 15,
+        desktop.addButton(i18n.getString("createWindowC"), 25, 15,
             new TAction() {
                 public void DO() {
                     final TWindow windowC = desktop.getApplication().addWindow(
-                        "Window C", 30, 20, TWindow.NOCLOSEBOX);
-                    windowC.addButton("&Close Me", 5, 5,
+                        i18n.getString("windowCTitle"), 30, 20,
+                        TWindow.NOCLOSEBOX);
+                    windowC.addButton(i18n.getString("closeMe"), 5, 5,
                         new TAction() {
                             public void DO() {
                                 windowC.close();
@@ -237,21 +249,20 @@ public class DesktopDemoApplication extends TApplication {
             }
         );
 
-        desktop.addButton("Enable focusFollowsMouse", 25, 18,
+        desktop.addButton(i18n.getString("enableFFM"), 25, 18,
             new TAction() {
                 public void DO() {
                     DesktopDemoApplication.this.setFocusFollowsMouse(true);
                 }
             }
         );
-        desktop.addButton("Disable focusFollowsMouse", 25, 21,
+        desktop.addButton(i18n.getString("disableFFM"), 25, 21,
             new TAction() {
                 public void DO() {
                     DesktopDemoApplication.this.setFocusFollowsMouse(false);
                 }
             }
         );
-
     }
 
 }

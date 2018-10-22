@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,10 +29,14 @@
 package jexer.demos;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 
-import jexer.*;
-import jexer.event.*;
-import jexer.ttree.*;
+import jexer.TApplication;
+import jexer.TWidget;
+import jexer.TWindow;
+import jexer.event.TResizeEvent;
+import jexer.ttree.TDirectoryTreeItem;
+import jexer.ttree.TTreeViewWidget;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -40,6 +44,11 @@ import static jexer.TKeypress.*;
  * This window demonstates the TTreeView widget.
  */
 public class DemoTreeViewWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoTreeViewWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -61,17 +70,22 @@ public class DemoTreeViewWindow extends TWindow {
      * @throws IOException if a java.io operation throws
      */
     public DemoTreeViewWindow(final TApplication parent) throws IOException {
-        super(parent, "Tree View", 0, 0, 44, 16, TWindow.RESIZABLE);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 44, 16,
+            TWindow.RESIZABLE);
 
         // Load the treeview with "stuff"
         treeView = addTreeViewWidget(1, 1, 40, 12);
         new TDirectoryTreeItem(treeView, ".", true);
 
-        statusBar = newStatusBar("Treeview demonstration");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
-        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmShell,
+            i18n.getString("statusBarShell"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmExit,
+            i18n.getString("statusBarExit"));
     }
 
     // ------------------------------------------------------------------------

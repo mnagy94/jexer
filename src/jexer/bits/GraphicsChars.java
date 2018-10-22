@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -145,6 +145,8 @@ public final class GraphicsChars {
     public static final char WINDOW_RIGHT_BOTTOM_DOUBLE = CP437[0xBC];
     public static final char VERTICAL_BAR               = CP437[0xB3];
     public static final char OCTOSTAR                   = CP437[0x0F];
+    public static final char DOWNARROWLEFT              = CP437[0xDD];
+    public static final char DOWNARROWRIGHT             = CP437[0xDE];
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------

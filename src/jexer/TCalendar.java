@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -232,27 +232,27 @@ public class TCalendar extends TWidget {
 
         // Fill in the interior background
         for (int i = 0; i < getHeight(); i++) {
-            getScreen().hLineXY(0, i, getWidth(), ' ', backgroundColor);
+            hLineXY(0, i, getWidth(), ' ', backgroundColor);
         }
 
         // Draw the title
         String title = String.format("%tB %tY", displayCalendar,
             displayCalendar);
         int titleLeft = (getWidth() - title.length() - 2) / 2;
-        getScreen().putCharXY(titleLeft, 0, ' ', titleColor);
-        getScreen().putStringXY(titleLeft + 1, 0, title, titleColor);
-        getScreen().putCharXY(titleLeft + title.length() + 1, 0, ' ',
+        putCharXY(titleLeft, 0, ' ', titleColor);
+        putStringXY(titleLeft + 1, 0, title, titleColor);
+        putCharXY(titleLeft + title.length() + 1, 0, ' ',
             titleColor);
 
         // Arrows
-        getScreen().putCharXY(1, 0, GraphicsChars.LEFTARROW, arrowColor);
-        getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.RIGHTARROW,
+        putCharXY(1, 0, GraphicsChars.LEFTARROW, arrowColor);
+        putCharXY(getWidth() - 2, 0, GraphicsChars.RIGHTARROW,
             arrowColor);
 
         /*
          * Now draw out the days.
          */
-        getScreen().putStringXY(0, 1, "  S   M   T   W   T   F   S ", dayColor);
+        putStringXY(0, 1, "  S   M   T   W   T   F   S ", dayColor);
         int lastDayNumber = displayCalendar.getActualMaximum(
                 Calendar.DAY_OF_MONTH);
         GregorianCalendar firstOfMonth = new GregorianCalendar();
@@ -274,10 +274,10 @@ public class TCalendar extends TWidget {
                 && (displayCalendar.get(Calendar.YEAR) == calendar.get(
                     Calendar.YEAR))
             ) {
-                getScreen().putStringXY(dayColumn, row,
+                putStringXY(dayColumn, row,
                     String.format(" %2d ", dayOfMonth), selectedDayColor);
             } else {
-                getScreen().putStringXY(dayColumn, row,
+                putStringXY(dayColumn, row,
                     String.format(" %2d ", dayOfMonth), dayColor);
             }
             dayColumn += 4;

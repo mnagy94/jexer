@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -226,25 +226,25 @@ public class TButton extends TWidget {
         }
 
         if (inButtonPress) {
-            getScreen().putCharXY(1, 0, ' ', buttonColor);
-            getScreen().putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
-            getScreen().putCharXY(getWidth() - 1, 0, ' ', buttonColor);
+            putCharXY(1, 0, ' ', buttonColor);
+            putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
+            putCharXY(getWidth() - 1, 0, ' ', buttonColor);
         } else {
-            getScreen().putCharXY(0, 0, ' ', buttonColor);
-            getScreen().putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
-            getScreen().putCharXY(getWidth() - 2, 0, ' ', buttonColor);
+            putCharXY(0, 0, ' ', buttonColor);
+            putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
+            putCharXY(getWidth() - 2, 0, ' ', buttonColor);
 
-            getScreen().putCharXY(getWidth() - 1, 0,
+            putCharXY(getWidth() - 1, 0,
                 GraphicsChars.CP437[0xDC], shadowColor);
-            getScreen().hLineXY(1, 1, getWidth() - 1,
+            hLineXY(1, 1, getWidth() - 1,
                 GraphicsChars.CP437[0xDF], shadowColor);
         }
         if (mnemonic.getShortcutIdx() >= 0) {
             if (inButtonPress) {
-                getScreen().putCharXY(2 + mnemonic.getShortcutIdx(), 0,
+                putCharXY(2 + mnemonic.getShortcutIdx(), 0,
                     mnemonic.getShortcut(), menuMnemonicColor);
             } else {
-                getScreen().putCharXY(1 + mnemonic.getShortcutIdx(), 0,
+                putCharXY(1 + mnemonic.getShortcutIdx(), 0,
                     mnemonic.getShortcut(), menuMnemonicColor);
             }
 

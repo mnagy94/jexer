@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -178,7 +178,7 @@ public class TMessageBox extends TWindow {
     protected TMessageBox(final TApplication application, final String title,
         final String caption, final Type type, final boolean yield) {
 
-        // Start as 50x50 at (1, 1).  These will be changed later.
+        // Start as 100x100 at (1, 1).  These will be changed later.
         super(application, title, 1, 1, 100, 100, CENTERED | MODAL);
 
         // Hang onto type so that we can provide more convenience in
@@ -327,13 +327,14 @@ public class TMessageBox extends TWindow {
             break;
 
         default:
-            throw new IllegalArgumentException("Invalid message box type: " + type);
+            throw new IllegalArgumentException("Invalid message box type: " +
+                type);
         }
 
-        // Set the secondaryThread to run me
-        getApplication().enableSecondaryEventReceiver(this);
-
         if (yield) {
+            // Set the secondaryThread to run me
+            getApplication().enableSecondaryEventReceiver(this);
+
             // Yield to the secondary thread.  When I come back from the
             // constructor response will already be set.
             getApplication().yield();
@@ -420,6 +421,42 @@ public class TMessageBox extends TWindow {
      */
     public final Result getResult() {
         return result;
+    }
+
+    /**
+     * See if the user clicked YES.
+     *
+     * @return true if the user clicked YES
+     */
+    public final boolean isYes() {
+        return (result == Result.YES);
+    }
+
+    /**
+     * See if the user clicked NO.
+     *
+     * @return true if the user clicked NO
+     */
+    public final boolean isNo() {
+        return (result == Result.NO);
+    }
+
+    /**
+     * See if the user clicked OK.
+     *
+     * @return true if the user clicked OK
+     */
+    public final boolean isOk() {
+        return (result == Result.OK);
+    }
+
+    /**
+     * See if the user clicked CANCEL.
+     *
+     * @return true if the user clicked CANCEL
+     */
+    public final boolean isCancel() {
+        return (result == Result.CANCEL);
     }
 
 }

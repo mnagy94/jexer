@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -179,8 +179,11 @@ public class TimeoutInputStream extends InputStream {
             // available.  If not, we throw ReadTimeoutException.
             long checkTime = System.currentTimeMillis();
             while (stream.available() == 0) {
-                long now = System.currentTimeMillis();
+                if (remaining > 0) {
+                    return (b.length - remaining);
+                }
 
+                long now = System.currentTimeMillis();
                 synchronized (this) {
                     if ((now - checkTime > timeoutMillis) || (cancel == true)) {
                         if (cancel == true) {
@@ -257,6 +260,10 @@ public class TimeoutInputStream extends InputStream {
             // available.  If not, we throw ReadTimeoutException.
             long checkTime = System.currentTimeMillis();
             while (stream.available() == 0) {
+                if (remaining > 0) {
+                    return (len - remaining);
+                }
+
                 long now = System.currentTimeMillis();
                 synchronized (this) {
                     if ((now - checkTime > timeoutMillis) || (cancel == true)) {

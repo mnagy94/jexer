@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -74,13 +74,13 @@ class SwingComponent {
     /**
      * An optional border in pixels to add.
      */
-    private static final int BORDER = 5;
+    private static final int BORDER = 1;
 
     /**
      * Adjustable Insets for this component.  This has the effect of adding a
      * black border around the drawing area.
      */
-    Insets adjustInsets = new Insets(BORDER, BORDER, BORDER, BORDER);
+    Insets adjustInsets = new Insets(BORDER + 5, BORDER, BORDER, BORDER);
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -366,11 +366,11 @@ class SwingComponent {
         // Figure out the thickness of borders and use that to set the final
         // size.
         if (frame != null) {
-            Insets insets = frame.getInsets();
+            Insets insets = getInsets();
             frame.setSize(width + insets.left + insets.right,
                 height + insets.top + insets.bottom);
         } else {
-            Insets insets = component.getInsets();
+            Insets insets = getInsets();
             component.setSize(width + insets.left + insets.right,
                 height + insets.top + insets.bottom);
         }

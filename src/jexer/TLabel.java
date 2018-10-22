@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -124,7 +124,7 @@ public class TLabel extends TWidget {
             CellAttributes background = getWindow().getBackground();
             color.setBackColor(background.getBackColor());
         }
-        getScreen().putStringXY(0, 0, label, color);
+        putStringXY(0, 0, label, color);
     }
 
     // ------------------------------------------------------------------------

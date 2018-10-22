@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,11 +28,22 @@
  */
 package jexer.demos;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.util.ResourceBundle;
 
-import jexer.*;
-import jexer.event.*;
-import jexer.menu.*;
+import jexer.TApplication;
+import jexer.TEditColorThemeWindow;
+import jexer.TEditorWindow;
+import jexer.event.TMenuEvent;
+import jexer.menu.TMenu;
+import jexer.menu.TMenuItem;
+import jexer.menu.TSubMenu;
 import jexer.backend.Backend;
 import jexer.backend.SwingTerminal;
 
@@ -40,6 +51,11 @@ import jexer.backend.SwingTerminal;
  * The demo application itself.
  */
 public class DemoApplication extends TApplication {
+
+    /**
+     * Translated strings.
+     */
+    private static ResourceBundle i18n = ResourceBundle.getBundle(DemoApplication.class.getName());
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -63,7 +79,7 @@ public class DemoApplication extends TApplication {
         super(input, output);
         addAllWidgets();
 
-        getBackend().setTitle("Jexer Demo Application");
+        getBackend().setTitle(i18n.getString("applicationTitle"));
     }
 
     /**
@@ -83,7 +99,7 @@ public class DemoApplication extends TApplication {
         super(input, reader, writer, setRawMode);
         addAllWidgets();
 
-        getBackend().setTitle("Jexer Demo Application");
+        getBackend().setTitle(i18n.getString("applicationTitle"));
     }
 
     /**
@@ -121,7 +137,7 @@ public class DemoApplication extends TApplication {
     public DemoApplication(final BackendType backendType) throws Exception {
         super(backendType);
         addAllWidgets();
-        getBackend().setTitle("Jexer Demo Application");
+        getBackend().setTitle(i18n.getString("applicationTitle"));
     }
 
     // ------------------------------------------------------------------------
@@ -190,33 +206,33 @@ public class DemoApplication extends TApplication {
         addFileMenu();
         addEditMenu();
 
-        TMenu demoMenu = addMenu("&Demo");
-        TMenuItem item = demoMenu.addItem(2000, "&Checkable");
+        TMenu demoMenu = addMenu(i18n.getString("demo"));
+        TMenuItem item = demoMenu.addItem(2000, i18n.getString("checkable"));
         item.setCheckable(true);
-        item = demoMenu.addItem(2001, "Disabled");
+        item = demoMenu.addItem(2001, i18n.getString("disabled"));
         item.setEnabled(false);
-        item = demoMenu.addItem(2002, "&Normal");
-        TSubMenu subMenu = demoMenu.addSubMenu("Sub-&Menu");
-        item = demoMenu.addItem(2010, "N&ormal A&&D");
-        item = demoMenu.addItem(2050, "Co&lors...");
+        item = demoMenu.addItem(2002, i18n.getString("normal"));
+        TSubMenu subMenu = demoMenu.addSubMenu(i18n.getString("subMenu"));
+        item = demoMenu.addItem(2010, i18n.getString("normal"));
+        item = demoMenu.addItem(2050, i18n.getString("colors"));
 
-        item = subMenu.addItem(2000, "&Checkable (sub)");
+        item = subMenu.addItem(2000, i18n.getString("checkableSub"));
         item.setCheckable(true);
-        item = subMenu.addItem(2001, "Disabled (sub)");
+        item = subMenu.addItem(2001, i18n.getString("disabledSub"));
         item.setEnabled(false);
-        item = subMenu.addItem(2002, "&Normal (sub)");
+        item = subMenu.addItem(2002, i18n.getString("normalSub"));
 
-        subMenu = subMenu.addSubMenu("Sub-&Menu");
-        item = subMenu.addItem(2000, "&Checkable (sub)");
+        subMenu = subMenu.addSubMenu(i18n.getString("subMenu"));
+        item = subMenu.addItem(2000, i18n.getString("checkableSub"));
         item.setCheckable(true);
-        item = subMenu.addItem(2001, "Disabled (sub)");
+        item = subMenu.addItem(2001, i18n.getString("disabledSub"));
         item.setEnabled(false);
-        item = subMenu.addItem(2002, "&Normal (sub)");
+        item = subMenu.addItem(2002, i18n.getString("normalSub"));
 
         if (getScreen() instanceof SwingTerminal) {
-            TMenu swingMenu = addMenu("Swin&g");
-            item = swingMenu.addItem(3000, "&Bigger +2");
-            item = swingMenu.addItem(3001, "&Smaller -2");
+            TMenu swingMenu = addMenu(i18n.getString("swing"));
+            item = swingMenu.addItem(3000, i18n.getString("bigger"));
+            item = swingMenu.addItem(3001, i18n.getString("smaller"));
         }
 
         addWindowMenu();

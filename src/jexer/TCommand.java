@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -170,11 +170,11 @@ public class TCommand {
     // ------------------------------------------------------------------------
 
     /**
-     * Protected constructor.  Subclasses can be used to define new commands.
+     * Public constructor.
      *
      * @param type the Type of command, one of EXIT, CASCADE, etc.
      */
-    protected TCommand(final int type) {
+    public TCommand(final int type) {
         this.type = type;
     }
 

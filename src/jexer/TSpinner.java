@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -162,10 +162,8 @@ public class TSpinner extends TWidget {
             spinnerColor = getTheme().getColor("tspinner.inactive");
         }
 
-        getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.UPARROW,
-            spinnerColor);
-        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.DOWNARROW,
-            spinnerColor);
+        putCharXY(getWidth() - 2, 0, GraphicsChars.UPARROW, spinnerColor);
+        putCharXY(getWidth() - 1, 0, GraphicsChars.DOWNARROW, spinnerColor);
     }
 
     // ------------------------------------------------------------------------

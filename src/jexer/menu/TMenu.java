@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -161,6 +161,7 @@ public class TMenu extends TWindow {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         this.mouse = mouse;
+        super.onMouseDown(mouse);
 
         // Pass to children
         for (TWidget widget: getChildren()) {
@@ -341,7 +342,7 @@ public class TMenu extends TWindow {
         hLineXY(1 + 1, getHeight() - 1, getWidth() - 4, cHSide, background);
 
         // Draw a shadow
-        getScreen().drawBoxShadow(0, 0, getWidth(), getHeight());
+        drawBoxShadow(0, 0, getWidth(), getHeight());
     }
 
     // ------------------------------------------------------------------------
@@ -385,6 +386,21 @@ public class TMenu extends TWindow {
     public TMenuItem addItem(final int id, final String label) {
         assert (id >= 1024);
         return addItemInternal(id, label, null);
+    }
+
+    /**
+     * Convenience function to add a menu item.
+     *
+     * @param id menu item ID.  Must be greater than 1024.
+     * @param label menu item label
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    public TMenuItem addItem(final int id, final String label,
+        final boolean enabled) {
+
+        assert (id >= 1024);
+        return addItemInternal(id, label, null, enabled);
     }
 
     /**

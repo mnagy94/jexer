@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -333,6 +333,19 @@ public interface Screen {
      */
     public void drawBoxShadow(final int left, final int top,
         final int right, final int bottom);
+
+    /**
+     * Clear the physical screen.
+     */
+    public void clearPhysical();
+
+    /**
+     * Unset every image cell on one row of the physical screen, forcing
+     * images on that row to be redrawn.
+     *
+     * @param y row coordinate.  0 is the top-most row.
+     */
+    public void unsetImageRow(final int y);
 
     /**
      * Classes must provide an implementation to push the logical screen to

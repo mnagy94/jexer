@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,8 +30,10 @@ package jexer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import jexer.backend.SwingTerminal;
 import jexer.bits.GraphicsChars;
 import jexer.event.TKeypressEvent;
 import jexer.ttree.TDirectoryTreeItem;
@@ -77,7 +79,12 @@ public class TFileOpenBox extends TWindow {
         /**
          * Button will be labeled "Save".
          */
-        SAVE
+        SAVE,
+
+        /**
+         * Button will be labeled "Select".
+         */
+        SELECT
     }
 
     // ------------------------------------------------------------------------
@@ -114,6 +121,11 @@ public class TFileOpenBox extends TWindow {
      */
     private TButton openButton;
 
+    /**
+     * The type of box this is (OPEN, SAVE, or SELECT).
+     */
+    private Type type = Type.OPEN;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -129,6 +141,21 @@ public class TFileOpenBox extends TWindow {
     public TFileOpenBox(final TApplication application, final String path,
         final Type type) throws IOException {
 
+        this(application, path, type, null);
+    }
+
+    /**
+     * Public constructor.  The file open box will be centered on screen.
+     *
+     * @param application the TApplication that manages this window
+     * @param path path of selected file
+     * @param type one of the Type constants
+     * @param filters a list of strings that files must match to be displayed
+     * @throws IOException of a java.io operation throws
+     */
+    public TFileOpenBox(final TApplication application, final String path,
+        final Type type, final List<String> filters) throws IOException {
+
         // Register with the TApplication
         super(application, "", 0, 0, 76, 22, MODAL);
 
@@ -140,7 +167,11 @@ public class TFileOpenBox extends TWindow {
                     try {
                         checkFilename(entryField.getText());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        // If the backend is Swing, we can emit the stack
+                        // trace to stderr.  Otherwise, just squash it.
+                        if (getScreen() instanceof SwingTerminal) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }, null);
@@ -154,10 +185,16 @@ public class TFileOpenBox extends TWindow {
                     File selectedDir = ((TDirectoryTreeItem) item).getFile();
                     try {
                         directoryList.setPath(selectedDir.getCanonicalPath());
-                        openButton.setEnabled(false);
+                        if (type == Type.OPEN) {
+                            openButton.setEnabled(false);
+                        }
                         activate(treeView);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        // If the backend is Swing, we can emit the stack
+                        // trace to stderr.  Otherwise, just squash it.
+                        if (getScreen() instanceof SwingTerminal) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -174,12 +211,34 @@ public class TFileOpenBox extends TWindow {
                         entryField.onKeypress(new TKeypressEvent(kbEnd));
                         openButton.setEnabled(true);
                         activate(entryField);
+                        checkFilename(entryField.getText());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        // If the backend is Swing, we can emit the stack
+                        // trace to stderr.  Otherwise, just squash it.
+                        if (getScreen() instanceof SwingTerminal) {
+                            e.printStackTrace();
+                        }
                     }
                 }
-            }
-        );
+            },
+            new TAction() {
+                public void DO() {
+                    try {
+                        File newPath = directoryList.getPath();
+                        entryField.setText(newPath.getCanonicalPath());
+                        entryField.onKeypress(new TKeypressEvent(kbEnd));
+                        openButton.setEnabled(true);
+                        activate(entryField);
+                    } catch (IOException e) {
+                        // If the backend is Swing, we can emit the stack
+                        // trace to stderr.  Otherwise, just squash it.
+                        if (getScreen() instanceof SwingTerminal) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            },
+            filters);
 
         String openLabel = "";
         switch (type) {
@@ -191,9 +250,14 @@ public class TFileOpenBox extends TWindow {
             openLabel = i18n.getString("saveButton");
             setTitle(i18n.getString("saveTitle"));
             break;
+        case SELECT:
+            openLabel = i18n.getString("selectButton");
+            setTitle(i18n.getString("selectTitle"));
+            break;
         default:
             throw new IllegalArgumentException("Invalid type: " + type);
         }
+        this.type = type;
 
         // Setup button actions
         openButton = addButton(openLabel, this.getWidth() - 12, 3,
@@ -202,12 +266,18 @@ public class TFileOpenBox extends TWindow {
                     try {
                         checkFilename(entryField.getText());
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        // If the backend is Swing, we can emit the stack
+                        // trace to stderr.  Otherwise, just squash it.
+                        if (getScreen() instanceof SwingTerminal) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
         );
-        openButton.setEnabled(false);
+        if (type == Type.OPEN) {
+            openButton.setEnabled(false);
+        }
 
         addButton(i18n.getString("cancelButton"), getWidth() - 12, 5,
             new TAction() {
@@ -265,10 +335,16 @@ public class TFileOpenBox extends TWindow {
                 File selectedDir = ((TDirectoryTreeItem) item).getFile();
                 try {
                     directoryList.setPath(selectedDir.getCanonicalPath());
-                    openButton.setEnabled(false);
+                    if (type == Type.OPEN) {
+                        openButton.setEnabled(false);
+                    }
                     activate(treeView);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    // If the backend is Swing, we can emit the stack trace
+                    // to stderr.  Otherwise, just squash it.
+                    if (getScreen() instanceof SwingTerminal) {
+                        e.printStackTrace();
+                    }
                 }
                 return;
             }
@@ -288,7 +364,7 @@ public class TFileOpenBox extends TWindow {
     @Override
     public void draw() {
         super.draw();
-        getScreen().vLineXY(33, 4, getHeight() - 6, GraphicsChars.WINDOW_SIDE,
+        vLineXY(33, 4, getHeight() - 6, GraphicsChars.WINDOW_SIDE,
             getBackground());
     }
 
@@ -324,9 +400,15 @@ public class TFileOpenBox extends TWindow {
                 treeViewRoot = new TDirectoryTreeItem(treeView,
                     newFilename, true);
                 treeView.setTreeRoot(treeViewRoot, true);
-                openButton.setEnabled(false);
+                if (type == Type.OPEN) {
+                    openButton.setEnabled(false);
+                }
                 directoryList.setPath(newFilename);
             }
+        } else if (type != Type.OPEN) {
+            filename = newFilename;
+            getApplication().closeWindow(this);
+            return;
         }
     }
 

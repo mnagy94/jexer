@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -158,15 +158,14 @@ public class TRadioButton extends TWidget {
             radioButtonColor = getTheme().getColor("tradiobutton.inactive");
         }
 
-        getScreen().putCharXY(0, 0, '(', radioButtonColor);
+        putCharXY(0, 0, '(', radioButtonColor);
         if (selected) {
-            getScreen().putCharXY(1, 0, GraphicsChars.CP437[0x07],
-                radioButtonColor);
+            putCharXY(1, 0, GraphicsChars.CP437[0x07], radioButtonColor);
         } else {
-            getScreen().putCharXY(1, 0, ' ', radioButtonColor);
+            putCharXY(1, 0, ' ', radioButtonColor);
         }
-        getScreen().putCharXY(2, 0, ')', radioButtonColor);
-        getScreen().putStringXY(4, 0, label, radioButtonColor);
+        putCharXY(2, 0, ')', radioButtonColor);
+        putStringXY(4, 0, label, radioButtonColor);
     }
 
     // ------------------------------------------------------------------------

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -322,11 +322,8 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                if (physical[cursorX][cursorY].getChar() == 'Q') {
-                    physical[cursorX][cursorY].setChar('X');
-                } else {
-                    physical[cursorX][cursorY].setChar('Q');
-                }
+                physical[cursorX][cursorY].unset();
+                unsetImageRow(cursorY);
             }
         }
     }
@@ -354,7 +351,35 @@ public class LogicalScreen implements Screen {
      * @param ch character + attributes to draw
      */
     public final void putCharXY(final int x, final int y, final Cell ch) {
-        putCharXY(x, y, ch.getChar(), ch);
+        if ((x < clipLeft)
+            || (x >= clipRight)
+            || (y < clipTop)
+            || (y >= clipBottom)
+        ) {
+            return;
+        }
+
+        int X = x + offsetX;
+        int Y = y + offsetY;
+
+        // System.err.printf("putCharXY: %d, %d, %c\n", X, Y, ch);
+
+        if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
+
+            // Do not put control characters on the display
+            if (!ch.isImage()) {
+                assert (ch.getChar() >= 0x20);
+                assert (ch.getChar() != 0x7F);
+            }
+            logical[X][Y].setTo(ch);
+
+            // If this happens to be the cursor position, make the position
+            // dirty.
+            if ((cursorX == X) && (cursorY == Y)) {
+                physical[cursorX][cursorY].unset();
+                unsetImageRow(cursorY);
+            }
+        }
     }
 
     /**
@@ -393,11 +418,8 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                if (physical[cursorX][cursorY].getChar() == 'Q') {
-                    physical[cursorX][cursorY].setChar('X');
-                } else {
-                    physical[cursorX][cursorY].setChar('Q');
-                }
+                physical[cursorX][cursorY].unset();
+                unsetImageRow(cursorY);
             }
         }
     }
@@ -430,11 +452,8 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                if (physical[cursorX][cursorY].getChar() == 'Q') {
-                    physical[cursorX][cursorY].setChar('X');
-                } else {
-                    physical[cursorX][cursorY].setChar('Q');
-                }
+                physical[cursorX][cursorY].unset();
+                unsetImageRow(cursorY);
             }
         }
     }
@@ -600,7 +619,7 @@ public class LogicalScreen implements Screen {
     /**
      * Draw a box with a border and empty background.
      *
-     * @param left left column of box.  0 is the left-most row.
+     * @param left left column of box.  0 is the left-most column.
      * @param top top row of the box.  0 is the top-most row.
      * @param right right column of box
      * @param bottom bottom row of the box
@@ -617,7 +636,7 @@ public class LogicalScreen implements Screen {
     /**
      * Draw a box with a border and empty background.
      *
-     * @param left left column of box.  0 is the left-most row.
+     * @param left left column of box.  0 is the left-most column.
      * @param top top row of the box.  0 is the top-most row.
      * @param right right column of box
      * @param bottom bottom row of the box
@@ -702,7 +721,7 @@ public class LogicalScreen implements Screen {
     /**
      * Draw a box shadow.
      *
-     * @param left left column of box.  0 is the left-most row.
+     * @param left left column of box.  0 is the left-most column.
      * @param top top row of the box.  0 is the top-most row.
      * @param right right column of box
      * @param bottom bottom row of the box
@@ -719,12 +738,10 @@ public class LogicalScreen implements Screen {
         // Shadows do not honor clipping but they DO honor offset.
         int oldClipRight = clipRight;
         int oldClipBottom = clipBottom;
-        /*
-        clipRight = boxWidth + 2;
-        clipBottom = boxHeight + 1;
-        */
-        clipRight = width;
-        clipBottom = height;
+        // When offsetX or offsetY go negative, we need to increase the clip
+        // bounds.
+        clipRight = width - offsetX;
+        clipBottom = height - offsetY;
 
         for (int i = 0; i < boxHeight; i++) {
             putAttrXY(boxLeft + boxWidth, boxTop + 1 + i, shadowAttr);
@@ -756,11 +773,8 @@ public class LogicalScreen implements Screen {
             && (cursorX <= width - 1)
         ) {
             // Make the current cursor position dirty
-            if (physical[cursorX][cursorY].getChar() == 'Q') {
-                physical[cursorX][cursorY].setChar('X');
-            } else {
-                physical[cursorX][cursorY].setChar('Q');
-            }
+            physical[cursorX][cursorY].unset();
+            unsetImageRow(cursorY);
         }
 
         cursorVisible = visible;
@@ -863,7 +877,21 @@ public class LogicalScreen implements Screen {
     public final void clearPhysical() {
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
-                physical[col][row].reset();
+                physical[col][row].unset();
+            }
+        }
+    }
+
+    /**
+     * Unset every image cell on one row of the physical screen, forcing
+     * images on that row to be redrawn.
+     *
+     * @param y row coordinate.  0 is the top-most row.
+     */
+    public final void unsetImageRow(final int y) {
+        for (int x = 0; x < width; x++) {
+            if (logical[x][y].isImage()) {
+                physical[x][y].unset();
             }
         }
     }

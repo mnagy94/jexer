@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -57,6 +58,12 @@ public class TText extends TScrollableWidget {
      * Available text justifications.
      */
     public enum Justification {
+
+        /**
+         * Not justified at all, use spacing as provided by the client.
+         */
+        NONE,
+
         /**
          * Left-justified text.
          */
@@ -183,8 +190,7 @@ public class TText extends TScrollableWidget {
                 line = "";
             }
             String formatString = "%-" + Integer.toString(getWidth() - 1) + "s";
-            getScreen().putStringXY(0, topY, String.format(formatString, line),
-                    color);
+            putStringXY(0, topY, String.format(formatString, line), color);
             topY++;
 
             if (topY >= (getHeight() - 1)) {
@@ -194,7 +200,7 @@ public class TText extends TScrollableWidget {
 
         // Pad the rest with blank lines
         for (int i = topY; i < (getHeight() - 1); i++) {
-            getScreen().hLineXY(0, i, getWidth() - 1, ' ', color);
+            hLineXY(0, i, getWidth() - 1, ' ', color);
         }
 
     }
@@ -260,6 +266,9 @@ public class TText extends TScrollableWidget {
         String[] paragraphs = text.split("\n\n");
         for (String p : paragraphs) {
             switch (justification) {
+            case NONE:
+                lines.addAll(Arrays.asList(p.split("\n")));
+                break;
             case LEFT:
                 lines.addAll(jexer.bits.StringUtils.left(p,
                         getWidth() - 1));

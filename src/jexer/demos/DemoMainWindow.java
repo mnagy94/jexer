@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,11 +28,24 @@
  */
 package jexer.demos;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
-import jexer.*;
-import jexer.event.*;
+import jexer.TAction;
+import jexer.TApplication;
+import jexer.TEditColorThemeWindow;
+import jexer.TEditorWindow;
+import jexer.TLabel;
+import jexer.TProgressBar;
+import jexer.TTimer;
+import jexer.TWidget;
+import jexer.TWindow;
+import jexer.event.TCommandEvent;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -41,6 +54,11 @@ import static jexer.TKeypress.*;
  * TProgressBox, TLabel, TButton, and TField widgets.
  */
 public class DemoMainWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoMainWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -101,13 +119,13 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, "Demo Window", 0, 0, 64, 23, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 23, flags);
 
         int row = 1;
 
         // Add some widgets
-        addLabel("Message Boxes", 1, row);
-        TWidget first = addButton("&MessageBoxes", 35, row,
+        addLabel(i18n.getString("messageBoxLabel"), 1, row);
+        TWidget first = addButton(i18n.getString("messageBoxButton"), 35, row,
             new TAction() {
                 public void DO() {
                     new DemoMsgBoxWindow(getApplication());
@@ -116,8 +134,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Open me as modal", 1, row);
-        addButton("W&indow", 35, row,
+        addLabel(i18n.getString("openModalLabel"), 1, row);
+        addButton(i18n.getString("openModalButton"), 35, row,
             new TAction() {
                 public void DO() {
                     new DemoMainWindow(getApplication(), MODAL);
@@ -126,8 +144,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Text fields and calendar", 1, row);
-        addButton("Field&s", 35, row,
+        addLabel(i18n.getString("textFieldLabel"), 1, row);
+        addButton(i18n.getString("textFieldButton"), 35, row,
             new TAction() {
                 public void DO() {
                     new DemoTextFieldWindow(getApplication());
@@ -136,8 +154,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Radio buttons, check and combobox", 1, row);
-        addButton("&CheckBoxes", 35, row,
+        addLabel(i18n.getString("radioButtonLabel"), 1, row);
+        addButton(i18n.getString("radioButtonButton"), 35, row,
             new TAction() {
                 public void DO() {
                     new DemoCheckBoxWindow(getApplication());
@@ -146,15 +164,15 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Editor window", 1, row);
-        addButton("&1 Widget", 35, row,
+        addLabel(i18n.getString("editorLabel"), 1, row);
+        addButton(i18n.getString("editorButton1"), 35, row,
             new TAction() {
                 public void DO() {
                     new DemoEditorWindow(getApplication());
                 }
             }
         );
-        addButton("&2 Window", 48, row,
+        addButton(i18n.getString("editorButton2"), 48, row,
             new TAction() {
                 public void DO() {
                     new TEditorWindow(getApplication());
@@ -163,8 +181,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Text areas", 1, row);
-        addButton("&Text", 35, row,
+        addLabel(i18n.getString("textAreaLabel"), 1, row);
+        addButton(i18n.getString("textAreaButton"), 35, row,
             new TAction() {
                 public void DO() {
                     new DemoTextWindow(getApplication());
@@ -173,8 +191,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Tree views", 1, row);
-        addButton("Tree&View", 35, row,
+        addLabel(i18n.getString("treeViewLabel"), 1, row);
+        addButton(i18n.getString("treeViewButton"), 35, row,
             new TAction() {
                 public void DO() {
                     try {
@@ -187,8 +205,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Terminal", 1, row);
-        addButton("Termi&nal", 35, row,
+        addLabel(i18n.getString("terminalLabel"), 1, row);
+        addButton(i18n.getString("terminalButton"), 35, row,
             new TAction() {
                 public void DO() {
                     getApplication().openTerminal(0, 0);
@@ -197,8 +215,8 @@ public class DemoMainWindow extends TWindow {
         );
         row += 2;
 
-        addLabel("Color editor", 1, row);
-        addButton("Co&lors", 35, row,
+        addLabel(i18n.getString("colorEditorLabel"), 1, row);
+        addButton(i18n.getString("colorEditorButton"), 35, row,
             new TAction() {
                 public void DO() {
                     new TEditColorThemeWindow(getApplication());
@@ -209,12 +227,13 @@ public class DemoMainWindow extends TWindow {
 
         progressBar = addProgressBar(1, row, 22, 0);
         row++;
-        timerLabel = addLabel("Timer", 1, row);
+        timerLabel = addLabel(i18n.getString("timerLabel"), 1, row);
         timer = getApplication().addTimer(250, true,
             new TAction() {
 
                 public void DO() {
-                    timerLabel.setLabel(String.format("Timer: %d", timerI));
+                    timerLabel.setLabel(String.format(i18n.
+                            getString("timerText"), timerI));
                     timerLabel.setWidth(timerLabel.getLabel().length());
                     if (timerI < 100) {
                         timerI++;
@@ -255,11 +274,15 @@ public class DemoMainWindow extends TWindow {
 
         activate(first);
 
-        statusBar = newStatusBar("Demo Main Window");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
-        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmShell,
+            i18n.getString("statusBarShell"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmExit,
+            i18n.getString("statusBarExit"));
     }
 
     // ------------------------------------------------------------------------
@@ -288,15 +311,18 @@ public class DemoMainWindow extends TWindow {
                 String filename = fileOpenBox(".");
                 if (filename != null) {
                     try {
-                        new TEditorWindow(getApplication(), new File(filename));
+                        new TEditorWindow(getApplication(),
+                            new File(filename));
                     } catch (IOException e) {
-                        messageBox("Error", "Error reading file: " +
-                            e.getMessage());
+                        messageBox(i18n.getString("errorTitle"),
+                            MessageFormat.format(i18n.
+                                getString("errorReadingFile"), e.getMessage()));
                     }
                 }
             } catch (IOException e) {
-                messageBox("Error", "Error opening file dialog: " +
-                    e.getMessage());
+                        messageBox(i18n.getString("errorTitle"),
+                            MessageFormat.format(i18n.
+                                getString("errorOpeningFile"), e.getMessage()));
             }
             return;
         }

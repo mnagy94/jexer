@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -220,23 +220,23 @@ public class TMenuItem extends TWidget {
         }
 
         char cVSide = GraphicsChars.WINDOW_SIDE;
-        getScreen().vLineXY(0, 0, 1, cVSide, background);
-        getScreen().vLineXY(getWidth() - 1, 0, 1, cVSide, background);
+        vLineXY(0, 0, 1, cVSide, background);
+        vLineXY(getWidth() - 1, 0, 1, cVSide, background);
 
-        getScreen().hLineXY(1, 0, getWidth() - 2, ' ', menuColor);
-        getScreen().putStringXY(2, 0, mnemonic.getRawLabel(), menuColor);
+        hLineXY(1, 0, getWidth() - 2, ' ', menuColor);
+        putStringXY(2, 0, mnemonic.getRawLabel(), menuColor);
         if (key != null) {
             String keyLabel = key.toString();
-            getScreen().putStringXY((getWidth() - keyLabel.length() - 2), 0,
-                keyLabel, menuColor);
+            putStringXY((getWidth() - keyLabel.length() - 2), 0, keyLabel,
+                menuColor);
         }
         if (mnemonic.getShortcutIdx() >= 0) {
-            getScreen().putCharXY(2 + mnemonic.getShortcutIdx(), 0,
-                mnemonic.getShortcut(), menuMnemonicColor);
+            putCharXY(2 + mnemonic.getShortcutIdx(), 0, mnemonic.getShortcut(),
+                menuMnemonicColor);
         }
         if (checked) {
             assert (checkable);
-            getScreen().putCharXY(1, 0, GraphicsChars.CHECK, menuColor);
+            putCharXY(1, 0, GraphicsChars.CHECK, menuColor);
         }
 
     }

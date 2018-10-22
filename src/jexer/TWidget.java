@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.ArrayList;
 
 import jexer.backend.Screen;
+import jexer.bits.Cell;
+import jexer.bits.CellAttributes;
 import jexer.bits.ColorTheme;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
@@ -180,8 +182,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.window = parent.window;
         children = new ArrayList<TWidget>();
 
-        // Do not add TStatusBars, they are drawn by TApplication
+        // Do not add TStatusBars, they are drawn by TApplication.
         if (this instanceof TStatusBar) {
+            // NOP
         } else {
             parent.addChild(this);
         }
@@ -205,8 +208,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.window = parent.window;
         children = new ArrayList<TWidget>();
 
-        // Do not add TStatusBars, they are drawn by TApplication
+        // Do not add TStatusBars, they are drawn by TApplication.
         if (this instanceof TStatusBar) {
+            // NOP
         } else {
             parent.addChild(this);
         }
@@ -240,6 +244,17 @@ public abstract class TWidget implements Comparable<TWidget> {
     // ------------------------------------------------------------------------
     // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Subclasses should override this method to cleanup resources.  This is
+     * called by TWindow.onClose().
+     */
+    protected void close() {
+        // Default: call close() on children.
+        for (TWidget w: getChildren()) {
+            w.close();
+        }
+    }
 
     /**
      * Check if a mouse press/release event coordinate is contained in this
@@ -280,19 +295,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         if ((children.size() == 0)
             || (this instanceof TTreeView)
             || (this instanceof TText)
+            || (this instanceof TComboBox)
         ) {
 
             // Defaults:
             //   tab / shift-tab - switch to next/previous widget
             //   left-arrow or up-arrow: same as shift-tab
             if ((keypress.equals(kbTab))
-                || (keypress.equals(kbDown))
+                || (keypress.equals(kbDown) && !(this instanceof TComboBox))
             ) {
                 parent.switchWidget(true);
                 return;
             } else if ((keypress.equals(kbShiftTab))
                 || (keypress.equals(kbBackTab))
-                || (keypress.equals(kbUp))
+                || (keypress.equals(kbUp) && !(this instanceof TComboBox))
             ) {
                 parent.switchWidget(false);
                 return;
@@ -349,6 +365,17 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public void onMouseDown(final TMouseEvent mouse) {
         // Default: do nothing, pass to children instead
+        if (activeChild != null) {
+            if (activeChild.mouseWouldHit(mouse)) {
+                // Dispatch to the active child
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - activeChild.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - activeChild.getAbsoluteY());
+                activeChild.onMouseDown(mouse);
+                return;
+            }
+        }
         for (int i = children.size() - 1 ; i >= 0 ; i--) {
             TWidget widget = children.get(i);
             if (widget.mouseWouldHit(mouse)) {
@@ -371,6 +398,17 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public void onMouseUp(final TMouseEvent mouse) {
         // Default: do nothing, pass to children instead
+        if (activeChild != null) {
+            if (activeChild.mouseWouldHit(mouse)) {
+                // Dispatch to the active child
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - activeChild.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - activeChild.getAbsoluteY());
+                activeChild.onMouseUp(mouse);
+                return;
+            }
+        }
         for (int i = children.size() - 1 ; i >= 0 ; i--) {
             TWidget widget = children.get(i);
             if (widget.mouseWouldHit(mouse)) {
@@ -410,6 +448,17 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public void onMouseDoubleClick(final TMouseEvent mouse) {
         // Default: do nothing, pass to children instead
+        if (activeChild != null) {
+            if (activeChild.mouseWouldHit(mouse)) {
+                // Dispatch to the active child
+
+                // Set x and y relative to the child's coordinates
+                mouse.setX(mouse.getAbsoluteX() - activeChild.getAbsoluteX());
+                mouse.setY(mouse.getAbsoluteY() - activeChild.getAbsoluteY());
+                activeChild.onMouseDoubleClick(mouse);
+                return;
+            }
+        }
         for (int i = children.size() - 1 ; i >= 0 ; i--) {
             TWidget widget = children.get(i);
             if (widget.mouseWouldHit(mouse)) {
@@ -931,7 +980,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @return the ColorTheme
      */
-    public final ColorTheme getTheme() {
+    protected final ColorTheme getTheme() {
         return window.getApplication().getTheme();
     }
 
@@ -944,9 +993,9 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Called by parent to render to TWindow.
+     * Called by parent to render to TWindow.  Note package private access.
      */
-    public final void drawChildren() {
+    final void drawChildren() {
         // Set my clipping rectangle
         assert (window != null);
         assert (getScreen() != null);
@@ -993,18 +1042,22 @@ public abstract class TWidget implements Comparable<TWidget> {
         // Draw me
         draw();
 
-        // Continue down the chain
+        // Continue down the chain.  Draw the active child last so that it
+        // is on top.
         for (TWidget widget: children) {
-            if (widget.isVisible()) {
+            if (widget.isVisible() && (widget != activeChild)) {
                 widget.drawChildren();
             }
+        }
+        if (activeChild != null) {
+            activeChild.drawChildren();
         }
     }
 
     /**
      * Repaint the screen on the next update.
      */
-    public final void doRepaint() {
+    protected final void doRepaint() {
         window.getApplication().doRepaint();
     }
 
@@ -1155,6 +1208,204 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         // No active children, return me
         return this;
+    }
+
+    // ------------------------------------------------------------------------
+    // Passthru for Screen functions ------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Get the attributes at one location.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @return attributes at (x, y)
+     */
+    protected final CellAttributes getAttrXY(final int x, final int y) {
+        return getScreen().getAttrXY(x, y);
+    }
+
+    /**
+     * Set the attributes at one location.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    protected final void putAttrXY(final int x, final int y,
+        final CellAttributes attr) {
+
+        getScreen().putAttrXY(x, y, attr);
+    }
+
+    /**
+     * Set the attributes at one location.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param attr attributes to use (bold, foreColor, backColor)
+     * @param clip if true, honor clipping/offset
+     */
+    protected final void putAttrXY(final int x, final int y,
+        final CellAttributes attr, final boolean clip) {
+
+        getScreen().putAttrXY(x, y, attr, clip);
+    }
+
+    /**
+     * Fill the entire screen with one character with attributes.
+     *
+     * @param ch character to draw
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    protected final void putAll(final char ch, final CellAttributes attr) {
+        getScreen().putAll(ch, attr);
+    }
+
+    /**
+     * Render one character with attributes.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param ch character + attributes to draw
+     */
+    protected final void putCharXY(final int x, final int y, final Cell ch) {
+        getScreen().putCharXY(x, y, ch);
+    }
+
+    /**
+     * Render one character with attributes.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param ch character to draw
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    protected final void putCharXY(final int x, final int y, final char ch,
+        final CellAttributes attr) {
+
+        getScreen().putCharXY(x, y, ch, attr);
+    }
+
+    /**
+     * Render one character without changing the underlying attributes.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param ch character to draw
+     */
+    protected final void putCharXY(final int x, final int y, final char ch) {
+        getScreen().putCharXY(x, y, ch);
+    }
+
+    /**
+     * Render a string.  Does not wrap if the string exceeds the line.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param str string to draw
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    protected final void putStringXY(final int x, final int y, final String str,
+        final CellAttributes attr) {
+
+        getScreen().putStringXY(x, y, str, attr);
+    }
+
+    /**
+     * Render a string without changing the underlying attribute.  Does not
+     * wrap if the string exceeds the line.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param str string to draw
+     */
+    protected final void putStringXY(final int x, final int y, final String str) {
+        getScreen().putStringXY(x, y, str);
+    }
+
+    /**
+     * Draw a vertical line from (x, y) to (x, y + n).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    protected final void vLineXY(final int x, final int y, final int n,
+        final char ch, final CellAttributes attr) {
+
+        getScreen().vLineXY(x, y, n, ch, attr);
+    }
+
+    /**
+     * Draw a horizontal line from (x, y) to (x + n, y).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    protected final void hLineXY(final int x, final int y, final int n,
+        final char ch, final CellAttributes attr) {
+
+        getScreen().hLineXY(x, y, n, ch, attr);
+    }
+
+    /**
+     * Draw a box with a border and empty background.
+     *
+     * @param left left column of box.  0 is the left-most row.
+     * @param top top row of the box.  0 is the top-most row.
+     * @param right right column of box
+     * @param bottom bottom row of the box
+     * @param border attributes to use for the border
+     * @param background attributes to use for the background
+     */
+    protected final void drawBox(final int left, final int top,
+        final int right, final int bottom,
+        final CellAttributes border, final CellAttributes background) {
+
+        getScreen().drawBox(left, top, right, bottom, border, background);
+    }
+
+    /**
+     * Draw a box with a border and empty background.
+     *
+     * @param left left column of box.  0 is the left-most row.
+     * @param top top row of the box.  0 is the top-most row.
+     * @param right right column of box
+     * @param bottom bottom row of the box
+     * @param border attributes to use for the border
+     * @param background attributes to use for the background
+     * @param borderType if 1, draw a single-line border; if 2, draw a
+     * double-line border; if 3, draw double-line top/bottom edges and
+     * single-line left/right edges (like Qmodem)
+     * @param shadow if true, draw a "shadow" on the box
+     */
+    protected final void drawBox(final int left, final int top,
+        final int right, final int bottom,
+        final CellAttributes border, final CellAttributes background,
+        final int borderType, final boolean shadow) {
+
+        getScreen().drawBox(left, top, right, bottom, border, background,
+            borderType, shadow);
+    }
+
+    /**
+     * Draw a box shadow.
+     *
+     * @param left left column of box.  0 is the left-most row.
+     * @param top top row of the box.  0 is the top-most row.
+     * @param right right column of box
+     * @param bottom bottom row of the box
+     */
+    protected final void drawBoxShadow(final int left, final int top,
+        final int right, final int bottom) {
+
+        getScreen().drawBoxShadow(left, top, right, bottom);
     }
 
     // ------------------------------------------------------------------------
@@ -1580,6 +1831,17 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Convenience function to spawn a file save box.
+     *
+     * @param path path of selected file
+     * @return the result of the new file open box
+     * @throws IOException if a java.io operation throws
+     */
+    public final String fileSaveBox(final String path) throws IOException {
+        return getApplication().fileOpenBox(path, TFileOpenBox.Type.SAVE);
+    }
+
+    /**
      * Convenience function to spawn a file open box.
      *
      * @param path path of selected file
@@ -1592,6 +1854,41 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         return getApplication().fileOpenBox(path, type);
     }
+
+    /**
+     * Convenience function to spawn a file open box.
+     *
+     * @param path path of selected file
+     * @param type one of the Type constants
+     * @param filter a string that files must match to be displayed
+     * @return the result of the new file open box
+     * @throws IOException of a java.io operation throws
+     */
+    public final String fileOpenBox(final String path,
+        final TFileOpenBox.Type type, final String filter) throws IOException {
+
+        ArrayList<String> filters = new ArrayList<String>();
+        filters.add(filter);
+
+        return getApplication().fileOpenBox(path, type, filters);
+    }
+
+    /**
+     * Convenience function to spawn a file open box.
+     *
+     * @param path path of selected file
+     * @param type one of the Type constants
+     * @param filters a list of strings that files must match to be displayed
+     * @return the result of the new file open box
+     * @throws IOException of a java.io operation throws
+     */
+    public final String fileOpenBox(final String path,
+        final TFileOpenBox.Type type,
+        final List<String> filters) throws IOException {
+
+        return getApplication().fileOpenBox(path, type, filters);
+    }
+
     /**
      * Convenience function to add a directory list to this container/window.
      *
@@ -1616,7 +1913,8 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param y row relative to parent
      * @param width width of text area
      * @param height height of text area
-     * @param action action to perform when an item is selected
+     * @param action action to perform when an item is selected (enter or
+     * double-click)
      * @return the new directory list
      */
     public final TDirectoryList addDirectoryList(final String path, final int x,
@@ -1627,6 +1925,51 @@ public abstract class TWidget implements Comparable<TWidget> {
 
     /**
      * Convenience function to add a directory list to this container/window.
+     *
+     * @param path directory path, must be a directory
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param action action to perform when an item is selected (enter or
+     * double-click)
+     * @param singleClickAction action to perform when an item is selected
+     * (single-click)
+     * @return the new directory list
+     */
+    public final TDirectoryList addDirectoryList(final String path, final int x,
+        final int y, final int width, final int height, final TAction action,
+        final TAction singleClickAction) {
+
+        return new TDirectoryList(this, path, x, y, width, height, action,
+            singleClickAction);
+    }
+
+    /**
+     * Convenience function to add a directory list to this container/window.
+     *
+     * @param path directory path, must be a directory
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param action action to perform when an item is selected (enter or
+     * double-click)
+     * @param singleClickAction action to perform when an item is selected
+     * (single-click)
+     * @param filters a list of strings that files must match to be displayed
+     * @return the new directory list
+     */
+    public final TDirectoryList addDirectoryList(final String path, final int x,
+        final int y, final int width, final int height, final TAction action,
+        final TAction singleClickAction, final List<String> filters) {
+
+        return new TDirectoryList(this, path, x, y, width, height, action,
+            singleClickAction, filters);
+    }
+
+    /**
+     * Convenience function to add a list to this container/window.
      *
      * @param strings list of strings to show
      * @param x column relative to parent
@@ -1642,7 +1985,7 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Convenience function to add a directory list to this container/window.
+     * Convenience function to add a list to this container/window.
      *
      * @param strings list of strings to show
      * @param x column relative to parent
@@ -1660,7 +2003,7 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Convenience function to add a directory list to this container/window.
+     * Convenience function to add a list to this container/window.
      *
      * @param strings list of strings to show
      * @param x column relative to parent

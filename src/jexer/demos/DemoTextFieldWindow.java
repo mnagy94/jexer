@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,9 +28,16 @@
  */
 package jexer.demos;
 
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.Date;
+import java.util.ResourceBundle;
 
-import jexer.*;
+import jexer.TAction;
+import jexer.TApplication;
+import jexer.TCalendar;
+import jexer.TField;
+import jexer.TMessageBox;
+import jexer.TWindow;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -38,6 +45,11 @@ import static jexer.TKeypress.*;
  * This window demonstates the TField and TPasswordField widgets.
  */
 public class DemoTextFieldWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoTextFieldWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -71,37 +83,36 @@ public class DemoTextFieldWindow extends TWindow {
     DemoTextFieldWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it
         // will be centered on screen.
-        super(parent, "Text Fields", 0, 0, 60, 20, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 60, 20, flags);
 
         int row = 1;
 
-        addLabel("Variable-width text field:", 1, row);
+        addLabel(i18n.getString("textField1"), 1, row);
         addField(35, row++, 15, false, "Field text");
-        addLabel("Fixed-width text field:", 1, row);
+        addLabel(i18n.getString("textField2"), 1, row);
         addField(35, row++, 15, true);
-        addLabel("Variable-width password:", 1, row);
+        addLabel(i18n.getString("textField3"), 1, row);
         addPasswordField(35, row++, 15, false);
-        addLabel("Fixed-width password:", 1, row);
+        addLabel(i18n.getString("textField4"), 1, row);
         addPasswordField(35, row++, 15, true, "hunter2");
-        addLabel("Very long text field:", 1, row);
+        addLabel(i18n.getString("textField5"), 1, row);
         TField selected = addField(35, row++, 40, false,
-            "Very very long field text that should be outside the window");
+            i18n.getString("textField6"));
         row += 1;
 
         calendar = addCalendar(1, row++,
             new TAction() {
                 public void DO() {
-                    getApplication().messageBox("Calendar",
-                        "You selected the following date:\n" +
-                        "\n" +
-                        new Date(calendar.getValue().getTimeInMillis()) +
-                        "\n",
+                    getApplication().messageBox(i18n.getString("calendarTitle"),
+                        MessageFormat.format(i18n.getString("calendarMessage"),
+                            new Date(calendar.getValue().getTimeInMillis())),
                         TMessageBox.Type.OK);
                 }
             }
         );
 
-        addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
+        addButton(i18n.getString("closeWindow"),
+            (getWidth() - 14) / 2, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     getApplication().closeWindow(DemoTextFieldWindow.this);
@@ -111,11 +122,15 @@ public class DemoTextFieldWindow extends TWindow {
 
         activate(selected);
 
-        statusBar = newStatusBar("Text fields");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
-        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmShell,
+            i18n.getString("statusBarShell"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmExit,
+            i18n.getString("statusBarExit"));
     }
 
 }

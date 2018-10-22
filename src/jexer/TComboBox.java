@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -61,6 +61,11 @@ public class TComboBox extends TWidget {
      */
     private TAction updateAction = null;
 
+    /**
+     * If true, the field cannot be updated to a value not on the list.
+     */
+    private boolean limitToListValue = true;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -87,9 +92,11 @@ public class TComboBox extends TWidget {
         // Set parent and window
         super(parent, x, y, width, 1);
 
+        assert (values != null);
+
         this.updateAction = updateAction;
 
-        field = new TField(this, 0, 0, width - 1, false, "",
+        field = new TField(this, 0, 0, width - 3, false, "",
             updateAction, null);
         if (valuesIndex >= 0) {
             field.setText(values.get(valuesIndex));
@@ -102,18 +109,27 @@ public class TComboBox extends TWidget {
                     list.setEnabled(false);
                     list.setVisible(false);
                     TComboBox.this.setHeight(1);
-                    TComboBox.this.activate(field);
+                    if (TComboBox.this.limitToListValue == false) {
+                        TComboBox.this.activate(field);
+                    }
                     if (updateAction != null) {
                         updateAction.DO();
                     }
                 }
             }
         );
+        if (valuesIndex >= 0) {
+            list.setSelectedIndex(valuesIndex);
+        }
 
         list.setEnabled(false);
         list.setVisible(false);
         setHeight(1);
-        activate(field);
+        if (limitToListValue) {
+            field.setEnabled(false);
+        } else {
+            activate(field);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -128,7 +144,8 @@ public class TComboBox extends TWidget {
      */
     private boolean mouseOnArrow(final TMouseEvent mouse) {
         if ((mouse.getY() == 0)
-            && (mouse.getX() == getWidth() - 1)
+            && (mouse.getX() >= getWidth() - 3)
+            && (mouse.getX() <= getWidth() - 1)
         ) {
             return true;
         }
@@ -148,7 +165,9 @@ public class TComboBox extends TWidget {
                 list.setEnabled(false);
                 list.setVisible(false);
                 setHeight(1);
-                activate(field);
+                if (limitToListValue == false) {
+                    activate(field);
+                }
             } else {
                 list.setEnabled(true);
                 list.setVisible(true);
@@ -156,6 +175,9 @@ public class TComboBox extends TWidget {
                 activate(list);
             }
         }
+
+        // Pass to parent for the things we don't care about.
+        super.onMouseDown(mouse);
     }
 
     /**
@@ -165,6 +187,18 @@ public class TComboBox extends TWidget {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
+        if (keypress.equals(kbEsc)) {
+            if (list.isActive()) {
+                list.setEnabled(false);
+                list.setVisible(false);
+                setHeight(1);
+                if (limitToListValue == false) {
+                    activate(field);
+                }
+                return;
+            }
+        }
+
         if (keypress.equals(kbAltDown)) {
             list.setEnabled(true);
             list.setVisible(true);
@@ -181,7 +215,9 @@ public class TComboBox extends TWidget {
                 list.setEnabled(false);
                 list.setVisible(false);
                 setHeight(1);
-                activate(field);
+                if (limitToListValue == false) {
+                    activate(field);
+                }
                 return;
             }
         }
@@ -201,13 +237,29 @@ public class TComboBox extends TWidget {
     public void draw() {
         CellAttributes comboBoxColor;
 
-        if (isAbsoluteActive()) {
+        if (!isAbsoluteActive()) {
+            // We lost focus, turn off the list.
+            if (list.isActive()) {
+                list.setEnabled(false);
+                list.setVisible(false);
+                setHeight(1);
+                if (limitToListValue == false) {
+                    activate(field);
+                }
+            }
+        }
+
+        if (isAbsoluteActive() && (limitToListValue == false)) {
             comboBoxColor = getTheme().getColor("tcombobox.active");
         } else {
             comboBoxColor = getTheme().getColor("tcombobox.inactive");
         }
 
-        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.DOWNARROW,
+        putCharXY(getWidth() - 3, 0, GraphicsChars.DOWNARROWLEFT,
+            comboBoxColor);
+        putCharXY(getWidth() - 2, 0, GraphicsChars.DOWNARROW,
+            comboBoxColor);
+        putCharXY(getWidth() - 1, 0, GraphicsChars.DOWNARROWRIGHT,
             comboBoxColor);
     }
 
@@ -238,6 +290,35 @@ public class TComboBox extends TWidget {
             }
         }
         list.setSelectedIndex(-1);
+    }
+
+    /**
+     * Set combobox text to one of the list values.
+     *
+     * @param index the index in the list
+     */
+    public void setIndex(final int index) {
+        list.setSelectedIndex(index);
+        field.setText(list.getSelected());
+    }
+
+    /**
+     * Get a copy of the list of strings to display.
+     *
+     * @return the list of strings
+     */
+    public final List<String> getList() {
+        return list.getList();
+    }
+
+    /**
+     * Set the new list of strings to display.
+     *
+     * @param list new list of strings
+     */
+    public final void setList(final List<String> list) {
+        this.list.setList(list);
+        field.setText("");
     }
 
 }

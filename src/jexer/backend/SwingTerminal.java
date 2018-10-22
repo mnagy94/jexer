@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -398,14 +398,16 @@ public class SwingTerminal extends LogicalScreen
                             SwingTerminal.this.textHeight,
                             windowWidth, windowHeight);
 
-                    SwingTerminal.this.setDimensions(sessionInfo.getWindowWidth(),
-                        sessionInfo.getWindowHeight());
+                    SwingTerminal.this.setDimensions(sessionInfo.
+                        getWindowWidth(), sessionInfo.getWindowHeight());
 
                     SwingTerminal.this.resizeToScreen();
                     SwingTerminal.this.swing.setVisible(true);
                 }
             });
-        } catch (Exception e) {
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -527,7 +529,9 @@ public class SwingTerminal extends LogicalScreen
                             SwingTerminal.this.textHeight);
                 }
             });
-        } catch (Exception e) {
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
@@ -644,6 +648,24 @@ public class SwingTerminal extends LogicalScreen
     // ------------------------------------------------------------------------
 
     /**
+     * Get the width of a character cell in pixels.
+     *
+     * @return the width in pixels of a character cell
+     */
+    public int getTextWidth() {
+        return textWidth;
+    }
+
+    /**
+     * Get the height of a character cell in pixels.
+     *
+     * @return the height in pixels of a character cell
+     */
+    public int getTextHeight() {
+        return textHeight;
+    }
+
+    /**
      * Setup Swing colors to match DOS color palette.
      */
     private static void setDOSColors() {
@@ -727,7 +749,10 @@ public class SwingTerminal extends LogicalScreen
             Font terminus = terminusRoot.deriveFont(Font.PLAIN, fontSize);
             gotTerminus = true;
             font = terminus;
-        } catch (Exception e) {
+        } catch (java.awt.FontFormatException e) {
+            e.printStackTrace();
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+        } catch (java.io.IOException e) {
             e.printStackTrace();
             font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
         }
@@ -964,7 +989,41 @@ public class SwingTerminal extends LogicalScreen
      * Resize to font dimensions.
      */
     public void resizeToScreen() {
-        swing.setDimensions(textWidth * width, textHeight * height);
+        swing.setDimensions(textWidth * (width + 1), textHeight * (height + 1));
+    }
+
+    /**
+     * Draw one cell's image to the screen.
+     *
+     * @param gr the Swing Graphics context
+     * @param cell the Cell to draw
+     * @param xPixel the x-coordinate to render to.  0 means the
+     * left-most pixel column.
+     * @param yPixel the y-coordinate to render to.  0 means the top-most
+     * pixel row.
+     */
+    private void drawImage(final Graphics gr, final Cell cell,
+        final int xPixel, final int yPixel) {
+
+        /*
+        System.err.println("drawImage(): " + xPixel + " " + yPixel +
+            " " + cell);
+        */
+
+        // Draw the background rectangle, then the foreground character.
+        assert (cell.isImage());
+        gr.setColor(cell.getBackground());
+        gr.fillRect(xPixel, yPixel, textWidth, textHeight);
+
+        BufferedImage image = cell.getImage();
+        if (image != null) {
+            if (swing.getFrame() != null) {
+                gr.drawImage(image, xPixel, yPixel, swing.getFrame());
+            } else {
+                gr.drawImage(image, xPixel, yPixel, swing.getComponent());
+            }
+            return;
+        }
     }
 
     /**
@@ -1190,7 +1249,11 @@ public class SwingTerminal extends LogicalScreen
                         || reallyCleared
                         || (swing.getFrame() == null)) {
 
-                        drawGlyph(gr, lCell, xPixel, yPixel);
+                        if (lCell.isImage()) {
+                            drawImage(gr, lCell, xPixel, yPixel);
+                        } else {
+                            drawGlyph(gr, lCell, xPixel, yPixel);
+                        }
 
                         // Physical is always updated
                         physical[x][y].setTo(lCell);
@@ -1260,7 +1323,11 @@ public class SwingTerminal extends LogicalScreen
                                 && cursorVisible)
                             || (lCell.isBlink())
                         ) {
-                            drawGlyph(gr, lCell, xPixel, yPixel);
+                            if (lCell.isImage()) {
+                                drawImage(gr, lCell, xPixel, yPixel);
+                            } else {
+                                drawGlyph(gr, lCell, xPixel, yPixel);
+                            }
                             physical[x][y].setTo(lCell);
                         }
                     }

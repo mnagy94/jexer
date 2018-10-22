@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,8 +28,12 @@
  */
 package jexer.demos;
 
-import java.net.*;
-import jexer.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
+
+import jexer.net.TelnetServerSocket;
 
 /**
  * This class is the main driver for a simple demonstration of Jexer's
@@ -37,6 +41,11 @@ import jexer.net.*;
  * port.
  */
 public class Demo2 {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(Demo2.class.getName());
 
     /**
      * Main entry point.
@@ -47,7 +56,7 @@ public class Demo2 {
         ServerSocket server = null;
         try {
             if (args.length == 0) {
-                System.err.printf("USAGE: java -cp jexer.jar jexer.demos.Demo2 port\n");
+                System.err.println(i18n.getString("usageString"));
                 return;
             }
 
@@ -55,12 +64,14 @@ public class Demo2 {
             server = new TelnetServerSocket(port);
             while (true) {
                 Socket socket = server.accept();
-                System.out.printf("New connection: %s\n", socket);
+                System.out.println(MessageFormat.
+                    format(i18n.getString("newConnection"), socket));
                 DemoApplication app = new DemoApplication(socket.getInputStream(),
                     socket.getOutputStream());
-                System.out.printf("   language: %s\n",
+                System.out.println(MessageFormat.
+                    format(i18n.getString("language"),
                     ((jexer.net.TelnetInputStream) socket.getInputStream()).
-                        getLanguage());
+                        getLanguage()));
                 (new Thread(app)).start();
             }
         } catch (Exception e) {

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,10 +28,17 @@
  */
 package jexer.demos;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 
-import jexer.*;
+import jexer.TAction;
+import jexer.TApplication;
+import jexer.TComboBox;
+import jexer.TMessageBox;
+import jexer.TRadioGroup;
+import jexer.TWindow;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -40,6 +47,11 @@ import static jexer.TKeypress.*;
  * widgets.
  */
 public class DemoCheckBoxWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoCheckBoxWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -73,50 +85,49 @@ public class DemoCheckBoxWindow extends TWindow {
     DemoCheckBoxWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, "Radiobuttons, CheckBoxes, and ComboBox",
-            0, 0, 60, 17, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 60, 17, flags);
 
         int row = 1;
 
         // Add some widgets
-        addLabel("Check box example 1", 1, row);
-        addCheckBox(35, row++, "CheckBox 1", false);
-        addLabel("Check box example 2", 1, row);
-        addCheckBox(35, row++, "CheckBox 2", true);
+        addLabel(i18n.getString("checkBoxLabel1"), 1, row);
+        addCheckBox(35, row++, i18n.getString("checkBoxText1"), false);
+        addLabel(i18n.getString("checkBoxLabel2"), 1, row);
+        addCheckBox(35, row++, i18n.getString("checkBoxText2"), true);
         row += 2;
 
-        TRadioGroup group = addRadioGroup(1, row, "Group 1");
-        group.addRadioButton("Radio option 1");
-        group.addRadioButton("Radio option 2");
-        group.addRadioButton("Radio option 3");
+        TRadioGroup group = addRadioGroup(1, row,
+            i18n.getString("radioGroupTitle"));
+        group.addRadioButton(i18n.getString("radioOption1"));
+        group.addRadioButton(i18n.getString("radioOption2"));
+        group.addRadioButton(i18n.getString("radioOption3"));
 
         List<String> comboValues = new ArrayList<String>();
-        comboValues.add("String 0");
-        comboValues.add("String 1");
-        comboValues.add("String 2");
-        comboValues.add("String 3");
-        comboValues.add("String 4");
-        comboValues.add("String 5");
-        comboValues.add("String 6");
-        comboValues.add("String 7");
-        comboValues.add("String 8");
-        comboValues.add("String 9");
-        comboValues.add("String 10");
+        comboValues.add(i18n.getString("comboBoxString0"));
+        comboValues.add(i18n.getString("comboBoxString1"));
+        comboValues.add(i18n.getString("comboBoxString2"));
+        comboValues.add(i18n.getString("comboBoxString3"));
+        comboValues.add(i18n.getString("comboBoxString4"));
+        comboValues.add(i18n.getString("comboBoxString5"));
+        comboValues.add(i18n.getString("comboBoxString6"));
+        comboValues.add(i18n.getString("comboBoxString7"));
+        comboValues.add(i18n.getString("comboBoxString8"));
+        comboValues.add(i18n.getString("comboBoxString9"));
+        comboValues.add(i18n.getString("comboBoxString10"));
 
         comboBox = addComboBox(35, row, 12, comboValues, 2, 6,
             new TAction() {
                 public void DO() {
-                    getApplication().messageBox("ComboBox",
-                        "You selected the following value:\n" +
-                        "\n" +
-                        comboBox.getText() +
-                        "\n",
+                    getApplication().messageBox(i18n.getString("messageBoxTitle"),
+                        MessageFormat.format(i18n.getString("messageBoxPrompt"),
+                            comboBox.getText()),
                         TMessageBox.Type.OK);
                 }
             }
         );
 
-        addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
+        addButton(i18n.getString("closeWindow"),
+            (getWidth() - 14) / 2, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     DemoCheckBoxWindow.this.getApplication()
@@ -125,11 +136,15 @@ public class DemoCheckBoxWindow extends TWindow {
             }
         );
 
-        statusBar = newStatusBar("Radiobuttons and checkboxes");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
-        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmShell,
+            i18n.getString("statusBarShell"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmExit,
+            i18n.getString("statusBarExit"));
     }
 
 }

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -65,11 +65,9 @@ public class TMenuSeparator extends TMenuItem {
     public void draw() {
         CellAttributes background = getTheme().getColor("tmenu");
 
-        getScreen().putCharXY(0, 0, GraphicsChars.CP437[0xC3], background);
-        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0xB4],
-            background);
-        getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.SINGLE_BAR,
-            background);
+        putCharXY(0, 0, GraphicsChars.CP437[0xC3], background);
+        putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0xB4], background);
+        hLineXY(1, 0, getWidth() - 2, GraphicsChars.SINGLE_BAR, background);
     }
 
 }

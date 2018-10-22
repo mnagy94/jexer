@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,17 +29,18 @@
 package jexer.tterminal;
 
 import java.io.BufferedOutputStream;
+import java.io.CharArrayWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import jexer.TKeypress;
@@ -252,12 +253,17 @@ public class ECMA48 implements Runnable {
     /**
      * The scrollback buffer characters + attributes.
      */
-    private volatile List<DisplayLine> scrollback;
+    private volatile ArrayList<DisplayLine> scrollback;
 
     /**
      * The raw display buffer characters + attributes.
      */
-    private volatile List<DisplayLine> display;
+    private volatile ArrayList<DisplayLine> display;
+
+    /**
+     * The maximum number of lines in the scrollback buffer.
+     */
+    private int maxScrollback = 10000;
 
     /**
      * The terminal's input.  For type == XTERM, this is an InputStreamReader
@@ -585,8 +591,8 @@ public class ECMA48 implements Runnable {
 
         csiParams         = new ArrayList<Integer>();
         tabStops          = new ArrayList<Integer>();
-        scrollback        = new LinkedList<DisplayLine>();
-        display           = new LinkedList<DisplayLine>();
+        scrollback        = new ArrayList<DisplayLine>();
+        display           = new ArrayList<DisplayLine>();
 
         this.type         = type;
         if (inputStream instanceof TimeoutInputStream) {
@@ -697,7 +703,7 @@ public class ECMA48 implements Runnable {
                                 ch = readBuffer[i];
                             }
 
-                            consume((char)ch);
+                            consume((char) ch);
                         }
                     }
                     // Permit my enclosing UI to know that I updated.
@@ -707,8 +713,29 @@ public class ECMA48 implements Runnable {
                 }
                 // System.err.println("end while loop"); System.err.flush();
             } catch (IOException e) {
-                e.printStackTrace();
                 done = true;
+
+                // This is an unusual case.  We want to see the stack trace,
+                // but it is related to the spawned process rather than the
+                // actual UI.  We will generate the stack trace, and consume
+                // it as though it was emitted by the shell.
+                CharArrayWriter writer= new CharArrayWriter();
+                // Send a ST and RIS to clear the emulator state.
+                try {
+                    writer.write("\033\\\033c");
+                    writer.write("\n-----------------------------------\n");
+                    e.printStackTrace(new PrintWriter(writer));
+                    writer.write("\n-----------------------------------\n");
+                } catch (IOException e2) {
+                    // SQUASH
+                }
+                char [] stackTrace = writer.toCharArray();
+                for (int i = 0; i < stackTrace.length; i++) {
+                    if (stackTrace[i] == '\n') {
+                        consume('\r');
+                    }
+                    consume(stackTrace[i]);
+                }
             }
 
         } // while ((done == false) && (stopReaderThread == false))
@@ -889,7 +916,7 @@ public class ECMA48 implements Runnable {
             try {
                 readerThread.join(1000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                // SQUASH
             }
         }
 
@@ -1234,7 +1261,12 @@ public class ECMA48 implements Runnable {
     private void newDisplayLine() {
         // Scroll the top line off into the scrollback buffer
         scrollback.add(display.get(0));
+        if (scrollback.size() > maxScrollback) {
+            scrollback.remove(0);
+            scrollback.trimToSize();
+        }
         display.remove(0);
+        display.trimToSize();
         DisplayLine line = new DisplayLine(currentState.attr);
         line.setReverseColor(reverseVideo);
         display.add(line);
@@ -2415,7 +2447,7 @@ public class ECMA48 implements Runnable {
             display.size());
         List<DisplayLine> displayMiddle = display.subList(regionBottom + 1
             - remaining, regionBottom + 1);
-        display = new LinkedList<DisplayLine>(displayTop);
+        display = new ArrayList<DisplayLine>(displayTop);
         display.addAll(displayMiddle);
         for (int i = 0; i < n; i++) {
             DisplayLine line = new DisplayLine(currentState.attr);
@@ -2456,7 +2488,7 @@ public class ECMA48 implements Runnable {
             display.size());
         List<DisplayLine> displayMiddle = display.subList(regionTop,
             regionTop + remaining);
-        display = new LinkedList<DisplayLine>(displayTop);
+        display = new ArrayList<DisplayLine>(displayTop);
         for (int i = 0; i < n; i++) {
             DisplayLine line = new DisplayLine(currentState.attr);
             line.setReverseColor(reverseVideo);

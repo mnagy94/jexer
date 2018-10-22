@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -163,8 +163,7 @@ public class TSubMenu extends TMenuItem {
         }
 
         // Add the arrow
-        getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.CP437[0x10],
-            menuColor);
+        putCharXY(getWidth() - 2, 0, GraphicsChars.CP437[0x10], menuColor);
     }
 
     /**

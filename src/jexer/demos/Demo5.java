@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -31,6 +31,7 @@ package jexer.demos;
 import java.awt.Font;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ResourceBundle;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
@@ -43,6 +44,11 @@ import jexer.backend.SwingBackend;
  * Swing UI.
  */
 public class Demo5 implements WindowListener {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(Demo5.class.getName());
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -133,7 +139,7 @@ public class Demo5 implements WindowListener {
     // ------------------------------------------------------------------------
     // Demo5 ------------------------------------------------------------------
     // ------------------------------------------------------------------------
-    
+
     /**
      * Run two demo applications in separate panes.
      */
@@ -196,7 +202,7 @@ public class Demo5 implements WindowListener {
         mainPane.setBorder(null);
         frame.setContentPane(mainPane);
 
-        frame.setTitle("Two Jexer Apps In One Swing UI");
+        frame.setTitle(i18n.getString("frameTitle"));
         frame.setSize(1000, 640);
         frame.setVisible(true);
     }

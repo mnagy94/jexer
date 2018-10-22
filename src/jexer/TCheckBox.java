@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -52,6 +52,11 @@ public class TCheckBox extends TWidget {
      * Label for this checkbox.
      */
     private String label;
+
+    /**
+     * If true, use the window's background color.
+     */
+    private boolean useWindowBackground = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -144,15 +149,19 @@ public class TCheckBox extends TWidget {
         } else {
             checkboxColor = getTheme().getColor("tcheckbox.inactive");
         }
-
-        getScreen().putCharXY(0, 0, '[', checkboxColor);
-        if (checked) {
-            getScreen().putCharXY(1, 0, GraphicsChars.CHECK, checkboxColor);
-        } else {
-            getScreen().putCharXY(1, 0, ' ', checkboxColor);
+        if (useWindowBackground) {
+            CellAttributes background = getWindow().getBackground();
+            checkboxColor.setBackColor(background.getBackColor());
         }
-        getScreen().putCharXY(2, 0, ']', checkboxColor);
-        getScreen().putStringXY(4, 0, label, checkboxColor);
+
+        putCharXY(0, 0, '[', checkboxColor);
+        if (checked) {
+            putCharXY(1, 0, GraphicsChars.CHECK, checkboxColor);
+        } else {
+            putCharXY(1, 0, ' ', checkboxColor);
+        }
+        putCharXY(2, 0, ']', checkboxColor);
+        putStringXY(4, 0, label, checkboxColor);
     }
 
     // ------------------------------------------------------------------------

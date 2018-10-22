@@ -1,6 +1,18 @@
 Jexer Work Log
 ==============
 
+October 21, 2018
+
+All future work for this project has been moved to GitLab.  GitHub
+will remain up for a few months longer, until the next release comes
+out.
+
+September 18, 2018
+
+Collecting up a few bug fixes involving race conditions: message box
+(and input box), TimeoutInputStream, window close.  Will get these
+uploaded to GitHub in a little while.
+
 July 13, 2018
 
 This project isn't dead, I swear!

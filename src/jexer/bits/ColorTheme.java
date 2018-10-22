@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -78,7 +78,7 @@ public class ColorTheme {
      * @return color associated with name, e.g. bold yellow on blue
      */
     public CellAttributes getColor(final String name) {
-        CellAttributes attr = (CellAttributes) colors.get(name);
+        CellAttributes attr = colors.get(name);
         return attr;
     }
 
@@ -153,7 +153,8 @@ public class ColorTheme {
             try {
                 foreColorRGB = Integer.parseInt(tokenizer.nextToken(), 16);
             } catch (NumberFormatException e) {
-                e.printStackTrace();
+                // Default to white on black
+                foreColorRGB = 0xFFFFFF;
             }
 
             // "on"
@@ -167,7 +168,7 @@ public class ColorTheme {
             try {
                 backColorRGB = Integer.parseInt(tokenizer.nextToken(), 16);
             } catch (NumberFormatException e) {
-                e.printStackTrace();
+                backColorRGB = 0;
             }
 
             CellAttributes color = new CellAttributes();
@@ -371,14 +372,14 @@ public class ColorTheme {
 
         // TField text
         color = new CellAttributes();
-        color.setForeColor(Color.WHITE);
-        color.setBackColor(Color.BLUE);
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
         color.setBold(false);
         colors.put("tfield.inactive", color);
         color = new CellAttributes();
-        color.setForeColor(Color.YELLOW);
-        color.setBackColor(Color.BLACK);
-        color.setBold(true);
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.CYAN);
+        color.setBold(false);
         colors.put("tfield.active", color);
 
         // TCheckBox

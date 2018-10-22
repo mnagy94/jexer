@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,7 +28,14 @@
  */
 package jexer.demos;
 
-import jexer.*;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
+
+import jexer.TAction;
+import jexer.TApplication;
+import jexer.TInputBox;
+import jexer.TMessageBox;
+import jexer.TWindow;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -36,6 +43,11 @@ import static jexer.TKeypress.*;
  * This window demonstates the TMessageBox and TInputBox widgets.
  */
 public class DemoMsgBoxWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoMsgBoxWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -59,120 +71,101 @@ public class DemoMsgBoxWindow extends TWindow {
     DemoMsgBoxWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it
         // will be centered on screen.
-        super(parent, "Message Boxes", 0, 0, 64, 18, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 18, flags);
 
         int row = 1;
 
         // Add some widgets
-        addLabel("Default OK message box", 1, row);
-        addButton("Open O&K MB", 35, row,
+        addLabel(i18n.getString("messageBoxLabel1"), 1, row);
+        addButton(i18n.getString("messageBoxButton1"), 35, row,
             new TAction() {
                 public void DO() {
-                    getApplication().messageBox("OK MessageBox",
-"This is an example of a OK MessageBox.  This is the\n" +
-"default MessageBox.\n" +
-"\n" +
-"Note that the MessageBox text can span multiple\n" +
-"lines.\n" +
-"\n" +
-"The default result (if someone hits the top-left\n" +
-"close button) is OK.\n",
+                    getApplication().messageBox(i18n.
+                        getString("messageBoxTitle1"),
+                        i18n.getString("messageBoxPrompt1"),
                         TMessageBox.Type.OK);
                 }
             }
         );
         row += 2;
 
-        addLabel("OK/Cancel message box", 1, row);
-        addButton("O&pen OKC MB", 35, row,
+        addLabel(i18n.getString("messageBoxLabel2"), 1, row);
+        addButton(i18n.getString("messageBoxButton2"), 35, row,
             new TAction() {
                 public void DO() {
-                    getApplication().messageBox("OK/Cancel MessageBox",
-"This is an example of a OK/Cancel MessageBox.\n" +
-"\n" +
-"Note that the MessageBox text can span multiple\n" +
-"lines.\n" +
-"\n" +
-"The default result (if someone hits the top-left\n" +
-"close button) is CANCEL.\n",
+                    getApplication().messageBox(i18n.
+                        getString("messageBoxTitle2"),
+                        i18n.getString("messageBoxPrompt2"),
                         TMessageBox.Type.OKCANCEL);
                 }
             }
         );
         row += 2;
 
-        addLabel("Yes/No message box", 1, row);
-        addButton("Open &YN MB", 35, row,
+        addLabel(i18n.getString("messageBoxLabel3"), 1, row);
+        addButton(i18n.getString("messageBoxButton3"), 35, row,
             new TAction() {
                 public void DO() {
-                    getApplication().messageBox("Yes/No MessageBox",
-"This is an example of a Yes/No MessageBox.\n" +
-"\n" +
-"Note that the MessageBox text can span multiple\n" +
-"lines.\n" +
-"\n" +
-"The default result (if someone hits the top-left\n" +
-"close button) is NO.\n",
+                    getApplication().messageBox(i18n.
+                        getString("messageBoxTitle3"),
+                        i18n.getString("messageBoxPrompt3"),
                         TMessageBox.Type.YESNO);
                 }
             }
         );
         row += 2;
 
-        addLabel("Yes/No/Cancel message box", 1, row);
-        addButton("Ope&n YNC MB", 35, row,
+        addLabel(i18n.getString("messageBoxLabel4"), 1, row);
+        addButton(i18n.getString("messageBoxButton4"), 35, row,
             new TAction() {
                 public void DO() {
-                    getApplication().messageBox("Yes/No/Cancel MessageBox",
-"This is an example of a Yes/No/Cancel MessageBox.\n" +
-"\n" +
-"Note that the MessageBox text can span multiple\n" +
-"lines.\n" +
-"\n" +
-"The default result (if someone hits the top-left\n" +
-"close button) is CANCEL.\n",
+                    getApplication().messageBox(i18n.
+                        getString("messageBoxTitle4"),
+                        i18n.getString("messageBoxPrompt4"),
                         TMessageBox.Type.YESNOCANCEL);
                 }
             }
         );
         row += 2;
 
-        addLabel("Input box 1", 1, row);
-        addButton("Open &input box", 35, row,
+        addLabel(i18n.getString("inputBoxLabel1"), 1, row);
+        addButton(i18n.getString("inputBoxButton1"), 35, row,
             new TAction() {
                 public void DO() {
-                    TInputBox in = getApplication().inputBox("Input Box",
-"This is an example of an InputBox.\n" +
-"\n" +
-"Note that the InputBox text can span multiple\n" +
-"lines.\n",
-                        "some input text");
-                    getApplication().messageBox("Your InputBox Answer",
-                        "You entered: " + in.getText());
+                    TInputBox in = getApplication().inputBox(i18n.
+                        getString("inputBoxTitle1"),
+                        i18n.getString("inputBoxPrompt1"),
+                        i18n.getString("inputBoxInput1"));
+                    getApplication().messageBox(i18n.
+                        getString("inputBoxAnswerTitle1"),
+                        MessageFormat.format(i18n.
+                            getString("inputBoxAnswerPrompt1"), in.getText()));
                 }
             }
         );
         row += 2;
 
-        addLabel("Input box 2", 1, row);
-        addButton("Cance&llable input box", 35, row,
+        addLabel(i18n.getString("inputBoxLabel2"), 1, row);
+        addButton(i18n.getString("inputBoxButton2"), 35, row,
             new TAction() {
                 public void DO() {
-                    TInputBox in = getApplication().inputBox("Input Box",
-"This is an example of an InputBox.\n" +
-"\n" +
-"Note that the InputBox text can span multiple\n" +
-"lines.\n" +
-"This one has both OK and Cancel buttons.\n",
-                        "some input text", TInputBox.Type.OKCANCEL);
-                    getApplication().messageBox("Your InputBox Answer",
-                        "You entered: " + in.getText() + " and pressed " +
-                        in.getResult());
+                    TInputBox in = getApplication().inputBox(i18n.
+                        getString("inputBoxTitle2"),
+                        i18n.getString("inputBoxPrompt2"),
+                        i18n.getString("inputBoxInput2"),
+                        TInputBox.Type.OKCANCEL);
+                    getApplication().messageBox(i18n.
+                        getString("inputBoxAnswerTitle2"),
+                        MessageFormat.format(i18n.
+                            getString("inputBoxAnswerPrompt2"), in.getText(),
+                            in.getResult()));
                 }
             }
         );
+        row += 2;
 
-        addButton("&Close Window", (getWidth() - 14) / 2, getHeight() - 4,
+        addButton(i18n.getString("closeWindow"),
+            (getWidth() - 14) / 2, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     getApplication().closeWindow(DemoMsgBoxWindow.this);
@@ -180,10 +173,14 @@ public class DemoMsgBoxWindow extends TWindow {
             }
         );
 
-        statusBar = newStatusBar("Message boxes");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF3, cmOpen, "Open");
-        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmShell,
+            i18n.getString("statusBarShell"));
+        statusBar.addShortcutKeypress(kbF3, cmOpen,
+            i18n.getString("statusBarOpen"));
+        statusBar.addShortcutKeypress(kbF10, cmExit,
+            i18n.getString("statusBarExit"));
     }
 }

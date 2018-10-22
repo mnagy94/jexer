@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -219,16 +219,15 @@ public class TEditColorThemeWindow extends TWindow {
             CellAttributes background = getWindow().getBackground();
             CellAttributes attr = new CellAttributes();
 
-            getScreen().drawBox(0, 0, getWidth(), getHeight(), border,
-                background, 1, false);
+            drawBox(0, 0, getWidth(), getHeight(), border, background, 1,
+                false);
 
             attr.setTo(getTheme().getColor("twindow.background.modal"));
             if (isActive()) {
                 attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
                 attr.setBold(getTheme().getColor("tlabel").isBold());
             }
-            getScreen().putStringXY(1, 0, i18n.getString("foregroundLabel"),
-                attr);
+            putStringXY(1, 0, i18n.getString("foregroundLabel"), attr);
 
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
@@ -275,12 +274,11 @@ public class TEditColorThemeWindow extends TWindow {
                 // Use white-on-black for black.  All other colors use
                 // black-on-whatever.
                 attr.reset();
-                getScreen().putCharXY(dotX, dotY, GraphicsChars.CP437[0x07],
-                    attr);
+                putCharXY(dotX, dotY, GraphicsChars.CP437[0x07], attr);
             } else {
                 attr.setForeColor(color);
                 attr.setBold(bold);
-                getScreen().putCharXY(dotX, dotY, '\u25D8', attr);
+                putCharXY(dotX, dotY, '\u25D8', attr);
             }
         }
 
@@ -493,16 +491,15 @@ public class TEditColorThemeWindow extends TWindow {
             CellAttributes background = getWindow().getBackground();
             CellAttributes attr = new CellAttributes();
 
-            getScreen().drawBox(0, 0, getWidth(), getHeight(), border,
-                background, 1, false);
+            drawBox(0, 0, getWidth(), getHeight(), border, background, 1,
+                false);
 
             attr.setTo(getTheme().getColor("twindow.background.modal"));
             if (isActive()) {
                 attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
                 attr.setBold(getTheme().getColor("tlabel").isBold());
             }
-            getScreen().putStringXY(1, 0, i18n.getString("backgroundLabel"),
-                attr);
+            putStringXY(1, 0, i18n.getString("backgroundLabel"), attr);
 
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
@@ -531,11 +528,10 @@ public class TEditColorThemeWindow extends TWindow {
                 // Use white-on-black for black.  All other colors use
                 // black-on-whatever.
                 attr.reset();
-                getScreen().putCharXY(dotX, dotY, GraphicsChars.CP437[0x07],
-                    attr);
+                putCharXY(dotX, dotY, GraphicsChars.CP437[0x07], attr);
             } else {
                 attr.setForeColor(color);
-                getScreen().putCharXY(dotX, dotY, '\u25D8', attr);
+                putCharXY(dotX, dotY, '\u25D8', attr);
             }
 
         }
@@ -739,16 +735,16 @@ public class TEditColorThemeWindow extends TWindow {
             attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
             attr.setBold(getTheme().getColor("tlabel").isBold());
         }
-        getScreen().putStringXY(3, 2, i18n.getString("colorName"), attr);
+        putStringXY(3, 2, i18n.getString("colorName"), attr);
 
         // Draw the sample text box
         attr.reset();
         attr.setForeColor(foreground.color);
         attr.setBold(foreground.bold);
         attr.setBackColor(background.color);
-        getScreen().putStringXY(getWidth() - 17, getHeight() - 6,
+        putStringXY(getWidth() - 17, getHeight() - 6,
             i18n.getString("textTextText"), attr);
-        getScreen().putStringXY(getWidth() - 17, getHeight() - 5,
+        putStringXY(getWidth() - 17, getHeight() - 5,
             i18n.getString("textTextText"), attr);
     }
 

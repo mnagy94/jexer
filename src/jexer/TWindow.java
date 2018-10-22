@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -338,18 +338,31 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Subclasses should override this method to perform any user prompting
+     * before they are offscreen.  Note that unlike other windowing toolkits,
+     * windows can NOT use this function in some manner to avoid being
+     * closed.  This is called by application.closeWindow().
+     */
+    protected void onPreClose() {
+        // Default: do nothing.
+    }
+
+    /**
      * Subclasses should override this method to cleanup resources.  This is
      * called by application.closeWindow().
      */
-    public void onClose() {
-        // Default: do nothing
+    protected void onClose() {
+        // Default: perform widget-specific cleanup.
+        for (TWidget w: getChildren()) {
+            w.close();
+        }
     }
 
     /**
      * Called by application.switchWindow() when this window gets the
      * focus, and also by application.addWindow().
      */
-    public void onFocus() {
+    protected void onFocus() {
         // Default: do nothing
     }
 
@@ -357,21 +370,21 @@ public class TWindow extends TWidget {
      * Called by application.switchWindow() when another window gets the
      * focus.
      */
-    public void onUnfocus() {
+    protected void onUnfocus() {
         // Default: do nothing
     }
 
     /**
      * Called by application.hideWindow().
      */
-    public void onHide() {
+    protected void onHide() {
         // Default: do nothing
     }
 
     /**
      * Called by application.showWindow().
      */
-    public void onShow() {
+    protected void onShow() {
         // Default: do nothing
     }
 
@@ -385,6 +398,8 @@ public class TWindow extends TWidget {
         this.mouse = mouse;
 
         inKeyboardResize = false;
+        inWindowMove = false;
+        inWindowResize = false;
 
         if ((mouse.getAbsoluteY() == getY())
             && mouse.isMouse1()
@@ -854,8 +869,8 @@ public class TWindow extends TWidget {
         CellAttributes background = getBackground();
         int borderType = getBorderType();
 
-        getScreen().drawBox(0, 0, getWidth(), getHeight(), border,
-            background, borderType, true);
+        drawBox(0, 0, getWidth(), getHeight(), border, background, borderType,
+            true);
 
         // Draw the title
         int titleLeft = (getWidth() - title.length() - 2) / 2;
@@ -1264,7 +1279,15 @@ public class TWindow extends TWidget {
         if (!isModal()
             && (inWindowMove || inWindowResize || inKeyboardResize)
         ) {
-            assert (isActive());
+            if (!isActive()) {
+                // The user's terminal never passed a mouse up event, and now
+                // another window is active but we never finished a drag.
+                inWindowMove = false;
+                inWindowResize = false;
+                inKeyboardResize = false;
+                return getTheme().getColor("twindow.border.inactive");
+            }
+
             return getTheme().getColor("twindow.border.windowmove");
         } else if (isModal() && inWindowMove) {
             assert (isActive());
@@ -1321,150 +1344,6 @@ public class TWindow extends TWidget {
         } else {
             return 1;
         }
-    }
-
-    // ------------------------------------------------------------------------
-    // Passthru for Screen functions ------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Get the attributes at one location.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @return attributes at (x, y)
-     */
-    public final CellAttributes getAttrXY(final int x, final int y) {
-        return getScreen().getAttrXY(x, y);
-    }
-
-    /**
-     * Set the attributes at one location.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param attr attributes to use (bold, foreColor, backColor)
-     */
-    public final void putAttrXY(final int x, final int y,
-        final CellAttributes attr) {
-
-        getScreen().putAttrXY(x, y, attr);
-    }
-
-    /**
-     * Set the attributes at one location.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param attr attributes to use (bold, foreColor, backColor)
-     * @param clip if true, honor clipping/offset
-     */
-    public final void putAttrXY(final int x, final int y,
-        final CellAttributes attr, final boolean clip) {
-
-        getScreen().putAttrXY(x, y, attr, clip);
-    }
-
-    /**
-     * Fill the entire screen with one character with attributes.
-     *
-     * @param ch character to draw
-     * @param attr attributes to use (bold, foreColor, backColor)
-     */
-    public final void putAll(final char ch, final CellAttributes attr) {
-        getScreen().putAll(ch, attr);
-    }
-
-    /**
-     * Render one character with attributes.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param ch character + attributes to draw
-     */
-    public final void putCharXY(final int x, final int y, final Cell ch) {
-        getScreen().putCharXY(x, y, ch);
-    }
-
-    /**
-     * Render one character with attributes.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param ch character to draw
-     * @param attr attributes to use (bold, foreColor, backColor)
-     */
-    public final void putCharXY(final int x, final int y, final char ch,
-        final CellAttributes attr) {
-
-        getScreen().putCharXY(x, y, ch, attr);
-    }
-
-    /**
-     * Render one character without changing the underlying attributes.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param ch character to draw
-     */
-    public final void putCharXY(final int x, final int y, final char ch) {
-        getScreen().putCharXY(x, y, ch);
-    }
-
-    /**
-     * Render a string.  Does not wrap if the string exceeds the line.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param str string to draw
-     * @param attr attributes to use (bold, foreColor, backColor)
-     */
-    public final void putStringXY(final int x, final int y, final String str,
-        final CellAttributes attr) {
-
-        getScreen().putStringXY(x, y, str, attr);
-    }
-
-    /**
-     * Render a string without changing the underlying attribute.  Does not
-     * wrap if the string exceeds the line.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param str string to draw
-     */
-    public final void putStringXY(final int x, final int y, final String str) {
-        getScreen().putStringXY(x, y, str);
-    }
-
-    /**
-     * Draw a vertical line from (x, y) to (x, y + n).
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param n number of characters to draw
-     * @param ch character to draw
-     * @param attr attributes to use (bold, foreColor, backColor)
-     */
-    public final void vLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
-
-        getScreen().vLineXY(x, y, n, ch, attr);
-    }
-
-    /**
-     * Draw a horizontal line from (x, y) to (x + n, y).
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param n number of characters to draw
-     * @param ch character to draw
-     * @param attr attributes to use (bold, foreColor, backColor)
-     */
-    public final void hLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
-
-        getScreen().hLineXY(x, y, n, ch, attr);
     }
 
 }

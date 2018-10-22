@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,8 +28,13 @@
  */
 package jexer.demos;
 
-import jexer.*;
-import jexer.event.*;
+import java.util.ResourceBundle;
+
+import jexer.TApplication;
+import jexer.TEditorWidget;
+import jexer.TWidget;
+import jexer.TWindow;
+import jexer.event.TResizeEvent;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -37,6 +42,11 @@ import static jexer.TKeypress.*;
  * This window demonstates the TEditor widget.
  */
 public class DemoEditorWindow extends TWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoEditorWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -62,12 +72,15 @@ public class DemoEditorWindow extends TWindow {
         final String text) {
 
         super(parent, title, 0, 0, 44, 22, RESIZABLE);
-        editField = addEditor(text, 0, 0, 42, 20);
+        editField = new TEditorWidget(this, text, 0, 0, 42, 20);
 
-        statusBar = newStatusBar("Editable text demo window");
-        statusBar.addShortcutKeypress(kbF1, cmHelp, "Help");
-        statusBar.addShortcutKeypress(kbF2, cmShell, "Shell");
-        statusBar.addShortcutKeypress(kbF10, cmExit, "Exit");
+        statusBar = newStatusBar(i18n.getString("statusBar"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF2, cmShell,
+            i18n.getString("statusBarShell"));
+        statusBar.addShortcutKeypress(kbF10, cmExit,
+            i18n.getString("statusBarExit"));
     }
 
     /**
@@ -76,7 +89,7 @@ public class DemoEditorWindow extends TWindow {
      * @param parent the main application
      */
     public DemoEditorWindow(final TApplication parent) {
-        this(parent, "Editor",
+        this(parent, i18n.getString("windowTitle"),
 "This is an example of an editable text field.  Some example text follows.\n" +
 "\n" +
 "This library implements a text-based windowing system loosely\n" +

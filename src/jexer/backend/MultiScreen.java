@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -396,7 +396,14 @@ public class MultiScreen implements Screen {
      * @return current screen height
      */
     public int getHeight() {
-        return screens.get(0).getHeight();
+        // Return the smallest height of the screens.
+        int height = screens.get(0).getHeight();
+        for (Screen screen: screens) {
+            if (screen.getHeight() < height) {
+                height = screen.getHeight();
+            }
+        }
+        return height;
     }
 
     /**
@@ -405,7 +412,14 @@ public class MultiScreen implements Screen {
      * @return current screen width
      */
     public int getWidth() {
-        return screens.get(0).getWidth();
+        // Return the smallest width of the screens.
+        int width = screens.get(0).getWidth();
+        for (Screen screen: screens) {
+            if (screen.getWidth() < width) {
+                width = screen.getWidth();
+            }
+        }
+        return width;
     }
 
     /**
@@ -493,6 +507,27 @@ public class MultiScreen implements Screen {
 
         for (Screen screen: screens) {
             screen.drawBoxShadow(left, top, right, bottom);
+        }
+    }
+
+    /**
+     * Clear the physical screen.
+     */
+    public void clearPhysical() {
+        for (Screen screen: screens) {
+            screen.clearPhysical();
+        }
+    }
+
+    /**
+     * Unset every image cell on one row of the physical screen, forcing
+     * images on that row to be redrawn.
+     *
+     * @param y row coordinate.  0 is the top-most row.
+     */
+    public final void unsetImageRow(final int y) {
+        for (Screen screen: screens) {
+            screen.unsetImageRow(y);
         }
     }
 
@@ -588,6 +623,52 @@ public class MultiScreen implements Screen {
         if (screens.size() > 1) {
             screens.remove(screen);
         }
+    }
+
+    /**
+     * Get the width of a character cell in pixels.
+     *
+     * @return the width in pixels of a character cell
+     */
+    public int getTextWidth() {
+        int textWidth = 16;
+        for (Screen screen: screens) {
+            int newTextWidth = textWidth;
+            if (screen instanceof MultiScreen) {
+                newTextWidth = ((MultiScreen) screen).getTextWidth();
+            } else if (screen instanceof ECMA48Terminal) {
+                newTextWidth = ((ECMA48Terminal) screen).getTextWidth();
+            } else if (screen instanceof SwingTerminal) {
+                newTextWidth = ((SwingTerminal) screen).getTextWidth();
+            }
+            if (newTextWidth < textWidth) {
+                textWidth = newTextWidth;
+            }
+        }
+        return textWidth;
+    }
+
+    /**
+     * Get the height of a character cell in pixels.
+     *
+     * @return the height in pixels of a character cell
+     */
+    public int getTextHeight() {
+        int textHeight = 20;
+        for (Screen screen: screens) {
+            int newTextHeight = textHeight;
+            if (screen instanceof MultiScreen) {
+                newTextHeight = ((MultiScreen) screen).getTextHeight();
+            } else if (screen instanceof ECMA48Terminal) {
+                newTextHeight = ((ECMA48Terminal) screen).getTextHeight();
+            } else if (screen instanceof SwingTerminal) {
+                newTextHeight = ((SwingTerminal) screen).getTextHeight();
+            }
+            if (newTextHeight < textHeight) {
+                textHeight = newTextHeight;
+            }
+        }
+        return textHeight;
     }
 
 }

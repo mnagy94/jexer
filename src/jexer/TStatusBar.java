@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -259,35 +259,34 @@ public class TStatusBar extends TWidget {
         int row = getScreen().getHeight() - 1;
         int width = getScreen().getWidth();
 
-        getScreen().hLineXY(0, row, width, ' ', barColor);
+        hLineXY(0, row, width, ' ', barColor);
 
         int col = 0;
         for (TStatusBarKey key: keys) {
             String keyStr = key.key.toString();
             if (key.selected) {
-                getScreen().putCharXY(col++, row, ' ', selectedColor);
-                getScreen().putStringXY(col, row, keyStr, selectedColor);
+                putCharXY(col++, row, ' ', selectedColor);
+                putStringXY(col, row, keyStr, selectedColor);
                 col += keyStr.length();
-                getScreen().putCharXY(col++, row, ' ', selectedColor);
-                getScreen().putStringXY(col, row, key.label, selectedColor);
+                putCharXY(col++, row, ' ', selectedColor);
+                putStringXY(col, row, key.label, selectedColor);
                 col += key.label.length();
-                getScreen().putCharXY(col++, row, ' ', selectedColor);
+                putCharXY(col++, row, ' ', selectedColor);
             } else {
-                getScreen().putCharXY(col++, row, ' ', barColor);
-                getScreen().putStringXY(col, row, keyStr, keyColor);
+                putCharXY(col++, row, ' ', barColor);
+                putStringXY(col, row, keyStr, keyColor);
                 col += keyStr.length() + 1;
-                getScreen().putStringXY(col, row, key.label, barColor);
+                putStringXY(col, row, key.label, barColor);
                 col += key.label.length();
-                getScreen().putCharXY(col++, row, ' ', barColor);
+                putCharXY(col++, row, ' ', barColor);
             }
         }
         if (text.length() > 0) {
             if (keys.size() > 0) {
-                getScreen().putCharXY(col++, row, GraphicsChars.VERTICAL_BAR,
-                    barColor);
+                putCharXY(col++, row, GraphicsChars.VERTICAL_BAR, barColor);
             }
-            getScreen().putCharXY(col++, row, ' ', barColor);
-            getScreen().putStringXY(col, row, text, barColor);
+            putCharXY(col++, row, ' ', barColor);
+            putStringXY(col, row, text, barColor);
         }
     }
 

@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -28,23 +28,22 @@
  */
 package jexer;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.ColorTheme;
 import jexer.event.TCommandEvent;
@@ -54,8 +53,8 @@ import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.backend.Backend;
-import jexer.backend.Screen;
 import jexer.backend.MultiBackend;
+import jexer.backend.Screen;
 import jexer.backend.SwingBackend;
 import jexer.backend.ECMA48Backend;
 import jexer.backend.TWindowBackend;
@@ -159,6 +158,21 @@ public class TApplication implements Runnable {
      * Old version mouse coordinate Y.
      */
     private int oldMouseY;
+
+    /**
+     * Old drawn version of mouse coordinate X.
+     */
+    private int oldDrawnMouseX;
+
+    /**
+     * Old drawn version mouse coordinate Y.
+     */
+    private int oldDrawnMouseY;
+
+    /**
+     * Old drawn version mouse cell.
+     */
+    private Cell oldDrawnMouseCell = new Cell();
 
     /**
      * The last mouse up click time, used to determine if this is a mouse
@@ -267,6 +281,16 @@ public class TApplication implements Runnable {
     private boolean focusFollowsMouse = false;
 
     /**
+     * The images that might be displayed.  Note package private access.
+     */
+    private List<TImage> images;
+
+    /**
+     * The list of commands to run before the next I/O check.
+     */
+    private List<Runnable> invokeLaters = new LinkedList<Runnable>();
+
+    /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
      * two such threads in existence: the primary for normal case and a
      * secondary that is used for TMessageBox, TInputBox, and similar.
@@ -300,6 +324,21 @@ public class TApplication implements Runnable {
          * The consumer loop.
          */
         public void run() {
+            // Wrap everything in a try, so that if we go belly up we can let
+            // the user have their terminal back.
+            try {
+                runImpl();
+            } catch (Throwable t) {
+                this.application.restoreConsole();
+                t.printStackTrace();
+                this.application.exit();
+            }
+        }
+
+        /**
+         * The consumer loop.
+         */
+        private void runImpl() {
             boolean first = true;
 
             // Loop forever
@@ -327,9 +366,10 @@ public class TApplication implements Runnable {
                         }
 
                         if (debugThreads) {
-                            System.err.printf("%d %s %s sleep %d millis\n",
+                            System.err.printf("%d %s %s %s sleep %d millis\n",
                                 System.currentTimeMillis(), this,
-                                primary ? "primary" : "secondary", timeout);
+                                primary ? "primary" : "secondary",
+                                Thread.currentThread(), timeout);
                         }
 
                         synchronized (this) {
@@ -337,9 +377,10 @@ public class TApplication implements Runnable {
                         }
 
                         if (debugThreads) {
-                            System.err.printf("%d %s %s AWAKE\n",
+                            System.err.printf("%d %s %s %s AWAKE\n",
                                 System.currentTimeMillis(), this,
-                                primary ? "primary" : "secondary");
+                                primary ? "primary" : "secondary",
+                                Thread.currentThread());
                         }
 
                         if ((!primary)
@@ -385,15 +426,16 @@ public class TApplication implements Runnable {
                     ) {
                         // Secondary thread, time to exit.
 
+                        // Eliminate my reference so that wakeEventHandler()
+                        // resumes working on the primary.
+                        application.secondaryEventHandler = null;
+
                         // DO NOT UNLOCK.  Primary thread just came back from
                         // primaryHandleEvent() and will unlock in the else
                         // block below.  Just wake it up.
                         synchronized (application.primaryEventHandler) {
                             application.primaryEventHandler.notify();
                         }
-                        // Now eliminate my reference so that
-                        // wakeEventHandler() resumes working on the primary.
-                        application.secondaryEventHandler = null;
 
                         // All done!
                         return;
@@ -552,15 +594,16 @@ public class TApplication implements Runnable {
     private void TApplicationImpl() {
         theme           = new ColorTheme();
         desktopBottom   = getScreen().getHeight() - 1;
-        fillEventQueue  = new ArrayList<TInputEvent>();
-        drainEventQueue = new ArrayList<TInputEvent>();
+        fillEventQueue  = new LinkedList<TInputEvent>();
+        drainEventQueue = new LinkedList<TInputEvent>();
         windows         = new LinkedList<TWindow>();
-        menus           = new LinkedList<TMenu>();
-        subMenus        = new LinkedList<TMenu>();
+        menus           = new ArrayList<TMenu>();
+        subMenus        = new ArrayList<TMenu>();
         timers          = new LinkedList<TTimer>();
         accelerators    = new HashMap<TKeypress, TMenuItem>();
-        menuItems       = new ArrayList<TMenuItem>();
+        menuItems       = new LinkedList<TMenuItem>();
         desktop         = new TDesktop(this);
+        images          = new LinkedList<TImage>();
 
         // Special case: the Swing backend needs to have a timer to drive its
         // blink state.
@@ -617,14 +660,14 @@ public class TApplication implements Runnable {
                     try {
                         if (debugThreads) {
                             System.err.println(System.currentTimeMillis() +
-                                " MAIN sleep");
+                                " " + Thread.currentThread() + " MAIN sleep");
                         }
 
                         this.wait();
 
                         if (debugThreads) {
                             System.err.println(System.currentTimeMillis() +
-                                " MAIN AWAKE");
+                                " " + Thread.currentThread() + " MAIN AWAKE");
                         }
                     } catch (InterruptedException e) {
                         // I'm awake and don't care why, let's see what's
@@ -694,7 +737,8 @@ public class TApplication implements Runnable {
         if (command.equals(cmExit)) {
             if (messageBox(i18n.getString("exitDialogTitle"),
                     i18n.getString("exitDialogText"),
-                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
+                    TMessageBox.Type.YESNO).isYes()) {
+
                 exit();
             }
             return true;
@@ -744,7 +788,8 @@ public class TApplication implements Runnable {
         if (menu.getId() == TMenu.MID_EXIT) {
             if (messageBox(i18n.getString("exitDialogTitle"),
                     i18n.getString("exitDialogText"),
-                    TMessageBox.Type.YESNO).getResult() == TMessageBox.Result.YES) {
+                    TMessageBox.Type.YESNO).isYes()) {
+
                 exit();
             }
             return true;
@@ -767,11 +812,8 @@ public class TApplication implements Runnable {
             closeAllWindows();
             return true;
         }
-        if (menu.getId() == TMenu.MID_ABOUT) {
-            showAboutDialog();
-            return true;
-        }
         if (menu.getId() == TMenu.MID_REPAINT) {
+            getScreen().clearPhysical();
             doRepaint();
             return true;
         }
@@ -911,7 +953,8 @@ public class TApplication implements Runnable {
     private void primaryHandleEvent(final TInputEvent event) {
 
         if (debugEvents) {
-            System.err.printf("Handle event: %s\n", event);
+            System.err.printf("%s primaryHandleEvent: %s\n",
+                Thread.currentThread(), event);
         }
         TMouseEvent doubleClick = null;
 
@@ -1094,6 +1137,11 @@ public class TApplication implements Runnable {
     private void secondaryHandleEvent(final TInputEvent event) {
         TMouseEvent doubleClick = null;
 
+        if (debugEvents) {
+            System.err.printf("%s secondaryHandleEvent: %s\n",
+                Thread.currentThread(), event);
+        }
+
         // Peek at the mouse position
         if (event instanceof TMouseEvent) {
             TMouseEvent mouse = (TMouseEvent) event;
@@ -1161,6 +1209,11 @@ public class TApplication implements Runnable {
      * Yield to the secondary thread.
      */
     public final void yield() {
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " yield()\n");
+        }
+
         assert (secondaryEventReceiver != null);
 
         while (secondaryEventReceiver != null) {
@@ -1216,6 +1269,15 @@ public class TApplication implements Runnable {
         if (desktop != null) {
             desktop.onIdle();
         }
+
+        // Run any invokeLaters
+        synchronized (invokeLaters) {
+            for (Runnable invoke: invokeLaters) {
+                invoke.run();
+            }
+            invokeLaters.clear();
+        }
+
     }
 
     /**
@@ -1241,6 +1303,31 @@ public class TApplication implements Runnable {
     // ------------------------------------------------------------------------
     // TApplication -----------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Place a command on the run queue, and run it before the next round of
+     * checking I/O.
+     *
+     * @param command the command to run later
+     */
+    public void invokeLater(final Runnable command) {
+        synchronized (invokeLaters) {
+            invokeLaters.add(command);
+        }
+    }
+
+    /**
+     * Restore the console to sane defaults.  This is meant to be used for
+     * improper exits (e.g. a caught exception in main()), and should not be
+     * necessary for normal program termination.
+     */
+    public void restoreConsole() {
+        if (backend != null) {
+            if (backend instanceof ECMA48Backend) {
+                backend.shutdown();
+            }
+        }
+    }
 
     /**
      * Get the Backend.
@@ -1340,7 +1427,7 @@ public class TApplication implements Runnable {
      * @return a copy of the list of windows for this application
      */
     public final List<TWindow> getAllWindows() {
-        List<TWindow> result = new LinkedList<TWindow>();
+        List<TWindow> result = new ArrayList<TWindow>();
         result.addAll(windows);
         return result;
     }
@@ -1365,16 +1452,6 @@ public class TApplication implements Runnable {
         this.focusFollowsMouse = focusFollowsMouse;
     }
 
-    /**
-     * Display the about dialog.
-     */
-    protected void showAboutDialog() {
-        messageBox(i18n.getString("aboutDialogTitle"),
-            MessageFormat.format(i18n.getString("aboutDialogText"),
-                this.getClass().getPackage().getImplementationVersion()),
-            TMessageBox.Type.OK);
-    }
-
     // ------------------------------------------------------------------------
     // Screen refresh loop ----------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1390,18 +1467,22 @@ public class TApplication implements Runnable {
             System.err.printf("%d %s invertCell() %d %d\n",
                 System.currentTimeMillis(), Thread.currentThread(), x, y);
         }
-        CellAttributes attr = getScreen().getAttrXY(x, y);
-        if (attr.getForeColorRGB() < 0) {
-            attr.setForeColor(attr.getForeColor().invert());
+        Cell cell = getScreen().getCharXY(x, y);
+        if (cell.isImage()) {
+            cell.invertImage();
         } else {
-            attr.setForeColorRGB(attr.getForeColorRGB() ^ 0x00ffffff);
+            if (cell.getForeColorRGB() < 0) {
+                cell.setForeColor(cell.getForeColor().invert());
+            } else {
+                cell.setForeColorRGB(cell.getForeColorRGB() ^ 0x00ffffff);
+            }
+            if (cell.getBackColorRGB() < 0) {
+                cell.setBackColor(cell.getBackColor().invert());
+            } else {
+                cell.setBackColorRGB(cell.getBackColorRGB() ^ 0x00ffffff);
+            }
         }
-        if (attr.getBackColorRGB() < 0) {
-            attr.setBackColor(attr.getBackColor().invert());
-        } else {
-            attr.setBackColorRGB(attr.getBackColorRGB() ^ 0x00ffffff);
-        }
-        getScreen().putAttrXY(x, y, attr, false);
+        getScreen().putCharXY(x, y, cell);
     }
 
     /**
@@ -1415,25 +1496,62 @@ public class TApplication implements Runnable {
                 System.currentTimeMillis(), Thread.currentThread());
         }
 
+        // I don't think this does anything useful anymore...
         if (!repaint) {
             if (debugThreads) {
                 System.err.printf("%d %s drawAll() !repaint\n",
                     System.currentTimeMillis(), Thread.currentThread());
             }
-            synchronized (getScreen()) {
-                if ((oldMouseX != mouseX) || (oldMouseY != mouseY)) {
-                    // The only thing that has happened is the mouse moved.
-                    // Clear the old position and draw the new position.
-                    invertCell(oldMouseX, oldMouseY);
-                    invertCell(mouseX, mouseY);
-                    oldMouseX = mouseX;
-                    oldMouseY = mouseY;
+            if ((oldDrawnMouseX != mouseX) || (oldDrawnMouseY != mouseY)) {
+                if (debugThreads) {
+                    System.err.printf("%d %s drawAll() !repaint MOUSE\n",
+                        System.currentTimeMillis(), Thread.currentThread());
                 }
-                if (getScreen().isDirty()) {
-                    backend.flushScreen();
+
+                // The only thing that has happened is the mouse moved.
+
+                // Redraw the old cell at that position, and save the cell at
+                // the new mouse position.
+                if (debugThreads) {
+                    System.err.printf("%d %s restoreImage() %d %d\n",
+                        System.currentTimeMillis(), Thread.currentThread(),
+                        oldDrawnMouseX, oldDrawnMouseY);
                 }
-                return;
+                oldDrawnMouseCell.restoreImage();
+                getScreen().putCharXY(oldDrawnMouseX, oldDrawnMouseY,
+                    oldDrawnMouseCell);
+                oldDrawnMouseCell = getScreen().getCharXY(mouseX, mouseY);
+                if ((images.size() > 0) && (backend instanceof ECMA48Backend)) {
+                    // Special case: the entire row containing the mouse has
+                    // to be re-drawn if it has any image data, AND any rows
+                    // in between.
+                    if (oldDrawnMouseY != mouseY) {
+                        for (int i = oldDrawnMouseY; ;) {
+                            getScreen().unsetImageRow(i);
+                            if (i == mouseY) {
+                                break;
+                            }
+                            if (oldDrawnMouseY < mouseY) {
+                                i++;
+                            } else {
+                                i--;
+                            }
+                        }
+                    } else {
+                        getScreen().unsetImageRow(mouseY);
+                    }
+                }
+
+                // Draw mouse at the new position.
+                invertCell(mouseX, mouseY);
+
+                oldDrawnMouseX = mouseX;
+                oldDrawnMouseY = mouseY;
             }
+            if ((images.size() > 0) || getScreen().isDirty()) {
+                backend.flushScreen();
+            }
+            return;
         }
 
         if (debugThreads) {
@@ -1453,7 +1571,7 @@ public class TApplication implements Runnable {
         }
 
         // Draw each window in reverse Z order
-        List<TWindow> sorted = new LinkedList<TWindow>(windows);
+        List<TWindow> sorted = new ArrayList<TWindow>(windows);
         Collections.sort(sorted);
         TWindow topLevel = null;
         if (sorted.size() > 0) {
@@ -1494,7 +1612,7 @@ public class TApplication implements Runnable {
                 0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
 
             if (menu.isActive()) {
-                menu.drawChildren();
+                ((TWindow) menu).drawChildren();
                 // Reset the screen clipping so we can draw the next title.
                 getScreen().resetClipping();
             }
@@ -1504,8 +1622,9 @@ public class TApplication implements Runnable {
         for (TMenu menu: subMenus) {
             // Reset the screen clipping so we can draw the next sub-menu.
             getScreen().resetClipping();
-            menu.drawChildren();
+            ((TWindow) menu).drawChildren();
         }
+        getScreen().resetClipping();
 
         // Draw the status bar of the top-level window
         TStatusBar statusBar = null;
@@ -1525,9 +1644,34 @@ public class TApplication implements Runnable {
         }
 
         // Draw the mouse pointer
+        if (debugThreads) {
+            System.err.printf("%d %s restoreImage() %d %d\n",
+                System.currentTimeMillis(), Thread.currentThread(),
+                oldDrawnMouseX, oldDrawnMouseY);
+        }
+        oldDrawnMouseCell = getScreen().getCharXY(mouseX, mouseY);
+        if ((images.size() > 0) && (backend instanceof ECMA48Backend)) {
+            // Special case: the entire row containing the mouse has to be
+            // re-drawn if it has any image data, AND any rows in between.
+            if (oldDrawnMouseY != mouseY) {
+                for (int i = oldDrawnMouseY; ;) {
+                    getScreen().unsetImageRow(i);
+                    if (i == mouseY) {
+                        break;
+                    }
+                    if (oldDrawnMouseY < mouseY) {
+                        i++;
+                    } else {
+                        i--;
+                    }
+                }
+            } else {
+                getScreen().unsetImageRow(mouseY);
+            }
+        }
         invertCell(mouseX, mouseY);
-        oldMouseX = mouseX;
-        oldMouseY = mouseY;
+        oldDrawnMouseX = mouseX;
+        oldDrawnMouseY = mouseY;
 
         // Place the cursor if it is visible
         if (!menuIsActive) {
@@ -1543,9 +1687,8 @@ public class TApplication implements Runnable {
                             activeWidget.getCursorAbsoluteY());
                         cursor = true;
                     } else {
-                        getScreen().putCursor(false,
-                            activeWidget.getCursorAbsoluteX(),
-                            activeWidget.getCursorAbsoluteY());
+                        // Turn off the cursor.  Also place it at 0,0.
+                        getScreen().putCursor(false, 0, 0);
                         cursor = false;
                     }
                 }
@@ -1558,7 +1701,7 @@ public class TApplication implements Runnable {
         }
 
         // Flush the screen contents
-        if (getScreen().isDirty()) {
+        if ((images.size() > 0) || getScreen().isDirty()) {
             backend.flushScreen();
         }
 
@@ -1693,7 +1836,16 @@ public class TApplication implements Runnable {
             assert (activeWindow.getZ() == 0);
 
             activeWindow.setActive(false);
-            activeWindow.setZ(window.getZ());
+
+            // Increment every window Z that is on top of window
+            for (TWindow w: windows) {
+                if (w == window) {
+                    continue;
+                }
+                if (w.getZ() < window.getZ()) {
+                    w.setZ(w.getZ() + 1);
+                }
+            }
 
             // Unset activeWindow now before unfocus, so that a window
             // lifecycle change inside onUnfocus() doesn't call
@@ -1791,6 +1943,10 @@ public class TApplication implements Runnable {
              */
             return;
         }
+
+        // Let window know that it is about to be closed, while it is still
+        // visible on screen.
+        window.onPreClose();
 
         synchronized (windows) {
             // Whatever window might be moving/dragging, stop it now.
@@ -2051,7 +2207,7 @@ public class TApplication implements Runnable {
             int newHeight1 = ((getScreen().getHeight() - 1) / b);
             int newHeight2 = ((getScreen().getHeight() - 1) / (b + c));
 
-            List<TWindow> sorted = new LinkedList<TWindow>(windows);
+            List<TWindow> sorted = new ArrayList<TWindow>(windows);
             Collections.sort(sorted);
             Collections.reverse(sorted);
             for (int i = 0; i < sorted.size(); i++) {
@@ -2096,7 +2252,7 @@ public class TApplication implements Runnable {
             }
             int x = 0;
             int y = 1;
-            List<TWindow> sorted = new LinkedList<TWindow>(windows);
+            List<TWindow> sorted = new ArrayList<TWindow>(windows);
             Collections.sort(sorted);
             Collections.reverse(sorted);
             for (TWindow window: sorted) {
@@ -2246,6 +2402,46 @@ public class TApplication implements Runnable {
     }
 
     // ------------------------------------------------------------------------
+    // TImage management ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Add an image to the list.  Note package private access.
+     *
+     * @param image the image to add
+     * @throws IllegalArgumentException if the image is already used in
+     * another TApplication
+     */
+    final void addImage(final TImage image) {
+        if ((image.getApplication() != null)
+            && (image.getApplication() != this)
+        ) {
+            throw new IllegalArgumentException("Image " + image +
+                " is already " + "part of application " +
+                image.getApplication());
+        }
+        images.add(image);
+    }
+
+    /**
+     * Remove an image from the list.  Note package private access.
+     *
+     * @param image the image to remove
+     * @throws IllegalArgumentException if the image is already used in
+     * another TApplication
+     */
+    final void removeImage(final TImage image) {
+        if ((image.getApplication() != null)
+            && (image.getApplication() != this)
+        ) {
+            throw new IllegalArgumentException("Image " + image +
+                " is already " + "part of application " +
+                image.getApplication());
+        }
+        images.remove(image);
+    }
+
+    // ------------------------------------------------------------------------
     // TMenu management -------------------------------------------------------
     // ------------------------------------------------------------------------
 
@@ -2259,7 +2455,7 @@ public class TApplication implements Runnable {
      */
     private boolean mouseOnMenu(final TMouseEvent mouse) {
         assert (activeMenu != null);
-        List<TMenu> menus = new LinkedList<TMenu>(subMenus);
+        List<TMenu> menus = new ArrayList<TMenu>(subMenus);
         Collections.reverse(menus);
         for (TMenu menu: menus) {
             if (menu.mouseWouldHit(mouse)) {
@@ -2389,9 +2585,11 @@ public class TApplication implements Runnable {
                         assert (windows.get(0).isActive());
                         assert (windows.get(0) == activeWindow);
                         assert (!window.isActive());
-                        activeWindow.onUnfocus();
-                        activeWindow.setActive(false);
-                        activeWindow.setZ(window.getZ());
+                        if (activeWindow != null) {
+                            activeWindow.onUnfocus();
+                            activeWindow.setActive(false);
+                            activeWindow.setZ(window.getZ());
+                        }
                         activeWindow = window;
                         window.setZ(0);
                         window.setActive(true);
@@ -2430,7 +2628,7 @@ public class TApplication implements Runnable {
      * @return a copy of the menu list
      */
     public final List<TMenu> getAllMenus() {
-        return new LinkedList<TMenu>(menus);
+        return new ArrayList<TMenu>(menus);
     }
 
     /**
@@ -2501,10 +2699,14 @@ public class TApplication implements Runnable {
                 if (forward) {
                     if (i < menus.size() - 1) {
                         i++;
+                    } else {
+                        i = 0;
                     }
                 } else {
                     if (i > 0) {
                         i--;
+                    } else {
+                        i = menus.size() - 1;
                     }
                 }
                 activeMenu.setActive(false);
@@ -2557,6 +2759,7 @@ public class TApplication implements Runnable {
         for (TMenuItem item: menuItems) {
             if ((item.getId() >= lower) && (item.getId() <= upper)) {
                 item.setEnabled(false);
+                item.getParent().activate(0);
             }
         }
     }
@@ -2570,6 +2773,7 @@ public class TApplication implements Runnable {
         for (TMenuItem item: menuItems) {
             if (item.getId() == id) {
                 item.setEnabled(true);
+                item.getParent().activate(0);
             }
         }
     }
@@ -2585,6 +2789,7 @@ public class TApplication implements Runnable {
         for (TMenuItem item: menuItems) {
             if ((item.getId() >= lower) && (item.getId() <= upper)) {
                 item.setEnabled(true);
+                item.getParent().activate(0);
             }
         }
     }
@@ -2902,6 +3107,20 @@ public class TApplication implements Runnable {
      *
      * @param x column relative to parent
      * @param y row relative to parent
+     * @param closeOnExit if true, close the window when the command exits
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final boolean closeOnExit) {
+
+        return openTerminal(x, y, TWindow.RESIZABLE, closeOnExit);
+    }
+
+    /**
+     * Convenience function to open a terminal window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
      * @param flags mask of CENTERED, MODAL, or RESIZABLE
      * @return the terminal new window
      */
@@ -2909,6 +3128,21 @@ public class TApplication implements Runnable {
         final int flags) {
 
         return new TTerminalWindow(this, x, y, flags);
+    }
+
+    /**
+     * Convenience function to open a terminal window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param closeOnExit if true, close the window when the command exits
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final int flags, final boolean closeOnExit) {
+
+        return new TTerminalWindow(this, x, y, flags, closeOnExit);
     }
 
     /**
@@ -2924,6 +3158,22 @@ public class TApplication implements Runnable {
         final String commandLine) {
 
         return openTerminal(x, y, TWindow.RESIZABLE, commandLine);
+    }
+
+    /**
+     * Convenience function to open a terminal window and execute a custom
+     * command line inside it.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param commandLine the command line to execute
+     * @param closeOnExit if true, close the window when the command exits
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final String commandLine, final boolean closeOnExit) {
+
+        return openTerminal(x, y, TWindow.RESIZABLE, commandLine, closeOnExit);
     }
 
     /**
@@ -2949,6 +3199,23 @@ public class TApplication implements Runnable {
      * @param x column relative to parent
      * @param y row relative to parent
      * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param command the command line to execute
+     * @param closeOnExit if true, close the window when the command exits
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final int flags, final String [] command, final boolean closeOnExit) {
+
+        return new TTerminalWindow(this, x, y, flags, command, closeOnExit);
+    }
+
+    /**
+     * Convenience function to open a terminal window and execute a custom
+     * command line inside it.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
      * @param commandLine the command line to execute
      * @return the terminal new window
      */
@@ -2956,6 +3223,24 @@ public class TApplication implements Runnable {
         final int flags, final String commandLine) {
 
         return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s"));
+    }
+
+    /**
+     * Convenience function to open a terminal window and execute a custom
+     * command line inside it.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param flags mask of CENTERED, MODAL, or RESIZABLE
+     * @param commandLine the command line to execute
+     * @param closeOnExit if true, close the window when the command exits
+     * @return the terminal new window
+     */
+    public final TTerminalWindow openTerminal(final int x, final int y,
+        final int flags, final String commandLine, final boolean closeOnExit) {
+
+        return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s"),
+            closeOnExit);
     }
 
     /**
@@ -2983,6 +3268,42 @@ public class TApplication implements Runnable {
         final TFileOpenBox.Type type) throws IOException {
 
         TFileOpenBox box = new TFileOpenBox(this, path, type);
+        return box.getFilename();
+    }
+
+    /**
+     * Convenience function to spawn a file open box.
+     *
+     * @param path path of selected file
+     * @param type one of the Type constants
+     * @param filter a string that files must match to be displayed
+     * @return the result of the new file open box
+     * @throws IOException of a java.io operation throws
+     */
+    public final String fileOpenBox(final String path,
+        final TFileOpenBox.Type type, final String filter) throws IOException {
+
+        ArrayList<String> filters = new ArrayList<String>();
+        filters.add(filter);
+
+        TFileOpenBox box = new TFileOpenBox(this, path, type, filters);
+        return box.getFilename();
+    }
+
+    /**
+     * Convenience function to spawn a file open box.
+     *
+     * @param path path of selected file
+     * @param type one of the Type constants
+     * @param filters a list of strings that files must match to be displayed
+     * @return the result of the new file open box
+     * @throws IOException of a java.io operation throws
+     */
+    public final String fileOpenBox(final String path,
+        final TFileOpenBox.Type type,
+        final List<String> filters) throws IOException {
+
+        TFileOpenBox box = new TFileOpenBox(this, path, type, filters);
         return box.getFilename();
     }
 
@@ -3053,20 +3374,6 @@ public class TApplication implements Runnable {
 
         TWindow window = new TWindow(this, title, x, y, width, height, flags);
         return window;
-    }
-
-    /**
-     * Convenience function to open a file in an editor window and make it
-     * active.
-     *
-     * @param file the file to open
-     * @return the new editor window
-     * @throws IOException if a java.io operation throws
-     */
-    public final TEditorWindow addEditor(final File file) throws IOException {
-
-        TEditorWindow editor = new TEditorWindow(this, file);
-        return editor;
     }
 
 }

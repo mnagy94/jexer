@@ -2,13 +2,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.github.klamonte</groupId>
+  <groupId>com.gitlab.klamonte</groupId>
   <artifactId>jexer</artifactId>
   <packaging>jar</packaging>
   <name>Jexer</name>
   <description>Java Text User Interface library that resembles Turbo Vision</description>
   <version>0.0.6</version>
-  <url>https://github.com/klamonte/jexer</url>
+  <url>https://gitlab.com/klamonte/jexer</url>
 
   <licenses>
     <license>
@@ -24,15 +24,15 @@
   </properties>
 
   <scm>
-    <connection>scm:git:https://github.com/klamonte/jexer.git</connection>
-    <developerConnection>scm:git:https://github.com/klamonte/jexer.git</developerConnection>
-    <url>https://github.com/klamonte/jexer</url>
+    <connection>scm:git:https://gitlab.com/klamonte/jexer.git</connection>
+    <developerConnection>scm:git:https://gitlab.com/klamonte/jexer.git</developerConnection>
+    <url>https://gitlab.com/klamonte/jexer</url>
     <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
-    <system>github</system>
-    <url>https://github.com/klamonte/jexer/issues</url>
+    <system>gitlab</system>
+    <url>https://gitlab.com/klamonte/jexer/issues</url>
   </issueManagement>
 
   <build>

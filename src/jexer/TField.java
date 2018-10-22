@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -358,9 +358,8 @@ public class TField extends TWidget {
         if (end > text.length()) {
             end = text.length();
         }
-        getScreen().hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
-        getScreen().putStringXY(0, 0, text.substring(windowStart, end),
-            fieldColor);
+        hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
+        putStringXY(0, 0, text.substring(windowStart, end), fieldColor);
 
         // Fix the cursor, it will be rendered by TApplication.drawAll().
         updateCursor();
@@ -385,6 +384,7 @@ public class TField extends TWidget {
      * @param text the new field text
      */
     public void setText(final String text) {
+        assert (text != null);
         this.text = text;
         position = 0;
         windowStart = 0;

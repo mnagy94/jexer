@@ -106,7 +106,7 @@ Update written by date to current year:
     All code headers
     VERSION
 
-Tag github
+Tag gitlab
 
 Upload to SF
 

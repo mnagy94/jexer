@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -110,17 +110,20 @@ public class TInputBox extends TMessageBox {
         setHeight(getHeight() + 2);
         field = addField(1, getHeight() - 6, getWidth() - 4, false, text);
 
+        // Set the secondaryThread to run me
+        getApplication().enableSecondaryEventReceiver(this);
+
         // Yield to the secondary thread.  When I come back from the
         // constructor response will already be set.
         getApplication().yield();
     }
 
     // ------------------------------------------------------------------------
-    // TInputBox --------------------------------------------------------------
+    // TMessageBox ------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
-    // TMessageBox ------------------------------------------------------------
+    // TInputBox --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**

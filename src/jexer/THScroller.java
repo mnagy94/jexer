@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -216,19 +216,15 @@ public class THScroller extends TWidget {
     public void draw() {
         CellAttributes arrowColor = getTheme().getColor("tscroller.arrows");
         CellAttributes barColor = getTheme().getColor("tscroller.bar");
-        getScreen().putCharXY(0, 0, GraphicsChars.CP437[0x11], arrowColor);
-        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0x10],
-            arrowColor);
+        putCharXY(0, 0, GraphicsChars.CP437[0x11], arrowColor);
+        putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0x10], arrowColor);
 
         // Place the box
         if (rightValue > leftValue) {
-            getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.CP437[0xB1],
-                barColor);
-            getScreen().putCharXY(boxPosition(), 0, GraphicsChars.BOX,
-                arrowColor);
+            hLineXY(1, 0, getWidth() - 2, GraphicsChars.CP437[0xB1], barColor);
+            putCharXY(boxPosition(), 0, GraphicsChars.BOX, arrowColor);
         } else {
-            getScreen().hLineXY(1, 0, getWidth() - 2, GraphicsChars.HATCH,
-                barColor);
+            hLineXY(1, 0, getWidth() - 2, GraphicsChars.HATCH, barColor);
         }
 
     }

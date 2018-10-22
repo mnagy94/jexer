@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -87,11 +87,11 @@ public class TRadioGroup extends TWidget {
             radioGroupColor = getTheme().getColor("tradiogroup.inactive");
         }
 
-        getScreen().drawBox(0, 0, getWidth(), getHeight(),
-            radioGroupColor, radioGroupColor, 3, false);
+        drawBox(0, 0, getWidth(), getHeight(), radioGroupColor, radioGroupColor,
+            3, false);
 
-        getScreen().hLineXY(1, 0, label.length() + 2, ' ', radioGroupColor);
-        getScreen().putStringXY(2, 0, label, radioGroupColor);
+        hLineXY(1, 0, label.length() + 2, ' ', radioGroupColor);
+        putStringXY(2, 0, label, radioGroupColor);
     }
 
     // ------------------------------------------------------------------------

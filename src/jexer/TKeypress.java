@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -796,6 +796,11 @@ public class TKeypress {
      */
     @Override
     public String toString() {
+        // Special case: Enter is "<arrow> <line> <angle>"
+        if (equals(kbEnter)) {
+            return "\u25C0\u2500\u2518";
+        }
+
         if (isFunctionKey) {
             switch (keyCode) {
             case F1:

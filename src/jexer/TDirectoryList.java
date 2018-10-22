@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -30,8 +30,9 @@ package jexer;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * TDirectoryList shows the files within a directory.
@@ -45,12 +46,17 @@ public class TDirectoryList extends TList {
     /**
      * Files in the directory.
      */
-    private List<File> files;
+    private Map<String, File> files;
 
     /**
      * Root path containing files to display.
      */
     private File path;
+
+    /**
+     * The list of filters that a file must match in order to be displayed.
+     */
+    private List<String> filters;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -69,7 +75,7 @@ public class TDirectoryList extends TList {
     public TDirectoryList(final TWidget parent, final String path, final int x,
         final int y, final int width, final int height) {
 
-        this(parent, path, x, y, width, height, null);
+        this(parent, path, x, y, width, height, null, null, null);
     }
 
     /**
@@ -81,13 +87,61 @@ public class TDirectoryList extends TList {
      * @param y row relative to parent
      * @param width width of text area
      * @param height height of text area
-     * @param action action to perform when an item is selected
+     * @param action action to perform when an item is selected (enter or
+     * double-click)
      */
     public TDirectoryList(final TWidget parent, final String path, final int x,
         final int y, final int width, final int height, final TAction action) {
 
+        this(parent, path, x, y, width, height, action, null, null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param path directory path, must be a directory
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param action action to perform when an item is selected (enter or
+     * double-click)
+     * @param singleClickAction action to perform when an item is selected
+     * (single-click)
+     */
+    public TDirectoryList(final TWidget parent, final String path, final int x,
+        final int y, final int width, final int height, final TAction action,
+        final TAction singleClickAction) {
+
+        this(parent, path, x, y, width, height, action, singleClickAction,
+            null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param path directory path, must be a directory
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param action action to perform when an item is selected (enter or
+     * double-click)
+     * @param singleClickAction action to perform when an item is selected
+     * (single-click)
+     * @param filters a list of strings that files must match to be displayed
+     */
+    public TDirectoryList(final TWidget parent, final String path, final int x,
+        final int y, final int width, final int height, final TAction action,
+        final TAction singleClickAction, final List<String> filters) {
+
         super(parent, null, x, y, width, height, action);
-        files = new ArrayList<File>();
+        files = new HashMap<String, File>();
+        this.filters = filters;
+        this.singleClickAction = singleClickAction;
+
         setPath(path);
     }
 
@@ -120,11 +174,29 @@ public class TDirectoryList extends TList {
                 if (newFiles[i].isDirectory()) {
                     continue;
                 }
-                files.add(newFiles[i]);
-                newStrings.add(renderFile(files.size() - 1));
+                if (filters != null) {
+                    for (String pattern: filters) {
+
+                        /*
+                        System.err.println("newFiles[i] " +
+                            newFiles[i].getName() + " " + pattern +
+                            " " + newFiles[i].getName().matches(pattern));
+                        */
+
+                        if (newFiles[i].getName().matches(pattern)) {
+                            String key = renderFile(newFiles[i]);
+                            files.put(key, newFiles[i]);
+                            newStrings.add(key);
+                            break;
+                        }
+                    }
+                } else {
+                    String key = renderFile(newFiles[i]);
+                    files.put(key, newFiles[i]);
+                    newStrings.add(key);
+                }
             }
         }
-        Collections.sort(newStrings);
         setList(newStrings);
 
         // Select the first entry
@@ -139,18 +211,17 @@ public class TDirectoryList extends TList {
      * @return the path
      */
     public File getPath() {
-        path = files.get(getSelectedIndex());
+        path = files.get(getSelected());
         return path;
     }
 
     /**
      * Format one of the entries for drawing on the screen.
      *
-     * @param index index into files
+     * @param file the File
      * @return the line to draw
      */
-    private String renderFile(final int index) {
-        File file = files.get(index);
+    private String renderFile(final File file) {
         String name = file.getName();
         if (name.length() > 20) {
             name = name.substring(0, 17) + "...";

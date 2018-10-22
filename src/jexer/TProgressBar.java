@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -98,26 +98,23 @@ public class TProgressBar extends TWidget {
         int progressInt = (int)(progress * 100);
         int progressUnit = 100 / (getWidth() - 2);
 
-        getScreen().putCharXY(0, 0, GraphicsChars.CP437[0xC3], incompleteColor);
+        putCharXY(0, 0, GraphicsChars.CP437[0xC3], incompleteColor);
         for (int i = 0; i < getWidth() - 2; i++) {
             float iProgress = (float)i / (getWidth() - 2);
             int iProgressInt = (int)(iProgress * 100);
             if (iProgressInt <= progressInt - progressUnit) {
-                getScreen().putCharXY(i + 1, 0, GraphicsChars.BOX,
-                    completeColor);
+                putCharXY(i + 1, 0, GraphicsChars.BOX, completeColor);
             } else {
-                getScreen().putCharXY(i + 1, 0, GraphicsChars.SINGLE_BAR,
-                    incompleteColor);
+                putCharXY(i + 1, 0, GraphicsChars.SINGLE_BAR, incompleteColor);
             }
         }
         if (value >= maxValue) {
-            getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.BOX,
-                completeColor);
+            putCharXY(getWidth() - 2, 0, GraphicsChars.BOX, completeColor);
         } else {
-            getScreen().putCharXY(getWidth() - 2, 0, GraphicsChars.SINGLE_BAR,
+            putCharXY(getWidth() - 2, 0, GraphicsChars.SINGLE_BAR,
                 incompleteColor);
         }
-        getScreen().putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0xB4],
+        putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0xB4],
             incompleteColor);
     }
 

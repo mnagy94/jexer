@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2017 Kevin Lamonte
+ * Copyright (C) 2019 Kevin Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -248,7 +248,7 @@ public class TTreeItem extends TWidget {
         }
 
         // Blank out the background
-        getScreen().hLineXY(0, 0, getWidth(), ' ', color);
+        hLineXY(0, 0, getWidth(), ' ', color);
 
         String line = prefix;
         if (level > 0) {
@@ -264,20 +264,17 @@ public class TTreeItem extends TWidget {
                 line += " ";
             }
         }
-        getScreen().putStringXY(offset, 0, line, color);
+        putStringXY(offset, 0, line, color);
         if (selected) {
-            getScreen().putStringXY(offset + line.length(), 0, text,
-                selectedColor);
+            putStringXY(offset + line.length(), 0, text, selectedColor);
         } else {
-            getScreen().putStringXY(offset + line.length(), 0, text, textColor);
+            putStringXY(offset + line.length(), 0, text, textColor);
         }
         if ((level > 0) && (expandable)) {
             if (expanded) {
-                getScreen().putCharXY(offset + getExpanderX(), 0, '-',
-                    expanderColor);
+                putCharXY(offset + getExpanderX(), 0, '-', expanderColor);
             } else {
-                getScreen().putCharXY(offset + getExpanderX(), 0, '+',
-                    expanderColor);
+                putCharXY(offset + getExpanderX(), 0, '+', expanderColor);
             }
         }
     }
