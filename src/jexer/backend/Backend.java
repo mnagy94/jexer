@@ -96,4 +96,9 @@ public interface Backend {
      */
     public void setListener(final Object listener);
 
+    /**
+     * Reload backend options from System properties.
+     */
+    public void reloadOptions();
+
 }

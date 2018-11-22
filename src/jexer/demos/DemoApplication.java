@@ -203,6 +203,7 @@ public class DemoApplication extends TApplication {
         new DemoMainWindow(this);
 
         // Add the menus
+        addToolMenu();
         addFileMenu();
         addEditMenu();
 

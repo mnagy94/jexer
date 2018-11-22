@@ -1098,12 +1098,19 @@ public abstract class TWidget implements Comparable<TWidget> {
             return;
         }
 
-        if (child != activeChild) {
-            if (activeChild != null) {
-                activeChild.active = false;
+        if (children.size() == 1) {
+            if (children.get(0).enabled == true) {
+                child.active = true;
+                activeChild = child;
             }
-            child.active = true;
-            activeChild = child;
+        } else {
+            if (child != activeChild) {
+                if (activeChild != null) {
+                    activeChild.active = false;
+                }
+                child.active = true;
+                activeChild = child;
+            }
         }
     }
 
@@ -1114,6 +1121,14 @@ public abstract class TWidget implements Comparable<TWidget> {
      * isn't enabled, then the next enabled child will be activated.
      */
     public final void activate(final int tabOrder) {
+        if (children.size() == 1) {
+            if (children.get(0).enabled == true) {
+                children.get(0).active = true;
+                activeChild = children.get(0);
+            }
+            return;
+        }
+
         if (activeChild == null) {
             return;
         }
@@ -1144,11 +1159,25 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public final void switchWidget(final boolean forward) {
 
-        // Only switch if there are multiple enabled widgets
-        if ((children.size() < 2) || (activeChild == null)) {
+        // No children: do nothing.
+        if (children.size() == 0) {
             return;
         }
 
+        // If there is only one child, make it active if it is enabled.
+        if (children.size() == 1) {
+            if (children.get(0).enabled == true) {
+                activeChild = children.get(0);
+                activeChild.active = true;
+            } else {
+                children.get(0).active = false;
+                activeChild = null;
+            }
+            return;
+        }
+
+        // Two or more children: go forward or backward to the next enabled
+        // child.
         int tabOrder = activeChild.tabOrder;
         do {
             if (forward) {

@@ -162,6 +162,15 @@ public class MultiBackend implements Backend {
         }
     }
 
+    /**
+     * Reload backend options from System properties.
+     */
+    public void reloadOptions() {
+        for (Backend backend: backends) {
+            backend.reloadOptions();
+        }
+    }
+
     // ------------------------------------------------------------------------
     // MultiBackend -----------------------------------------------------------
     // ------------------------------------------------------------------------

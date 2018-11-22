@@ -68,6 +68,11 @@ public class TButton extends TWidget {
      */
     private TAction action;
 
+    /**
+     * The background color used for the button "shadow".
+     */
+    private CellAttributes shadowColor;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -92,6 +97,11 @@ public class TButton extends TWidget {
         setY(y);
         setHeight(2);
         setWidth(mnemonic.getRawLabel().length() + 3);
+
+        shadowColor = new CellAttributes();
+        shadowColor.setTo(getWindow().getBackground());
+        shadowColor.setForeColor(Color.BLACK);
+        shadowColor.setBold(false);
     }
 
     /**
@@ -209,10 +219,6 @@ public class TButton extends TWidget {
     public void draw() {
         CellAttributes buttonColor;
         CellAttributes menuMnemonicColor;
-        CellAttributes shadowColor = new CellAttributes();
-        shadowColor.setTo(getWindow().getBackground());
-        shadowColor.setForeColor(Color.BLACK);
-        shadowColor.setBold(false);
 
         if (!isEnabled()) {
             buttonColor = getTheme().getColor("tbutton.disabled");
@@ -273,6 +279,18 @@ public class TButton extends TWidget {
             action.DO();
             inButtonPress = false;
         }
+    }
+
+    /**
+     * Set the background color used for the button "shadow".
+     *
+     * @param color the new background color
+     */
+    public void setShadowColor(final CellAttributes color) {
+        shadowColor = new CellAttributes();
+        shadowColor.setTo(color);
+        shadowColor.setForeColor(Color.BLACK);
+        shadowColor.setBold(false);
     }
 
 }

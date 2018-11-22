@@ -89,7 +89,7 @@ public class TSpinner extends TWidget {
      */
     private boolean mouseOnUpArrow(final TMouseEvent mouse) {
         if ((mouse.getY() == 0)
-            && (mouse.getX() == getWidth() - 1)
+            && (mouse.getX() == getWidth() - 2)
         ) {
             return true;
         }
@@ -104,7 +104,7 @@ public class TSpinner extends TWidget {
      */
     private boolean mouseOnDownArrow(final TMouseEvent mouse) {
         if ((mouse.getY() == 0)
-            && (mouse.getX() == getWidth() - 2)
+            && (mouse.getX() == getWidth() - 1)
         ) {
             return true;
         }

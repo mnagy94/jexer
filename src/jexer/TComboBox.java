@@ -249,7 +249,7 @@ public class TComboBox extends TWidget {
             }
         }
 
-        if (isAbsoluteActive() && (limitToListValue == false)) {
+        if (isAbsoluteActive()) {
             comboBoxColor = getTheme().getColor("tcombobox.active");
         } else {
             comboBoxColor = getTheme().getColor("tcombobox.inactive");

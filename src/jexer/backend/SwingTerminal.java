@@ -165,11 +165,6 @@ public class SwingTerminal extends LogicalScreen
     private Map<Cell, BufferedImage> glyphCache;
 
     /**
-     * If true, we were successful getting Terminus.
-     */
-    private boolean gotTerminus = false;
-
-    /**
      * If true, we were successful at getting the font dimensions.
      */
     private boolean gotFontDimensions = false;
@@ -195,6 +190,16 @@ public class SwingTerminal extends LogicalScreen
     private int textHeight = 1;
 
     /**
+     * Width of a character cell in pixels, as reported by font.
+     */
+    private int fontTextWidth = 1;
+
+    /**
+     * Height of a character cell in pixels, as reported by font.
+     */
+    private int fontTextHeight = 1;
+
+    /**
      * Descent of a character cell in pixels.
      */
     private int maxDescent = 0;
@@ -208,6 +213,16 @@ public class SwingTerminal extends LogicalScreen
      * System-dependent X adjustment for text in the character cell.
      */
     private int textAdjustX = 0;
+
+    /**
+     * System-dependent height adjustment for text in the character cell.
+     */
+    private int textAdjustHeight = 0;
+
+    /**
+     * System-dependent width adjustment for text in the character cell.
+     */
+    private int textAdjustWidth = 0;
 
     /**
      * Top pixel absolute location.
@@ -302,26 +317,7 @@ public class SwingTerminal extends LogicalScreen
         this.fontSize = fontSize;
 
         setDOSColors();
-
-        // Figure out my cursor style.
-        String cursorStyleString = System.getProperty(
-            "jexer.Swing.cursorStyle", "underline").toLowerCase();
-        if (cursorStyleString.equals("underline")) {
-            cursorStyle = CursorStyle.UNDERLINE;
-        } else if (cursorStyleString.equals("outline")) {
-            cursorStyle = CursorStyle.OUTLINE;
-        } else if (cursorStyleString.equals("block")) {
-            cursorStyle = CursorStyle.BLOCK;
-        }
-
-        // Pull the system property for triple buffering.
-        if (System.getProperty("jexer.Swing.tripleBuffer") != null) {
-            if (System.getProperty("jexer.Swing.tripleBuffer").equals("true")) {
-                SwingComponent.tripleBuffer = true;
-            } else {
-                SwingComponent.tripleBuffer = false;
-            }
-        }
+        reloadOptions();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -388,7 +384,7 @@ public class SwingTerminal extends LogicalScreen
                     SwingTerminal.this.top = insets.top;
 
                     // Load the font so that we can set sessionInfo.
-                    getDefaultFont();
+                    setDefaultFont();
 
                     // Get the default cols x rows and set component size
                     // accordingly.
@@ -443,17 +439,7 @@ public class SwingTerminal extends LogicalScreen
         this.fontSize = fontSize;
 
         setDOSColors();
-
-        // Figure out my cursor style.
-        String cursorStyleString = System.getProperty(
-            "jexer.Swing.cursorStyle", "underline").toLowerCase();
-        if (cursorStyleString.equals("underline")) {
-            cursorStyle = CursorStyle.UNDERLINE;
-        } else if (cursorStyleString.equals("outline")) {
-            cursorStyle = CursorStyle.OUTLINE;
-        } else if (cursorStyleString.equals("block")) {
-            cursorStyle = CursorStyle.BLOCK;
-        }
+        reloadOptions();
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -519,7 +505,7 @@ public class SwingTerminal extends LogicalScreen
                     SwingTerminal.this.top = insets.top;
 
                     // Load the font so that we can set sessionInfo.
-                    getDefaultFont();
+                    setDefaultFont();
 
                     // Get the default cols x rows and set component size
                     // accordingly.
@@ -643,6 +629,31 @@ public class SwingTerminal extends LogicalScreen
         this.listener = listener;
     }
 
+    /**
+     * Reload options from System properties.
+     */
+    public void reloadOptions() {
+        // Figure out my cursor style.
+        String cursorStyleString = System.getProperty(
+            "jexer.Swing.cursorStyle", "underline").toLowerCase();
+        if (cursorStyleString.equals("underline")) {
+            cursorStyle = CursorStyle.UNDERLINE;
+        } else if (cursorStyleString.equals("outline")) {
+            cursorStyle = CursorStyle.OUTLINE;
+        } else if (cursorStyleString.equals("block")) {
+            cursorStyle = CursorStyle.BLOCK;
+        }
+
+        // Pull the system property for triple buffering.
+        if (System.getProperty("jexer.Swing.tripleBuffer",
+                "true").equals("true")
+        ) {
+            SwingComponent.tripleBuffer = true;
+        } else {
+            SwingComponent.tripleBuffer = false;
+        }
+    }
+
     // ------------------------------------------------------------------------
     // SwingTerminal ----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -729,25 +740,35 @@ public class SwingTerminal extends LogicalScreen
      * @param font the new font
      */
     public void setFont(final Font font) {
-        this.font = font;
-        getFontDimensions();
-        swing.setFont(font);
-        glyphCacheBlink = new HashMap<Cell, BufferedImage>();
-        glyphCache = new HashMap<Cell, BufferedImage>();
-        resizeToScreen();
+        synchronized (this) {
+            this.font = font;
+            getFontDimensions();
+            swing.setFont(font);
+            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+            glyphCache = new HashMap<Cell, BufferedImage>();
+            resizeToScreen();
+        }
+    }
+
+    /**
+     * Get the font this screen was last set to.
+     *
+     * @return the font
+     */
+    public Font getFont() {
+        return font;
     }
 
     /**
      * Set the font to Terminus, the best all-around font for both CP437 and
      * ISO8859-1.
      */
-    public void getDefaultFont() {
+    public void setDefaultFont() {
         try {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             InputStream in = loader.getResourceAsStream(FONTFILE);
             Font terminusRoot = Font.createFont(Font.TRUETYPE_FONT, in);
             Font terminus = terminusRoot.deriveFont(Font.PLAIN, fontSize);
-            gotTerminus = true;
             font = terminus;
         } catch (java.awt.FontFormatException e) {
             e.printStackTrace();
@@ -758,6 +779,100 @@ public class SwingTerminal extends LogicalScreen
         }
 
         setFont(font);
+    }
+
+    /**
+     * Get the X text adjustment.
+     *
+     * @return X text adjustment
+     */
+    public int getTextAdjustX() {
+        return textAdjustX;
+    }
+
+    /**
+     * Set the X text adjustment.
+     *
+     * @param textAdjustX the X text adjustment
+     */
+    public void setTextAdjustX(final int textAdjustX) {
+        synchronized (this) {
+            this.textAdjustX = textAdjustX;
+            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+            glyphCache = new HashMap<Cell, BufferedImage>();
+            clearPhysical();
+        }
+    }
+
+    /**
+     * Get the Y text adjustment.
+     *
+     * @return Y text adjustment
+     */
+    public int getTextAdjustY() {
+        return textAdjustY;
+    }
+
+    /**
+     * Set the Y text adjustment.
+     *
+     * @param textAdjustY the Y text adjustment
+     */
+    public void setTextAdjustY(final int textAdjustY) {
+        synchronized (this) {
+            this.textAdjustY = textAdjustY;
+            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+            glyphCache = new HashMap<Cell, BufferedImage>();
+            clearPhysical();
+        }
+    }
+
+    /**
+     * Get the height text adjustment.
+     *
+     * @return height text adjustment
+     */
+    public int getTextAdjustHeight() {
+        return textAdjustHeight;
+    }
+
+    /**
+     * Set the height text adjustment.
+     *
+     * @param textAdjustHeight the height text adjustment
+     */
+    public void setTextAdjustHeight(final int textAdjustHeight) {
+        synchronized (this) {
+            this.textAdjustHeight = textAdjustHeight;
+            textHeight = fontTextHeight + textAdjustHeight;
+            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+            glyphCache = new HashMap<Cell, BufferedImage>();
+            clearPhysical();
+        }
+    }
+
+    /**
+     * Get the width text adjustment.
+     *
+     * @return width text adjustment
+     */
+    public int getTextAdjustWidth() {
+        return textAdjustWidth;
+    }
+
+    /**
+     * Set the width text adjustment.
+     *
+     * @param textAdjustWidth the width text adjustment
+     */
+    public void setTextAdjustWidth(final int textAdjustWidth) {
+        synchronized (this) {
+            this.textAdjustWidth = textAdjustWidth;
+            textWidth = fontTextWidth + textAdjustWidth;
+            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+            glyphCache = new HashMap<Cell, BufferedImage>();
+            clearPhysical();
+        }
     }
 
     /**
@@ -855,13 +970,11 @@ public class SwingTerminal extends LogicalScreen
     }
 
     /**
-     * Figure out what textAdjustX and textAdjustY should be, based on the
-     * location of a vertical bar (to find textAdjustY) and a horizontal bar
-     * (to find textAdjustX).
-     *
-     * @return true if textAdjustX and textAdjustY were guessed at correctly
+     * Figure out what textAdjustX, textAdjustY, textAdjustHeight, and
+     * textAdjustWidth should be, based on the location of a vertical bar and
+     * a horizontal bar.
      */
-    private boolean getFontAdjustments() {
+    private void getFontAdjustments() {
         BufferedImage image = null;
 
         // What SHOULD happen is that the topmost/leftmost white pixel is at
@@ -871,66 +984,73 @@ public class SwingTerminal extends LogicalScreen
         Graphics2D gr2 = null;
         int gr2x = 3;
         int gr2y = 3;
-        image = new BufferedImage(textWidth * 2, textHeight * 2,
+        image = new BufferedImage(fontTextWidth * 2, fontTextHeight * 2,
             BufferedImage.TYPE_INT_ARGB);
 
         gr2 = image.createGraphics();
         gr2.setFont(swing.getFont());
         gr2.setColor(java.awt.Color.BLACK);
-        gr2.fillRect(0, 0, textWidth * 2, textHeight * 2);
+        gr2.fillRect(0, 0, fontTextWidth * 2, fontTextHeight * 2);
         gr2.setColor(java.awt.Color.WHITE);
         char [] chars = new char[1];
-        chars[0] = jexer.bits.GraphicsChars.VERTICAL_BAR;
-        gr2.drawChars(chars, 0, 1, gr2x, gr2y + textHeight - maxDescent);
-        gr2.dispose();
-
-        for (int x = 0; x < textWidth; x++) {
-            for (int y = 0; y < textHeight; y++) {
-
-                /*
-                System.err.println("X: " + x + " Y: " + y + " " +
-                    image.getRGB(x, y));
-                 */
-
-                if ((image.getRGB(x, y) & 0xFFFFFF) != 0) {
-                    textAdjustY = (gr2y - y);
-
-                    // System.err.println("textAdjustY: " + textAdjustY);
-                    x = textWidth;
-                    break;
-                }
-            }
-        }
-
-        gr2 = image.createGraphics();
-        gr2.setFont(swing.getFont());
-        gr2.setColor(java.awt.Color.BLACK);
-        gr2.fillRect(0, 0, textWidth * 2, textHeight * 2);
-        gr2.setColor(java.awt.Color.WHITE);
         chars[0] = jexer.bits.GraphicsChars.SINGLE_BAR;
-        gr2.drawChars(chars, 0, 1, gr2x, gr2y + textHeight - maxDescent);
+        gr2.drawChars(chars, 0, 1, gr2x, gr2y + fontTextHeight - maxDescent);
+        chars[0] = jexer.bits.GraphicsChars.VERTICAL_BAR;
+        gr2.drawChars(chars, 0, 1, gr2x, gr2y + fontTextHeight - maxDescent);
         gr2.dispose();
 
-        for (int x = 0; x < textWidth; x++) {
-            for (int y = 0; y < textHeight; y++) {
+        int top = fontTextHeight * 2;
+        int bottom = -1;
+        int left = fontTextWidth * 2;
+        int right = -1;
+        textAdjustX = 0;
+        textAdjustY = 0;
+        textAdjustHeight = 0;
+        textAdjustWidth = 0;
+
+        for (int x = 0; x < fontTextWidth * 2; x++) {
+            for (int y = 0; y < fontTextHeight * 2; y++) {
 
                 /*
-                System.err.println("X: " + x + " Y: " + y + " " +
+                System.err.println("H X: " + x + " Y: " + y + " " +
                     image.getRGB(x, y));
-                 */
+                */
 
                 if ((image.getRGB(x, y) & 0xFFFFFF) != 0) {
-                    textAdjustX = (gr2x - x);
-
-                    // System.err.println("textAdjustX: " + textAdjustX);
-                    return true;
+                    // Pixel is present.
+                    if (y < top) {
+                        top = y;
+                    }
+                    if (y > bottom) {
+                        bottom = y;
+                    }
+                    if (x < left) {
+                        left = x;
+                    }
+                    if (x > right) {
+                        right = x;
+                    }
                 }
             }
         }
+        if (left < right) {
+            textAdjustX = (gr2x - left);
+            textAdjustWidth = fontTextWidth - (right - left + 1);
+        }
+        if (top < bottom) {
+            textAdjustY = (gr2y - top);
+            textAdjustHeight = fontTextHeight - (bottom - top + 1);
+        }
+        // System.err.println("top " + top + " bottom " + bottom);
+        // System.err.println("left " + left + " right " + right);
 
-        // Something weird happened, don't rely on this function.
-        // System.err.println("getFontAdjustments: false");
-        return false;
+        // Special case: do not believe fonts that claim to be wider than
+        // they are tall.
+        if (fontTextWidth >= fontTextHeight) {
+            textAdjustX = 0;
+            textAdjustWidth = 0;
+            fontTextWidth = fontTextHeight / 2;
+        }
     }
 
     /**
@@ -958,26 +1078,16 @@ public class SwingTerminal extends LogicalScreen
         maxDescent = fm.getMaxDescent();
         Rectangle2D bounds = fm.getMaxCharBounds(gr);
         int leading = fm.getLeading();
-        textWidth = (int)Math.round(bounds.getWidth());
-        // textHeight = (int)Math.round(bounds.getHeight()) - maxDescent;
+        fontTextWidth = (int)Math.round(bounds.getWidth());
+        // fontTextHeight = (int)Math.round(bounds.getHeight()) - maxDescent;
 
         // This produces the same number, but works better for ugly
         // monospace.
-        textHeight = fm.getMaxAscent() + maxDescent - leading;
+        fontTextHeight = fm.getMaxAscent() + maxDescent - leading;
 
-        if (gotTerminus == true) {
-            textHeight++;
-        }
-
-        if (getFontAdjustments() == false) {
-            // We were unable to programmatically determine textAdjustX and
-            // textAdjustY, so try some guesses based on VM vendor.
-            String runtime = System.getProperty("java.runtime.name");
-            if ((runtime != null) && (runtime.contains("Java(TM)"))) {
-                textAdjustY = -1;
-                textAdjustX = 0;
-            }
-        }
+        getFontAdjustments();
+        textHeight = fontTextHeight + textAdjustHeight;
+        textWidth = fontTextWidth + textAdjustWidth;
 
         if (sessionInfo != null) {
             sessionInfo.setTextCellDimensions(textWidth, textHeight);

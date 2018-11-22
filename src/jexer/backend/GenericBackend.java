@@ -137,4 +137,11 @@ public abstract class GenericBackend implements Backend {
         terminal.setListener(listener);
     }
 
+    /**
+     * Reload backend options from System properties.
+     */
+    public void reloadOptions() {
+        terminal.reloadOptions();
+    }
+
 }

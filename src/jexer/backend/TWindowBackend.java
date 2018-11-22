@@ -427,6 +427,13 @@ public class TWindowBackend extends TWindow implements Backend {
         this.listener = listener;
     }
 
+    /**
+     * Reload backend options from System properties.
+     */
+    public void reloadOptions() {
+        // NOP
+    }
+
     // ------------------------------------------------------------------------
     // TWindowBackend ---------------------------------------------------------
     // ------------------------------------------------------------------------

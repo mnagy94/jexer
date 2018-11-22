@@ -1085,23 +1085,7 @@ public class ECMA48Terminal extends LogicalScreen
         windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
-        // Permit RGB colors only if externally requested.
-        if (System.getProperty("jexer.ECMA48.rgbColor") != null) {
-            if (System.getProperty("jexer.ECMA48.rgbColor").equals("true")) {
-                doRgbColor = true;
-            } else {
-                doRgbColor = false;
-            }
-        }
-
-        // Pull the system properties for sixel output.
-        if (System.getProperty("jexer.ECMA48.sixel") != null) {
-            if (System.getProperty("jexer.ECMA48.sixel").equals("true")) {
-                sixel = true;
-            } else {
-                sixel = false;
-            }
-        }
+        reloadOptions();
 
         // Spin up the input reader
         eventQueue = new LinkedList<TInputEvent>();
@@ -1187,23 +1171,7 @@ public class ECMA48Terminal extends LogicalScreen
         windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
-        // Permit RGB colors only if externally requested
-        if (System.getProperty("jexer.ECMA48.rgbColor") != null) {
-            if (System.getProperty("jexer.ECMA48.rgbColor").equals("true")) {
-                doRgbColor = true;
-            } else {
-                doRgbColor = false;
-            }
-        }
-
-        // Pull the system properties for sixel output.
-        if (System.getProperty("jexer.ECMA48.sixel") != null) {
-            if (System.getProperty("jexer.ECMA48.sixel").equals("true")) {
-                sixel = true;
-            } else {
-                sixel = false;
-            }
-        }
+        reloadOptions();
 
         // Spin up the input reader
         eventQueue = new LinkedList<TInputEvent>();
@@ -1355,6 +1323,27 @@ public class ECMA48Terminal extends LogicalScreen
      */
     public void setListener(final Object listener) {
         this.listener = listener;
+    }
+
+    /**
+     * Reload options from System properties.
+     */
+    public void reloadOptions() {
+        // Permit RGB colors only if externally requested.
+        if (System.getProperty("jexer.ECMA48.rgbColor",
+                "false").equals("true")
+        ) {
+            doRgbColor = true;
+        } else {
+            doRgbColor = false;
+        }
+
+        // Pull the system properties for sixel output.
+        if (System.getProperty("jexer.ECMA48.sixel", "true").equals("true")) {
+            sixel = true;
+        } else {
+            sixel = false;
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -2745,10 +2734,18 @@ public class ECMA48Terminal extends LogicalScreen
 
         StringBuilder sb = new StringBuilder();
 
-        assert (sixel == true);
         assert (cells != null);
         assert (cells.size() > 0);
         assert (cells.get(0).getImage() != null);
+
+        if (sixel == false) {
+            sb.append(normal());
+            sb.append(gotoXY(x, y));
+            for (int i = 0; i < cells.size(); i++) {
+                sb.append(' ');
+            }
+            return sb.toString();
+        }
 
         if (sixelCache == null) {
             sixelCache = new SixelCache(height * 10);

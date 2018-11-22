@@ -627,7 +627,7 @@ public class TEditColorThemeWindow extends TWindow {
     // ------------------------------------------------------------------------
 
     /**
-     * Public constructor.  The file open box will be centered on screen.
+     * Public constructor.  The window will be centered on screen.
      *
      * @param application the TApplication that manages this window
      */

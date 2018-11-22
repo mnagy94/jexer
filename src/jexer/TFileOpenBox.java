@@ -185,6 +185,7 @@ public class TFileOpenBox extends TWindow {
                     File selectedDir = ((TDirectoryTreeItem) item).getFile();
                     try {
                         directoryList.setPath(selectedDir.getCanonicalPath());
+                        entryField.setText(selectedDir.getCanonicalPath());
                         if (type == Type.OPEN) {
                             openButton.setEnabled(false);
                         }
@@ -391,7 +392,7 @@ public class TFileOpenBox extends TWindow {
     private void checkFilename(final String newFilename) throws IOException {
         File newFile = new File(newFilename);
         if (newFile.exists()) {
-            if (newFile.isFile()) {
+            if (newFile.isFile() || (type == Type.SELECT)) {
                 filename = newFilename;
                 getApplication().closeWindow(this);
                 return;

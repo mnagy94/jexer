@@ -58,45 +58,48 @@ public class TMenu extends TWindow {
     // Reserved menu item IDs
     public static final int MID_UNUSED          = -1;
 
+    // Tools menu
+    public static final int MID_REPAINT         = 1;
+    public static final int MID_VIEW_IMAGE      = 2;
+    public static final int MID_CHANGE_FONT     = 3;
+
     // File menu
-    public static final int MID_EXIT            = 1;
+    public static final int MID_NEW             = 10;
+    public static final int MID_EXIT            = 11;
     public static final int MID_QUIT            = MID_EXIT;
-    public static final int MID_OPEN_FILE       = 2;
-    public static final int MID_SHELL           = 3;
+    public static final int MID_OPEN_FILE       = 12;
+    public static final int MID_SHELL           = 13;
 
     // Edit menu
-    public static final int MID_CUT             = 10;
-    public static final int MID_COPY            = 11;
-    public static final int MID_PASTE           = 12;
-    public static final int MID_CLEAR           = 13;
+    public static final int MID_CUT             = 20;
+    public static final int MID_COPY            = 21;
+    public static final int MID_PASTE           = 22;
+    public static final int MID_CLEAR           = 23;
 
     // Search menu
-    public static final int MID_FIND            = 20;
-    public static final int MID_REPLACE         = 21;
-    public static final int MID_SEARCH_AGAIN    = 22;
-    public static final int MID_GOTO_LINE       = 23;
+    public static final int MID_FIND            = 30;
+    public static final int MID_REPLACE         = 31;
+    public static final int MID_SEARCH_AGAIN    = 32;
+    public static final int MID_GOTO_LINE       = 33;
 
     // Window menu
-    public static final int MID_TILE            = 30;
-    public static final int MID_CASCADE         = 31;
-    public static final int MID_CLOSE_ALL       = 32;
-    public static final int MID_WINDOW_MOVE     = 33;
-    public static final int MID_WINDOW_ZOOM     = 34;
-    public static final int MID_WINDOW_NEXT     = 35;
-    public static final int MID_WINDOW_PREVIOUS = 36;
-    public static final int MID_WINDOW_CLOSE    = 37;
+    public static final int MID_TILE            = 40;
+    public static final int MID_CASCADE         = 41;
+    public static final int MID_CLOSE_ALL       = 42;
+    public static final int MID_WINDOW_MOVE     = 43;
+    public static final int MID_WINDOW_ZOOM     = 44;
+    public static final int MID_WINDOW_NEXT     = 45;
+    public static final int MID_WINDOW_PREVIOUS = 46;
+    public static final int MID_WINDOW_CLOSE    = 47;
 
     // Help menu
-    public static final int MID_HELP_CONTENTS           = 40;
-    public static final int MID_HELP_INDEX              = 41;
-    public static final int MID_HELP_SEARCH             = 42;
-    public static final int MID_HELP_PREVIOUS           = 43;
-    public static final int MID_HELP_HELP               = 44;
-    public static final int MID_HELP_ACTIVE_FILE        = 45;
-    public static final int MID_ABOUT                   = 46;
-
-    // Other
-    public static final int MID_REPAINT         = 50;
+    public static final int MID_HELP_CONTENTS           = 50;
+    public static final int MID_HELP_INDEX              = 51;
+    public static final int MID_HELP_SEARCH             = 52;
+    public static final int MID_HELP_PREVIOUS           = 53;
+    public static final int MID_HELP_HELP               = 54;
+    public static final int MID_HELP_ACTIVE_FILE        = 55;
+    public static final int MID_ABOUT                   = 56;
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -508,6 +511,22 @@ public class TMenu extends TWindow {
 
         switch (id) {
 
+        case MID_REPAINT:
+            label = i18n.getString("menuRepaintDesktop");
+            break;
+
+        case MID_VIEW_IMAGE:
+            label = i18n.getString("menuViewImage");
+            break;
+
+        case MID_CHANGE_FONT:
+            label = i18n.getString("menuChangeFont");
+            break;
+
+        case MID_NEW:
+            label = i18n.getString("menuNew");
+            break;
+
         case MID_EXIT:
             label = i18n.getString("menuExit");
             key = kbAltX;
@@ -606,10 +625,6 @@ public class TMenu extends TWindow {
             break;
         case MID_ABOUT:
             label = i18n.getString("menuHelpAbout");
-            break;
-
-        case MID_REPAINT:
-            label = i18n.getString("menuRepaintDesktop");
             break;
 
         default:

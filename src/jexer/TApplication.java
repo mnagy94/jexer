@@ -28,12 +28,14 @@
  */
 package jexer;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -812,9 +814,21 @@ public class TApplication implements Runnable {
             closeAllWindows();
             return true;
         }
+        if (menu.getId() == TMenu.MID_ABOUT) {
+            showAboutDialog();
+            return true;
+        }
         if (menu.getId() == TMenu.MID_REPAINT) {
             getScreen().clearPhysical();
             doRepaint();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_VIEW_IMAGE) {
+            openImage();
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_CHANGE_FONT) {
+            new TFontChooserWindow(this);
             return true;
         }
         return false;
@@ -969,7 +983,10 @@ public class TApplication implements Runnable {
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
             } else {
-                if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
+                if ((mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
+                    && (!mouse.isMouseWheelUp())
+                    && (!mouse.isMouseWheelDown())
+                ) {
                     if ((mouse.getTime().getTime() - lastMouseUpTime) <
                         doubleClickTime) {
 
@@ -1151,7 +1168,10 @@ public class TApplication implements Runnable {
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
             } else {
-                if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
+                if ((mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
+                    && (!mouse.isMouseWheelUp())
+                    && (!mouse.isMouseWheelDown())
+                ) {
                     if ((mouse.getTime().getTime() - lastMouseUpTime) <
                         doubleClickTime) {
 
@@ -1314,6 +1334,7 @@ public class TApplication implements Runnable {
         synchronized (invokeLaters) {
             invokeLaters.add(command);
         }
+        doRepaint();
     }
 
     /**
@@ -1450,6 +1471,41 @@ public class TApplication implements Runnable {
      */
     public void setFocusFollowsMouse(final boolean focusFollowsMouse) {
         this.focusFollowsMouse = focusFollowsMouse;
+    }
+
+    /**
+     * Display the about dialog.
+     */
+    protected void showAboutDialog() {
+        String version = getClass().getPackage().getImplementationVersion();
+        if (version == null) {
+            // This is Java 9+, use a hardcoded string here.
+            version = "0.3.0";
+        }
+        messageBox(i18n.getString("aboutDialogTitle"),
+            MessageFormat.format(i18n.getString("aboutDialogText"), version),
+            TMessageBox.Type.OK);
+    }
+
+    /**
+     * Handle the Tool | Open image menu item.
+     */
+    private void openImage() {
+        try {
+            List<String> filters = new ArrayList<String>();
+            filters.add("^.*\\.[Jj][Pp][Gg]$");
+            filters.add("^.*\\.[Jj][Pp][Ee][Gg]$");
+            filters.add("^.*\\.[Pp][Nn][Gg]$");
+            filters.add("^.*\\.[Gg][Ii][Ff]$");
+            filters.add("^.*\\.[Bb][Mm][Pp]$");
+            String filename = fileOpenBox(".", TFileOpenBox.Type.OPEN, filters);
+            if (filename != null) {
+                new TImageWindow(this, new File(filename));
+            }
+        } catch (IOException e) {
+            // Show this exception to the user.
+            new TExceptionDialog(this, e);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -1959,29 +2015,33 @@ public class TApplication implements Runnable {
             int z = window.getZ();
             window.setZ(-1);
             window.onUnfocus();
+            windows.remove(window);
             Collections.sort(windows);
-            windows.remove(0);
             activeWindow = null;
+            int newZ = 0;
+            boolean foundNextWindow = false;
+
             for (TWindow w: windows) {
+                w.setZ(newZ);
+                newZ++;
 
                 // Do not activate a hidden window.
                 if (w.isHidden()) {
                     continue;
                 }
 
-                if (w.getZ() > z) {
-                    w.setZ(w.getZ() - 1);
-                    if (w.getZ() == 0) {
-                        w.setActive(true);
-                        w.onFocus();
-                        assert (activeWindow == null);
-                        activeWindow = w;
-                    } else {
-                        if (w.isActive()) {
-                            w.setActive(false);
-                            w.onUnfocus();
-                        }
-                    }
+                if (foundNextWindow == false) {
+                    foundNextWindow = true;
+                    w.setActive(true);
+                    w.onFocus();
+                    assert (activeWindow == null);
+                    activeWindow = w;
+                    continue;
+                }
+
+                if (w.isActive()) {
+                    w.setActive(false);
+                    w.onUnfocus();
                 }
             }
         }
@@ -2557,7 +2617,7 @@ public class TApplication implements Runnable {
 
         if (((focusFollowsMouse == true)
                 && (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION))
-            || (mouse.getType() == TMouseEvent.Type.MOUSE_UP)
+            || (mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
         ) {
             synchronized (windows) {
                 Collections.sort(windows);
@@ -2871,6 +2931,22 @@ public class TApplication implements Runnable {
         menus.add(menu);
         recomputeMenuX();
         return menu;
+    }
+
+    /**
+     * Convenience function to add a default tools (hamburger) menu.
+     *
+     * @return the new menu
+     */
+    public final TMenu addToolMenu() {
+        TMenu toolMenu = addMenu(i18n.getString("toolMenuTitle"));
+        toolMenu.addDefaultItem(TMenu.MID_REPAINT);
+        toolMenu.addDefaultItem(TMenu.MID_VIEW_IMAGE);
+        toolMenu.addDefaultItem(TMenu.MID_CHANGE_FONT);
+        TStatusBar toolStatusBar = toolMenu.newStatusBar(i18n.
+            getString("toolMenuStatus"));
+        toolStatusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
+        return toolMenu;
     }
 
     /**

@@ -66,4 +66,9 @@ public interface TerminalReader {
      */
     public void setListener(final Object listener);
 
+    /**
+     * Reload options from System properties.
+     */
+    public void reloadOptions();
+
 }
