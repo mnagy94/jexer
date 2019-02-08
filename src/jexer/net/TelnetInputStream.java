@@ -926,25 +926,41 @@ public class TelnetInputStream extends InputStream implements SessionInfo {
                 if (subnegBuffer.get(i) == (byte)TELNET_IAC) {
                     i++;
                 }
-                windowWidth = subnegBuffer.get(i) * 256;
+                int width = subnegBuffer.get(i);
+                if (width < 0) {
+                    width += 256;
+                }
+                windowWidth = width * 256;
 
                 i++;
                 if (subnegBuffer.get(i) == (byte)TELNET_IAC) {
                     i++;
                 }
-                windowWidth += subnegBuffer.get(i);
+                width = subnegBuffer.get(i);
+                windowWidth += width;
+                if (width < 0) {
+                    windowWidth += 256;
+                }
 
                 i++;
                 if (subnegBuffer.get(i) == (byte)TELNET_IAC) {
                     i++;
                 }
-                windowHeight = subnegBuffer.get(i) * 256;
+                int height = subnegBuffer.get(i);
+                if (height < 0) {
+                    height += 256;
+                }
+                windowHeight = height * 256;
 
                 i++;
                 if (subnegBuffer.get(i) == (byte)TELNET_IAC) {
                     i++;
                 }
-                windowHeight += subnegBuffer.get(i);
+                height = subnegBuffer.get(i);
+                windowHeight += height;
+                if (height < 0) {
+                    windowHeight += 256;
+                }
             }
             break;
 
