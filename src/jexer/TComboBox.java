@@ -282,11 +282,29 @@ public class TComboBox extends TWidget {
      * @param text the new text in the edit field
      */
     public void setText(final String text) {
+        setText(text, true);
+    }
+
+    /**
+     * Set combobox text value.
+     *
+     * @param text the new text in the edit field
+     * @param caseSensitive if true, perform a case-sensitive search for the
+     * list item
+     */
+    public void setText(final String text, final boolean caseSensitive) {
         field.setText(text);
         for (int i = 0; i < list.getMaxSelectedIndex(); i++) {
-            if (list.getSelected().equals(text)) {
-                list.setSelectedIndex(i);
-                return;
+            if (caseSensitive == true) {
+                if (list.getListItem(i).equals(text)) {
+                    list.setSelectedIndex(i);
+                    return;
+                }
+            } else {
+                if (list.getListItem(i).toLowerCase().equals(text.toLowerCase())) {
+                    list.setSelectedIndex(i);
+                    return;
+                }
             }
         }
         list.setSelectedIndex(-1);

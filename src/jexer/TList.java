@@ -407,6 +407,16 @@ public class TList extends TScrollableWidget {
     }
 
     /**
+     * Get a selectable string by index.
+     *
+     * @param idx index into list
+     * @return the string at idx in the list
+     */
+    public final String getListItem(final int idx) {
+        return strings.get(idx);
+    }
+
+    /**
      * Get the selected string.
      *
      * @return the selected string, or null of nothing is selected yet
