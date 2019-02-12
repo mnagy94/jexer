@@ -185,6 +185,15 @@ public class TWindow extends TWidget {
      */
     protected TStatusBar statusBar = null;
 
+    /**
+     * A window may request that TApplication NOT draw the mouse cursor over
+     * it by setting this to true.  This is currently only used within Jexer
+     * by TTerminalWindow so that only the bottom-most instance of nested
+     * Jexer's draws the mouse within its application window.  But perhaps
+     * other applications can use it, so public getter/setter is provided.
+     */
+    private boolean hideMouse = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1344,6 +1353,28 @@ public class TWindow extends TWidget {
         } else {
             return 1;
         }
+    }
+
+    /**
+     * Returns true if this window does not want the application-wide mouse
+     * cursor drawn over it.
+     *
+     * @return true if this window does not want the application-wide mouse
+     * cursor drawn over it
+     */
+    public final boolean hasHiddenMouse() {
+        return hideMouse;
+    }
+
+    /**
+     * Set request to prevent the application-wide mouse cursor from being
+     * drawn over this window.
+     *
+     * @param hideMouse if true, this window does not want the
+     * application-wide mouse cursor drawn over it
+     */
+    public final void setHiddenMouse(final boolean hideMouse) {
+        this.hideMouse = hideMouse;
     }
 
 }

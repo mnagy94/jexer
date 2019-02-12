@@ -303,6 +303,15 @@ public class ECMA48 implements Runnable {
     private MouseEncoding mouseEncoding = MouseEncoding.X10;
 
     /**
+     * A terminal may request that the mouse pointer be hidden using a
+     * Privacy Message containing either "hideMousePointer" or
+     * "showMousePointer".  This is currently only used within Jexer by
+     * TTerminalWindow so that only the bottom-most instance of nested
+     * Jexer's draws the mouse within its application window.
+     */
+    private boolean hideMousePointer = false;
+
+    /**
      * Physical display width.  We start at 80x24, but the user can resize us
      * bigger/smaller.
      */
@@ -4560,6 +4569,38 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Handle the SCAN_SOSPMAPC_STRING state.  This is currently only used by
+     * Jexer ECMA48Terminal to talk to ECMA48.
+     *
+     * @param pmChar the character received from the remote side
+     */
+    private void pmPut(final char pmChar) {
+        // System.err.println("pmPut: " + pmChar);
+
+        // Collect first
+        collectBuffer.append(pmChar);
+
+        // Xterm cases...
+        if (collectBuffer.toString().endsWith("\033\\")) {
+            String arg = null;
+            arg = collectBuffer.substring(0, collectBuffer.length() - 2);
+
+            // System.err.println("arg: '" + arg + "'");
+
+            if (arg.equals("hideMousePointer")) {
+                hideMousePointer = true;
+            }
+            if (arg.equals("showMousePointer")) {
+                hideMousePointer = false;
+            }
+
+            // Go to SCAN_GROUND state
+            toGround();
+            return;
+        }
+    }
+
+    /**
      * Run this input character through the ECMA48 state machine.
      *
      * @param ch character from the remote side
@@ -4588,9 +4629,11 @@ public class ECMA48 implements Runnable {
         // 0x1B == ESCAPE
         if (ch == 0x1B) {
             if ((type == DeviceType.XTERM)
-                && (scanState == ScanState.OSC_STRING)
+                && ((scanState == ScanState.OSC_STRING)
+                    || (scanState == ScanState.SOSPMAPC_STRING))
             ) {
                 // Xterm can pass ESCAPE to its OSC sequence.
+                // Jexer can pass ESCAPE to its PM sequence.
             } else if ((scanState != ScanState.DCS_ENTRY)
                 && (scanState != ScanState.DCS_INTERMEDIATE)
                 && (scanState != ScanState.DCS_IGNORE)
@@ -6446,6 +6489,15 @@ public class ECMA48 implements Runnable {
         case SOSPMAPC_STRING:
             // 00-17, 19, 1C-1F, 20-7F --> ignore
 
+            // Special case for Jexer: PM can pass one control character
+            if (ch == 0x1B) {
+                pmPut(ch);
+            }
+
+            if ((ch >= 0x20) && (ch <= 0x7F)) {
+                pmPut(ch);
+            }
+
             // 0x9C goes to GROUND
             if (ch == 0x9C) {
                 toGround();
@@ -6507,6 +6559,17 @@ public class ECMA48 implements Runnable {
      */
     public final int getCursorY() {
         return currentState.cursorY;
+    }
+
+    /**
+     * Returns true if this terminal has requested the mouse pointer be
+     * hidden.
+     *
+     * @return true if this terminal has requested the mouse pointer be
+     * hidden
+     */
+    public final boolean hasHiddenMousePointer() {
+        return hideMousePointer;
     }
 
 }

@@ -3385,6 +3385,11 @@ public class ECMA48Terminal extends LogicalScreen
      *
      * Note that this also sets the alternate/primary screen buffer.
      *
+     * Finally, also emit a Privacy Message sequence that Jexer recognizes to
+     * mean "hide the mouse pointer."  We have to use our own sequence to do
+     * this because there is no standard in xterm for unilaterally hiding the
+     * pointer all the time (regardless of typing).
+     *
      * @param on If true, enable mouse report and use the alternate screen
      * buffer.  If false disable mouse reporting and use the primary screen
      * buffer.
@@ -3392,9 +3397,9 @@ public class ECMA48Terminal extends LogicalScreen
      */
     private String mouse(final boolean on) {
         if (on) {
-            return "\033[?1002;1003;1005;1006h\033[?1049h";
+            return "\033[?1002;1003;1005;1006h\033[?1049h\033^hideMousePointer\033\\";
         }
-        return "\033[?1002;1003;1006;1005l\033[?1049l";
+        return "\033[?1002;1003;1006;1005l\033[?1049l\033^showMousePointer\033\\";
     }
 
 }

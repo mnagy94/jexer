@@ -1522,7 +1522,26 @@ public class TApplication implements Runnable {
         if (debugThreads) {
             System.err.printf("%d %s invertCell() %d %d\n",
                 System.currentTimeMillis(), Thread.currentThread(), x, y);
+
+            if (activeWindow != null) {
+                System.err.println("activeWindow.hasHiddenMouse() " +
+                    activeWindow.hasHiddenMouse());
+            }
         }
+
+        // If this cell is on top of a visible window that has requested a
+        // hidden mouse, bail out.
+        if ((activeWindow != null) && (activeMenu == null)) {
+            if ((activeWindow.hasHiddenMouse() == true)
+                && (x > activeWindow.getX())
+                && (x < activeWindow.getX() + activeWindow.getWidth() - 1)
+                && (y > activeWindow.getY())
+                && (y < activeWindow.getY() + activeWindow.getHeight() - 1)
+            ) {
+                return;
+            }
+        }
+
         Cell cell = getScreen().getCharXY(x, y);
         if (cell.isImage()) {
             cell.invertImage();

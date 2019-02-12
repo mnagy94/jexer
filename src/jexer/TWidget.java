@@ -1160,7 +1160,7 @@ public abstract class TWidget implements Comparable<TWidget> {
     public final void switchWidget(final boolean forward) {
 
         // No children: do nothing.
-        if (children.size() == 0) {
+        if ((children.size() == 0) || (activeChild == null)) {
             return;
         }
 

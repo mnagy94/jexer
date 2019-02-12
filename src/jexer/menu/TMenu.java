@@ -566,10 +566,10 @@ public class TMenu extends TWindow {
             break;
         case MID_SEARCH_AGAIN:
             label = i18n.getString("menuSearchAgain");
+            key = kbCtrlL;
             break;
         case MID_GOTO_LINE:
             label = i18n.getString("menuGotoLine");
-            key = kbCtrlL;
             break;
 
         case MID_TILE:
