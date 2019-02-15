@@ -3317,7 +3317,7 @@ public class TApplication implements Runnable {
     public final TTerminalWindow openTerminal(final int x, final int y,
         final int flags, final String commandLine) {
 
-        return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s"));
+        return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s+"));
     }
 
     /**
@@ -3334,7 +3334,7 @@ public class TApplication implements Runnable {
     public final TTerminalWindow openTerminal(final int x, final int y,
         final int flags, final String commandLine, final boolean closeOnExit) {
 
-        return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s"),
+        return new TTerminalWindow(this, x, y, flags, commandLine.split("\\s+"),
             closeOnExit);
     }
 

@@ -28,9 +28,12 @@
  */
 package jexer;
 
+import static jexer.TKeypress.kbEnter;
+import static jexer.TKeypress.kbEsc;
 import static jexer.TKeypress.kbSpace;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.MnemonicString;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 
@@ -49,9 +52,9 @@ public class TCheckBox extends TWidget {
     private boolean checked = false;
 
     /**
-     * Label for this checkbox.
+     * The shortcut and checkbox label.
      */
-    private String label;
+    private MnemonicString mnemonic;
 
     /**
      * If true, use the window's background color.
@@ -77,7 +80,7 @@ public class TCheckBox extends TWidget {
         // Set parent and window
         super(parent, x, y, label.length() + 4, 1);
 
-        this.label = label;
+        mnemonic = new MnemonicString(label);
         this.checked = checked;
 
         setCursorVisible(true);
@@ -124,8 +127,15 @@ public class TCheckBox extends TWidget {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-        if (keypress.equals(kbSpace)) {
+        if (keypress.equals(kbSpace)
+            || keypress.equals(kbEnter)
+        ) {
             checked = !checked;
+            return;
+        }
+
+        if (keypress.equals(kbEsc)) {
+            checked = false;
             return;
         }
 
@@ -143,11 +153,14 @@ public class TCheckBox extends TWidget {
     @Override
     public void draw() {
         CellAttributes checkboxColor;
+        CellAttributes mnemonicColor;
 
         if (isAbsoluteActive()) {
             checkboxColor = getTheme().getColor("tcheckbox.active");
+            mnemonicColor = getTheme().getColor("tcheckbox.mnemonic.highlighted");
         } else {
             checkboxColor = getTheme().getColor("tcheckbox.inactive");
+            mnemonicColor = getTheme().getColor("tcheckbox.mnemonic");
         }
         if (useWindowBackground) {
             CellAttributes background = getWindow().getBackground();
@@ -161,7 +174,11 @@ public class TCheckBox extends TWidget {
             putCharXY(1, 0, ' ', checkboxColor);
         }
         putCharXY(2, 0, ']', checkboxColor);
-        putStringXY(4, 0, label, checkboxColor);
+        putStringXY(4, 0, mnemonic.getRawLabel(), checkboxColor);
+        if (mnemonic.getShortcutIdx() >= 0) {
+            putCharXY(4 + mnemonic.getShortcutIdx(), 0,
+                mnemonic.getShortcut(), mnemonicColor);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -184,6 +201,15 @@ public class TCheckBox extends TWidget {
      */
     public void setChecked(final boolean checked) {
         this.checked = checked;
+    }
+
+    /**
+     * Get the mnemonic string for this checkbox.
+     *
+     * @return mnemonic string
+     */
+    public MnemonicString getMnemonic() {
+        return mnemonic;
     }
 
 }

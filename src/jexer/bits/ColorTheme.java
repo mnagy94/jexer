@@ -362,6 +362,11 @@ public class ColorTheme {
         color.setBackColor(Color.BLUE);
         color.setBold(true);
         colors.put("tlabel", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.YELLOW);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        colors.put("tlabel.mnemonic", color);
 
         // TText text
         color = new CellAttributes();
@@ -393,6 +398,16 @@ public class ColorTheme {
         color.setBackColor(Color.BLACK);
         color.setBold(true);
         colors.put("tcheckbox.active", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.YELLOW);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        colors.put("tcheckbox.mnemonic", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.RED);
+        color.setBackColor(Color.BLACK);
+        color.setBold(true);
+        colors.put("tcheckbox.mnemonic.highlighted", color);
 
         // TComboBox
         color = new CellAttributes();
@@ -456,6 +471,16 @@ public class ColorTheme {
         color.setBackColor(Color.BLACK);
         color.setBold(true);
         colors.put("tradiobutton.active", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.YELLOW);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        colors.put("tradiobutton.mnemonic", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.RED);
+        color.setBackColor(Color.BLACK);
+        color.setBold(true);
+        colors.put("tradiobutton.mnemonic.highlighted", color);
 
         // TRadioGroup
         color = new CellAttributes();

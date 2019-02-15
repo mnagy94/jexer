@@ -74,16 +74,6 @@ public class TWindowBackend extends TWindow implements Backend {
     private Screen otherScreen;
 
     /**
-     * The mouse X position as seen on the other screen.
-     */
-    private int otherMouseX = -1;
-
-    /**
-     * The mouse Y position as seen on the other screen.
-     */
-    private int otherMouseY = -1;
-
-    /**
      * The session information.
      */
     private SessionInfo sessionInfo;
@@ -114,6 +104,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new LogicalScreen();
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
+        setHiddenMouse(true);
     }
 
     /**
@@ -139,6 +130,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new LogicalScreen();
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
+        setHiddenMouse(true);
     }
 
     /**
@@ -165,6 +157,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new LogicalScreen();
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
+        setHiddenMouse(true);
     }
 
     /**
@@ -193,6 +186,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new LogicalScreen();
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
+        setHiddenMouse(true);
     }
 
     // ------------------------------------------------------------------------
@@ -275,17 +269,12 @@ public class TWindowBackend extends TWindow implements Backend {
             event.setY(mouse.getY() - 1);
             event.setAbsoluteX(event.getX());
             event.setAbsoluteY(event.getY());
-            otherMouseX = event.getX() + getX() + 1;
-            otherMouseY = event.getY() + getY() + 1;
             synchronized (eventQueue) {
                 eventQueue.add(event);
             }
             synchronized (listener) {
                 listener.notifyAll();
             }
-        } else {
-            otherMouseX = -1;
-            otherMouseY = -1;
         }
         super.onMouseMotion(mouse);
     }
@@ -327,17 +316,6 @@ public class TWindowBackend extends TWindow implements Backend {
                 for (int x = 0; x < otherScreen.getWidth(); x++) {
                     putCharXY(x + 1, y + 1, otherScreen.getCharXY(x, y));
                 }
-            }
-
-            // If the mouse pointer is over the other window, draw its
-            // pointer again here.  (Their TApplication drew it, then our
-            // TApplication drew it again (undo-ing it), so now we draw it a
-            // third time so that it is visible.)
-            if ((otherMouseX != -1) && (otherMouseY != -1)) {
-                CellAttributes attr = getAttrXY(otherMouseX, otherMouseY);
-                attr.setForeColor(attr.getForeColor().invert());
-                attr.setBackColor(attr.getBackColor().invert());
-                putAttrXY(otherMouseX, otherMouseY, attr, false);
             }
 
             // If their cursor is visible, draw that here too.

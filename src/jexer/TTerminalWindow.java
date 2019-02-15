@@ -101,7 +101,7 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final String commandLine) {
 
-        this(application, x, y, RESIZABLE, commandLine.split("\\s"),
+        this(application, x, y, RESIZABLE, commandLine.split("\\s+"),
             System.getProperty("jexer.TTerminal.closeOnExit",
                 "false").equals("true"));
     }
@@ -118,7 +118,7 @@ public class TTerminalWindow extends TScrollableWindow
     public TTerminalWindow(final TApplication application, final int x,
         final int y, final String commandLine, final boolean closeOnExit) {
 
-        this(application, x, y, RESIZABLE, commandLine.split("\\s"),
+        this(application, x, y, RESIZABLE, commandLine.split("\\s+"),
             closeOnExit);
     }
 
@@ -247,16 +247,16 @@ public class TTerminalWindow extends TScrollableWindow
                 equals("true"))
         ) {
             ptypipe = true;
-            spawnShell(cmdShellPtypipe.split("\\s"));
+            spawnShell(cmdShellPtypipe.split("\\s+"));
         } else if (System.getProperty("os.name").startsWith("Windows")) {
-            spawnShell(cmdShellWindows.split("\\s"));
+            spawnShell(cmdShellWindows.split("\\s+"));
         } else if (System.getProperty("os.name").startsWith("Mac")) {
-            spawnShell(cmdShellBSD.split("\\s"));
+            spawnShell(cmdShellBSD.split("\\s+"));
         } else if (System.getProperty("os.name").startsWith("Linux")) {
-            spawnShell(cmdShellGNU.split("\\s"));
+            spawnShell(cmdShellGNU.split("\\s+"));
         } else {
             // When all else fails, assume GNU.
-            spawnShell(cmdShellGNU.split("\\s"));
+            spawnShell(cmdShellGNU.split("\\s+"));
         }
     }
 

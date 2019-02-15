@@ -331,7 +331,7 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
 
         // If I have any buttons on me AND this is an Alt-key that matches
-        // its mnemonic, send it an Enter keystroke
+        // its mnemonic, send it an Enter keystroke.
         for (TWidget widget: children) {
             if (widget instanceof TButton) {
                 TButton button = (TButton) widget;
@@ -344,6 +344,81 @@ public abstract class TWidget implements Comparable<TWidget> {
                 ) {
 
                     widget.onKeypress(new TKeypressEvent(kbEnter));
+                    return;
+                }
+            }
+        }
+
+        // If I have any labels on me AND this is an Alt-key that matches
+        // its mnemonic, call its action.
+        for (TWidget widget: children) {
+            if (widget instanceof TLabel) {
+                TLabel label = (TLabel) widget;
+                if (!keypress.getKey().isFnKey()
+                    && keypress.getKey().isAlt()
+                    && !keypress.getKey().isCtrl()
+                    && (Character.toLowerCase(label.getMnemonic().getShortcut())
+                        == Character.toLowerCase(keypress.getKey().getChar()))
+                ) {
+
+                    label.dispatch();
+                    return;
+                }
+            }
+        }
+
+        // If I have any radiobuttons on me AND this is an Alt-key that
+        // matches its mnemonic, select it and send a Space to it.
+        for (TWidget widget: children) {
+            if (widget instanceof TRadioButton) {
+                TRadioButton button = (TRadioButton) widget;
+                if (button.isEnabled()
+                    && !keypress.getKey().isFnKey()
+                    && keypress.getKey().isAlt()
+                    && !keypress.getKey().isCtrl()
+                    && (Character.toLowerCase(button.getMnemonic().getShortcut())
+                        == Character.toLowerCase(keypress.getKey().getChar()))
+                ) {
+                    activate(widget);
+                    widget.onKeypress(new TKeypressEvent(kbSpace));
+                    return;
+                }
+            }
+            if (widget instanceof TRadioGroup) {
+                for (TWidget child: widget.getChildren()) {
+                    if (child instanceof TRadioButton) {
+                        TRadioButton button = (TRadioButton) child;
+                        if (button.isEnabled()
+                            && !keypress.getKey().isFnKey()
+                            && keypress.getKey().isAlt()
+                            && !keypress.getKey().isCtrl()
+                            && (Character.toLowerCase(button.getMnemonic().getShortcut())
+                                == Character.toLowerCase(keypress.getKey().getChar()))
+                        ) {
+                            activate(widget);
+                            widget.activate(child);
+                            child.onKeypress(new TKeypressEvent(kbSpace));
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // If I have any checkboxes on me AND this is an Alt-key that matches
+        // its mnemonic, select it and set it to checked.
+        for (TWidget widget: children) {
+            if (widget instanceof TCheckBox) {
+                TCheckBox checkBox = (TCheckBox) widget;
+                if (checkBox.isEnabled()
+                    && !keypress.getKey().isFnKey()
+                    && keypress.getKey().isAlt()
+                    && !keypress.getKey().isCtrl()
+                    && (Character.toLowerCase(checkBox.getMnemonic().getShortcut())
+                        == Character.toLowerCase(keypress.getKey().getChar()))
+                ) {
+                    activate(checkBox);
+                    checkBox.setChecked(true);
                     return;
                 }
             }
@@ -1086,6 +1161,16 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Reset the tab order of children to match their position in the list.
+     * Available so that subclasses can re-order their widgets if needed.
+     */
+    protected void resetTabOrder() {
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).tabOrder = i;
+        }
+    }
+
+    /**
      * Switch the active child.
      *
      * @param child TWidget to activate
@@ -1129,9 +1214,6 @@ public abstract class TWidget implements Comparable<TWidget> {
             return;
         }
 
-        if (activeChild == null) {
-            return;
-        }
         TWidget child = null;
         for (TWidget widget: children) {
             if ((widget.enabled)
@@ -1144,7 +1226,9 @@ public abstract class TWidget implements Comparable<TWidget> {
             }
         }
         if ((child != null) && (child != activeChild)) {
-            activeChild.active = false;
+            if (activeChild != null) {
+                activeChild.active = false;
+            }
             assert (child.enabled);
             child.active = true;
             activeChild = child;
@@ -1160,7 +1244,7 @@ public abstract class TWidget implements Comparable<TWidget> {
     public final void switchWidget(final boolean forward) {
 
         // No children: do nothing.
-        if ((children.size() == 0) || (activeChild == null)) {
+        if (children.size() == 0) {
             return;
         }
 
@@ -1178,7 +1262,10 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         // Two or more children: go forward or backward to the next enabled
         // child.
-        int tabOrder = activeChild.tabOrder;
+        int tabOrder = 0;
+        if (activeChild != null) {
+            tabOrder = activeChild.tabOrder;
+        }
         do {
             if (forward) {
                 tabOrder++;
@@ -1203,7 +1290,12 @@ public abstract class TWidget implements Comparable<TWidget> {
 
                 tabOrder = 0;
             }
-            if (activeChild.tabOrder == tabOrder) {
+            if (activeChild == null) {
+                if (tabOrder == 0) {
+                    // We wrapped around
+                    break;
+                }
+            } else if (activeChild.tabOrder == tabOrder) {
                 // We wrapped around
                 break;
             }
@@ -1211,11 +1303,15 @@ public abstract class TWidget implements Comparable<TWidget> {
             && !(children.get(tabOrder) instanceof THScroller)
             && !(children.get(tabOrder) instanceof TVScroller));
 
-        assert (children.get(tabOrder).enabled);
+        if (activeChild != null) {
+            assert (children.get(tabOrder).enabled);
 
-        activeChild.active = false;
-        children.get(tabOrder).active = true;
-        activeChild = children.get(tabOrder);
+            activeChild.active = false;
+        }
+        if (children.get(tabOrder).enabled == true) {
+            children.get(tabOrder).active = true;
+            activeChild = children.get(tabOrder);
+        }
     }
 
     /**
@@ -1459,6 +1555,21 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param text label
      * @param x column relative to parent
      * @param y row relative to parent
+     * @param action to call when shortcut is pressed
+     * @return the new label
+     */
+    public final TLabel addLabel(final String text, final int x, final int y,
+        final TAction action) {
+
+        return addLabel(text, x, y, "tlabel", action);
+    }
+
+    /**
+     * Convenience function to add a label to this container/window.
+     *
+     * @param text label
+     * @param x column relative to parent
+     * @param y row relative to parent
      * @param colorKey ColorTheme key color to use for foreground text.
      * Default is "tlabel"
      * @return the new label
@@ -1477,6 +1588,23 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param y row relative to parent
      * @param colorKey ColorTheme key color to use for foreground text.
      * Default is "tlabel"
+     * @param action to call when shortcut is pressed
+     * @return the new label
+     */
+    public final TLabel addLabel(final String text, final int x, final int y,
+        final String colorKey, final TAction action) {
+
+        return new TLabel(this, text, x, y, colorKey, action);
+    }
+
+    /**
+     * Convenience function to add a label to this container/window.
+     *
+     * @param text label
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param colorKey ColorTheme key color to use for foreground text.
+     * Default is "tlabel"
      * @param useWindowBackground if true, use the window's background color
      * @return the new label
      */
@@ -1484,6 +1612,26 @@ public abstract class TWidget implements Comparable<TWidget> {
         final String colorKey, final boolean useWindowBackground) {
 
         return new TLabel(this, text, x, y, colorKey, useWindowBackground);
+    }
+
+    /**
+     * Convenience function to add a label to this container/window.
+     *
+     * @param text label
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param colorKey ColorTheme key color to use for foreground text.
+     * Default is "tlabel"
+     * @param useWindowBackground if true, use the window's background color
+     * @param action to call when shortcut is pressed
+     * @return the new label
+     */
+    public final TLabel addLabel(final String text, final int x, final int y,
+        final String colorKey, final boolean useWindowBackground,
+        final TAction action) {
+
+        return new TLabel(this, text, x, y, colorKey, useWindowBackground,
+            action);
     }
 
     /**

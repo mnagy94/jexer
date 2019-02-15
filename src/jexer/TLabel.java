@@ -29,9 +29,11 @@
 package jexer;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.MnemonicString;
 
 /**
- * TLabel implements a simple label.
+ * TLabel implements a simple label, with an optional mnemonic hotkey action
+ * associated with it.
  */
 public class TLabel extends TWidget {
 
@@ -40,9 +42,14 @@ public class TLabel extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * Label text.
+     * The shortcut and label.
      */
-    private String label = "";
+    private MnemonicString mnemonic;
+
+    /**
+     * The action to perform when the mnemonic shortcut is pressed.
+     */
+    private TAction action;
 
     /**
      * Label color.
@@ -73,6 +80,21 @@ public class TLabel extends TWidget {
     }
 
     /**
+     * Public constructor, using the default "tlabel" for colorKey.
+     *
+     * @param parent parent widget
+     * @param text label on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param action to call when shortcut is pressed
+     */
+    public TLabel(final TWidget parent, final String text, final int x,
+        final int y, final TAction action) {
+
+        this(parent, text, x, y, "tlabel", action);
+    }
+
+    /**
      * Public constructor.
      *
      * @param parent parent widget
@@ -95,17 +117,52 @@ public class TLabel extends TWidget {
      * @param x column relative to parent
      * @param y row relative to parent
      * @param colorKey ColorTheme key color to use for foreground text
+     * @param action to call when shortcut is pressed
+     */
+    public TLabel(final TWidget parent, final String text, final int x,
+        final int y, final String colorKey, final TAction action) {
+
+        this(parent, text, x, y, colorKey, true, action);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param text label on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param colorKey ColorTheme key color to use for foreground text
      * @param useWindowBackground if true, use the window's background color
      */
     public TLabel(final TWidget parent, final String text, final int x,
         final int y, final String colorKey, final boolean useWindowBackground) {
 
+        this(parent, text, x, y, colorKey, useWindowBackground, null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param text label on the screen
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param colorKey ColorTheme key color to use for foreground text
+     * @param useWindowBackground if true, use the window's background color
+     * @param action to call when shortcut is pressed
+     */
+    public TLabel(final TWidget parent, final String text, final int x,
+        final int y, final String colorKey, final boolean useWindowBackground,
+        final TAction action) {
+
         // Set parent and window
         super(parent, false, x, y, text.length(), 1);
 
-        this.label = text;
+        mnemonic = new MnemonicString(text);
         this.colorKey = colorKey;
         this.useWindowBackground = useWindowBackground;
+        this.action = action;
     }
 
     // ------------------------------------------------------------------------
@@ -119,12 +176,19 @@ public class TLabel extends TWidget {
     public void draw() {
         // Setup my color
         CellAttributes color = new CellAttributes();
+        CellAttributes mnemonicColor = new CellAttributes();
         color.setTo(getTheme().getColor(colorKey));
+        mnemonicColor.setTo(getTheme().getColor("tlabel.mnemonic"));
         if (useWindowBackground) {
             CellAttributes background = getWindow().getBackground();
             color.setBackColor(background.getBackColor());
+            mnemonicColor.setBackColor(background.getBackColor());
         }
-        putStringXY(0, 0, label, color);
+        putStringXY(0, 0, mnemonic.getRawLabel(), color);
+        if (mnemonic.getShortcutIdx() >= 0) {
+            putCharXY(mnemonic.getShortcutIdx(), 0,
+                mnemonic.getShortcut(), mnemonicColor);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -132,12 +196,21 @@ public class TLabel extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * Get label text.
+     * Get label raw text.
      *
      * @return label text
      */
     public String getLabel() {
-        return label;
+        return mnemonic.getRawLabel();
+    }
+
+    /**
+     * Get the mnemonic string for this label.
+     *
+     * @return mnemonic string
+     */
+    public MnemonicString getMnemonic() {
+        return mnemonic;
     }
 
     /**
@@ -146,7 +219,16 @@ public class TLabel extends TWidget {
      * @param label new label text
      */
     public void setLabel(final String label) {
-        this.label = label;
+        mnemonic = new MnemonicString(label);
+    }
+
+    /**
+     * Act as though the mnemonic shortcut was pressed.
+     */
+    public void dispatch() {
+        if (action != null) {
+            action.DO();
+        }
     }
 
 }

@@ -49,6 +49,12 @@ public class TRadioGroup extends TWidget {
      */
     private TRadioButton selectedButton = null;
 
+    /**
+     * If true, one of the children MUST be selected.  Note package private
+     * access.
+     */
+    boolean requiresSelection = true;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -117,9 +123,32 @@ public class TRadioGroup extends TWidget {
      */
     void setSelected(final TRadioButton button) {
         assert (button.isSelected());
-        if (selectedButton != null) {
+        if ((selectedButton != null) && (selectedButton != button)) {
             selectedButton.setSelected(false);
         }
+        selectedButton = button;
+    }
+
+    /**
+     * Set the new selected radio button.  1-based.
+     *
+     * @param id ID of the selected button, or 0 to unselect
+     */
+    public void setSelected(final int id) {
+        if ((id < 0) || (id > getChildren().size())) {
+            return;
+        }
+
+        if (id == 0) {
+            for (TWidget widget: getChildren()) {
+                ((TRadioButton) widget).setSelected(false);
+            }
+            selectedButton = null;
+            return;
+        }
+        assert ((id > 0) && (id <= getChildren().size()));
+        TRadioButton button = (TRadioButton) (getChildren().get(id - 1));
+        button.setSelected(true);
         selectedButton = button;
     }
 
@@ -136,8 +165,13 @@ public class TRadioGroup extends TWidget {
             setWidth(label.length() + 7);
         }
         setHeight(getChildren().size() + 3);
-        return new TRadioButton(this, buttonX, buttonY, label,
+        TRadioButton button = new TRadioButton(this, buttonX, buttonY, label,
             getChildren().size() + 1);
+
+        // Default to the first item on the list.
+        activate(getChildren().get(0));
+
+        return button;
     }
 
 }
