@@ -305,3 +305,70 @@ integrated development environment for the Java language that was
 built using a very lightly modified GPL version of Jexer.  TJ provided
 a real-world use case to shake out numerous bugs and limitations of
 Jexer.
+
+
+
+Maintainers Wanted
+------------------
+
+Both Jexer and TJIDE are seeking additional maintainers.  I am not in
+a position in life to take on significant off-hours programming work,
+and am willing to hand these projects over to one or more persons with
+time and interest.
+
+My personal code design philosophy for TJIDE/Jexer is outlined at
+https://gitlab.com/klamonte/tjide/blob/master/java/docs/code_design.txt
+.  I realize that some of the features listed below may require
+deviations from this philosophy, but this is what I have built so far.
+
+Some of the areas that will likely require significant efforts are:
+
+  * Editor improvements.  The editor is currently very minimalistic,
+    much closer to MS-DOS edit.com than a real programmer's editor.
+    Users will probably desire many more features: drag-and-drop, real
+    syntax or at least regexp highlighting (not just keywords), paren
+    matching, paragraph/comment reflow, and dozens more.  The
+    underlying Document/Line/Word model is not going to be sufficient
+    to meet these features.  It would be up to you if you wish to
+    retrofit any improvements you make to the MIT version of Jexer.
+
+  * Better Windows and OSX support.  It would be nice to ship a
+    jlink'ed JVM on these platforms with the JRE, JDK, and JPDA
+    modules all together.  For Windows, it might be preferable to
+    consider doing any of the following: ship a third-party terminal,
+    use PowerShell, or use the newer ConPTY for TTerminalWindow.
+
+  * Project window awareness for modules.  Currently the project
+    window knows only simple file paths (where it assumes paths are
+    subpackages) and jars.  It would be nice to also have module
+    awareness here, since modules are the future for Java.
+
+  * Bug fixes.  The (G)Jexer codebase is quite large despite my best
+    efforts.  Bugs are typically very small to fix, but can take some
+    time to find: a simple NPE or AssertionError can sometimes take
+    4-8 hours to squash.  Fortunately, fixing issues in one place has
+    not often led to breakages elsewhere.
+
+  * Plugin support.  TJIDE is the first truly new TUI-based IDE to
+    emerge in quite some time.  It was deliberately built to resemble
+    IDEs used to teach computer science courses for decades, and it is
+    hoped that instructors will be able to use it soon.  A plugin
+    system to define new kinds of targets, editors, and debuggers
+    would go a long way to using TJIDE for other languages.
+
+  * New (G)Jexer applications.  So far as I know, (G)Jexer is the only
+    mouse-supporting full TUI windowing framework with sixel image
+    support in existence.  I cannot predict what kinds of applications
+    could be built out of it, and how those needs will push back to
+    the framework.
+
+These are what I can clearly see right now.  Obviously users are
+capable of finding many more.
+
+I intend to continue poking on TJIDE and Jexer, and will maintain a
+branch to be "the fastest and simplest Java language IDE available",
+which will deliberately remain small.
+
+I hope that other languages choose to transliterate MIT Jexer to
+provide TUIs to their own platforms.  I will be happy to help them
+understand the code to support those efforts.
