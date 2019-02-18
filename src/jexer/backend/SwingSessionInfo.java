@@ -179,6 +179,14 @@ public class SwingSessionInfo implements SessionInfo {
         Insets insets = swing.getInsets();
         int width = swing.getWidth() - insets.left - insets.right;
         int height = swing.getHeight() - insets.top - insets.bottom;
+        // In theory, if Java reported pixel-perfect dimensions, the
+        // expressions above would precisely line up with the requested
+        // window size from SwingComponent.setDimensions().  In practice,
+        // there appears to be a small difference.  Add half a text cell in
+        // both directions before the division to hopefully reach the same
+        // result as setDimensions() was supposed to give us.
+        width += (textWidth / 2);
+        height += (textHeight / 2);
         windowWidth = width / textWidth;
         windowHeight = height / textHeight;
 

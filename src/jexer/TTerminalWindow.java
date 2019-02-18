@@ -789,7 +789,7 @@ public class TTerminalWindow extends TScrollableWindow
         // thread.
         synchronized (emulator) {
             setHiddenMouse(emulator.hasHiddenMousePointer());
-            
+
             setCursorX(emulator.getCursorX() + 1);
             setCursorY(emulator.getCursorY() + 1
                 + (getHeight() - 2 - emulator.getHeight())

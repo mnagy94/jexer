@@ -35,6 +35,7 @@ import jexer.bits.CellAttributes;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
+import jexer.event.TResizeEvent;
 import jexer.TApplication;
 import jexer.TWindow;
 
@@ -69,14 +70,49 @@ public class TWindowBackend extends TWindow implements Backend {
     private List<TInputEvent> eventQueue;
 
     /**
-     * The screen to use.
+     * The screen this window is monitoring.
      */
     private Screen otherScreen;
+
+    /**
+     * The application associated with otherScreen.
+     */
+    private TApplication otherApplication;
 
     /**
      * The session information.
      */
     private SessionInfo sessionInfo;
+
+    /**
+     * OtherScreen provides a hook to notify TWindowBackend of screen size
+     * changes.
+     */
+    private class OtherScreen extends LogicalScreen {
+
+        /**
+         * The TWindowBackend to notify.
+         */
+        private TWindowBackend window;
+
+        /**
+         * Public constructor.
+         */
+        public OtherScreen(final TWindowBackend window) {
+            this.window = window;
+        }
+
+        /**
+         * Resize the physical screen to match the logical screen dimensions.
+         */
+        @Override
+        public void resizeToScreen() {
+            window.setWidth(getWidth() + 2);
+            window.setHeight(getHeight() + 2);
+        }
+
+    }
+
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -101,7 +137,7 @@ public class TWindowBackend extends TWindow implements Backend {
         this.listener = listener;
         eventQueue = new LinkedList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
-        otherScreen = new LogicalScreen();
+        otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
         setHiddenMouse(true);
@@ -127,7 +163,7 @@ public class TWindowBackend extends TWindow implements Backend {
         this.listener = listener;
         eventQueue = new LinkedList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
-        otherScreen = new LogicalScreen();
+        otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
         setHiddenMouse(true);
@@ -154,7 +190,7 @@ public class TWindowBackend extends TWindow implements Backend {
         this.listener = listener;
         eventQueue = new LinkedList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
-        otherScreen = new LogicalScreen();
+        otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
         setHiddenMouse(true);
@@ -183,7 +219,7 @@ public class TWindowBackend extends TWindow implements Backend {
         this.listener = listener;
         eventQueue = new LinkedList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
-        otherScreen = new LogicalScreen();
+        otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
         setHiddenMouse(true);
@@ -192,6 +228,35 @@ public class TWindowBackend extends TWindow implements Backend {
     // ------------------------------------------------------------------------
     // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Handle window/screen resize events.
+     *
+     * @param event resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent event) {
+        if (event.getType() == TResizeEvent.Type.WIDGET) {
+            int newWidth = event.getWidth() - 2;
+            int newHeight = event.getHeight() - 2;
+            if ((newWidth != otherScreen.getWidth())
+                || (newHeight != otherScreen.getHeight())
+            ) {
+                // I was resized, notify the screen I am watching to match my
+                // new size.
+                synchronized (eventQueue) {
+                    eventQueue.add(new TResizeEvent(TResizeEvent.Type.SCREEN,
+                            newWidth, newHeight));
+                }
+                synchronized (listener) {
+                    listener.notifyAll();
+                }
+            }
+            return;
+        } else {
+            super.onResize(event);
+        }
+    }
 
     /**
      * Returns true if the mouse is currently in the otherScreen window.
@@ -327,6 +392,15 @@ public class TWindowBackend extends TWindow implements Backend {
                 setCursorVisible(false);
             }
         }
+
+        // Check if the other application has died.  If so, unset hidden
+        // mouse.
+        if (otherApplication != null) {
+            if (otherApplication.isRunning() == false) {
+                setHiddenMouse(false);
+            }
+        }
+
     }
 
     /**
@@ -432,6 +506,15 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     public Screen getOtherScreen() {
         return otherScreen;
+    }
+
+    /**
+     * Set the other screen's application.
+     *
+     * @param application the application driving the other screen
+     */
+    public void setOtherApplication(final TApplication application) {
+        this.otherApplication = application;
     }
 
 }

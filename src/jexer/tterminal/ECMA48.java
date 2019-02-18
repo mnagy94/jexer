@@ -1114,7 +1114,7 @@ public class ECMA48 implements Runnable {
     private void resetTabStops() {
         tabStops.clear();
         for (int i = 0; (i * 8) <= rightMargin; i++) {
-            tabStops.add(new Integer(i * 8));
+            tabStops.add(Integer.valueOf(i * 8));
         }
     }
 
@@ -1629,6 +1629,7 @@ public class ECMA48 implements Runnable {
      * @param keypress keypress received from the local user
      * @return string to transmit to the remote side
      */
+    @SuppressWarnings("fallthrough")
     private String keypressToString(final TKeypress keypress) {
 
         if ((fullDuplex == false) && (!keypress.isFnKey())) {
@@ -2367,13 +2368,13 @@ public class ECMA48 implements Runnable {
             switch (currentState.glLockshift) {
 
             case G1_GR:
-                assert (false);
+                throw new IllegalArgumentException("programming bug");
 
             case G2_GR:
-                assert (false);
+                throw new IllegalArgumentException("programming bug");
 
             case G3_GR:
-                assert (false);
+                throw new IllegalArgumentException("programming bug");
 
             case G2_GL:
                 // LS2
@@ -2394,10 +2395,10 @@ public class ECMA48 implements Runnable {
             switch (currentState.grLockshift) {
 
             case G2_GL:
-                assert (false);
+                throw new IllegalArgumentException("programming bug");
 
             case G3_GL:
-                assert (false);
+                throw new IllegalArgumentException("programming bug");
 
             case G1_GR:
                 // LS1R
@@ -2652,7 +2653,7 @@ public class ECMA48 implements Runnable {
      */
     private void param(final byte ch) {
         if (csiParams.size() == 0) {
-            csiParams.add(new Integer(0));
+            csiParams.add(Integer.valueOf(0));
         }
         Integer x = csiParams.get(csiParams.size() - 1);
         if ((ch >= '0') && (ch <= '9')) {
@@ -2662,7 +2663,7 @@ public class ECMA48 implements Runnable {
         }
 
         if (ch == ';') {
-            csiParams.add(new Integer(0));
+            csiParams.add(Integer.valueOf(0));
         }
     }
 

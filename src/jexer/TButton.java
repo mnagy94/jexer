@@ -253,7 +253,6 @@ public class TButton extends TWidget {
                 putCharXY(1 + mnemonic.getShortcutIdx(), 0,
                     mnemonic.getShortcut(), menuMnemonicColor);
             }
-
         }
     }
 

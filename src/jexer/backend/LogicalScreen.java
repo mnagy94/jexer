@@ -564,6 +564,14 @@ public class LogicalScreen implements Screen {
      */
     public final void setDimensions(final int width, final int height) {
         reallocate(width, height);
+        resizeToScreen();
+    }
+
+    /**
+     * Resize the physical screen to match the logical screen dimensions.
+     */
+    public void resizeToScreen() {
+        // Subclasses are expected to override this.
     }
 
     /**
@@ -889,6 +897,9 @@ public class LogicalScreen implements Screen {
      * @param y row coordinate.  0 is the top-most row.
      */
     public final void unsetImageRow(final int y) {
+        if ((y < 0) || (y >= height)) {
+            return;
+        }
         for (int x = 0; x < width; x++) {
             if (logical[x][y].isImage()) {
                 physical[x][y].unset();

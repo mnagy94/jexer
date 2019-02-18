@@ -31,6 +31,7 @@ package jexer;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 
 import jexer.event.TKeypressEvent;
@@ -42,6 +43,11 @@ import static jexer.TKeypress.*;
  * TImageWindow shows an image with scrollbars.
  */
 public class TImageWindow extends TScrollableWindow {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TImageWindow.class.getName());
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -124,6 +130,8 @@ public class TImageWindow extends TScrollableWindow {
         setBottomValue(imageField.getRows() - imageField.getHeight());
         setLeftValue(0);
         setRightValue(imageField.getColumns() - imageField.getWidth());
+
+        statusBar = newStatusBar(i18n.getString("statusBar"));
     }
 
     // ------------------------------------------------------------------------

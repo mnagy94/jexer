@@ -91,6 +91,11 @@ public class TWindow extends TWidget {
      */
     public static final int HIDEONCLOSE = 0x40;
 
+    /**
+     * Menus cannot be used when this window is active (default no).
+     */
+    public static final int OVERRIDEMENU        = 0x80;
+
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1246,6 +1251,20 @@ public class TWindow extends TWidget {
      */
     public final boolean hasZoomBox() {
         if ((flags & NOZOOMBOX) != 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if this window does not want menus to work while it is
+     * visible.
+     *
+     * @return true if this window does not want menus to work while it is
+     * visible
+     */
+    public final boolean hasOverriddenMenu() {
+        if ((flags & OVERRIDEMENU) != 0) {
             return true;
         }
         return false;

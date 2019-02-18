@@ -487,6 +487,26 @@ public class TKeypress {
             0, 'y', true, false, false);
     public static final TKeypress kbAltZ = new TKeypress(false,
             0, 'z', true, false, false);
+    public static final TKeypress kbAlt0 = new TKeypress(false,
+            0, '0', true, false, false);
+    public static final TKeypress kbAlt1 = new TKeypress(false,
+            0, '1', true, false, false);
+    public static final TKeypress kbAlt2 = new TKeypress(false,
+            0, '2', true, false, false);
+    public static final TKeypress kbAlt3 = new TKeypress(false,
+            0, '3', true, false, false);
+    public static final TKeypress kbAlt4 = new TKeypress(false,
+            0, '4', true, false, false);
+    public static final TKeypress kbAlt5 = new TKeypress(false,
+            0, '5', true, false, false);
+    public static final TKeypress kbAlt6 = new TKeypress(false,
+            0, '6', true, false, false);
+    public static final TKeypress kbAlt7 = new TKeypress(false,
+            0, '7', true, false, false);
+    public static final TKeypress kbAlt8 = new TKeypress(false,
+            0, '8', true, false, false);
+    public static final TKeypress kbAlt9 = new TKeypress(false,
+            0, '9', true, false, false);
     public static final TKeypress kbCtrlA = new TKeypress(false,
             0, 'A', false, true, false);
     public static final TKeypress kbCtrlB = new TKeypress(false,

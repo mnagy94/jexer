@@ -386,7 +386,20 @@ public class MultiScreen implements Screen {
      */
     public void setDimensions(final int width, final int height) {
         for (Screen screen: screens) {
-            screen.setDimensions(width, height);
+            // Do not blindly call setDimension() on every screen.  Instead
+            // call it only on those screens that do not already have the
+            // requested dimension.  With this very small check, we have the
+            // ability for ANY screen in the MultiBackend to resize ALL of
+            // the screens.
+            if ((screen.getWidth() != width)
+                || (screen.getHeight() != height)
+            ) {
+                screen.setDimensions(width, height);
+            } else {
+                // The screen that didn't change is probably the one that
+                // prompted the resize.  Force it to repaint.
+                screen.clearPhysical();
+            }
         }
     }
 

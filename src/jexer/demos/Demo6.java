@@ -28,6 +28,8 @@
  */
 package jexer.demos;
 
+import java.util.ResourceBundle;
+
 import jexer.TApplication;
 import jexer.backend.*;
 import jexer.demos.DemoApplication;
@@ -36,6 +38,15 @@ import jexer.demos.DemoApplication;
  * This class shows off the use of MultiBackend and MultiScreen.
  */
 public class Demo6 {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(Demo6.class.getName());
+
+    // ------------------------------------------------------------------------
+    // Demo6 ------------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Main entry point.
@@ -117,8 +128,10 @@ public class Demo6 {
              * eliminate) screen tearing/artifacts.
              */
             TWindowBackend windowBackend = new TWindowBackend(demoApp,
-                monitor, "Monitor Window", width + 2, height + 2);
+                monitor, i18n.getString("monitorWindow"),
+                width + 2, height + 2);
             windowBackend.setDrawLock(multiScreen);
+            windowBackend.setOtherApplication(demoApp);
             multiBackend.addBackend(windowBackend);
 
             /*

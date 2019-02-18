@@ -480,9 +480,9 @@ public class ECMA48Terminal extends LogicalScreen
                     int red, green, blue;
                     if (imageX < image.getWidth() - 1) {
                         int pXpY  = ditheredImage.getRGB(imageX + 1, imageY);
-                        red   = (int) ((pXpY >>> 16) & 0xFF) + (7 * redError);
-                        green = (int) ((pXpY >>>  8) & 0xFF) + (7 * greenError);
-                        blue  = (int) ( pXpY         & 0xFF) + (7 * blueError);
+                        red   = ((pXpY >>> 16) & 0xFF) + (7 * redError);
+                        green = ((pXpY >>>  8) & 0xFF) + (7 * greenError);
+                        blue  = ( pXpY         & 0xFF) + (7 * blueError);
                         red = clamp(red);
                         green = clamp(green);
                         blue = clamp(blue);
@@ -493,9 +493,9 @@ public class ECMA48Terminal extends LogicalScreen
                         if (imageY < image.getHeight() - 1) {
                             int pXpYp = ditheredImage.getRGB(imageX + 1,
                                 imageY + 1);
-                            red   = (int) ((pXpYp >>> 16) & 0xFF) + redError;
-                            green = (int) ((pXpYp >>>  8) & 0xFF) + greenError;
-                            blue  = (int) ( pXpYp         & 0xFF) + blueError;
+                            red   = ((pXpYp >>> 16) & 0xFF) + redError;
+                            green = ((pXpYp >>>  8) & 0xFF) + greenError;
+                            blue  = ( pXpYp         & 0xFF) + blueError;
                             red = clamp(red);
                             green = clamp(green);
                             blue = clamp(blue);
@@ -509,9 +509,9 @@ public class ECMA48Terminal extends LogicalScreen
                         int pXYp  = ditheredImage.getRGB(imageX,
                             imageY + 1);
 
-                        red   = (int) ((pXmYp >>> 16) & 0xFF) + (3 * redError);
-                        green = (int) ((pXmYp >>>  8) & 0xFF) + (3 * greenError);
-                        blue  = (int) ( pXmYp         & 0xFF) + (3 * blueError);
+                        red   = ((pXmYp >>> 16) & 0xFF) + (3 * redError);
+                        green = ((pXmYp >>>  8) & 0xFF) + (3 * greenError);
+                        blue  = ( pXmYp         & 0xFF) + (3 * blueError);
                         red = clamp(red);
                         green = clamp(green);
                         blue = clamp(blue);
@@ -519,9 +519,9 @@ public class ECMA48Terminal extends LogicalScreen
                         pXmYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
                         ditheredImage.setRGB(imageX - 1, imageY + 1, pXmYp);
 
-                        red   = (int) ((pXYp >>> 16) & 0xFF) + (5 * redError);
-                        green = (int) ((pXYp >>>  8) & 0xFF) + (5 * greenError);
-                        blue  = (int) ( pXYp         & 0xFF) + (5 * blueError);
+                        red   = ((pXYp >>> 16) & 0xFF) + (5 * redError);
+                        green = ((pXYp >>>  8) & 0xFF) + (5 * greenError);
+                        blue  = ( pXYp         & 0xFF) + (5 * blueError);
                         red = clamp(red);
                         green = clamp(green);
                         blue = clamp(blue);
@@ -1236,6 +1236,19 @@ public class ECMA48Terminal extends LogicalScreen
         }
         output.write(sb.toString());
         flush();
+    }
+
+    /**
+     * Resize the physical screen to match the logical screen dimensions.
+     */
+    @Override
+    public void resizeToScreen() {
+        // Send dtterm/xterm sequences, which will probably not work because
+        // allowWindowOps is defaulted to false.
+        String resizeString = String.format("\033[8;%d;%dt", getHeight(),
+            getWidth());
+        this.output.write(resizeString);
+        this.output.flush();
     }
 
     // ------------------------------------------------------------------------
@@ -2213,6 +2226,9 @@ public class ECMA48Terminal extends LogicalScreen
         // Check for new window size
         long windowSizeDelay = nowTime - windowSizeTime;
         if (windowSizeDelay > 1000) {
+            int oldTextWidth = getTextWidth();
+            int oldTextHeight = getTextHeight();
+
             sessionInfo.queryWindowSize();
             int newWidth = sessionInfo.getWindowWidth();
             int newHeight = sessionInfo.getWindowHeight();
@@ -2221,14 +2237,24 @@ public class ECMA48Terminal extends LogicalScreen
                 || (newHeight != windowResize.getHeight())
             ) {
 
+                // Request xterm report window dimensions in pixels again.
+                // Between now and then, ensure that the reported text cell
+                // size is the same by setting widthPixels and heightPixels
+                // to match the new dimensions.
+                widthPixels = oldTextWidth * newWidth;
+                heightPixels = oldTextHeight * newHeight;
+
                 if (debugToStderr) {
                     System.err.println("Screen size changed, old size " +
                         windowResize);
                     System.err.println("                     new size " +
                         newWidth + " x " + newHeight);
+                    System.err.println("                   old pixels " +
+                        oldTextWidth + " x " + oldTextHeight);
+                    System.err.println("                   new pixels " +
+                        getTextWidth() + " x " + getTextHeight());
                 }
 
-                // Request xterm report window dimensions in pixels again.
                 this.output.printf("%s", xtermReportWindowPixelDimensions());
                 this.output.flush();
 
@@ -2798,6 +2824,15 @@ public class ECMA48Terminal extends LogicalScreen
                 rgbArray = cells.get(i).getImage().getRGB(0, 0,
                     imageWidth, imageHeight, null, 0, imageWidth);
             }
+
+            /*
+            System.err.printf("calling image.setRGB(): %d %d %d %d %d\n",
+                i * imageWidth, 0, imageWidth, imageHeight,
+                0, imageWidth);
+            System.err.printf("   fullWidth %d fullHeight %d cells.size() %d textWidth %d\n",
+                fullWidth, fullHeight, cells.size(), getTextWidth());
+             */
+
             image.setRGB(i * imageWidth, 0, imageWidth, imageHeight,
                 rgbArray, 0, imageWidth);
             if (imageHeight < fullHeight) {

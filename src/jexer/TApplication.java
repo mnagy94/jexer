@@ -1508,6 +1508,18 @@ public class TApplication implements Runnable {
         }
     }
 
+    /**
+     * Check if application is still running.
+     *
+     * @return true if the application is running
+     */
+    public final boolean isRunning() {
+        if (quit == true) {
+            return false;
+        }
+        return true;
+    }
+
     // ------------------------------------------------------------------------
     // Screen refresh loop ----------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1777,6 +1789,10 @@ public class TApplication implements Runnable {
 
         // Flush the screen contents
         if ((images.size() > 0) || getScreen().isDirty()) {
+            if (debugThreads) {
+                System.err.printf("%d %s backend.flushScreen()\n",
+                    System.currentTimeMillis(), Thread.currentThread());
+            }
             backend.flushScreen();
         }
 
@@ -1908,7 +1924,8 @@ public class TApplication implements Runnable {
 
         assert (!window.isActive());
         if (activeWindow != null) {
-            assert (activeWindow.getZ() == 0);
+            // TODO: see if this assertion is really necessary.
+            // assert (activeWindow.getZ() == 0);
 
             activeWindow.setActive(false);
 
@@ -2234,6 +2251,21 @@ public class TApplication implements Runnable {
 
         for (TWindow w: windows) {
             if (w.isModal()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if there is a window with overridden menu flag on top.
+     *
+     * @return true if the active window is overriding the menu
+     */
+    private boolean overrideMenuWindowActive() {
+        if (activeWindow != null) {
+            if (activeWindow.hasOverriddenMenu()) {
                 return true;
             }
         }
@@ -2571,6 +2603,7 @@ public class TApplication implements Runnable {
         if ((mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
             && (mouse.isMouse1())
             && (!modalWindowActive())
+            && (!overrideMenuWindowActive())
             && (mouse.getAbsoluteY() == 0)
         ) {
 

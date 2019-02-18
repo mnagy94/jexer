@@ -1096,10 +1096,11 @@ public class SwingTerminal extends LogicalScreen
     }
 
     /**
-     * Resize to font dimensions.
+     * Resize the physical screen to match the logical screen dimensions.
      */
+    @Override
     public void resizeToScreen() {
-        swing.setDimensions(textWidth * (width + 1), textHeight * (height + 1));
+        swing.setDimensions(textWidth * width, textHeight * height);
     }
 
     /**
