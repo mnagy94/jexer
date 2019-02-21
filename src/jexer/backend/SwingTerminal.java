@@ -567,6 +567,7 @@ public class SwingTerminal extends LogicalScreen
             && (swing.getBufferStrategy() != null)
         ) {
             do {
+                clearPhysical();
                 do {
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
@@ -1101,6 +1102,7 @@ public class SwingTerminal extends LogicalScreen
     @Override
     public void resizeToScreen() {
         swing.setDimensions(textWidth * width, textHeight * height);
+        clearPhysical();
     }
 
     /**
