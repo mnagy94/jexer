@@ -386,7 +386,7 @@ public class TEditorWindow extends TScrollableWindow {
      * @param mouse a mouse-based event
      * @return whether or not the mouse is on the editor
      */
-    private final boolean mouseOnEditor(final TMouseEvent mouse) {
+    private boolean mouseOnEditor(final TMouseEvent mouse) {
         if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
             && (mouse.getAbsoluteX() <  getAbsoluteX() + getWidth() - 1)
             && (mouse.getAbsoluteY() >= getAbsoluteY() + 1)

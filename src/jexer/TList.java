@@ -29,7 +29,6 @@
 package jexer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import jexer.bits.CellAttributes;

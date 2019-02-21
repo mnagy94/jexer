@@ -854,7 +854,7 @@ public class TTerminalWindow extends TScrollableWindow
      * @param mouse a mouse-based event
      * @return whether or not the mouse is on the emulator
      */
-    private final boolean mouseOnEmulator(final TMouseEvent mouse) {
+    private boolean mouseOnEmulator(final TMouseEvent mouse) {
 
         synchronized (emulator) {
             if (!emulator.isReading()) {

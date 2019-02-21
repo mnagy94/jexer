@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.LinkedList;
 
 import jexer.TWidget;
-import jexer.ttree.TTreeViewWidget;
 
 /**
  * TDirectoryTreeItem is a single item in a disk directory tree view.

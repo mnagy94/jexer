@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jexer.backend.Screen;
-import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.event.TCommandEvent;
@@ -1195,6 +1194,7 @@ public class TWindow extends TWidget {
      * Close window.  Note that windows without a close box can still be
      * closed by calling the close() method.
      */
+    @Override
     public void close() {
         application.closeWindow(this);
     }

@@ -31,7 +31,6 @@ package jexer.backend;
 import java.util.LinkedList;
 import java.util.List;
 
-import jexer.bits.CellAttributes;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;

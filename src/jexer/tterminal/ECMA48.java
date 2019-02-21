@@ -4095,12 +4095,12 @@ public class ECMA48 implements Runnable {
             if (collectBuffer.charAt(0) == '>') {
                 extendedFlag = 1;
                 if (collectBuffer.length() >= 2) {
-                    i = Integer.parseInt(args.toString());
+                    i = Integer.parseInt(args);
                 }
             } else if (collectBuffer.charAt(0) == '=') {
                 extendedFlag = 2;
                 if (collectBuffer.length() >= 2) {
-                    i = Integer.parseInt(args.toString());
+                    i = Integer.parseInt(args);
                 }
             } else {
                 // Unknown code, bail out
@@ -4542,7 +4542,7 @@ public class ECMA48 implements Runnable {
                 args = collectBuffer.substring(0, collectBuffer.length() - 2);
             }
 
-            String [] p = args.toString().split(";");
+            String [] p = args.split(";");
             if (p.length > 0) {
                 if ((p[0].equals("0")) || (p[0].equals("2"))) {
                     if (p.length > 1) {
