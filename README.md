@@ -48,6 +48,20 @@ This project is licensed under the MIT License.  See the file LICENSE
 for the full license text.
 
 
+Maven
+-----
+
+Jexer is available on Maven Central:
+
+```xml
+<dependency>
+  <groupId>com.gitlab.klamonte</groupId>
+  <artifactId>jexer</artifactId>
+  <version>0.3.0</version>
+</dependency>
+```
+
+
 
 Acknowledgements
 ----------------
