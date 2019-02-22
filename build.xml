@@ -49,6 +49,8 @@
            includeantruntime="false"
            debug="on"
            debuglevel="lines,vars,source"
+           target="1.6"
+           source="1.6"
            />
   </target>
 
