@@ -26,3 +26,4 @@ misc/**
 
 pmd.bash
 pmd-results.html
+examples/*.sh

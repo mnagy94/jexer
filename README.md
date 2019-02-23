@@ -137,9 +137,19 @@ it and you'll see an application like this:
 
 ![The Example Code Above](/screenshots/readme_application.png?raw=true "The application in the text of README.md")
 
-See the files in jexer.demos for many more detailed examples showing
-all of the existing UI controls.  The available demos can be run as
-follows:
+
+
+More Examples
+-------------
+
+The examples/ folder currently contains:
+
+  * A [prototype tiling window
+    manager](/examples/JavaTilingWindowManager.java) in less than 250
+    lines of code.
+
+jexer.demos contains official demos showing all of the existing UI
+controls.  The demos can be run as follows:
 
   * 'java -jar jexer.jar' .  This will use System.in/out with
     xterm-like sequences on non-Windows non-Mac platforms.  On Windows
