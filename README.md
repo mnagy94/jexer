@@ -93,13 +93,9 @@ class MyApplication extends TApplication {
         new MyWindow(this);
     }
 
-    public static void main(String [] args) {
-        try {
-            MyApplication app = new MyApplication();
-            (new Thread(app)).start();
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
+    public static void main(String [] args) throws Exception {
+        MyApplication app = new MyApplication();
+        (new Thread(app)).start();
     }
 }
 ```
