@@ -145,7 +145,7 @@ More Examples
 The examples/ folder currently contains:
 
   * A [prototype tiling window
-    manager](/examples/JavaTilingWindowManager.java) in less than 250
+    manager](/examples/JexerTilingWindowManager.java) in less than 250
     lines of code.
 
 jexer.demos contains official demos showing all of the existing UI
