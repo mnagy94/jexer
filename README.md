@@ -148,6 +148,10 @@ The examples/ folder currently contains:
     manager](/examples/JexerTilingWindowManager.java) in less than 250
     lines of code.
 
+  * A [prototype image thumbnail
+    viewer](/examples/JexerImageViewer.java) in less than 350 lines of
+    code.
+
 jexer.demos contains official demos showing all of the existing UI
 controls.  The demos can be run as follows:
 

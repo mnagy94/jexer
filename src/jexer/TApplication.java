@@ -936,6 +936,7 @@ public class TApplication implements Runnable {
                 if (desktop != null) {
                     desktop.setDimensions(0, 0, resize.getWidth(),
                         resize.getHeight() - 1);
+                    desktop.onResize(resize);
                 }
 
                 // Change menu edges if needed.
