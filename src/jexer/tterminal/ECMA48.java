@@ -2662,7 +2662,7 @@ public class ECMA48 implements Runnable {
             csiParams.set(csiParams.size() - 1, x);
         }
 
-        if (ch == ';') {
+        if ((ch == ';') && (csiParams.size() < 16)) {
             csiParams.add(Integer.valueOf(0));
         }
     }
