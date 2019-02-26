@@ -205,7 +205,7 @@ backend.
 | Terminal       | Environment        | Mouse Click | Mouse Cursor | Images |
 | -------------- | ------------------ | ----------- | ------------ | ------ |
 | xterm          | X11                | yes         | yes          | yes    |
-| lcxterm        | CLI, Linux console | yes         | yes          | no     |
+| lcxterm(3)     | CLI, Linux console | yes         | yes          | no     |
 | rxvt-unicode   | X11                | yes         | yes          | no     |
 | alacritty(3)   | X11                | yes         | yes          | no     |
 | gnome-terminal | X11                | yes         | yes          | no     |
@@ -218,7 +218,7 @@ backend.
 | putty          | X11, Windows       | yes         | no           | no(2)  |
 | Linux          | Linux console      | no          | no           | no(2)  |
 | qodem(3)       | CLI, Linux console | yes         | yes(4)       | no     |
-| qodem-x11(3)   | CLI                | yes         | no           | no     |
+| qodem-x11(3)   | X11                | yes         | no           | no     |
 
 1 - Passes mouse to its host console, so will support mouse if the
 host console does.
