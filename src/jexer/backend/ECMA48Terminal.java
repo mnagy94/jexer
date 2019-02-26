@@ -85,6 +85,8 @@ public class ECMA48Terminal extends LogicalScreen
      * 1024.
      */
     private static final int MAX_COLOR_REGISTERS = 1024;
+    // Black-and-white is possible too.
+    // private static final int MAX_COLOR_REGISTERS = 2;
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -341,6 +343,16 @@ public class ECMA48Terminal extends LogicalScreen
             int red   = (color >>> 16) & 0xFF;
             int green = (color >>>  8) & 0xFF;
             int blue  =  color         & 0xFF;
+
+            if (MAX_COLOR_REGISTERS == 2) {
+                if (((red * red) + (green * green) + (blue * blue)) < 35568) {
+                    // Black
+                    return 0;
+                }
+                // White
+                return 1;
+            }
+
 
             rgbToHsl(red, green, blue, hsl);
             int hue = hsl[0];
@@ -661,6 +673,14 @@ public class ECMA48Terminal extends LogicalScreen
             // palette with MAX_COLOR_REGISTERS colors for everything, and
             // map the BufferedImage colors to their nearest neighbor in RGB
             // space.
+
+            if (MAX_COLOR_REGISTERS == 2) {
+                rgbColors.add(0);
+                rgbColors.add(0xFFFFFF);
+                rgbSortedIndex[0] = 0;
+                rgbSortedIndex[1] = 1;
+                return;
+            }
 
             // We build a palette using the Hue-Saturation-Luminence model,
             // with 5+ bits for Hue, 2+ bits for Saturation, and 1+ bit for
