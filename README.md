@@ -210,6 +210,7 @@ backend.
 | alacritty(3)   | X11                | yes         | yes          | no     |
 | gnome-terminal | X11                | yes         | yes          | no     |
 | xfce4-terminal | X11                | yes         | yes          | no     |
+| mlterm         | X11                | yes         | yes          | no(5)  |
 | aminal(3)      | X11                | yes         | no           | no     |
 | konsole        | X11                | yes         | no           | no     |
 | yakuake        | X11                | yes         | no           | no     |
@@ -220,14 +221,16 @@ backend.
 | qodem(3)       | CLI, Linux console | yes         | yes(4)       | no     |
 | qodem-x11(3)   | X11                | yes         | no           | no     |
 
-1 - Passes mouse to its host console, so will support mouse if the
-host console does.
+1 - Passes mouse to its host terminal, so will support mouse if the
+host terminal does.
 
 2 - Also fails to filter out sixel data, leaving garbage on screen.
 
 3 - Latest in repository.
 
 4 - Requires TERM=xterm-1003 before starting.
+
+5 - Opening image crashes terminal.
 
 
 
