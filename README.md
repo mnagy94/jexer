@@ -196,6 +196,40 @@ More Screenshots
 ![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
 
 
+Terminal Support
+----------------
+
+The table below lists terminals tested against Jexer's ECMA48/Xterm
+backend.
+
+| Terminal       | Environment        | Mouse Click | Mouse Cursor | Images |
+| -------------- | ------------------ | ----------- | ------------ | ------ |
+| xterm          | X11                | yes         | yes          | yes    |
+| lcxterm        | CLI, Linux console | yes         | yes          | no     |
+| rxvt-unicode   | X11                | yes         | yes          | no     |
+| alacritty(3)   | X11                | yes         | yes          | no     |
+| gnome-terminal | X11                | yes         | yes          | no     |
+| xfce4-terminal | X11                | yes         | yes          | no     |
+| aminal(3)      | X11                | yes         | no           | no     |
+| konsole        | X11                | yes         | no           | no     |
+| yakuake        | X11                | yes         | no           | no     |
+| screen         | CLI                | no(1)       | no           | no(2)  |
+| tmux           | CLI                | no(1)       | no           | no     |
+| putty          | X11, Windows       | yes         | no           | no(2)  |
+| Linux          | Linux console      | no          | no           | no(2)  |
+| qodem(3)       | CLI, Linux console | yes         | yes(4)       | no     |
+| qodem-x11(3)   | CLI                | yes         | no           | no     |
+
+1 - Passes mouse to its host console, so will support mouse if the
+host console does.
+
+2 - Also fails to filter out sixel data, leaving garbage on screen.
+
+3 - Latest in repository.
+
+4 - Requires TERM=xterm-1003 before starting.
+
+
 
 System Properties
 -----------------
