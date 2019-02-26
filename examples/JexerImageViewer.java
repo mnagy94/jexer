@@ -31,9 +31,6 @@ public class JexerImageViewer extends TApplication {
      * Main entry point.
      */
     public static void main(String [] args) throws Exception {
-        // For this application, we must use ptypipe so that the tile shells
-        // can be aware of their size.
-
         JexerImageViewer app = new JexerImageViewer();
         (new Thread(app)).start();
     }
