@@ -214,15 +214,14 @@ backend.
 | aminal(3)      | X11                | yes         | no           | no     |
 | konsole        | X11                | yes         | no           | no     |
 | yakuake        | X11                | yes         | no           | no     |
-| screen         | CLI                | no(1)       | no           | no(2)  |
-| tmux           | CLI                | no(1)       | no           | no     |
+| screen         | CLI                | yes(1)      | yes(1)       | no(2)  |
+| tmux           | CLI                | yes(1)      | yes(1)       | no     |
 | putty          | X11, Windows       | yes         | no           | no(2)  |
 | Linux          | Linux console      | no          | no           | no(2)  |
 | qodem(3)       | CLI, Linux console | yes         | yes(4)       | no     |
 | qodem-x11(3)   | X11                | yes         | no           | no     |
 
-1 - Passes mouse to its host terminal, so will support mouse if the
-host terminal does.
+1 - Requires mouse support from host terminal.
 
 2 - Also fails to filter out sixel data, leaving garbage on screen.
 
