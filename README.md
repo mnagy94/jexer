@@ -206,7 +206,7 @@ backend.
 | -------------- | ------------------ | ----------- | ------------ | ------ |
 | xterm          | X11                | yes         | yes          | yes    |
 | lcxterm(3)     | CLI, Linux console | yes         | yes          | no     |
-| rxvt-unicode   | X11                | yes         | yes          | no     |
+| rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | alacritty(3)   | X11                | yes         | yes          | no     |
 | gnome-terminal | X11                | yes         | yes          | no     |
 | xfce4-terminal | X11                | yes         | yes          | no     |
