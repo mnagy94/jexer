@@ -1455,6 +1455,11 @@ public class ECMA48Terminal extends LogicalScreen
                         events.clear();
                     }
 
+                    if (output.checkError()) {
+                        // This is EOF.
+                        done = true;
+                    }
+
                     // Wait 20 millis for more data
                     Thread.sleep(20);
                 }
@@ -1466,7 +1471,11 @@ public class ECMA48Terminal extends LogicalScreen
                 done = true;
             }
         } // while ((done == false) && (stopReaderThread == false))
-        // System.err.println("*** run() exiting..."); System.err.flush();
+
+        // TODO: pass an event up to TApplication to tell it this Backend is
+        // done.
+
+        System.err.println("*** run() exiting..."); System.err.flush();
     }
 
     // ------------------------------------------------------------------------
