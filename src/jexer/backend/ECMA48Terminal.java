@@ -1475,7 +1475,7 @@ public class ECMA48Terminal extends LogicalScreen
         // TODO: pass an event up to TApplication to tell it this Backend is
         // done.
 
-        System.err.println("*** run() exiting..."); System.err.flush();
+        // System.err.println("*** run() exiting..."); System.err.flush();
     }
 
     // ------------------------------------------------------------------------
