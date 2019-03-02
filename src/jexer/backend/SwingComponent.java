@@ -45,6 +45,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferStrategy;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /**
  * Wrapper for integrating with Swing, because JFrame and JComponent have
@@ -363,17 +364,38 @@ class SwingComponent {
      * @param height the new height in pixels
      */
     public void setDimensions(final int width, final int height) {
-        // Figure out the thickness of borders and use that to set the final
-        // size.
-        if (frame != null) {
-            Insets insets = getInsets();
-            frame.setSize(width + insets.left + insets.right,
-                height + insets.top + insets.bottom);
-        } else {
-            Insets insets = getInsets();
-            component.setSize(width + insets.left + insets.right,
-                height + insets.top + insets.bottom);
+        if (SwingUtilities.isEventDispatchThread()) {
+            // We are in the Swing thread and can safely set the size.
+
+            // Figure out the thickness of borders and use that to set the
+            // final size.
+            if (frame != null) {
+                Insets insets = getInsets();
+                frame.setSize(width + insets.left + insets.right,
+                    height + insets.top + insets.bottom);
+            } else {
+                Insets insets = getInsets();
+                component.setSize(width + insets.left + insets.right,
+                    height + insets.top + insets.bottom);
+            }
+            return;
         }
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                // Figure out the thickness of borders and use that to set
+                // the final size.
+                if (frame != null) {
+                    Insets insets = getInsets();
+                    frame.setSize(width + insets.left + insets.right,
+                        height + insets.top + insets.bottom);
+                } else {
+                    Insets insets = getInsets();
+                    component.setSize(width + insets.left + insets.right,
+                        height + insets.top + insets.bottom);
+                }
+            }
+        });
     }
 
     /**

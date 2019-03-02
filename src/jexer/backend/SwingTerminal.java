@@ -1935,6 +1935,12 @@ public class SwingTerminal extends LogicalScreen
             return;
         }
 
+        if (sessionInfo == null) {
+            // This is the initial component resize in construction, bail
+            // out.
+            return;
+        }
+
         // Drop a new TResizeEvent into the queue
         sessionInfo.queryWindowSize();
         synchronized (eventQueue) {
