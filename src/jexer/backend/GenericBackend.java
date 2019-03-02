@@ -31,6 +31,8 @@ package jexer.backend;
 import java.util.List;
 
 import jexer.event.TInputEvent;
+import jexer.event.TCommandEvent;
+import static jexer.TCommand.*;
 
 /**
  * This abstract class provides a screen, keyboard, and mouse to
@@ -108,6 +110,18 @@ public abstract class GenericBackend implements Backend {
     public void getEvents(final List<TInputEvent> queue) {
         if (terminal.hasEvents()) {
             terminal.getEvents(queue);
+
+            // This default backend assumes a single user, and if that user
+            // becomes disconnected we should terminate the application.
+            if (queue.size() > 0) {
+                TInputEvent event = queue.get(queue.size() - 1);
+                if (event instanceof TCommandEvent) {
+                    TCommandEvent command = (TCommandEvent) event;
+                    if (command.equals(cmBackendDisconnect)) {
+                        queue.add(new TCommandEvent(cmAbort));
+                    }
+                }
+            }
         }
     }
 

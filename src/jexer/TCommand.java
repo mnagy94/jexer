@@ -135,6 +135,11 @@ public class TCommand {
      */
     public static final int SAVE                = 30;
 
+    /**
+     * Backend disconnected.
+     */
+    public static final int BACKEND_DISCONNECT  = 100;
+
     public static final TCommand cmAbort        = new TCommand(ABORT);
     public static final TCommand cmExit         = new TCommand(EXIT);
     public static final TCommand cmQuit         = new TCommand(EXIT);
@@ -155,6 +160,7 @@ public class TCommand {
     public static final TCommand cmHelp         = new TCommand(HELP);
     public static final TCommand cmSave         = new TCommand(SAVE);
     public static final TCommand cmMenu         = new TCommand(MENU);
+    public static final TCommand cmBackendDisconnect    = new TCommand(BACKEND_DISCONNECT);
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

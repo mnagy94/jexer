@@ -50,10 +50,12 @@ import jexer.TImage;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Color;
+import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
+import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
@@ -1472,8 +1474,15 @@ public class ECMA48Terminal extends LogicalScreen
             }
         } // while ((done == false) && (stopReaderThread == false))
 
-        // TODO: pass an event up to TApplication to tell it this Backend is
-        // done.
+        // Pass an event up to TApplication to tell it this Backend is done.
+        synchronized (eventQueue) {
+            eventQueue.add(new TCommandEvent(cmBackendDisconnect));
+        }
+        if (listener != null) {
+            synchronized (listener) {
+                listener.notifyAll();
+            }
+        }
 
         // System.err.println("*** run() exiting..."); System.err.flush();
     }

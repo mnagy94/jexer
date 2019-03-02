@@ -638,6 +638,8 @@ public class TApplication implements Runnable {
      * Run this application until it exits.
      */
     public void run() {
+        // System.err.println("*** TApplication.run() begins ***");
+
         // Start the main consumer thread
         primaryEventHandler = new WidgetEventHandler(this, true);
         (new Thread(primaryEventHandler)).start();
@@ -721,6 +723,11 @@ public class TApplication implements Runnable {
         // resources.
         closeAllWindows();
 
+        // Give the overarching application an opportunity to release
+        // resources.
+        onExit();
+
+        // System.err.println("*** TApplication.run() exits ***");
     }
 
     // ------------------------------------------------------------------------
@@ -914,7 +921,7 @@ public class TApplication implements Runnable {
         // Abort everything
         if (event instanceof TCommandEvent) {
             TCommandEvent command = (TCommandEvent) event;
-            if (command.getCmd().equals(cmAbort)) {
+            if (command.equals(cmAbort)) {
                 exit();
                 return;
             }
@@ -1481,7 +1488,7 @@ public class TApplication implements Runnable {
         String version = getClass().getPackage().getImplementationVersion();
         if (version == null) {
             // This is Java 9+, use a hardcoded string here.
-            version = "0.3.0";
+            version = "0.3.1";
         }
         messageBox(i18n.getString("aboutDialogTitle"),
             MessageFormat.format(i18n.getString("aboutDialogText"), version),
@@ -1808,6 +1815,14 @@ public class TApplication implements Runnable {
         synchronized (this) {
             this.notify();
         }
+    }
+
+    /**
+     * Subclasses can use this hook to cleanup resources.  Called as the last
+     * step of TApplication.run().
+     */
+    public void onExit() {
+        // Default does nothing.
     }
 
     // ------------------------------------------------------------------------
