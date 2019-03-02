@@ -55,7 +55,7 @@ public class DemoApplication extends TApplication {
     /**
      * Translated strings.
      */
-    private static ResourceBundle i18n = ResourceBundle.getBundle(DemoApplication.class.getName());
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(DemoApplication.class.getName());
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
