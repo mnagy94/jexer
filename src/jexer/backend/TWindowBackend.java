@@ -28,15 +28,17 @@
  */
 package jexer.backend;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
+import jexer.TApplication;
+import jexer.TWindow;
+import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.TApplication;
-import jexer.TWindow;
+import static jexer.TCommand.*;
 
 /**
  * TWindowBackend uses a window in one TApplication to provide a backend for
@@ -134,7 +136,7 @@ public class TWindowBackend extends TWindow implements Backend {
         super(application, title, width, height);
 
         this.listener = listener;
-        eventQueue = new LinkedList<TInputEvent>();
+        eventQueue = new ArrayList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
@@ -160,7 +162,7 @@ public class TWindowBackend extends TWindow implements Backend {
         super(application, title, width, height, flags);
 
         this.listener = listener;
-        eventQueue = new LinkedList<TInputEvent>();
+        eventQueue = new ArrayList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
@@ -187,7 +189,7 @@ public class TWindowBackend extends TWindow implements Backend {
         super(application, title, x, y, width, height);
 
         this.listener = listener;
-        eventQueue = new LinkedList<TInputEvent>();
+        eventQueue = new ArrayList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
@@ -216,7 +218,7 @@ public class TWindowBackend extends TWindow implements Backend {
         super(application, title, x, y, width, height, flags);
 
         this.listener = listener;
-        eventQueue = new LinkedList<TInputEvent>();
+        eventQueue = new ArrayList<TInputEvent>();
         sessionInfo = new TSessionInfo(width, height);
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
@@ -408,7 +410,9 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     @Override
     public void onClose() {
-        // TODO: send a screen disconnect
+        synchronized (eventQueue) {
+            eventQueue.add(new TCommandEvent(cmBackendDisconnect));
+        }
     }
 
     // ------------------------------------------------------------------------

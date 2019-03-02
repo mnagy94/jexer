@@ -28,10 +28,12 @@
  */
 package jexer.backend;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
+import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
+import static jexer.TCommand.*;
 
 /**
  * MultiBackend mirrors its I/O to several backends.
@@ -50,7 +52,12 @@ public class MultiBackend implements Backend {
     /**
      * The list of backends to use.
      */
-    private List<Backend> backends = new LinkedList<Backend>();
+    private List<Backend> backends = new ArrayList<Backend>();
+
+    /**
+     * The SessionInfo to return.
+     */
+    private SessionInfo sessionInfo;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -69,6 +76,10 @@ public class MultiBackend implements Backend {
         } else {
             multiScreen = new MultiScreen(backend.getScreen());
         }
+        if (backend instanceof GenericBackend) {
+            ((GenericBackend) backend).abortOnDisconnect = false;
+        }
+        sessionInfo = backend.getSessionInfo();
     }
 
     // ------------------------------------------------------------------------
@@ -81,7 +92,7 @@ public class MultiBackend implements Backend {
      * @return the SessionInfo
      */
     public SessionInfo getSessionInfo() {
-        return backends.get(0).getSessionInfo();
+        return sessionInfo;
     }
 
     /**
@@ -109,6 +120,9 @@ public class MultiBackend implements Backend {
      * @return if true, getEvents() has something to return to the application
      */
     public boolean hasEvents() {
+        if (backends.size() == 0) {
+            return true;
+        }
         for (Backend backend: backends) {
             if (backend.hasEvents()) {
                 return true;
@@ -124,8 +138,37 @@ public class MultiBackend implements Backend {
      * @param queue list to append new events to
      */
     public void getEvents(List<TInputEvent> queue) {
+        List<Backend> backendsToRemove = null;
         for (Backend backend: backends) {
-            backend.getEvents(queue);
+            if (backend.hasEvents()) {
+                backend.getEvents(queue);
+
+                // This default backend assumes a single user, and if that
+                // user becomes disconnected we should terminate the
+                // application.
+                if (queue.size() > 0) {
+                    TInputEvent event = queue.get(queue.size() - 1);
+                    if (event instanceof TCommandEvent) {
+                        TCommandEvent command = (TCommandEvent) event;
+                        if (command.equals(cmBackendDisconnect)) {
+                            if (backendsToRemove == null) {
+                                backendsToRemove = new ArrayList<Backend>();
+                            }
+                            backendsToRemove.add(backend);
+                        }
+                    }
+                }
+            }
+        }
+        if (backendsToRemove != null) {
+            for (Backend backend: backendsToRemove) {
+                multiScreen.removeScreen(backend.getScreen());
+                backends.remove(backend);
+                backend.shutdown();
+            }
+        }
+        if (backends.size() == 0) {
+            queue.add(new TCommandEvent(cmAbort));
         }
     }
 
@@ -186,6 +229,9 @@ public class MultiBackend implements Backend {
             multiScreen.addScreen(((TWindowBackend) backend).getOtherScreen());
         } else {
             multiScreen.addScreen(backend.getScreen());
+        }
+        if (backend instanceof GenericBackend) {
+            ((GenericBackend) backend).abortOnDisconnect = false;
         }
     }
 

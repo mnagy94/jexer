@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.LinkedList;
 
 import jexer.TImage;
 import jexer.bits.Cell;
@@ -1109,7 +1108,7 @@ public class ECMA48Terminal extends LogicalScreen
         reloadOptions();
 
         // Spin up the input reader
-        eventQueue = new LinkedList<TInputEvent>();
+        eventQueue = new ArrayList<TInputEvent>();
         readerThread = new Thread(this);
         readerThread.start();
 
@@ -1195,7 +1194,7 @@ public class ECMA48Terminal extends LogicalScreen
         reloadOptions();
 
         // Spin up the input reader
-        eventQueue = new LinkedList<TInputEvent>();
+        eventQueue = new ArrayList<TInputEvent>();
         readerThread = new Thread(this);
         readerThread.start();
 
@@ -1392,7 +1391,7 @@ public class ECMA48Terminal extends LogicalScreen
         // available() will often return > 1, so we need to read in chunks to
         // stay caught up.
         char [] readBuffer = new char[128];
-        List<TInputEvent> events = new LinkedList<TInputEvent>();
+        List<TInputEvent> events = new ArrayList<TInputEvent>();
 
         while (!done && !stopReaderThread) {
             try {

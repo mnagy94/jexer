@@ -60,6 +60,16 @@ public abstract class GenericBackend implements Backend {
      */
     protected TerminalReader terminal;
 
+    /**
+     * By default, GenericBackend adds a cmAbort after it sees
+     * cmBackendDisconnect, so that TApplication will exit when the user
+     * closes the Swing window or disconnects the ECMA48 streams.  But
+     * MultiBackend wraps multiple Backends, and needs to decide when to send
+     * cmAbort differently.  Setting this to false is how it manages that.
+     * Note package private access.
+     */
+    boolean abortOnDisconnect = true;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -113,7 +123,7 @@ public abstract class GenericBackend implements Backend {
 
             // This default backend assumes a single user, and if that user
             // becomes disconnected we should terminate the application.
-            if (queue.size() > 0) {
+            if ((queue.size() > 0) && (abortOnDisconnect == true)) {
                 TInputEvent event = queue.get(queue.size() - 1);
                 if (event instanceof TCommandEvent) {
                     TCommandEvent command = (TCommandEvent) event;

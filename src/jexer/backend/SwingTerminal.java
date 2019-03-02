@@ -51,8 +51,8 @@ import java.awt.event.WindowListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.swing.JComponent;
@@ -411,7 +411,7 @@ public class SwingTerminal extends LogicalScreen
         mouse1           = false;
         mouse2           = false;
         mouse3           = false;
-        eventQueue       = new LinkedList<TInputEvent>();
+        eventQueue       = new ArrayList<TInputEvent>();
 
         // Add listeners to Swing.
         swing.addKeyListener(this);
@@ -525,7 +525,7 @@ public class SwingTerminal extends LogicalScreen
         mouse1           = false;
         mouse2           = false;
         mouse3           = false;
-        eventQueue       = new LinkedList<TInputEvent>();
+        eventQueue       = new ArrayList<TInputEvent>();
 
         // Add listeners to Swing.
         swing.addKeyListener(this);
@@ -1843,9 +1843,9 @@ public class SwingTerminal extends LogicalScreen
      * @param event window event received
      */
     public void windowClosing(final WindowEvent event) {
-        // Drop a cmAbort and walk away
+        // Drop a cmBackendDisconnect and walk away
         synchronized (eventQueue) {
-            eventQueue.add(new TCommandEvent(cmAbort));
+            eventQueue.add(new TCommandEvent(cmBackendDisconnect));
             resetBlinkTimer();
         }
         if (listener != null) {

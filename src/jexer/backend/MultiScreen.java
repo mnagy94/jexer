@@ -28,7 +28,7 @@
  */
 package jexer.backend;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.Cell;
@@ -46,7 +46,7 @@ public class MultiScreen implements Screen {
     /**
      * The list of screens to use.
      */
-    private List<Screen> screens = new LinkedList<Screen>();
+    private List<Screen> screens = new ArrayList<Screen>();
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
