@@ -223,6 +223,24 @@ public class TLabel extends TWidget {
     }
 
     /**
+     * Get the label color.
+     *
+     * @param return the ColorTheme key color to use for foreground text
+     */
+    public String getColorKey() {
+        return colorKey;
+    }
+
+    /**
+     * Set the label color.
+     *
+     * @param colorKey ColorTheme key color to use for foreground text
+     */
+    public void setColorKey(final String colorKey) {
+        this.colorKey = colorKey;
+    }
+
+    /**
      * Act as though the mnemonic shortcut was pressed.
      */
     public void dispatch() {

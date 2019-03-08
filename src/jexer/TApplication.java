@@ -62,6 +62,7 @@ import jexer.backend.ECMA48Backend;
 import jexer.backend.TWindowBackend;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
+import jexer.menu.TSubMenu;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -3092,6 +3093,50 @@ public class TApplication implements Runnable {
             getString("helpMenuStatus"));
         statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
         return helpMenu;
+    }
+
+    /**
+     * Convenience function to add a default "Table" menu.
+     *
+     * @return the new menu
+     */
+    public final TMenu addTableMenu() {
+        TMenu tableMenu = addMenu(i18n.getString("tableMenuTitle"));
+        TSubMenu borderMenu = tableMenu.addSubMenu(i18n.
+            getString("tableSubMenuBorders"));
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_NONE, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_ALL, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_RIGHT, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_LEFT, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_TOP, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_BOTTOM, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_DOUBLE_BOTTOM, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_THICK_BOTTOM, false);
+        TSubMenu deleteMenu = tableMenu.addSubMenu(i18n.
+            getString("tableSubMenuDelete"));
+        deleteMenu.addDefaultItem(TMenu.MID_TABLE_DELETE_LEFT, false);
+        deleteMenu.addDefaultItem(TMenu.MID_TABLE_DELETE_UP, false);
+        deleteMenu.addDefaultItem(TMenu.MID_TABLE_DELETE_ROW, false);
+        deleteMenu.addDefaultItem(TMenu.MID_TABLE_DELETE_COLUMN, false);
+        TSubMenu insertMenu = tableMenu.addSubMenu(i18n.
+            getString("tableSubMenuInsert"));
+        insertMenu.addDefaultItem(TMenu.MID_TABLE_INSERT_LEFT, false);
+        insertMenu.addDefaultItem(TMenu.MID_TABLE_INSERT_RIGHT, false);
+        insertMenu.addDefaultItem(TMenu.MID_TABLE_INSERT_ABOVE, false);
+        insertMenu.addDefaultItem(TMenu.MID_TABLE_INSERT_BELOW, false);
+        TSubMenu columnMenu = tableMenu.addSubMenu(i18n.
+            getString("tableSubMenuColumn"));
+        columnMenu.addDefaultItem(TMenu.MID_TABLE_COLUMN_NARROW, false);
+        columnMenu.addDefaultItem(TMenu.MID_TABLE_COLUMN_WIDEN, false);
+        TSubMenu fileMenu = tableMenu.addSubMenu(i18n.
+            getString("tableSubMenuFile"));
+        fileMenu.addDefaultItem(TMenu.MID_TABLE_FILE_SAVE_CSV, false);
+        fileMenu.addDefaultItem(TMenu.MID_TABLE_FILE_SAVE_TEXT, false);
+
+        TStatusBar statusBar = tableMenu.newStatusBar(i18n.
+            getString("tableMenuStatus"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
+        return tableMenu;
     }
 
     // ------------------------------------------------------------------------

@@ -821,6 +821,13 @@ public class TKeypress {
             return "\u25C0\u2500\u2518";
         }
 
+        if (equals(kbShiftLeft)) {
+            return "Shift+\u2190";
+        }
+        if (equals(kbShiftRight)) {
+            return "Shift+\u2192";
+        }
+
         if (isFunctionKey) {
             switch (keyCode) {
             case F1:

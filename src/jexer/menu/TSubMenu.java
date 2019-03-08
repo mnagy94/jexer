@@ -235,6 +235,18 @@ public class TSubMenu extends TMenuItem {
     }
 
     /**
+     * Convenience function to add one of the default menu items.
+     *
+     * @param id menu item ID.  Must be between 0 (inclusive) and 1023
+     * (inclusive).
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    public TMenuItem addDefaultItem(final int id, final boolean enabled) {
+        return menu.addDefaultItem(id, enabled);
+    }
+
+    /**
      * Convenience function to add a menu separator.
      */
     public void addSeparator() {

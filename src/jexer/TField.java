@@ -44,6 +44,11 @@ public class TField extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Background character for unfilled-in text.
+     */
+    protected char backgroundChar = GraphicsChars.HATCH;
+
+    /**
      * Field text.
      */
     protected String text = "";
@@ -83,6 +88,16 @@ public class TField extends TWidget {
      * The action to perform when the text is updated.
      */
     protected TAction updateAction;
+
+    /**
+     * The color to use when this field is active.
+     */
+    private String activeColorKey = "tfield.active";
+
+    /**
+     * The color to use when this field is not active.
+     */
+    private String inactiveColorKey = "tfield.inactive";
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -349,16 +364,16 @@ public class TField extends TWidget {
         CellAttributes fieldColor;
 
         if (isAbsoluteActive()) {
-            fieldColor = getTheme().getColor("tfield.active");
+            fieldColor = getTheme().getColor(activeColorKey);
         } else {
-            fieldColor = getTheme().getColor("tfield.inactive");
+            fieldColor = getTheme().getColor(inactiveColorKey);
         }
 
         int end = windowStart + getWidth();
         if (end > text.length()) {
             end = text.length();
         }
-        hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
+        hLineXY(0, 0, getWidth(), backgroundChar, fieldColor);
         putStringXY(0, 0, text.substring(windowStart, end), fieldColor);
 
         // Fix the cursor, it will be rendered by TApplication.drawAll().
@@ -368,6 +383,24 @@ public class TField extends TWidget {
     // ------------------------------------------------------------------------
     // TField -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Get field background character.
+     *
+     * @return background character
+     */
+    public final char getBackgroundChar() {
+        return backgroundChar;
+    }
+
+    /**
+     * Set field background character.
+     *
+     * @param backgroundChar the background character
+     */
+    public void setBackgroundChar(final char backgroundChar) {
+        this.backgroundChar = backgroundChar;
+    }
 
     /**
      * Get field text.
@@ -519,5 +552,26 @@ public class TField extends TWidget {
         this.position = position;
         normalizeWindowStart();
     }
+
+    /**
+     * Set the active color key.
+     *
+     * @param activeColorKey ColorTheme key color to use when this field is
+     * active
+     */
+    public void setActiveColorKey(final String activeColorKey) {
+        this.activeColorKey = activeColorKey;
+    }
+
+    /**
+     * Set the inactive color key.
+     *
+     * @param inactiveColorKey ColorTheme key color to use when this field is
+     * inactive
+     */
+    public void setInactiveColorKey(final String inactiveColorKey) {
+        this.inactiveColorKey = inactiveColorKey;
+    }
+
 
 }

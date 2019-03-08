@@ -68,11 +68,20 @@ public class Demo2 {
                     format(i18n.getString("newConnection"), socket));
                 DemoApplication app = new DemoApplication(socket.getInputStream(),
                     socket.getOutputStream());
+                (new Thread(app)).start();
+                Thread.sleep(500);
+                System.out.println(MessageFormat.
+                    format(i18n.getString("terminal"),
+                    ((jexer.net.TelnetInputStream) socket.getInputStream()).
+                        getTerminalType()));
+                System.out.println(MessageFormat.
+                    format(i18n.getString("username"),
+                    ((jexer.net.TelnetInputStream) socket.getInputStream()).
+                        getUsername()));
                 System.out.println(MessageFormat.
                     format(i18n.getString("language"),
                     ((jexer.net.TelnetInputStream) socket.getInputStream()).
                         getLanguage()));
-                (new Thread(app)).start();
             }
         } catch (Exception e) {
             e.printStackTrace();

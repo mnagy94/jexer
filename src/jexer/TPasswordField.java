@@ -115,7 +115,7 @@ public class TPasswordField extends TField {
             end = text.length();
         }
 
-        hLineXY(0, 0, getWidth(), GraphicsChars.HATCH, fieldColor);
+        hLineXY(0, 0, getWidth(), backgroundChar, fieldColor);
         if (showStars) {
             hLineXY(0, 0, getWidth() - 2, '*', fieldColor);
         } else {

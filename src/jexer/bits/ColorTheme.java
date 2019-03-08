@@ -634,6 +634,18 @@ public class ColorTheme {
         color.setBold(false);
         colors.put("teditor", color);
 
+        // TTable
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(false);
+        colors.put("ttable.inactive", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.CYAN);
+        color.setBold(false);
+        colors.put("ttable.active", color);
+
     }
 
     /**

@@ -236,6 +236,7 @@ public class DemoApplication extends TApplication {
             item = swingMenu.addItem(3001, i18n.getString("smaller"));
         }
 
+        addTableMenu();
         addWindowMenu();
         addHelpMenu();
     }

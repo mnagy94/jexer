@@ -42,6 +42,7 @@ import jexer.TEditColorThemeWindow;
 import jexer.TEditorWindow;
 import jexer.TLabel;
 import jexer.TProgressBar;
+import jexer.TTableWindow;
 import jexer.TTimer;
 import jexer.TWidget;
 import jexer.TWindow;
@@ -119,7 +120,7 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 23, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 25, flags);
 
         int row = 1;
 
@@ -186,6 +187,24 @@ public class DemoMainWindow extends TWindow {
             new TAction() {
                 public void DO() {
                     new DemoTextWindow(getApplication());
+                }
+            }
+        );
+        row += 2;
+
+        addLabel(i18n.getString("ttableLabel"), 1, row);
+        addButton(i18n.getString("ttableButton1"), 35, row,
+            new TAction() {
+                public void DO() {
+                    // TODO
+                }
+            }
+        );
+        addButton(i18n.getString("ttableButton2"), 48, row,
+            new TAction() {
+                public void DO() {
+                    new TTableWindow(getApplication(),
+                        i18n.getString("tableDemo"));
                 }
             }
         );

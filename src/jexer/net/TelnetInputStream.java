@@ -200,6 +200,15 @@ public class TelnetInputStream extends InputStream implements SessionInfo {
     }
 
     /**
+     * Get the terminal type as reported by the telnet Terminal Type option.
+     *
+     * @return the terminal type
+     */
+    public String getTerminalType() {
+        return master.terminalType;
+    }
+
+    /**
      * Text window width getter.
      *
      * @return the window width
@@ -311,6 +320,7 @@ public class TelnetInputStream extends InputStream implements SessionInfo {
 
         // If we got something, return it.
         if (rc > 0) {
+            readBufferEnd += rc;
             readBufferStart++;
             return readBuffer[readBufferStart - 1];
         }

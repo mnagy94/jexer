@@ -101,6 +101,28 @@ public class TMenu extends TWindow {
     public static final int MID_HELP_ACTIVE_FILE        = 55;
     public static final int MID_ABOUT                   = 56;
 
+    // Table menu
+    public static final int MID_TABLE_BORDER_NONE               = 60;
+    public static final int MID_TABLE_BORDER_ALL                = 61;
+    public static final int MID_TABLE_BORDER_RIGHT              = 62;
+    public static final int MID_TABLE_BORDER_LEFT               = 63;
+    public static final int MID_TABLE_BORDER_TOP                = 64;
+    public static final int MID_TABLE_BORDER_BOTTOM             = 65;
+    public static final int MID_TABLE_BORDER_DOUBLE_BOTTOM      = 66;
+    public static final int MID_TABLE_BORDER_THICK_BOTTOM       = 67;
+    public static final int MID_TABLE_DELETE_LEFT               = 68;
+    public static final int MID_TABLE_DELETE_UP                 = 69;
+    public static final int MID_TABLE_DELETE_ROW                = 70;
+    public static final int MID_TABLE_DELETE_COLUMN             = 71;
+    public static final int MID_TABLE_INSERT_LEFT               = 72;
+    public static final int MID_TABLE_INSERT_RIGHT              = 73;
+    public static final int MID_TABLE_INSERT_ABOVE              = 74;
+    public static final int MID_TABLE_INSERT_BELOW              = 75;
+    public static final int MID_TABLE_COLUMN_NARROW             = 76;
+    public static final int MID_TABLE_COLUMN_WIDEN              = 77;
+    public static final int MID_TABLE_FILE_SAVE_CSV             = 78;
+    public static final int MID_TABLE_FILE_SAVE_TEXT            = 79;
+
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -625,6 +647,69 @@ public class TMenu extends TWindow {
             break;
         case MID_ABOUT:
             label = i18n.getString("menuHelpAbout");
+            break;
+
+        case MID_TABLE_BORDER_NONE:
+            label = i18n.getString("menuTableBorderNone");
+            break;
+        case MID_TABLE_BORDER_ALL:
+            label = i18n.getString("menuTableBorderAll");
+            break;
+        case MID_TABLE_BORDER_RIGHT:
+            label = i18n.getString("menuTableBorderRight");
+            break;
+        case MID_TABLE_BORDER_LEFT:
+            label = i18n.getString("menuTableBorderLeft");
+            break;
+        case MID_TABLE_BORDER_TOP:
+            label = i18n.getString("menuTableBorderTop");
+            break;
+        case MID_TABLE_BORDER_BOTTOM:
+            label = i18n.getString("menuTableBorderBottom");
+            break;
+        case MID_TABLE_BORDER_DOUBLE_BOTTOM:
+            label = i18n.getString("menuTableBorderDoubleBottom");
+            break;
+        case MID_TABLE_BORDER_THICK_BOTTOM:
+            label = i18n.getString("menuTableBorderThickBottom");
+            break;
+        case MID_TABLE_DELETE_LEFT:
+            label = i18n.getString("menuTableDeleteLeft");
+            break;
+        case MID_TABLE_DELETE_UP:
+            label = i18n.getString("menuTableDeleteUp");
+            break;
+        case MID_TABLE_DELETE_ROW:
+            label = i18n.getString("menuTableDeleteRow");
+            break;
+        case MID_TABLE_DELETE_COLUMN:
+            label = i18n.getString("menuTableDeleteColumn");
+            break;
+        case MID_TABLE_INSERT_LEFT:
+            label = i18n.getString("menuTableInsertLeft");
+            break;
+        case MID_TABLE_INSERT_RIGHT:
+            label = i18n.getString("menuTableInsertRight");
+            break;
+        case MID_TABLE_INSERT_ABOVE:
+            label = i18n.getString("menuTableInsertAbove");
+            break;
+        case MID_TABLE_INSERT_BELOW:
+            label = i18n.getString("menuTableInsertBelow");
+            break;
+        case MID_TABLE_COLUMN_NARROW:
+            label = i18n.getString("menuTableColumnNarrow");
+            key = kbShiftLeft;
+            break;
+        case MID_TABLE_COLUMN_WIDEN:
+            label = i18n.getString("menuTableColumnWiden");
+            key = kbShiftRight;
+            break;
+        case MID_TABLE_FILE_SAVE_CSV:
+            label = i18n.getString("menuTableFileSaveCsv");
+            break;
+        case MID_TABLE_FILE_SAVE_TEXT:
+            label = i18n.getString("menuTableFileSaveText");
             break;
 
         default:
