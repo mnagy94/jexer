@@ -225,7 +225,7 @@ public class TLabel extends TWidget {
     /**
      * Get the label color.
      *
-     * @param return the ColorTheme key color to use for foreground text
+     * @return the ColorTheme key color to use for foreground text
      */
     public String getColorKey() {
         return colorKey;
