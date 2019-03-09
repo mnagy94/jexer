@@ -123,7 +123,7 @@ public class DemoTextWindow extends TWindow {
 "Notice that some menu items should be disabled when this window has focus.\n" +
 "\n" +
 "This library implements a text-based windowing system loosely " +
-"reminiscient of Borland's [Turbo " +
+"reminiscent of Borland's [Turbo " +
 "Vision](http://en.wikipedia.org/wiki/Turbo_Vision) library.  For those " +
 "wishing to use the actual C++ Turbo Vision library, see [Sergio " +
 "Sigala's updated version](http://tvision.sourceforge.net/) that runs " +

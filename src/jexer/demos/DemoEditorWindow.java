@@ -93,7 +93,7 @@ public class DemoEditorWindow extends TWindow {
 "This is an example of an editable text field.  Some example text follows.\n" +
 "\n" +
 "This library implements a text-based windowing system loosely\n" +
-"reminiscient of Borland's [Turbo\n" +
+"reminiscent of Borland's [Turbo\n" +
 "Vision](http://en.wikipedia.org/wiki/Turbo_Vision) library.  For those\n" +
 "wishing to use the actual C++ Turbo Vision library, see [Sergio\n" +
 "Sigala's updated version](http://tvision.sourceforge.net/) that runs\n" +
