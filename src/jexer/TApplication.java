@@ -433,9 +433,9 @@ public class TApplication implements Runnable {
                         // resumes working on the primary.
                         application.secondaryEventHandler = null;
 
-                        // DO NOT UNLOCK.  Primary thread just came back from
-                        // primaryHandleEvent() and will unlock in the else
-                        // block below.  Just wake it up.
+                        // We are ready to exit, wake up the primary thread.
+                        // Remember that it is currently sleeping inside its
+                        // primaryHandleEvent().
                         synchronized (application.primaryEventHandler) {
                             application.primaryEventHandler.notify();
                         }
@@ -3025,9 +3025,8 @@ public class TApplication implements Runnable {
      */
     public final TMenu addFileMenu() {
         TMenu fileMenu = addMenu(i18n.getString("fileMenuTitle"));
-        fileMenu.addDefaultItem(TMenu.MID_OPEN_FILE);
-        fileMenu.addSeparator();
         fileMenu.addDefaultItem(TMenu.MID_SHELL);
+        fileMenu.addSeparator();
         fileMenu.addDefaultItem(TMenu.MID_EXIT);
         TStatusBar statusBar = fileMenu.newStatusBar(i18n.
             getString("fileMenuStatus"));
