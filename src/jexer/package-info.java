@@ -31,30 +31,23 @@
  * Jexer - Java Text User Interface library
  *
  * <p>
- * This library is currently in design, but when finished it is intended to
- * implement a text-based windowing system loosely reminiscient of Borland's
- * <a href="http://en.wikipedia.org/wiki/Turbo_Vision">Turbo Vision</a>
- * library.
- *
- * <p>
- * The library is currently under initial development, usage patterns are
- * still being worked on.  Generally the goal will be to build applications
- * somewhat as follows:
+ * This library is a text-based windowing system loosely reminiscient of
+ * Borland's <a href="http://en.wikipedia.org/wiki/Turbo_Vision">Turbo
+ * Vision</a> library.  Jexer's goal is to enable people to get up and
+ * running with minimum hassle and lots of polish.  A very quick "Hello
+ * World" application can be created as simply as this:
  *
  * <pre>
  * {@code
- * import jexer.*;
+ * import jexer.TApplication;
  *
  * public class MyApplication extends TApplication {
  *
  *     public MyApplication() {
  *         super();
  *
- *         // Create an editor window that has support for copy/paste,
- *         // search text, arrow keys, horizontal and vertical scrollbar, etc.
- *         addEditor();
- *
- *         // Create standard menus for File and Window
+ *         // Create standard menus for Tool, File, and Window.
+ *         addToolMenu();
  *         addFileMenu();
  *         addWindowMenu();
  *     }
