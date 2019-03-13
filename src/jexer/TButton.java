@@ -69,10 +69,10 @@ public class TButton extends TWidget {
     private TAction action;
 
     /**
-     * The background color used for the button "shadow".
+     * The background color used for the button "shadow", or NULL for "no shadow".
      */
     private CellAttributes shadowColor;
-
+    
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -232,18 +232,20 @@ public class TButton extends TWidget {
         }
 
         if (inButtonPress) {
-            putCharXY(1, 0, ' ', buttonColor);
-            putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
+    		putCharXY(1, 0, ' ', buttonColor);
+    		putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
             putCharXY(getWidth() - 1, 0, ' ', buttonColor);
         } else {
             putCharXY(0, 0, ' ', buttonColor);
             putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
             putCharXY(getWidth() - 2, 0, ' ', buttonColor);
-
-            putCharXY(getWidth() - 1, 0,
-                GraphicsChars.CP437[0xDC], shadowColor);
-            hLineXY(1, 1, getWidth() - 1,
-                GraphicsChars.CP437[0xDF], shadowColor);
+        	
+            if (shadowColor != null) {
+	            putCharXY(getWidth() - 1, 0,
+	                GraphicsChars.CP437[0xDC], shadowColor);
+	            hLineXY(1, 1, getWidth() - 1,
+	                GraphicsChars.CP437[0xDF], shadowColor);
+            }
         }
         if (mnemonic.getShortcutIdx() >= 0) {
             if (inButtonPress) {
@@ -282,14 +284,20 @@ public class TButton extends TWidget {
 
     /**
      * Set the background color used for the button "shadow".
+     * <p>
+     * Can be NULL for "no shadow".
      *
-     * @param color the new background color
+     * @param color the new background color, or NULL if none
      */
     public void setShadowColor(final CellAttributes color) {
-        shadowColor = new CellAttributes();
-        shadowColor.setTo(color);
-        shadowColor.setForeColor(Color.BLACK);
-        shadowColor.setBold(false);
+    	if (color != null) {
+	        shadowColor = new CellAttributes();
+	        shadowColor.setTo(color);
+	        shadowColor.setForeColor(Color.BLACK);
+	        shadowColor.setBold(false);
+    	} else {
+    		shadowColor = null;
+    	}
     }
 
 }
