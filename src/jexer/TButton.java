@@ -34,7 +34,8 @@ import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
-import static jexer.TKeypress.*;
+import static jexer.TKeypress.kbEnter;
+import static jexer.TKeypress.kbSpace;
 
 /**
  * TButton implements a simple button.  To make the button do something, pass
@@ -69,10 +70,11 @@ public class TButton extends TWidget {
     private TAction action;
 
     /**
-     * The background color used for the button "shadow", or NULL for "no shadow".
+     * The background color used for the button "shadow", or null for "no
+     * shadow".
      */
     private CellAttributes shadowColor;
-    
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -232,19 +234,19 @@ public class TButton extends TWidget {
         }
 
         if (inButtonPress) {
-    		putCharXY(1, 0, ' ', buttonColor);
-    		putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
+            putCharXY(1, 0, ' ', buttonColor);
+            putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
             putCharXY(getWidth() - 1, 0, ' ', buttonColor);
         } else {
             putCharXY(0, 0, ' ', buttonColor);
             putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
             putCharXY(getWidth() - 2, 0, ' ', buttonColor);
-        	
+
             if (shadowColor != null) {
-	            putCharXY(getWidth() - 1, 0,
-	                GraphicsChars.CP437[0xDC], shadowColor);
-	            hLineXY(1, 1, getWidth() - 1,
-	                GraphicsChars.CP437[0xDF], shadowColor);
+                putCharXY(getWidth() - 1, 0,
+                    GraphicsChars.CP437[0xDC], shadowColor);
+                hLineXY(1, 1, getWidth() - 1,
+                    GraphicsChars.CP437[0xDF], shadowColor);
             }
         }
         if (mnemonic.getShortcutIdx() >= 0) {
@@ -283,21 +285,20 @@ public class TButton extends TWidget {
     }
 
     /**
-     * Set the background color used for the button "shadow".
-     * <p>
-     * Can be NULL for "no shadow".
+     * Set the background color used for the button "shadow".  If null, no
+     * shadow will be drawn.
      *
-     * @param color the new background color, or NULL if none
+     * @param color the new background color, or null for no shadow
      */
     public void setShadowColor(final CellAttributes color) {
-    	if (color != null) {
-	        shadowColor = new CellAttributes();
-	        shadowColor.setTo(color);
-	        shadowColor.setForeColor(Color.BLACK);
-	        shadowColor.setBold(false);
-    	} else {
-    		shadowColor = null;
-    	}
+        if (color != null) {
+            shadowColor = new CellAttributes();
+            shadowColor.setTo(color);
+            shadowColor.setForeColor(Color.BLACK);
+            shadowColor.setBold(false);
+        } else {
+            shadowColor = null;
+        }
     }
 
 }

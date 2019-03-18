@@ -85,7 +85,13 @@
 
   <target name="doc" depends="docs"/>
 
-  <target name="docs" depends="jar">
+  <!--
+      For Java 11+, add additionalparam="dash-dash-frames".  My
+      workflow is back to Java 8, so leaving this comment here for
+      myself when Debian stables moves to Java 11.
+  -->
+
+<target name="docs" depends="jar">
     <javadoc
         destdir="${apidocs.dir}"
         author="true"
@@ -93,7 +99,6 @@
         use="true"
         access="protected"
         windowtitle="Jexer - Java Text User Interface - API docs"
-        additionalparam="--frames"
         >
       <fileset dir="${src.dir}" defaultexcludes="yes">
         <include name="jexer/**/*.java"/>
