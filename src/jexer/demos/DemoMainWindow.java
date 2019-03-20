@@ -31,9 +31,6 @@ package jexer.demos;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 import java.util.ResourceBundle;
 
 import jexer.TAction;
@@ -87,17 +84,6 @@ public class DemoMainWindow extends TWindow {
      */
     TProgressBar progressBar;
 
-    /**
-     * Day of week label is updated with TSpinner clicks.
-     */
-    TLabel dayOfWeekLabel;
-
-    /**
-     * Day of week to demonstrate TSpinner.  Has to be at class scope so that
-     * it can be accessed by the anonymous TAction class.
-     */
-    GregorianCalendar calendar = new GregorianCalendar();
-
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -120,7 +106,7 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 25, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 23, flags);
 
         int row = 1;
 
@@ -242,11 +228,11 @@ public class DemoMainWindow extends TWindow {
                 }
             }
         );
-        row += 2;
 
-        progressBar = addProgressBar(1, row, 22, 0);
+        row = 15;
+        progressBar = addProgressBar(48, row, 12, 0);
         row++;
-        timerLabel = addLabel(i18n.getString("timerLabel"), 1, row);
+        timerLabel = addLabel(i18n.getString("timerLabel"), 48, row);
         timer = getApplication().addTimer(250, true,
             new TAction() {
 
@@ -263,33 +249,6 @@ public class DemoMainWindow extends TWindow {
                 }
             }
         );
-
-        dayOfWeekLabel = addLabel("Wednesday-", 35, row - 1, "tmenu", false);
-        dayOfWeekLabel.setLabel(String.format("%-10s",
-                calendar.getDisplayName(Calendar.DAY_OF_WEEK,
-                    Calendar.LONG, Locale.getDefault())));
-
-        addSpinner(35 + dayOfWeekLabel.getWidth(), row - 1,
-            new TAction() {
-                public void DO() {
-                    calendar.add(Calendar.DAY_OF_WEEK, 1);
-                    dayOfWeekLabel.setLabel(String.format("%-10s",
-                            calendar.getDisplayName(
-                            Calendar.DAY_OF_WEEK, Calendar.LONG,
-                            Locale.getDefault())));
-                }
-            },
-            new TAction() {
-                public void DO() {
-                    calendar.add(Calendar.DAY_OF_WEEK, -1);
-                    dayOfWeekLabel.setLabel(String.format("%-10s",
-                            calendar.getDisplayName(
-                            Calendar.DAY_OF_WEEK, Calendar.LONG,
-                            Locale.getDefault())));
-                }
-            }
-        );
-
 
         activate(first);
 

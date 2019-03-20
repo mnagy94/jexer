@@ -29,13 +29,17 @@
 package jexer.demos;
 
 import java.text.MessageFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 import jexer.TAction;
 import jexer.TApplication;
 import jexer.TCalendar;
 import jexer.TField;
+import jexer.TLabel;
 import jexer.TMessageBox;
 import jexer.TWindow;
 import static jexer.TCommand.*;
@@ -60,6 +64,17 @@ public class DemoTextFieldWindow extends TWindow {
      * anonymous TAction class.
      */
     TCalendar calendar = null;
+
+    /**
+     * Day of week label is updated with TSpinner clicks.
+     */
+    TLabel dayOfWeekLabel;
+
+    /**
+     * Day of week to demonstrate TSpinner.  Has to be at class scope so that
+     * it can be accessed by the anonymous TAction class.
+     */
+    GregorianCalendar dayOfWeekCalendar = new GregorianCalendar();
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -110,6 +125,33 @@ public class DemoTextFieldWindow extends TWindow {
                 }
             }
         );
+
+        dayOfWeekLabel = addLabel("Wednesday-", 35, row - 1, "tmenu", false);
+        dayOfWeekLabel.setLabel(String.format("%-10s",
+                dayOfWeekCalendar.getDisplayName(Calendar.DAY_OF_WEEK,
+                    Calendar.LONG, Locale.getDefault())));
+
+        addSpinner(35 + dayOfWeekLabel.getWidth(), row - 1,
+            new TAction() {
+                public void DO() {
+                    dayOfWeekCalendar.add(Calendar.DAY_OF_WEEK, 1);
+                    dayOfWeekLabel.setLabel(String.format("%-10s",
+                            dayOfWeekCalendar.getDisplayName(
+                            Calendar.DAY_OF_WEEK, Calendar.LONG,
+                            Locale.getDefault())));
+                }
+            },
+            new TAction() {
+                public void DO() {
+                    dayOfWeekCalendar.add(Calendar.DAY_OF_WEEK, -1);
+                    dayOfWeekLabel.setLabel(String.format("%-10s",
+                            dayOfWeekCalendar.getDisplayName(
+                            Calendar.DAY_OF_WEEK, Calendar.LONG,
+                            Locale.getDefault())));
+                }
+            }
+        );
+
 
         addButton(i18n.getString("closeWindow"),
             (getWidth() - 14) / 2, getHeight() - 4,
