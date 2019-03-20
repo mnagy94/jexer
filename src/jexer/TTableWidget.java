@@ -113,12 +113,17 @@ public class TTableWidget extends TWidget {
     /**
      * If true, highlight the entire row of the currently-selected cell.
      */
-    private boolean highlightRow = false;
+    private boolean highlightRow = true;
 
     /**
      * If true, highlight the entire column of the currently-selected cell.
      */
-    private boolean highlightColumn = false;
+    private boolean highlightColumn = true;
+
+    /**
+     * If true, show the row labels as the first column.
+     */
+    private boolean showRowLabels = true;
 
     /**
      * Column represents a column of cells.
@@ -138,12 +143,30 @@ public class TTableWidget extends TWidget {
         /**
          * Column label.
          */
-        private String label = "";
+        private String label;
 
         /**
          * The border for this column.
          */
         private Border border = Border.NONE;
+
+        /**
+         * Constructor sets label to lettered column.
+         *
+         * @param col column number to use for this column.  Column 0 will be
+         * "A", column 1 will be "B", column 26 will be "AA", and so on.
+         */
+        Column(int col) {
+            StringBuilder sb = new StringBuilder();
+            for (;;) {
+                sb.append((char) ('A' + (col % 26)));
+                if (col < 26) {
+                    break;
+                }
+                col /= 26;
+            }
+            label = sb.reverse().toString();
+        }
 
         /**
          * Add an entry to this column.
@@ -189,6 +212,15 @@ public class TTableWidget extends TWidget {
          * The border for this row.
          */
         private Border border = Border.NONE;
+
+        /**
+         * Constructor sets label to numbered row.
+         *
+         * @param row row number to use for this row
+         */
+        Row(final int row) {
+            label = Integer.toString(row);
+        }
 
         /**
          * Add an entry to this column.
@@ -272,8 +304,6 @@ public class TTableWidget extends TWidget {
 
             field = addField(0, 0, width - 1, false);
             field.setEnabled(false);
-            field.setActiveColorKey("ttable.active");
-            field.setInactiveColorKey("ttable.inactive");
             field.setBackgroundChar(' ');
         }
 
@@ -330,25 +360,26 @@ public class TTableWidget extends TWidget {
         public void draw() {
             TTableWidget table = (TTableWidget) getParent();
 
-            field.setActiveColorKey("ttable.active");
-            field.setInactiveColorKey("ttable.inactive");
-
             if (isAbsoluteActive()) {
-                if (table.selectedColumn == column) {
-                    if ((table.selectedRow == row)
-                        || (table.highlightColumn == true)
-                    ) {
-                        field.setActiveColorKey("ttable.active");
-                        field.setInactiveColorKey("ttable.active");
-                    }
-                } else if (table.selectedRow == row) {
-                    if ((table.selectedColumn == column)
-                        || (table.highlightRow == true)
-                    ) {
-                        field.setActiveColorKey("ttable.active");
-                        field.setInactiveColorKey("ttable.active");
-                    }
+                if (isEditing) {
+                    field.setActiveColorKey("tfield.active");
+                    field.setInactiveColorKey("tfield.inactive");
+                } else {
+                    field.setActiveColorKey("ttable.selected");
+                    field.setInactiveColorKey("ttable.selected");
                 }
+            } else if (((table.selectedColumn == column)
+                    && ((table.selectedRow == row)
+                        || (table.highlightColumn == true)))
+                || ((table.selectedRow == row)
+                    && ((table.selectedColumn == column)
+                        || (table.highlightRow == true)))
+            ) {
+                field.setActiveColorKey("ttable.active");
+                field.setInactiveColorKey("ttable.active");
+            } else {
+                field.setActiveColorKey("ttable.active");
+                field.setInactiveColorKey("ttable.inactive");
             }
 
             super.draw();
@@ -397,8 +428,8 @@ public class TTableWidget extends TWidget {
         super(parent, x, y, width, height);
 
         // Initialize the starting row and column.
-        rows.add(new Row());
-        columns.add(new Column());
+        rows.add(new Row(0));
+        columns.add(new Column(0));
 
         // Place a grid of cells that fit in this space.
         int row = 0;
@@ -412,16 +443,18 @@ public class TTableWidget extends TWidget {
                 rows.get(row).add(cell);
                 columns.get(column).add(cell);
                 if ((i == 0) && (j + columns.get(0).width < width)) {
-                    columns.add(new Column());
+                    columns.add(new Column(column + 1));
                 }
                 column++;
             }
             if (i + rows.get(0).height < height) {
-                rows.add(new Row());
+                rows.add(new Row(row + 1));
             }
             row++;
         }
         activate(columns.get(selectedColumn).get(selectedRow));
+
+        alignGrid();
     }
 
     // ------------------------------------------------------------------------
@@ -442,7 +475,8 @@ public class TTableWidget extends TWidget {
             // grid context.
             return;
         }
-        
+
+        // If editing, pass to that cell and do nothing else.
         if (getSelectedCell().isEditing) {
             super.onKeypress(keypress);
             return;
@@ -486,6 +520,10 @@ public class TTableWidget extends TWidget {
             // Pass to the Cell.
             super.onKeypress(keypress);
         }
+
+        // We may have scrolled off screen.  Reset positions as needed to
+        // make the newly selected cell visible.
+        alignGrid();
     }
 
     /**
@@ -519,6 +557,12 @@ public class TTableWidget extends TWidget {
                 cell.setWidth(columns.get(selectedColumn).width);
                 cell.field.setWidth(columns.get(selectedColumn).width - 1);
             }
+            for (int i = selectedColumn + 1; i < columns.size(); i++) {
+                for (Cell cell: columns.get(i).cells) {
+                    cell.setX(cell.getX() - 1);
+                }
+            }
+            alignGrid();
             break;
         case TMenu.MID_TABLE_COLUMN_WIDEN:
             columns.get(selectedColumn).width++;
@@ -526,6 +570,12 @@ public class TTableWidget extends TWidget {
                 cell.setWidth(columns.get(selectedColumn).width);
                 cell.field.setWidth(columns.get(selectedColumn).width - 1);
             }
+            for (int i = selectedColumn + 1; i < columns.size(); i++) {
+                for (Cell cell: columns.get(i).cells) {
+                    cell.setX(cell.getX() + 1);
+                }
+            }
+            alignGrid();
             break;
         case TMenu.MID_TABLE_FILE_SAVE_CSV:
         case TMenu.MID_TABLE_FILE_SAVE_TEXT:
@@ -581,6 +631,44 @@ public class TTableWidget extends TWidget {
         assert (rows.size() > selectedRow);
         assert (rows.get(selectedRow) != null);
         return rows.get(selectedRow);
+    }
+
+    /**
+     * Get the full horizontal width of this table.
+     *
+     * @return the width required to render the entire table
+     */
+    public int getMaximumWidth() {
+        int totalWidth = 0;
+        if (showRowLabels == true) {
+            // For now, all row labels are 8 cells wide.  TODO: make this
+            // adjustable.
+            totalWidth += 8;
+        }
+        for (Cell cell: getSelectedRow().cells) {
+            totalWidth += cell.getWidth() + 1;
+        }
+        return totalWidth;
+    }
+
+    /**
+     * Align the grid so that the selected cell is fully visible.
+     */
+    private void alignGrid() {
+        // Determine if we need to shift left or right.
+        int width = getMaximumWidth();
+        int leftCellX = 0;
+        if (showRowLabels == true) {
+            // For now, all row labels are 8 cells wide.  TODO: make this
+            // adjustable.
+            leftCellX += 8;
+        }
+        // TODO
+
+
+        // TODO: determine shift up/down
+
+
     }
 
 }

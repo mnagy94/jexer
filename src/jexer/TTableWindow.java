@@ -292,7 +292,7 @@ public class TTableWindow extends TScrollableWindow {
         setTopValue(1);
         // setBottomValue(editField.getMaximumRowNumber());
         setLeftValue(1);
-        // setRightValue(editField.getMaximumColumnNumber());
+        setRightValue(tableField.getMaximumWidth());
 
         statusBar = newStatusBar(i18n.getString("statusBar"));
         statusBar.addShortcutKeypress(kbF1, cmHelp,
