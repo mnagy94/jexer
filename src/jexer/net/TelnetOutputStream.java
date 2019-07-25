@@ -146,7 +146,7 @@ public class TelnetOutputStream extends OutputStream {
     @Override
     public void write(final int b) throws IOException {
         byte [] bytes = new byte[1];
-        bytes[0] = (byte)b;
+        bytes[0] = (byte) b;
         writeImpl(bytes, 0, 1);
     }
 
@@ -196,8 +196,8 @@ public class TelnetOutputStream extends OutputStream {
 
                 if (ch == TELNET_IAC) {
                     // IAC -> IAC IAC
-                    writeBuffer[writeBufferI++] = (byte)TELNET_IAC;
-                    writeBuffer[writeBufferI++] = (byte)TELNET_IAC;
+                    writeBuffer[writeBufferI++] = (byte) TELNET_IAC;
+                    writeBuffer[writeBufferI++] = (byte) TELNET_IAC;
                 } else {
                     // Anything else -> just send
                     writeBuffer[writeBufferI++] = ch;
@@ -213,15 +213,15 @@ public class TelnetOutputStream extends OutputStream {
                 if (writeCR == true) {
                     // Flush the previous CR to the stream.
                     // CR <anything> -> CR NULL
-                    writeBuffer[writeBufferI++] = (byte)C_CR;
-                    writeBuffer[writeBufferI++] = (byte)C_NUL;
+                    writeBuffer[writeBufferI++] = (byte) C_CR;
+                    writeBuffer[writeBufferI++] = (byte) C_NUL;
                 }
                 writeCR = true;
             } else if (ch == C_LF) {
                 if (writeCR == true) {
                     // CR LF -> CR LF
-                    writeBuffer[writeBufferI++] = (byte)C_CR;
-                    writeBuffer[writeBufferI++] = (byte)C_LF;
+                    writeBuffer[writeBufferI++] = (byte) C_CR;
+                    writeBuffer[writeBufferI++] = (byte) C_LF;
                     writeCR = false;
                 } else {
                     // Bare LF -> LF
@@ -230,18 +230,18 @@ public class TelnetOutputStream extends OutputStream {
             } else if (ch == TELNET_IAC) {
                 if (writeCR == true) {
                     // CR <anything> -> CR NULL
-                    writeBuffer[writeBufferI++] = (byte)C_CR;
-                    writeBuffer[writeBufferI++] = (byte)C_NUL;
+                    writeBuffer[writeBufferI++] = (byte) C_CR;
+                    writeBuffer[writeBufferI++] = (byte) C_NUL;
                     writeCR = false;
                 }
                 // IAC -> IAC IAC
-                writeBuffer[writeBufferI++] = (byte)TELNET_IAC;
-                writeBuffer[writeBufferI++] = (byte)TELNET_IAC;
+                writeBuffer[writeBufferI++] = (byte) TELNET_IAC;
+                writeBuffer[writeBufferI++] = (byte) TELNET_IAC;
             } else {
                 if (writeCR == true) {
                     // CR <anything> -> CR NULL
-                    writeBuffer[writeBufferI++] = (byte)C_CR;
-                    writeBuffer[writeBufferI++] = (byte)C_NUL;
+                    writeBuffer[writeBufferI++] = (byte) C_CR;
+                    writeBuffer[writeBufferI++] = (byte) C_NUL;
                     writeCR = false;
                 } else {
                     // Normal character */
