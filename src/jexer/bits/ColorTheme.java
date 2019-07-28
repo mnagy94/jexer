@@ -654,12 +654,12 @@ public class ColorTheme {
         color.setForeColor(Color.BLACK);
         color.setBackColor(Color.WHITE);
         color.setBold(false);
-        colors.put("ttable.heading", color);
+        colors.put("ttable.label", color);
         color = new CellAttributes();
         color.setForeColor(Color.BLUE);
         color.setBackColor(Color.WHITE);
         color.setBold(false);
-        colors.put("ttable.heading.selected", color);
+        colors.put("ttable.label.selected", color);
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
         color.setBackColor(Color.BLUE);

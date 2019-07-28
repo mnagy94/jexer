@@ -389,6 +389,8 @@ public class TTableWidget extends TWidget {
                 field.setInactiveColorKey("ttable.inactive");
             }
 
+            assert (isVisible() == true);
+
             super.draw();
         }
 
@@ -462,6 +464,18 @@ public class TTableWidget extends TWidget {
         activate(columns.get(selectedColumn).get(selectedRow));
 
         alignGrid();
+
+        // Set the menu to match the flags.
+        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS).
+                setChecked(showRowLabels);
+        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_COLUMN_LABELS).
+                setChecked(showColumnLabels);
+        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW).
+                setChecked(highlightRow);
+        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN).
+                setChecked(highlightColumn);
+
+
     }
 
     // ------------------------------------------------------------------------
@@ -553,6 +567,18 @@ public class TTableWidget extends TWidget {
     @Override
     public void onMenu(final TMenuEvent menu) {
         switch (menu.getId()) {
+        case TMenu.MID_TABLE_VIEW_ROW_LABELS:
+            showRowLabels = getApplication().getMenuItem(menu.getId()).getChecked();
+            break;
+        case TMenu.MID_TABLE_VIEW_COLUMN_LABELS:
+            showColumnLabels = getApplication().getMenuItem(menu.getId()).getChecked();
+            break;
+        case TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW:
+            highlightRow = getApplication().getMenuItem(menu.getId()).getChecked();
+            break;
+        case TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN:
+            highlightColumn = getApplication().getMenuItem(menu.getId()).getChecked();
+            break;
         case TMenu.MID_TABLE_BORDER_NONE:
         case TMenu.MID_TABLE_BORDER_ALL:
         case TMenu.MID_TABLE_BORDER_RIGHT:
@@ -602,6 +628,8 @@ public class TTableWidget extends TWidget {
         default:
             super.onMenu(menu);
         }
+
+        alignGrid();
     }
 
     // ------------------------------------------------------------------------
@@ -609,12 +637,12 @@ public class TTableWidget extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * Draw the table row/column headings, and borders.
+     * Draw the table row/column labels, and borders.
      */
     @Override
     public void draw() {
-        CellAttributes headingColor = getTheme().getColor("ttable.heading");
-        CellAttributes headingColorSelected = getTheme().getColor("ttable.heading.selected");
+        CellAttributes labelColor = getTheme().getColor("ttable.label");
+        CellAttributes labelColorSelected = getTheme().getColor("ttable.label.selected");
         CellAttributes borderColor = getTheme().getColor("ttable.border");
 
         // Column labels.
@@ -625,7 +653,7 @@ public class TTableWidget extends TWidget {
                 }
                 putStringXY(columns.get(i).get(top).getX(), 0,
                     String.format(" %-6s ", columns.get(i).label),
-                    (i == selectedColumn ? headingColorSelected : headingColor));
+                    (i == selectedColumn ? labelColorSelected : labelColor));
             }
         }
 
@@ -637,7 +665,7 @@ public class TTableWidget extends TWidget {
                 }
                 putStringXY(0, rows.get(i).get(left).getY(),
                     String.format(" %-6s ", rows.get(i).label),
-                    (i == selectedRow ? headingColorSelected : headingColor));
+                    (i == selectedRow ? labelColorSelected : labelColor));
             }
         }
 
@@ -744,7 +772,6 @@ public class TTableWidget extends TWidget {
         // Adjust X locations to be visible -----------------------------------
 
         // Determine if we need to shift left or right.
-        int width = getMaximumWidth();
         int leftCellX = 0;
         if (showRowLabels == true) {
             // For now, all row labels are 8 cells wide.  TODO: make this
@@ -822,7 +849,6 @@ public class TTableWidget extends TWidget {
         // The same logic as above, but applied to the column Y.
 
         // Determine if we need to shift up or down.
-        int height = getMaximumHeight();
         int topCellY = 0;
         if (showColumnLabels == true) {
             // For now, all column labels are 1 cell high.  TODO: make this
@@ -867,10 +893,11 @@ public class TTableWidget extends TWidget {
          * selected cell Y is topCellY.
          */
         for (int x = 0; x < columns.size(); x++) {
-            if (columns.get(x).cells.get(0).isVisible() == false) {
-                // This entire column will not be visible, as determined by
-                // the width checks above.  Do no further processing.
-                break;
+
+            if (columns.get(x).get(0).isVisible() == false) {
+                // This column won't be visible as determined by the checks
+                // above, just continue to the next.
+                continue;
             }
 
             // All cells above the selected cell.
@@ -890,7 +917,6 @@ public class TTableWidget extends TWidget {
 
             // Selected cell.
             columns.get(x).cells.get(selectedRow).setY(topCellY);
-            assert (columns.get(x).cells.get(selectedRow).isVisible());
 
             // All cells below the selected cell.
             newCellY = topCellY + selectedRowCell.getHeight();

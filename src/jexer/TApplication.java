@@ -2924,6 +2924,21 @@ public class TApplication implements Runnable {
     }
 
     /**
+     * Get the menu item associated with this ID.
+     *
+     * @param id the menu item ID
+     * @return the menu item, or null if not found
+     */
+    public final TMenuItem getMenuItem(final int id) {
+        for (TMenuItem item: menuItems) {
+            if (item.getId() == id) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Recompute menu x positions based on their title length.
      */
     public final void recomputeMenuX() {
@@ -3101,6 +3116,13 @@ public class TApplication implements Runnable {
      */
     public final TMenu addTableMenu() {
         TMenu tableMenu = addMenu(i18n.getString("tableMenuTitle"));
+        TSubMenu viewMenu = tableMenu.addSubMenu(i18n.
+            getString("tableSubMenuView"));
+        viewMenu.addDefaultItem(TMenu.MID_TABLE_VIEW_ROW_LABELS, false);
+        viewMenu.addDefaultItem(TMenu.MID_TABLE_VIEW_COLUMN_LABELS, false);
+        viewMenu.addDefaultItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW, false);
+        viewMenu.addDefaultItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN, false);
+
         TSubMenu borderMenu = tableMenu.addSubMenu(i18n.
             getString("tableSubMenuBorders"));
         borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_NONE, false);

@@ -102,26 +102,30 @@ public class TMenu extends TWindow {
     public static final int MID_ABOUT                   = 56;
 
     // Table menu
-    public static final int MID_TABLE_BORDER_NONE               = 60;
-    public static final int MID_TABLE_BORDER_ALL                = 61;
-    public static final int MID_TABLE_BORDER_RIGHT              = 62;
-    public static final int MID_TABLE_BORDER_LEFT               = 63;
-    public static final int MID_TABLE_BORDER_TOP                = 64;
-    public static final int MID_TABLE_BORDER_BOTTOM             = 65;
-    public static final int MID_TABLE_BORDER_DOUBLE_BOTTOM      = 66;
-    public static final int MID_TABLE_BORDER_THICK_BOTTOM       = 67;
-    public static final int MID_TABLE_DELETE_LEFT               = 68;
-    public static final int MID_TABLE_DELETE_UP                 = 69;
-    public static final int MID_TABLE_DELETE_ROW                = 70;
-    public static final int MID_TABLE_DELETE_COLUMN             = 71;
-    public static final int MID_TABLE_INSERT_LEFT               = 72;
-    public static final int MID_TABLE_INSERT_RIGHT              = 73;
-    public static final int MID_TABLE_INSERT_ABOVE              = 74;
-    public static final int MID_TABLE_INSERT_BELOW              = 75;
-    public static final int MID_TABLE_COLUMN_NARROW             = 76;
-    public static final int MID_TABLE_COLUMN_WIDEN              = 77;
-    public static final int MID_TABLE_FILE_SAVE_CSV             = 78;
-    public static final int MID_TABLE_FILE_SAVE_TEXT            = 79;
+    public static final int MID_TABLE_VIEW_ROW_LABELS           = 60;
+    public static final int MID_TABLE_VIEW_COLUMN_LABELS        = 61;
+    public static final int MID_TABLE_VIEW_HIGHLIGHT_ROW        = 62;
+    public static final int MID_TABLE_VIEW_HIGHLIGHT_COLUMN     = 63;
+    public static final int MID_TABLE_BORDER_NONE               = 64;
+    public static final int MID_TABLE_BORDER_ALL                = 65;
+    public static final int MID_TABLE_BORDER_RIGHT              = 66;
+    public static final int MID_TABLE_BORDER_LEFT               = 67;
+    public static final int MID_TABLE_BORDER_TOP                = 68;
+    public static final int MID_TABLE_BORDER_BOTTOM             = 69;
+    public static final int MID_TABLE_BORDER_DOUBLE_BOTTOM      = 70;
+    public static final int MID_TABLE_BORDER_THICK_BOTTOM       = 71;
+    public static final int MID_TABLE_DELETE_LEFT               = 72;
+    public static final int MID_TABLE_DELETE_UP                 = 73;
+    public static final int MID_TABLE_DELETE_ROW                = 74;
+    public static final int MID_TABLE_DELETE_COLUMN             = 75;
+    public static final int MID_TABLE_INSERT_LEFT               = 76;
+    public static final int MID_TABLE_INSERT_RIGHT              = 77;
+    public static final int MID_TABLE_INSERT_ABOVE              = 78;
+    public static final int MID_TABLE_INSERT_BELOW              = 79;
+    public static final int MID_TABLE_COLUMN_NARROW             = 80;
+    public static final int MID_TABLE_COLUMN_WIDEN              = 81;
+    public static final int MID_TABLE_FILE_SAVE_CSV             = 82;
+    public static final int MID_TABLE_FILE_SAVE_TEXT            = 83;
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -530,6 +534,8 @@ public class TMenu extends TWindow {
 
         String label;
         TKeypress key = null;
+        boolean checkable = false;
+        boolean checked = false;
 
         switch (id) {
 
@@ -649,6 +655,27 @@ public class TMenu extends TWindow {
             label = i18n.getString("menuHelpAbout");
             break;
 
+        case MID_TABLE_VIEW_ROW_LABELS:
+            label = i18n.getString("menuTableViewRowLabels");
+            checkable = true;
+            checked = true;
+            break;
+        case MID_TABLE_VIEW_COLUMN_LABELS:
+            label = i18n.getString("menuTableViewColumnLabels");
+            checkable = true;
+            checked = true;
+            break;
+        case MID_TABLE_VIEW_HIGHLIGHT_ROW:
+            label = i18n.getString("menuTableViewHighlightRow");
+            checkable = true;
+            checked = true;
+            break;
+        case MID_TABLE_VIEW_HIGHLIGHT_COLUMN:
+            label = i18n.getString("menuTableViewHighlightColumn");
+            checkable = true;
+            checked = true;
+            break;
+
         case MID_TABLE_BORDER_NONE:
             label = i18n.getString("menuTableBorderNone");
             break;
@@ -716,7 +743,9 @@ public class TMenu extends TWindow {
             throw new IllegalArgumentException("Invalid menu ID: " + id);
         }
 
-        return addItemInternal(id, label, key, enabled);
+        TMenuItem item = addItemInternal(id, label, key, enabled);
+        item.setCheckable(checkable);
+        return item;
     }
 
     /**

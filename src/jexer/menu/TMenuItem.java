@@ -264,6 +264,30 @@ public class TMenuItem extends TWidget {
     }
 
     /**
+     * Get checkable flag.
+     *
+     * @return true if this menu item is both checkable and checked
+     */
+    public final boolean getChecked() {
+        return ((checkable == true) && (checked == true));
+    }
+
+    /**
+     * Set checked flag.  Note that setting checked on an item checkable will
+     * do nothing.
+     *
+     * @param checked if true, and if this menu item is checkable, then
+     * getChecked() will return true
+     */
+    public final void setChecked(final boolean checked) {
+        if (checkable) {
+            this.checked = checked;
+        } else {
+            this.checked = false;
+        }
+    }
+
+    /**
      * Get the mnemonic string for this menu item.
      *
      * @return mnemonic string

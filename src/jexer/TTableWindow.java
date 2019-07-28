@@ -88,6 +88,10 @@ public class TTableWindow extends TScrollableWindow {
     public void onFocus() {
         // Enable the table menu items.
         getApplication().enableMenuItem(TMenu.MID_CUT);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_VIEW_COLUMN_LABELS);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_NONE);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_ALL);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_RIGHT);
@@ -117,6 +121,10 @@ public class TTableWindow extends TScrollableWindow {
     public void onUnfocus() {
         // Disable the table menu items.
         getApplication().disableMenuItem(TMenu.MID_CUT);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_VIEW_COLUMN_LABELS);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_NONE);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_ALL);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_RIGHT);
