@@ -650,6 +650,16 @@ public class ColorTheme {
         color.setBackColor(Color.BLUE);
         color.setBold(true);
         colors.put("ttable.selected", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.WHITE);
+        color.setBold(false);
+        colors.put("ttable.heading", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        colors.put("ttable.border", color);
 
     }
 
