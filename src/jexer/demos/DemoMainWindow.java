@@ -182,7 +182,8 @@ public class DemoMainWindow extends TWindow {
         addButton(i18n.getString("ttableButton1"), 35, row,
             new TAction() {
                 public void DO() {
-                    // TODO
+                    new DemoTableWindow(getApplication(),
+                        i18n.getString("tableWidgetDemo"));
                 }
             }
         );
