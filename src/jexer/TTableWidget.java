@@ -28,12 +28,14 @@
  */
 package jexer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
+import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.menu.TMenu;
 import static jexer.TKeypress.*;
@@ -319,6 +321,66 @@ public class TTableWidget extends TWidget {
         // --------------------------------------------------------------------
 
         /**
+         * Handle mouse double-click events.
+         *
+         * @param mouse mouse double-click event
+         */
+        @Override
+        public void onMouseDoubleClick(final TMouseEvent mouse) {
+            // Use TWidget's code to pass the event to the children.
+            super.onMouseDown(mouse);
+
+            // Double-click means to start editing.
+            fieldText = field.getText();
+            isEditing = true;
+            field.setEnabled(true);
+            activate(field);
+
+            if (isActive()) {
+                // Let the table know that I was activated.
+                ((TTableWidget) getParent()).selectedRow = row;
+                ((TTableWidget) getParent()).selectedColumn = column;
+                ((TTableWidget) getParent()).alignGrid();
+            }
+        }
+
+        /**
+         * Handle mouse press events.
+         *
+         * @param mouse mouse button press event
+         */
+        @Override
+        public void onMouseDown(final TMouseEvent mouse) {
+            // Use TWidget's code to pass the event to the children.
+            super.onMouseDown(mouse);
+
+            if (isActive()) {
+                // Let the table know that I was activated.
+                ((TTableWidget) getParent()).selectedRow = row;
+                ((TTableWidget) getParent()).selectedColumn = column;
+                ((TTableWidget) getParent()).alignGrid();
+            }
+        }
+
+        /**
+         * Handle mouse release events.
+         *
+         * @param mouse mouse button release event
+         */
+        @Override
+        public void onMouseUp(final TMouseEvent mouse) {
+            // Use TWidget's code to pass the event to the children.
+            super.onMouseDown(mouse);
+
+            if (isActive()) {
+                // Let the table know that I was activated.
+                ((TTableWidget) getParent()).selectedRow = row;
+                ((TTableWidget) getParent()).selectedColumn = column;
+                ((TTableWidget) getParent()).alignGrid();
+            }
+        }
+
+        /**
          * Handle keystrokes.
          *
          * @param keypress keystroke event
@@ -483,6 +545,31 @@ public class TTableWidget extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Handle mouse press events.
+     *
+     * @param mouse mouse button press event
+     */
+    @Override
+    public void onMouseDown(final TMouseEvent mouse) {
+        if (mouse.isMouseWheelUp() || mouse.isMouseWheelDown()) {
+            // Treat wheel up/down as 3 up/down
+            TKeypressEvent keyEvent;
+            if (mouse.isMouseWheelUp()) {
+                keyEvent = new TKeypressEvent(kbUp);
+            } else {
+                keyEvent = new TKeypressEvent(kbDown);
+            }
+            for (int i = 0; i < 3; i++) {
+                onKeypress(keyEvent);
+            }
+            return;
+        }
+
+        // Use TWidget's code to pass the event to the children.
+        super.onMouseDown(mouse);
+    }
+
+    /**
      * Handle keystrokes.
      *
      * @param keypress keystroke event
@@ -504,39 +591,65 @@ public class TTableWidget extends TWidget {
         }
 
         if (keypress.equals(kbLeft)) {
+            // Left
             if (selectedColumn > 0) {
                 selectedColumn--;
             }
             activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbRight)) {
+            // Right
             if (selectedColumn < columns.size() - 1) {
                 selectedColumn++;
             }
             activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbUp)) {
+            // Up
             if (selectedRow > 0) {
                 selectedRow--;
             }
             activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbDown)) {
+            // Down
             if (selectedRow < rows.size() - 1) {
                 selectedRow++;
             }
             activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbHome)) {
+            // Home - leftmost column
             selectedColumn = 0;
             activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbEnd)) {
+            // End - rightmost column
             selectedColumn = columns.size() - 1;
             activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbPgUp)) {
-            // TODO
+            // PgUp - Treat like multiple up
+            for (int i = 0; i < getHeight() - 2; i++) {
+                if (selectedRow > 0) {
+                    selectedRow--;
+                }
+            }
+            activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbPgDn)) {
-            // TODO
+            // PgDn - Treat like multiple up
+            for (int i = 0; i < getHeight() - 2; i++) {
+                if (selectedRow < rows.size() - 1) {
+                    selectedRow++;
+                }
+            }
+            activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbCtrlHome)) {
-            // TODO
+            // Ctrl-Home - go to top-left
+            selectedRow = 0;
+            selectedColumn = 0;
+            activate(columns.get(selectedColumn).get(selectedRow));
+            activate(columns.get(selectedColumn).get(selectedRow));
         } else if (keypress.equals(kbCtrlEnd)) {
-            // TODO
+            // Ctrl-End - go to bottom-right
+            selectedRow = rows.size() - 1;
+            selectedColumn = columns.size() - 1;
+            activate(columns.get(selectedColumn).get(selectedRow));
+            activate(columns.get(selectedColumn).get(selectedRow));
         } else {
             // Pass to the Cell.
             super.onKeypress(keypress);
@@ -600,7 +713,7 @@ public class TTableWidget extends TWidget {
             columns.get(selectedColumn).width--;
             for (Cell cell: getSelectedColumn().cells) {
                 cell.setWidth(columns.get(selectedColumn).width);
-                cell.field.setWidth(columns.get(selectedColumn).width - 1);
+                cell.field.setWidth(columns.get(selectedColumn).width);
             }
             for (int i = selectedColumn + 1; i < columns.size(); i++) {
                 for (Cell cell: columns.get(i).cells) {
@@ -613,7 +726,7 @@ public class TTableWidget extends TWidget {
             columns.get(selectedColumn).width++;
             for (Cell cell: getSelectedColumn().cells) {
                 cell.setWidth(columns.get(selectedColumn).width);
-                cell.field.setWidth(columns.get(selectedColumn).width - 1);
+                cell.field.setWidth(columns.get(selectedColumn).width);
             }
             for (int i = selectedColumn + 1; i < columns.size(); i++) {
                 for (Cell cell: columns.get(i).cells) {
@@ -623,7 +736,10 @@ public class TTableWidget extends TWidget {
             alignGrid();
             break;
         case TMenu.MID_TABLE_FILE_SAVE_CSV:
+            // TODO
+            break;
         case TMenu.MID_TABLE_FILE_SAVE_TEXT:
+            // TODO
             break;
         default:
             super.onMenu(menu);
@@ -652,7 +768,9 @@ public class TTableWidget extends TWidget {
                     break;
                 }
                 putStringXY(columns.get(i).get(top).getX(), 0,
-                    String.format(" %-6s ", columns.get(i).label),
+                    String.format(" %-" +
+                        (columns.get(i).get(top).getWidth() - 2)
+                        + "s ", columns.get(i).label),
                     (i == selectedColumn ? labelColorSelected : labelColor));
             }
         }
@@ -718,11 +836,77 @@ public class TTableWidget extends TWidget {
     }
 
     /**
+     * Get the currently-selected column number.  0 is the left-most column.
+     *
+     * @return the selected column number
+     */
+    public int getSelectedColumnNumber() {
+        return selectedColumn;
+    }
+
+    /**
+     * Set the currently-selected column number.  0 is the left-most column.
+     *
+     * @param column the column number to select
+     */
+    public void setSelectedColumnNumber(final int column) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        selectedColumn = column;
+        activate(columns.get(selectedColumn).get(selectedRow));
+        alignGrid();
+    }
+
+    /**
+     * Get the currently-selected row number.  0 is the top-most row.
+     *
+     * @return the selected row number
+     */
+    public int getSelectedRowNumber() {
+        return selectedRow;
+    }
+
+    /**
+     * Set the currently-selected row number.  0 is the left-most column.
+     *
+     * @param row the row number to select
+     */
+    public void setSelectedRowNumber(final int row) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        selectedRow = row;
+        activate(columns.get(selectedColumn).get(selectedRow));
+        alignGrid();
+    }
+
+    /**
+     * Get the number of columns.
+     *
+     * @return the number of columns
+     */
+    public int getColumnCount() {
+        return columns.size();
+    }
+
+    /**
+     * Get the number of rows.
+     *
+     * @return the number of rows
+     */
+    public int getRowCount() {
+        return rows.size();
+    }
+
+    /**
      * Get the full horizontal width of this table.
      *
      * @return the width required to render the entire table
      */
-    public int getMaximumWidth() {
+    private int getMaximumWidth() {
         int totalWidth = 0;
         if (showRowLabels == true) {
             // For now, all row labels are 8 cells wide.  TODO: make this
@@ -740,7 +924,7 @@ public class TTableWidget extends TWidget {
      *
      * @return the height required to render the entire table
      */
-    public int getMaximumHeight() {
+    private int getMaximumHeight() {
         int totalHeight = 0;
         if (showColumnLabels == true) {
             // For now, all column labels are 1 cell tall.  TODO: make this
@@ -765,7 +949,17 @@ public class TTableWidget extends TWidget {
          */
         for (int x = 0; x < columns.size(); x++) {
             for (int y = 0; y < rows.size(); y++) {
-                rows.get(y).cells.get(x).setVisible(true);
+                Cell cell =  rows.get(y).cells.get(x);
+                cell.setVisible(true);
+
+                // Special case: mouse double-clicks can lead to multiple
+                // cells in editing mode.  Only allow a cell to remain
+                // editing if it is fact the active widget.
+                if (cell.isEditing && !cell.isActive()) {
+                    cell.fieldText = cell.field.getText();
+                    cell.isEditing = false;
+                    cell.field.setEnabled(false);
+                }
             }
         }
 
@@ -817,7 +1011,7 @@ public class TTableWidget extends TWidget {
             left = selectedColumn;
             for (int x = selectedColumn - 1; x >= 0; x--) {
                 newCellX -= rows.get(y).cells.get(x).getWidth() + 1;
-                if (newCellX - rows.get(y).cells.get(x).getWidth() + 1 >= 0) {
+                if (newCellX >= (showRowLabels ? 8 : 0)) {
                     rows.get(y).cells.get(x).setVisible(true);
                     rows.get(y).cells.get(x).setX(newCellX);
                     left--;
@@ -932,6 +1126,16 @@ public class TTableWidget extends TWidget {
             }
         }
 
+    }
+
+    /**
+     * Save contents to file.
+     *
+     * @param filename file to save to
+     * @throws IOException if a java.io operation throws
+     */
+    public void saveToFilename(final String filename) throws IOException {
+        // TODO
     }
 
 }

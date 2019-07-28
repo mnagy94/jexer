@@ -28,6 +28,8 @@
  */
 package jexer;
 
+import java.io.IOException;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 import jexer.event.TCommandEvent;
@@ -152,18 +154,6 @@ public class TTableWindow extends TScrollableWindow {
     // ------------------------------------------------------------------------
 
     /**
-     * Draw the window.
-     */
-    @Override
-    public void draw() {
-        // Draw as normal.
-        super.draw();
-
-        // Add borders on rows and columns.
-        // TODO
-    }
-
-    /**
      * Handle mouse press events.
      *
      * @param mouse mouse button press event
@@ -175,19 +165,10 @@ public class TTableWindow extends TScrollableWindow {
 
         if (mouseOnTable(mouse)) {
             // The table might have changed, update the scollbars.
-            // TODO
-            /*
-            setBottomValue(editField.getMaximumRowNumber());
-            setVerticalValue(editField.getVisibleRowNumber());
-            setRightValue(editField.getMaximumColumnNumber());
-            setHorizontalValue(editField.getEditingColumnNumber());
-            */
-        } else {
-            if (mouse.isMouseWheelUp() || mouse.isMouseWheelDown()) {
-                // Vertical scrollbar actions
-                // TODO
-                // editField.setVisibleRowNumber(getVerticalValue());
-            }
+            setBottomValue(tableField.getRowCount() - 1);
+            setVerticalValue(tableField.getSelectedRowNumber());
+            setRightValue(tableField.getColumnCount() - 1);
+            setHorizontalValue(tableField.getSelectedColumnNumber());
         }
     }
 
@@ -202,12 +183,13 @@ public class TTableWindow extends TScrollableWindow {
         super.onMouseUp(mouse);
 
         if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
-            // Clicked on vertical scrollbar
-            // TODO
-            // editField.setVisibleRowNumber(getVerticalValue());
+            // Clicked/dragged on vertical scrollbar.
+            tableField.setSelectedRowNumber(getVerticalValue());
         }
-
-        // TODO: horizontal scrolling
+        if (mouse.isMouse1() && mouseOnHorizontalScroller(mouse)) {
+            // Clicked/dragged on horizontal scrollbar.
+            tableField.setSelectedColumnNumber(getHorizontalValue());
+        }
     }
 
     /**
@@ -221,22 +203,20 @@ public class TTableWindow extends TScrollableWindow {
         super.onMouseMotion(mouse);
 
         if (mouseOnTable(mouse) && mouse.isMouse1()) {
-            // The editor might have changed, update the scollbars.
-            // TODO
-            /*
-            setBottomValue(editField.getMaximumRowNumber());
-            setVerticalValue(editField.getVisibleRowNumber());
-            setRightValue(editField.getMaximumColumnNumber());
-            setHorizontalValue(editField.getEditingColumnNumber());
-            */
+            // The table might have changed, update the scollbars.
+            setBottomValue(tableField.getRowCount() - 1);
+            setVerticalValue(tableField.getSelectedRowNumber());
+            setRightValue(tableField.getColumnCount() - 1);
+            setHorizontalValue(tableField.getSelectedColumnNumber());
         } else {
             if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
-                // Clicked/dragged on vertical scrollbar
-                // TODO
-                // editField.setVisibleRowNumber(getVerticalValue());
+                // Clicked/dragged on vertical scrollbar.
+                tableField.setSelectedRowNumber(getVerticalValue());
             }
-
-            // TODO: horizontal scrolling
+            if (mouse.isMouse1() && mouseOnHorizontalScroller(mouse)) {
+                // Clicked/dragged on horizontal scrollbar.
+                tableField.setSelectedColumnNumber(getHorizontalValue());
+            }
         }
 
     }
@@ -251,14 +231,11 @@ public class TTableWindow extends TScrollableWindow {
         // Use TWidget's code to pass the event to the children.
         super.onKeypress(keypress);
 
-        // The editor might have changed, update the scollbars.
-        // TODO
-        /*
-        setBottomValue(editField.getMaximumRowNumber());
-        setVerticalValue(editField.getVisibleRowNumber());
-        setRightValue(editField.getMaximumColumnNumber());
-        setHorizontalValue(editField.getEditingColumnNumber());
-         */
+        // The table might have changed, update the scollbars.
+        setBottomValue(tableField.getRowCount() - 1);
+        setVerticalValue(tableField.getSelectedRowNumber());
+        setRightValue(tableField.getColumnCount() - 1);
+        setHorizontalValue(tableField.getSelectedColumnNumber());
     }
 
     /**
@@ -285,6 +262,54 @@ public class TTableWindow extends TScrollableWindow {
         }
     }
 
+    /**
+     * Method that subclasses can override to handle posted command events.
+     *
+     * @param command command event
+     */
+    @Override
+    public void onCommand(final TCommandEvent command) {
+        if (command.equals(cmOpen)) {
+            try {
+                String filename = fileOpenBox(".");
+                if (filename != null) {
+                    try {
+                        // TODO
+                        if (false) {
+                            tableField.saveToFilename(filename);
+                        }
+                    } catch (IOException e) {
+                        messageBox(i18n.getString("errorDialogTitle"),
+                            MessageFormat.format(i18n.
+                                getString("errorReadingFile"), e.getMessage()));
+                    }
+                }
+            } catch (IOException e) {
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorOpeningFileDialog"), e.getMessage()));
+            }
+            return;
+        }
+
+        if (command.equals(cmSave)) {
+            try {
+                String filename = fileSaveBox(".");
+                if (filename != null) {
+                    tableField.saveToFilename(filename);
+                }
+            } catch (IOException e) {
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorSavingFile"), e.getMessage()));
+            }
+            return;
+        }
+
+        // Didn't handle it, let children get it instead
+        super.onCommand(command);
+    }
+
     // ------------------------------------------------------------------------
     // TTableWindow -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -297,20 +322,19 @@ public class TTableWindow extends TScrollableWindow {
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
         setMinimumWindowWidth(25);
         setMinimumWindowHeight(10);
-        setTopValue(1);
-        // setBottomValue(editField.getMaximumRowNumber());
-        setLeftValue(1);
-        setRightValue(tableField.getMaximumWidth());
+        setTopValue(tableField.getSelectedRowNumber());
+        setBottomValue(tableField.getRowCount() - 1);
+        setLeftValue(tableField.getSelectedColumnNumber());
+        setRightValue(tableField.getColumnCount() - 1);
 
         statusBar = newStatusBar(i18n.getString("statusBar"));
         statusBar.addShortcutKeypress(kbF1, cmHelp,
             i18n.getString("statusBarHelp"));
-        /*
+
         statusBar.addShortcutKeypress(kbF2, cmSave,
             i18n.getString("statusBarSave"));
         statusBar.addShortcutKeypress(kbF3, cmOpen,
             i18n.getString("statusBarOpen"));
-        */
         statusBar.addShortcutKeypress(kbF10, cmMenu,
             i18n.getString("statusBarMenu"));
     }
