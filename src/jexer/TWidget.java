@@ -1116,6 +1116,7 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         // Draw me
         draw();
+        assert (visible == true);
 
         // Continue down the chain.  Draw the active child last so that it
         // is on top.
