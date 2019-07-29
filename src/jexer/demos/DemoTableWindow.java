@@ -66,7 +66,6 @@ public class DemoTableWindow extends TWindow {
      *
      * @param parent the main application
      * @param title the text string
-     * @param text the text string
      */
     public DemoTableWindow(final TApplication parent, final String title) {
 

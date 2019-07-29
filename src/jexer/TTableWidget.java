@@ -944,43 +944,6 @@ public class TTableWidget extends TWidget {
     }
 
     /**
-     * Get the full horizontal width of this table.
-     *
-     * @return the width required to render the entire table
-     */
-    private int getMaximumWidth() {
-        int totalWidth = 0;
-        if (showRowLabels == true) {
-            // For now, all row labels are 8 cells wide.  TODO: make this
-            // adjustable.
-            totalWidth += ROW_LABEL_WIDTH;
-        }
-        for (Cell cell: getSelectedRow().cells) {
-            totalWidth += cell.getWidth() + 1;
-        }
-        return totalWidth;
-    }
-
-    /**
-     * Get the full vertical height of this table.
-     *
-     * @return the height required to render the entire table
-     */
-    private int getMaximumHeight() {
-        int totalHeight = 0;
-        if (showColumnLabels == true) {
-            // For now, all column labels are 1 cell tall.  TODO: make this
-            // adjustable.
-            totalHeight += 1;
-        }
-        for (Cell cell: getSelectedColumn().cells) {
-            totalHeight += cell.getHeight();
-            // TODO: handle top/bottom borders.
-        }
-        return totalHeight;
-    }
-
-    /**
      * Align the grid so that the selected cell is fully visible.
      *
      * @param force if true, always move the grid as needed
