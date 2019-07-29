@@ -80,6 +80,26 @@ public class TTableWidget extends TWidget {
         THICK,
     }
 
+    /**
+     * Row label width.
+     */
+    private static final int ROW_LABEL_WIDTH = 8;
+
+    /**
+     * Column label height.
+     */
+    private static final int COLUMN_LABEL_HEIGHT = 1;
+
+    /**
+     * Extra rows to add.
+     */
+    private static final int EXTRA_ROWS = 10;
+
+    /**
+     * Extra columns to add.
+     */
+    private static final int EXTRA_COLUMNS = 10 * (8 + 1);
+
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -117,12 +137,12 @@ public class TTableWidget extends TWidget {
     /**
      * If true, highlight the entire row of the currently-selected cell.
      */
-    private boolean highlightRow = true;
+    private boolean highlightRow = false;
 
     /**
      * If true, highlight the entire column of the currently-selected cell.
      */
-    private boolean highlightColumn = true;
+    private boolean highlightColumn = false;
 
     /**
      * If true, show the row labels as the first column.
@@ -133,6 +153,16 @@ public class TTableWidget extends TWidget {
      * If true, show the column labels as the first row.
      */
     private boolean showColumnLabels = true;
+
+    /**
+     * The top border for the first row.
+     */
+    private Border topBorder = Border.NONE;
+
+    /**
+     * The left border for the first column.
+     */
+    private Border leftBorder = Border.NONE;
 
     /**
      * Column represents a column of cells.
@@ -155,9 +185,9 @@ public class TTableWidget extends TWidget {
         private String label = "";
 
         /**
-         * The border for this column.
+         * The right border for this column.
          */
-        private Border border = Border.NONE;
+        private Border rightBorder = Border.NONE;
 
         /**
          * Constructor sets label to lettered column.
@@ -218,9 +248,9 @@ public class TTableWidget extends TWidget {
         private String label = "";
 
         /**
-         * The border for this row.
+         * The bottom border for this row.
          */
-        private Border border = Border.NONE;
+        private Border bottomBorder = Border.NONE;
 
         /**
          * Constructor sets label to numbered row.
@@ -340,7 +370,7 @@ public class TTableWidget extends TWidget {
                 // Let the table know that I was activated.
                 ((TTableWidget) getParent()).selectedRow = row;
                 ((TTableWidget) getParent()).selectedColumn = column;
-                ((TTableWidget) getParent()).alignGrid();
+                ((TTableWidget) getParent()).alignGrid(false);
             }
         }
 
@@ -358,7 +388,7 @@ public class TTableWidget extends TWidget {
                 // Let the table know that I was activated.
                 ((TTableWidget) getParent()).selectedRow = row;
                 ((TTableWidget) getParent()).selectedColumn = column;
-                ((TTableWidget) getParent()).alignGrid();
+                ((TTableWidget) getParent()).alignGrid(false);
             }
         }
 
@@ -376,7 +406,7 @@ public class TTableWidget extends TWidget {
                 // Let the table know that I was activated.
                 ((TTableWidget) getParent()).selectedRow = row;
                 ((TTableWidget) getParent()).selectedColumn = column;
-                ((TTableWidget) getParent()).alignGrid();
+                ((TTableWidget) getParent()).alignGrid(false);
             }
         }
 
@@ -504,28 +534,32 @@ public class TTableWidget extends TWidget {
 
         // Place a grid of cells that fit in this space.
         int row = 0;
-        for (int i = 0; i < height; i += rows.get(0).height) {
+        for (int i = 0; i < height + EXTRA_ROWS; i += rows.get(0).height) {
             int column = 0;
-            for (int j = 0; j < width; j += columns.get(0).width) {
+            for (int j = 0; j < width + EXTRA_COLUMNS;
+                 j += columns.get(0).width) {
+
                 Cell cell = new Cell(this, j, i, columns.get(0).width,
                     rows.get(0).height, column, row);
 
                 cell.setText("" + row + " " + column);
                 rows.get(row).add(cell);
                 columns.get(column).add(cell);
-                if ((i == 0) && (j + columns.get(0).width < width)) {
+                if ((i == 0) &&
+                    (j + columns.get(0).width < width + EXTRA_COLUMNS)
+                ) {
                     columns.add(new Column(column + 1));
                 }
                 column++;
             }
-            if (i + rows.get(0).height < height) {
+            if (i + rows.get(0).height < height + EXTRA_ROWS) {
                 rows.add(new Row(row + 1));
             }
             row++;
         }
         activate(columns.get(selectedColumn).get(selectedRow));
 
-        alignGrid();
+        alignGrid(true);
 
         // Set the menu to match the flags.
         getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS).
@@ -590,6 +624,8 @@ public class TTableWidget extends TWidget {
             return;
         }
 
+        boolean forceGridAlign = false;
+
         if (keypress.equals(kbLeft)) {
             // Left
             if (selectedColumn > 0) {
@@ -618,10 +654,12 @@ public class TTableWidget extends TWidget {
             // Home - leftmost column
             selectedColumn = 0;
             activate(columns.get(selectedColumn).get(selectedRow));
+            forceGridAlign = true;
         } else if (keypress.equals(kbEnd)) {
             // End - rightmost column
             selectedColumn = columns.size() - 1;
             activate(columns.get(selectedColumn).get(selectedRow));
+            forceGridAlign = true;
         } else if (keypress.equals(kbPgUp)) {
             // PgUp - Treat like multiple up
             for (int i = 0; i < getHeight() - 2; i++) {
@@ -630,6 +668,7 @@ public class TTableWidget extends TWidget {
                 }
             }
             activate(columns.get(selectedColumn).get(selectedRow));
+            forceGridAlign = true;
         } else if (keypress.equals(kbPgDn)) {
             // PgDn - Treat like multiple up
             for (int i = 0; i < getHeight() - 2; i++) {
@@ -638,18 +677,21 @@ public class TTableWidget extends TWidget {
                 }
             }
             activate(columns.get(selectedColumn).get(selectedRow));
+            forceGridAlign = true;
         } else if (keypress.equals(kbCtrlHome)) {
             // Ctrl-Home - go to top-left
             selectedRow = 0;
             selectedColumn = 0;
             activate(columns.get(selectedColumn).get(selectedRow));
             activate(columns.get(selectedColumn).get(selectedRow));
+            forceGridAlign = true;
         } else if (keypress.equals(kbCtrlEnd)) {
             // Ctrl-End - go to bottom-right
             selectedRow = rows.size() - 1;
             selectedColumn = columns.size() - 1;
             activate(columns.get(selectedColumn).get(selectedRow));
             activate(columns.get(selectedColumn).get(selectedRow));
+            forceGridAlign = true;
         } else {
             // Pass to the Cell.
             super.onKeypress(keypress);
@@ -657,7 +699,7 @@ public class TTableWidget extends TWidget {
 
         // We may have scrolled off screen.  Reset positions as needed to
         // make the newly selected cell visible.
-        alignGrid();
+        alignGrid(forceGridAlign);
     }
 
     /**
@@ -669,7 +711,7 @@ public class TTableWidget extends TWidget {
     public void onResize(final TResizeEvent event) {
         super.onResize(event);
 
-        alignGrid();
+        alignGrid(true);
     }
 
     /**
@@ -720,7 +762,7 @@ public class TTableWidget extends TWidget {
                     cell.setX(cell.getX() - 1);
                 }
             }
-            alignGrid();
+            alignGrid(false);
             break;
         case TMenu.MID_TABLE_COLUMN_WIDEN:
             columns.get(selectedColumn).width++;
@@ -733,7 +775,7 @@ public class TTableWidget extends TWidget {
                     cell.setX(cell.getX() + 1);
                 }
             }
-            alignGrid();
+            alignGrid(false);
             break;
         case TMenu.MID_TABLE_FILE_SAVE_CSV:
             // TODO
@@ -745,7 +787,7 @@ public class TTableWidget extends TWidget {
             super.onMenu(menu);
         }
 
-        alignGrid();
+        alignGrid(false);
     }
 
     // ------------------------------------------------------------------------
@@ -769,7 +811,7 @@ public class TTableWidget extends TWidget {
                 }
                 putStringXY(columns.get(i).get(top).getX(), 0,
                     String.format(" %-" +
-                        (columns.get(i).get(top).getWidth() - 2)
+                        (columns.get(i).width - 2)
                         + "s ", columns.get(i).label),
                     (i == selectedColumn ? labelColorSelected : labelColor));
             }
@@ -856,7 +898,7 @@ public class TTableWidget extends TWidget {
         }
         selectedColumn = column;
         activate(columns.get(selectedColumn).get(selectedRow));
-        alignGrid();
+        alignGrid(true);
     }
 
     /**
@@ -880,7 +922,7 @@ public class TTableWidget extends TWidget {
         }
         selectedRow = row;
         activate(columns.get(selectedColumn).get(selectedRow));
-        alignGrid();
+        alignGrid(true);
     }
 
     /**
@@ -911,7 +953,7 @@ public class TTableWidget extends TWidget {
         if (showRowLabels == true) {
             // For now, all row labels are 8 cells wide.  TODO: make this
             // adjustable.
-            totalWidth += 8;
+            totalWidth += ROW_LABEL_WIDTH;
         }
         for (Cell cell: getSelectedRow().cells) {
             totalWidth += cell.getWidth() + 1;
@@ -940,8 +982,47 @@ public class TTableWidget extends TWidget {
 
     /**
      * Align the grid so that the selected cell is fully visible.
+     *
+     * @param force if true, always move the grid as needed
      */
-    private void alignGrid() {
+    private void alignGrid(final boolean force) {
+        boolean resetRowY = false;
+        boolean resetColumnX = false;
+
+        if (selectedColumn < left) {
+            left = selectedColumn;
+            resetColumnX = true;
+            resetRowY = true;
+        }
+        if (selectedRow < top) {
+            top = selectedRow;
+            resetColumnX = true;
+            resetRowY = true;
+        }
+
+        if (force == true) {
+            resetRowY = true;
+            resetColumnX = true;
+        } else if ((getSelectedCell().getX() + getSelectedCell().getWidth() + 1 >
+                getWidth() - 1)
+            || (columns.get(left).get(0).getX() <
+                (showRowLabels == true ? ROW_LABEL_WIDTH : 0))
+        ) {
+            resetColumnX = true;
+            resetRowY = true;
+        } else if ((getSelectedCell().getY() + getSelectedCell().getHeight() >
+                getHeight())
+            || (rows.get(top).get(0).getY() <
+                (showColumnLabels == true ? COLUMN_LABEL_HEIGHT : 0))
+        ) {
+            resetColumnX = true;
+            resetRowY = true;
+        }
+
+        if ((resetColumnX == false) && (resetRowY == false)) {
+            // Nothing to do, bail out.
+            return;
+        }
 
         /*
          * We start by assuming that all cells are visible, and then mark as
@@ -949,12 +1030,12 @@ public class TTableWidget extends TWidget {
          */
         for (int x = 0; x < columns.size(); x++) {
             for (int y = 0; y < rows.size(); y++) {
-                Cell cell =  rows.get(y).cells.get(x);
+                Cell cell = rows.get(y).get(x);
                 cell.setVisible(true);
 
-                // Special case: mouse double-clicks can lead to multiple
-                // cells in editing mode.  Only allow a cell to remain
-                // editing if it is fact the active widget.
+                // Special case: mouse double-clicks can lead to
+                // multiple cells in editing mode.  Only allow a cell
+                // to remain editing if it is fact the active widget.
                 if (cell.isEditing && !cell.isActive()) {
                     cell.fieldText = cell.field.getText();
                     cell.isEditing = false;
@@ -970,7 +1051,7 @@ public class TTableWidget extends TWidget {
         if (showRowLabels == true) {
             // For now, all row labels are 8 cells wide.  TODO: make this
             // adjustable.
-            leftCellX += 8;
+            leftCellX += ROW_LABEL_WIDTH;
         }
         Row row = getSelectedRow();
         Cell selectedColumnCell = null;
@@ -984,60 +1065,93 @@ public class TTableWidget extends TWidget {
         // There should always be a selected column.
         assert (selectedColumnCell != null);
 
-        int excessWidth = leftCellX + selectedColumnCell.getWidth() + 1 - getWidth();
-        if (excessWidth > 0) {
-            leftCellX -= excessWidth;
-        }
-        if (leftCellX < 0) {
-            if (showRowLabels == true) {
-                leftCellX = 8;
-            } else {
-                leftCellX = 0;
-            }
-        }
+        if (resetColumnX == true) {
 
-        /*
-         * leftCellX now contains the basic left offset necessary to draw the
-         * cells such that the selected cell (column) is fully visible within
-         * this widget's given width.  Or, if the widget is too narrow to
-         * display the full cell, leftCellX is 0 or 8.
-         *
-         * Now reset all of the X positions of the other cells so that the
-         * selected cell X is leftCellX.
-         */
-        for (int y = 0; y < rows.size(); y++) {
-            // All cells to the left of selected cell.
-            int newCellX = leftCellX;
-            left = selectedColumn;
-            for (int x = selectedColumn - 1; x >= 0; x--) {
-                newCellX -= rows.get(y).cells.get(x).getWidth() + 1;
-                if (newCellX >= (showRowLabels ? 8 : 0)) {
-                    rows.get(y).cells.get(x).setVisible(true);
-                    rows.get(y).cells.get(x).setX(newCellX);
-                    left--;
+            // We need to adjust everything so that the selected cell is
+            // visible.
+
+            int excessWidth = leftCellX + selectedColumnCell.getWidth() + 1 - getWidth();
+            if (excessWidth > 0) {
+                leftCellX -= excessWidth;
+            }
+            if (leftCellX < 0) {
+                if (showRowLabels == true) {
+                    leftCellX = ROW_LABEL_WIDTH;
                 } else {
-                    // This cell won't be visible.
-                    rows.get(y).cells.get(x).setVisible(false);
+                    leftCellX = 0;
                 }
             }
 
-            // Selected cell.
-            rows.get(y).cells.get(selectedColumn).setX(leftCellX);
-            assert (rows.get(y).cells.get(selectedColumn).isVisible());
-
-            // All cells to the right of selected cell.
-            newCellX = leftCellX + selectedColumnCell.getWidth() + 1;
-            for (int x = selectedColumn + 1; x < columns.size(); x++) {
-                if (newCellX <= getWidth()) {
-                    rows.get(y).cells.get(x).setVisible(true);
-                    rows.get(y).cells.get(x).setX(newCellX);
-                } else {
-                    // This cell won't be visible.
-                    rows.get(y).cells.get(x).setVisible(false);
+            /*
+             * leftCellX now contains the basic left offset necessary to draw
+             * the cells such that the selected cell (column) is fully
+             * visible within this widget's given width.  Or, if the widget
+             * is too narrow to display the full cell, leftCellX is 0 or
+             * ROW_LABEL_WIDTH.
+             *
+             * Now reset all of the X positions of the other cells so that
+             * the selected cell X is leftCellX.
+             */
+            for (int y = 0; y < rows.size(); y++) {
+                // All cells to the left of selected cell.
+                int newCellX = leftCellX;
+                left = selectedColumn - 1;
+                for (int x = selectedColumn - 1; x >= 0; x--) {
+                    newCellX -= rows.get(y).get(x).getWidth() + 1;
+                    rows.get(y).get(x).setX(newCellX);
+                    if (newCellX >= (showRowLabels ? ROW_LABEL_WIDTH : 0)) {
+                        if ((rows.get(y).get(0).getY() < (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0))
+                            || (rows.get(y).get(0).getY() >= getHeight())
+                        ) {
+                            // This row isn't visible.
+                            rows.get(y).get(x).setVisible(false);
+                        } else {
+                            rows.get(y).get(x).setVisible(true);
+                        }
+                        left--;
+                    } else {
+                        // This cell won't be visible.
+                        rows.get(y).get(x).setVisible(false);
+                    }
                 }
-                newCellX += rows.get(y).cells.get(x).getWidth() + 1;
+                left++;
+
+                // Selected cell.
+                rows.get(y).get(selectedColumn).setX(leftCellX);
+                if ((rows.get(y).get(0).getY() < (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0))
+                    || (rows.get(y).get(0).getY() >= getHeight())
+                ) {
+                    // This row isn't visible.
+                    rows.get(y).get(selectedColumn).setVisible(false);
+                } else {
+                    rows.get(y).get(selectedColumn).setVisible(true);
+                }
+
+                assert (rows.get(y).get(left).getX() >= 0);
+                assert (rows.get(y).get(left).getX() + rows.get(y).get(left).getWidth() >= (showRowLabels ? ROW_LABEL_WIDTH : 0));
+
+                // All cells to the right of selected cell.
+                newCellX = leftCellX + selectedColumnCell.getWidth() + 1;
+                for (int x = selectedColumn + 1; x < columns.size(); x++) {
+                    rows.get(y).get(x).setX(newCellX);
+                    if (newCellX <= getWidth()) {
+                        if ((rows.get(y).get(0).getY() < (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0))
+                            || (rows.get(y).get(0).getY() >= getHeight())
+                        ) {
+                            // This row isn't visible.
+                            rows.get(y).get(x).setVisible(false);
+                        } else {
+                            rows.get(y).get(x).setVisible(true);
+                        }
+                    } else {
+                        // This cell won't be visible.
+                        rows.get(y).get(x).setVisible(false);
+                    }
+                    newCellX += rows.get(y).get(x).getWidth() + 1;
+                }
             }
-        }
+
+        } // if (resetColumnX == true)
 
         // Adjust Y locations to be visible -----------------------------------
         // The same logic as above, but applied to the column Y.
@@ -1062,69 +1176,96 @@ public class TTableWidget extends TWidget {
         // There should always be a selected row.
         assert (selectedRowCell != null);
 
-        int excessHeight = topCellY + selectedRowCell.getHeight() - getHeight() - 1;
-        if (showColumnLabels == true) {
-            excessHeight += 1;
-        }
-        if (excessHeight > 0) {
-            topCellY -= excessHeight;
-        }
-        if (topCellY < 0) {
+        if (resetRowY == true) {
+
+            // We need to adjust everything so that the selected cell is
+            // visible.
+
+            int excessHeight = topCellY + selectedRowCell.getHeight() - getHeight() - 1;
             if (showColumnLabels == true) {
-                topCellY = 1;
-            } else {
-                topCellY = 0;
+                excessHeight += COLUMN_LABEL_HEIGHT;
             }
-        }
-
-        /*
-         * topCellY now contains the basic top offset necessary to draw the
-         * cells such that the selected cell (row) is fully visible within
-         * this widget's given height.  Or, if the widget is too short to
-         * display the full cell, topCellY is 0 or 1.
-         *
-         * Now reset all of the Y positions of the other cells so that the
-         * selected cell Y is topCellY.
-         */
-        for (int x = 0; x < columns.size(); x++) {
-
-            if (columns.get(x).get(0).isVisible() == false) {
-                // This column won't be visible as determined by the checks
-                // above, just continue to the next.
-                continue;
+            if (excessHeight > 0) {
+                topCellY -= excessHeight;
             }
-
-            // All cells above the selected cell.
-            int newCellY = topCellY;
-            top = selectedRow;
-            for (int y = selectedRow - 1; y >= 0; y--) {
-                newCellY -= rows.get(y).cells.get(x).getHeight();
-                if (newCellY >= (showColumnLabels == true ? 1 : 0)) {
-                    rows.get(y).cells.get(x).setVisible(true);
-                    rows.get(y).cells.get(x).setY(newCellY);
-                    top--;
+            if (topCellY < 0) {
+                if (showColumnLabels == true) {
+                    topCellY = COLUMN_LABEL_HEIGHT;
                 } else {
-                    // This cell won't be visible.
-                    rows.get(y).cells.get(x).setVisible(false);
+                    topCellY = 0;
                 }
             }
 
-            // Selected cell.
-            columns.get(x).cells.get(selectedRow).setY(topCellY);
-
-            // All cells below the selected cell.
-            newCellY = topCellY + selectedRowCell.getHeight();
-            for (int y = selectedRow + 1; y < rows.size(); y++) {
-                if (newCellY <= getHeight()) {
-                    rows.get(y).cells.get(x).setVisible(true);
-                    rows.get(y).cells.get(x).setY(newCellY);
-                } else {
-                    // This cell won't be visible.
-                    rows.get(y).cells.get(x).setVisible(false);
+            /*
+             * topCellY now contains the basic top offset necessary to draw
+             * the cells such that the selected cell (row) is fully visible
+             * within this widget's given height.  Or, if the widget is too
+             * short to display the full cell, topCellY is 0 or
+             * COLUMN_LABEL_HEIGHT.
+             *
+             * Now reset all of the Y positions of the other cells so that
+             * the selected cell Y is topCellY.
+             */
+            for (int x = 0; x < columns.size(); x++) {
+                // All cells above the selected cell.
+                int newCellY = topCellY;
+                top = selectedRow - 1;
+                for (int y = selectedRow - 1; y >= 0; y--) {
+                    newCellY -= columns.get(x).get(y).getHeight();
+                    columns.get(x).get(y).setY(newCellY);
+                    if (newCellY >= (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0)) {
+                        if ((columns.get(x).get(0).getX() < (showRowLabels ? ROW_LABEL_WIDTH : 0))
+                            || (columns.get(x).get(0).getX() >= getWidth())
+                        ) {
+                            // This column isn't visible.
+                            columns.get(x).get(y).setVisible(false);
+                        } else {
+                            columns.get(x).get(y).setVisible(true);
+                        }
+                        top--;
+                    } else {
+                        // This cell won't be visible.
+                        columns.get(x).get(y).setVisible(false);
+                    }
                 }
-                newCellY += rows.get(y).cells.get(x).getHeight();
+                top++;
+
+                // Selected cell.
+                columns.get(x).get(selectedRow).setY(topCellY);
+                if ((columns.get(x).get(0).getX() < (showRowLabels ? ROW_LABEL_WIDTH : 0))
+                    || (columns.get(x).get(0).getX() >= getWidth())
+                ) {
+                    // This column isn't visible.
+                    columns.get(x).get(selectedRow).setVisible(false);
+                } else {
+                    columns.get(x).get(selectedRow).setVisible(true);
+                }
+
+                assert (columns.get(x).get(top).getY() >= 0);
+                assert (columns.get(x).get(top).getY() + columns.get(x).get(top).getHeight() >= (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0));
+
+                // All cells below the selected cell.
+                newCellY = topCellY + selectedRowCell.getHeight();
+                for (int y = selectedRow + 1; y < rows.size(); y++) {
+                    columns.get(x).get(y).setY(newCellY);
+                    if (newCellY <= getHeight()) {
+                        if ((columns.get(x).get(0).getX() < (showRowLabels ? ROW_LABEL_WIDTH : 0))
+                            || (columns.get(x).get(0).getX() >= getWidth())
+                        ) {
+                            // This column isn't visible.
+                            columns.get(x).get(y).setVisible(false);
+                        } else {
+                            columns.get(x).get(y).setVisible(true);
+                        }
+                    } else {
+                        // This cell won't be visible.
+                        columns.get(x).get(y).setVisible(false);
+                    }
+                    newCellY += columns.get(x).get(y).getHeight();
+                }
             }
-        }
+
+        } // if (resetRowY == true)
 
     }
 
