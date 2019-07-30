@@ -663,7 +663,7 @@ public class ColorTheme {
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
         color.setBackColor(Color.BLUE);
-        color.setBold(true);
+        color.setBold(false);
         colors.put("ttable.border", color);
 
     }

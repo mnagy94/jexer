@@ -793,13 +793,57 @@ public class TTableWidget extends TWidget {
             highlightColumn = getApplication().getMenuItem(menu.getId()).getChecked();
             break;
         case TMenu.MID_TABLE_BORDER_NONE:
+            if (selectedRow == 0) {
+                topBorder = Border.NONE;
+            }
+            if (selectedColumn == 0) {
+                leftBorder = Border.NONE;
+            }
+            columns.get(selectedColumn).rightBorder = Border.NONE;
+            rows.get(selectedRow).bottomBorder = Border.NONE;
+            rows.get(selectedRow).height = 1;
+            break;
         case TMenu.MID_TABLE_BORDER_ALL:
+            if (selectedRow == 0) {
+                topBorder = Border.SINGLE;
+            }
+            if (selectedColumn == 0) {
+                leftBorder = Border.SINGLE;
+            }
+            columns.get(selectedColumn).rightBorder = Border.SINGLE;
+            rows.get(selectedRow).bottomBorder = Border.SINGLE;
+            rows.get(selectedRow).height = 2;
+            break;
         case TMenu.MID_TABLE_BORDER_RIGHT:
+            columns.get(selectedColumn).rightBorder = Border.SINGLE;
+            break;
         case TMenu.MID_TABLE_BORDER_LEFT:
+            if (selectedColumn == 0) {
+                leftBorder = Border.SINGLE;
+            } else {
+                columns.get(selectedColumn - 1).rightBorder = Border.SINGLE;
+            }
+            break;
         case TMenu.MID_TABLE_BORDER_TOP:
+            if (selectedRow == 0) {
+                topBorder = Border.SINGLE;
+            } else {
+                rows.get(selectedRow - 1).bottomBorder = Border.SINGLE;
+                rows.get(selectedRow - 1).height = 2;
+            }
+            break;
         case TMenu.MID_TABLE_BORDER_BOTTOM:
+                rows.get(selectedRow).bottomBorder = Border.SINGLE;
+                rows.get(selectedRow).height = 2;
+                break;
         case TMenu.MID_TABLE_BORDER_DOUBLE_BOTTOM:
+                rows.get(selectedRow).bottomBorder = Border.DOUBLE;
+                rows.get(selectedRow).height = 2;
+                break;
         case TMenu.MID_TABLE_BORDER_THICK_BOTTOM:
+                rows.get(selectedRow).bottomBorder = Border.THICK;
+                rows.get(selectedRow).height = 2;
+                break;
         case TMenu.MID_TABLE_DELETE_LEFT:
         case TMenu.MID_TABLE_DELETE_UP:
         case TMenu.MID_TABLE_DELETE_ROW:
@@ -818,7 +862,6 @@ public class TTableWidget extends TWidget {
             for (int i = selectedColumn + 1; i < columns.size(); i++) {
                 columns.get(i).setX(columns.get(i).getX() - 1);
             }
-            alignGrid();
             break;
         case TMenu.MID_TABLE_COLUMN_WIDEN:
             columns.get(selectedColumn).width++;
@@ -829,7 +872,6 @@ public class TTableWidget extends TWidget {
             for (int i = selectedColumn + 1; i < columns.size(); i++) {
                 columns.get(i).setX(columns.get(i).getX() + 1);
             }
-            alignGrid();
             break;
         case TMenu.MID_TABLE_FILE_SAVE_CSV:
             // TODO
@@ -841,6 +883,7 @@ public class TTableWidget extends TWidget {
             super.onMenu(menu);
         }
 
+        // Fix/redraw the display.
         alignGrid();
     }
 
@@ -863,7 +906,8 @@ public class TTableWidget extends TWidget {
                 if (columns.get(i).get(top).isVisible() == false) {
                     break;
                 }
-                putStringXY(columns.get(i).get(top).getX(), 0,
+                putStringXY(columns.get(i).get(top).getX(),
+                    (topBorder == Border.NONE ? 0 : 1),
                     String.format(" %-" +
                         (columns.get(i).width - 2)
                         + "s ", columns.get(i).label),
@@ -882,6 +926,56 @@ public class TTableWidget extends TWidget {
                     (i == selectedRow ? labelColorSelected : labelColor));
             }
         }
+
+        // Draw vertical borders.
+        if (leftBorder == Border.SINGLE) {
+            vLineXY((showRowLabels ? ROW_LABEL_WIDTH : 0), 0,
+                getHeight(), '\u2502', borderColor);
+        }
+        for (int i = left; i < columns.size(); i++) {
+            if (columns.get(i).get(top).isVisible() == false) {
+                break;
+            }
+            if (columns.get(i).rightBorder == Border.SINGLE) {
+                vLineXY(columns.get(i).getX() + columns.get(i).width,
+                    (topBorder == Border.NONE ? 0 : 1),
+                    getHeight(), '\u2502', borderColor);
+            }
+        }
+
+        // Draw horizontal borders.
+        if (topBorder == Border.SINGLE) {
+            hLineXY((showRowLabels ? ROW_LABEL_WIDTH : 0), 0,
+                getWidth(), '\u2500', borderColor);
+        }
+        for (int i = top; i < rows.size(); i++) {
+            if (rows.get(i).get(left).isVisible() == false) {
+                break;
+            }
+            if (rows.get(i).bottomBorder == Border.SINGLE) {
+                hLineXY((leftBorder == Border.NONE ? 0 : 1) +
+                        (showRowLabels ? ROW_LABEL_WIDTH : 0),
+                    rows.get(i).getY() + rows.get(i).height - 1,
+                    getWidth(), '\u2500', borderColor);
+            } else if (rows.get(i).bottomBorder == Border.DOUBLE) {
+                hLineXY((leftBorder == Border.NONE ? 0 : 1) +
+                        (showRowLabels ? ROW_LABEL_WIDTH : 0),
+                    rows.get(i).getY() + rows.get(i).height - 1,
+                    getWidth(), '\u2550', borderColor);
+            } else if (rows.get(i).bottomBorder == Border.THICK) {
+                hLineXY((leftBorder == Border.NONE ? 0 : 1) +
+                        (showRowLabels ? ROW_LABEL_WIDTH : 0),
+                    rows.get(i).getY() + rows.get(i).height - 1,
+                    getWidth(), '\u2580', borderColor);
+            }
+        }
+        // Top-left corner if needed
+        if ((topBorder == Border.SINGLE) && (leftBorder == Border.SINGLE)) {
+            putCharXY((showRowLabels ? ROW_LABEL_WIDTH : 0), 0,
+                '\u250c', borderColor);
+        }
+
+        // TODO: draw the correct corners between rows and columns
 
         // Now draw the window borders.
         super.draw();
@@ -1045,6 +1139,9 @@ public class TTableWidget extends TWidget {
         boolean done = false;
         while (!done) {
             int rightCellX = (showRowLabels ? ROW_LABEL_WIDTH : 0);
+            if (leftBorder != Border.NONE) {
+                rightCellX++;
+            }
             int maxCellX = rightCellX + viewColumns;
             right = left;
             boolean selectedIsVisible = false;
@@ -1085,6 +1182,9 @@ public class TTableWidget extends TWidget {
         // We have the left/right range correct, set cell visibility and
         // column X positions.
         int leftCellX = showRowLabels ? ROW_LABEL_WIDTH : 0;
+        if (leftBorder != Border.NONE) {
+            leftCellX++;
+        }
         for (int x = 0; x < columns.size(); x++) {
             if ((x < left) || (x > right)) {
                 for (int i = 0; i < rows.size(); i++) {
@@ -1105,6 +1205,9 @@ public class TTableWidget extends TWidget {
         done = false;
         while (!done) {
             int bottomCellY = (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0);
+            if (topBorder != Border.NONE) {
+                bottomCellY++;
+            }
             int maxCellY = bottomCellY + viewRows;
             bottom = top;
             for (int y = top; y < rows.size(); y++) {
@@ -1127,6 +1230,9 @@ public class TTableWidget extends TWidget {
         // We have the top/bottom range correct, set cell visibility and
         // row Y positions.
         int topCellY = showColumnLabels ? COLUMN_LABEL_HEIGHT : 0;
+        if (topBorder != Border.NONE) {
+            topCellY++;
+        }
         for (int y = 0; y < rows.size(); y++) {
             if ((y < top) || (y > bottom)) {
                 for (int i = 0; i < columns.size(); i++) {
