@@ -3127,6 +3127,8 @@ public class TApplication implements Runnable {
             getString("tableSubMenuBorders"));
         borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_NONE, false);
         borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_ALL, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_CELL_NONE, false);
+        borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_CELL_ALL, false);
         borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_RIGHT, false);
         borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_LEFT, false);
         borderMenu.addDefaultItem(TMenu.MID_TABLE_BORDER_TOP, false);

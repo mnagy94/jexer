@@ -74,8 +74,7 @@ public class TTableWidget extends TWidget {
         DOUBLE,
 
         /**
-         * Thick bar: \u258C (vertical, left half block) and \u2580
-         * (horizontal, upper block).
+         * Thick bar: \u2503 (vertical heavy) and \u2501 (horizontal heavy).
          */
         THICK,
     }
@@ -793,6 +792,28 @@ public class TTableWidget extends TWidget {
             highlightColumn = getApplication().getMenuItem(menu.getId()).getChecked();
             break;
         case TMenu.MID_TABLE_BORDER_NONE:
+            topBorder = Border.NONE;
+            leftBorder = Border.NONE;
+            for (int i = 0; i < columns.size(); i++) {
+                columns.get(i).rightBorder = Border.NONE;
+            }
+            for (int i = 0; i < rows.size(); i++) {
+                rows.get(i).bottomBorder = Border.NONE;
+                rows.get(i).height = 1;
+            }
+            break;
+        case TMenu.MID_TABLE_BORDER_ALL:
+            topBorder = Border.SINGLE;
+            leftBorder = Border.SINGLE;
+            for (int i = 0; i < columns.size(); i++) {
+                columns.get(i).rightBorder = Border.SINGLE;
+            }
+            for (int i = 0; i < rows.size(); i++) {
+                rows.get(i).bottomBorder = Border.SINGLE;
+                rows.get(i).height = 2;
+            }
+            break;
+        case TMenu.MID_TABLE_BORDER_CELL_NONE:
             if (selectedRow == 0) {
                 topBorder = Border.NONE;
             }
@@ -803,7 +824,7 @@ public class TTableWidget extends TWidget {
             rows.get(selectedRow).bottomBorder = Border.NONE;
             rows.get(selectedRow).height = 1;
             break;
-        case TMenu.MID_TABLE_BORDER_ALL:
+        case TMenu.MID_TABLE_BORDER_CELL_ALL:
             if (selectedRow == 0) {
                 topBorder = Border.SINGLE;
             }
@@ -906,8 +927,7 @@ public class TTableWidget extends TWidget {
                 if (columns.get(i).get(top).isVisible() == false) {
                     break;
                 }
-                putStringXY(columns.get(i).get(top).getX(),
-                    (topBorder == Border.NONE ? 0 : 1),
+                putStringXY(columns.get(i).get(top).getX(), 0,
                     String.format(" %-" +
                         (columns.get(i).width - 2)
                         + "s ", columns.get(i).label),
@@ -929,7 +949,9 @@ public class TTableWidget extends TWidget {
 
         // Draw vertical borders.
         if (leftBorder == Border.SINGLE) {
-            vLineXY((showRowLabels ? ROW_LABEL_WIDTH : 0), 0,
+            vLineXY((showRowLabels ? ROW_LABEL_WIDTH : 0),
+                (topBorder == Border.NONE ? 0 : 1) +
+                    (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0),
                 getHeight(), '\u2502', borderColor);
         }
         for (int i = left; i < columns.size(); i++) {
@@ -938,14 +960,16 @@ public class TTableWidget extends TWidget {
             }
             if (columns.get(i).rightBorder == Border.SINGLE) {
                 vLineXY(columns.get(i).getX() + columns.get(i).width,
-                    (topBorder == Border.NONE ? 0 : 1),
+                    (topBorder == Border.NONE ? 0 : 1) +
+                        (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0),
                     getHeight(), '\u2502', borderColor);
             }
         }
 
         // Draw horizontal borders.
         if (topBorder == Border.SINGLE) {
-            hLineXY((showRowLabels ? ROW_LABEL_WIDTH : 0), 0,
+            hLineXY((showRowLabels ? ROW_LABEL_WIDTH : 0),
+                (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0),
                 getWidth(), '\u2500', borderColor);
         }
         for (int i = top; i < rows.size(); i++) {
@@ -966,16 +990,85 @@ public class TTableWidget extends TWidget {
                 hLineXY((leftBorder == Border.NONE ? 0 : 1) +
                         (showRowLabels ? ROW_LABEL_WIDTH : 0),
                     rows.get(i).getY() + rows.get(i).height - 1,
-                    getWidth(), '\u2580', borderColor);
+                    getWidth(), '\u2501', borderColor);
             }
         }
         // Top-left corner if needed
         if ((topBorder == Border.SINGLE) && (leftBorder == Border.SINGLE)) {
-            putCharXY((showRowLabels ? ROW_LABEL_WIDTH : 0), 0,
+            putCharXY((showRowLabels ? ROW_LABEL_WIDTH : 0),
+                (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0),
                 '\u250c', borderColor);
         }
 
-        // TODO: draw the correct corners between rows and columns
+        // Now draw the correct corners
+        for (int i = top; i < rows.size(); i++) {
+            if (rows.get(i).get(left).isVisible() == false) {
+                break;
+            }
+            for (int j = left; j < columns.size(); j++) {
+                if (columns.get(j).get(i).isVisible() == false) {
+                    break;
+                }
+                if ((i == top) && (topBorder == Border.SINGLE)
+                    && (columns.get(j).rightBorder == Border.SINGLE)
+                ) {
+                    // Top tee
+                    putCharXY(columns.get(j).getX() + columns.get(j).width,
+                        (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0),
+                        '\u252c', borderColor);
+                }
+                if ((j == left) && (leftBorder == Border.SINGLE)
+                    && (rows.get(i).bottomBorder == Border.SINGLE)
+                ) {
+                    // Left tee
+                    putCharXY((showRowLabels ? ROW_LABEL_WIDTH : 0),
+                        rows.get(i).getY() + rows.get(i).height - 1,
+                        '\u251c', borderColor);
+                }
+                if ((columns.get(j).rightBorder == Border.SINGLE)
+                    && (rows.get(i).bottomBorder == Border.SINGLE)
+                ) {
+                    // Intersection of single bars
+                    putCharXY(columns.get(j).getX() + columns.get(j).width,
+                        rows.get(i).getY() + rows.get(i).height - 1,
+                        '\u253c', borderColor);
+                }
+                if ((j == left) && (leftBorder == Border.SINGLE)
+                    && (rows.get(i).bottomBorder == Border.DOUBLE)
+                ) {
+                    // Left tee: single bar vertical, double bar horizontal
+                    putCharXY((showRowLabels ? ROW_LABEL_WIDTH : 0),
+                        rows.get(i).getY() + rows.get(i).height - 1,
+                        '\u255e', borderColor);
+                }
+                if ((j == left) && (leftBorder == Border.SINGLE)
+                    && (rows.get(i).bottomBorder == Border.THICK)
+                ) {
+                    // Left tee: single bar vertical, thick bar horizontal
+                    putCharXY((showRowLabels ? ROW_LABEL_WIDTH : 0),
+                        rows.get(i).getY() + rows.get(i).height - 1,
+                        '\u251d', borderColor);
+                }
+                if ((columns.get(j).rightBorder == Border.SINGLE)
+                    && (rows.get(i).bottomBorder == Border.DOUBLE)
+                ) {
+                    // Intersection: single bar vertical, double bar
+                    // horizontal
+                    putCharXY(columns.get(j).getX() + columns.get(j).width,
+                        rows.get(i).getY() + rows.get(i).height - 1,
+                        '\u256a', borderColor);
+                }
+                if ((columns.get(j).rightBorder == Border.SINGLE)
+                    && (rows.get(i).bottomBorder == Border.THICK)
+                ) {
+                    // Intersection: single bar vertical, thick bar
+                    // horizontal
+                    putCharXY(columns.get(j).getX() + columns.get(j).width,
+                        rows.get(i).getY() + rows.get(i).height - 1,
+                        '\u253f', borderColor);
+                }
+            }
+        }
 
         // Now draw the window borders.
         super.draw();

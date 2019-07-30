@@ -96,6 +96,8 @@ public class TTableWindow extends TScrollableWindow {
         getApplication().enableMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_NONE);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_ALL);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_CELL_NONE);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_CELL_ALL);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_RIGHT);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_LEFT);
         getApplication().enableMenuItem(TMenu.MID_TABLE_BORDER_TOP);
@@ -129,6 +131,8 @@ public class TTableWindow extends TScrollableWindow {
         getApplication().disableMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_NONE);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_ALL);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_CELL_NONE);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_CELL_ALL);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_RIGHT);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_LEFT);
         getApplication().disableMenuItem(TMenu.MID_TABLE_BORDER_TOP);

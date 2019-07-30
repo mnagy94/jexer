@@ -102,30 +102,34 @@ public class TMenu extends TWindow {
     public static final int MID_ABOUT                   = 56;
 
     // Table menu
-    public static final int MID_TABLE_VIEW_ROW_LABELS           = 60;
-    public static final int MID_TABLE_VIEW_COLUMN_LABELS        = 61;
-    public static final int MID_TABLE_VIEW_HIGHLIGHT_ROW        = 62;
-    public static final int MID_TABLE_VIEW_HIGHLIGHT_COLUMN     = 63;
-    public static final int MID_TABLE_BORDER_NONE               = 64;
-    public static final int MID_TABLE_BORDER_ALL                = 65;
-    public static final int MID_TABLE_BORDER_RIGHT              = 66;
-    public static final int MID_TABLE_BORDER_LEFT               = 67;
-    public static final int MID_TABLE_BORDER_TOP                = 68;
-    public static final int MID_TABLE_BORDER_BOTTOM             = 69;
-    public static final int MID_TABLE_BORDER_DOUBLE_BOTTOM      = 70;
-    public static final int MID_TABLE_BORDER_THICK_BOTTOM       = 71;
-    public static final int MID_TABLE_DELETE_LEFT               = 72;
-    public static final int MID_TABLE_DELETE_UP                 = 73;
-    public static final int MID_TABLE_DELETE_ROW                = 74;
-    public static final int MID_TABLE_DELETE_COLUMN             = 75;
-    public static final int MID_TABLE_INSERT_LEFT               = 76;
-    public static final int MID_TABLE_INSERT_RIGHT              = 77;
-    public static final int MID_TABLE_INSERT_ABOVE              = 78;
-    public static final int MID_TABLE_INSERT_BELOW              = 79;
-    public static final int MID_TABLE_COLUMN_NARROW             = 80;
-    public static final int MID_TABLE_COLUMN_WIDEN              = 81;
-    public static final int MID_TABLE_FILE_SAVE_CSV             = 82;
-    public static final int MID_TABLE_FILE_SAVE_TEXT            = 83;
+    public static final int MID_TABLE_RENAME_ROW                = 60;
+    public static final int MID_TABLE_RENAME_COLUMN             = 61;
+    public static final int MID_TABLE_VIEW_ROW_LABELS           = 70;
+    public static final int MID_TABLE_VIEW_COLUMN_LABELS        = 71;
+    public static final int MID_TABLE_VIEW_HIGHLIGHT_ROW        = 72;
+    public static final int MID_TABLE_VIEW_HIGHLIGHT_COLUMN     = 73;
+    public static final int MID_TABLE_BORDER_NONE               = 80;
+    public static final int MID_TABLE_BORDER_ALL                = 81;
+    public static final int MID_TABLE_BORDER_CELL_NONE          = 82;
+    public static final int MID_TABLE_BORDER_CELL_ALL           = 83;
+    public static final int MID_TABLE_BORDER_RIGHT              = 84;
+    public static final int MID_TABLE_BORDER_LEFT               = 85;
+    public static final int MID_TABLE_BORDER_TOP                = 86;
+    public static final int MID_TABLE_BORDER_BOTTOM             = 87;
+    public static final int MID_TABLE_BORDER_DOUBLE_BOTTOM      = 88;
+    public static final int MID_TABLE_BORDER_THICK_BOTTOM       = 89;
+    public static final int MID_TABLE_DELETE_LEFT               = 100;
+    public static final int MID_TABLE_DELETE_UP                 = 101;
+    public static final int MID_TABLE_DELETE_ROW                = 102;
+    public static final int MID_TABLE_DELETE_COLUMN             = 103;
+    public static final int MID_TABLE_INSERT_LEFT               = 104;
+    public static final int MID_TABLE_INSERT_RIGHT              = 105;
+    public static final int MID_TABLE_INSERT_ABOVE              = 106;
+    public static final int MID_TABLE_INSERT_BELOW              = 107;
+    public static final int MID_TABLE_COLUMN_NARROW             = 110;
+    public static final int MID_TABLE_COLUMN_WIDEN              = 111;
+    public static final int MID_TABLE_FILE_SAVE_CSV             = 115;
+    public static final int MID_TABLE_FILE_SAVE_TEXT            = 116;
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -681,6 +685,12 @@ public class TMenu extends TWindow {
             break;
         case MID_TABLE_BORDER_ALL:
             label = i18n.getString("menuTableBorderAll");
+            break;
+        case MID_TABLE_BORDER_CELL_NONE:
+            label = i18n.getString("menuTableBorderCellNone");
+            break;
+        case MID_TABLE_BORDER_CELL_ALL:
+            label = i18n.getString("menuTableBorderCellAll");
             break;
         case MID_TABLE_BORDER_RIGHT:
             label = i18n.getString("menuTableBorderRight");
