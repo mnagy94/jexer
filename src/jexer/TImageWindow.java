@@ -104,8 +104,8 @@ public class TImageWindow extends TScrollableWindow {
 
         BufferedImage image = ImageIO.read(file);
 
-        imageField = new TImage(this, 0, 0, getWidth() - 2, getHeight() - 2,
-            image, 0, 0, null);
+        imageField = addImage(0, 0, getWidth() - 2, getHeight() - 2,
+            image, 0, 0);
         setTitle(file.getName());
 
         setupAfterImage();

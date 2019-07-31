@@ -270,14 +270,20 @@ public class TMenu extends TWindow {
         /*
         System.err.printf("keypress: %s active child: %s\n", keypress,
             getActiveChild());
-         */
+        */
 
         if (getActiveChild() != this) {
-            if ((getActiveChild() instanceof TSubMenu)
-                || (getActiveChild() instanceof TMenu)
-            ) {
+            if (getActiveChild() instanceof TMenu) {
                 getActiveChild().onKeypress(keypress);
                 return;
+            }
+
+            if (getActiveChild() instanceof TSubMenu) {
+                TSubMenu subMenu = (TSubMenu) getActiveChild();
+                if (subMenu.menu.isActive()) {
+                    subMenu.onKeypress(keypress);
+                    return;
+                }
             }
         }
 
@@ -310,12 +316,18 @@ public class TMenu extends TWindow {
         if (!keypress.getKey().isFnKey()
             && !keypress.getKey().isAlt()
             && !keypress.getKey().isCtrl()) {
+
+            // System.err.println("Checking children for mnemonic...");
+
             for (TWidget widget: getChildren()) {
                 TMenuItem item = (TMenuItem) widget;
-                if ((item.getMnemonic() != null)
+                if ((item.isEnabled() == true)
+                    && (item.getMnemonic() != null)
                     && (Character.toLowerCase(item.getMnemonic().getShortcut())
                         == Character.toLowerCase(keypress.getKey().getChar()))
                 ) {
+                    // System.err.println("activate: " + item);
+
                     // Send an enter keystroke to it
                     activate(item);
                     item.handleEvent(new TKeypressEvent(kbEnter));

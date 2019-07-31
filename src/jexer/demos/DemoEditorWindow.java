@@ -72,7 +72,7 @@ public class DemoEditorWindow extends TWindow {
         final String text) {
 
         super(parent, title, 0, 0, 44, 22, RESIZABLE);
-        editField = new TEditorWidget(this, text, 0, 0, 42, 20);
+        editField = addEditor(text, 0, 0, 42, 20);
 
         statusBar = newStatusBar(i18n.getString("statusBar"));
         statusBar.addShortcutKeypress(kbF1, cmHelp,

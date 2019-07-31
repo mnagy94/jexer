@@ -32,7 +32,8 @@ import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 
 /**
- * TField implements an editable text field.
+ * TPasswordField implements an editable text field that displays
+ * stars/asterisks when it is not active.
  */
 public class TPasswordField extends TField {
 

@@ -122,6 +122,25 @@ public class TImage extends TWidget {
      * @param image the image to display
      * @param left left column of the image.  0 is the left-most column.
      * @param top top row of the image.  0 is the top-most row.
+     */
+    public TImage(final TWidget parent, final int x, final int y,
+        final int width, final int height,
+        final BufferedImage image, final int left, final int top) {
+
+        this(parent, x, y, width, height, image, left, top, null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width number of text cells for width of the image
+     * @param height number of text cells for height of the image
+     * @param image the image to display
+     * @param left left column of the image.  0 is the left-most column.
+     * @param top top row of the image.  0 is the top-most row.
      * @param clickAction function to call when mouse is pressed
      */
     public TImage(final TWidget parent, final int x, final int y,

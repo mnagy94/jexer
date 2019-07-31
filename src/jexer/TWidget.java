@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
@@ -2199,6 +2200,60 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         return new TList(this, strings, x, y, width, height, enterAction,
             moveAction);
+    }
+
+    /**
+     * Convenience function to add an image to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width number of text cells for width of the image
+     * @param height number of text cells for height of the image
+     * @param image the image to display
+     * @param left left column of the image.  0 is the left-most column.
+     * @param top top row of the image.  0 is the top-most row.
+     */
+    public final TImage addImage(final int x, final int y,
+        final int width, final int height,
+        final BufferedImage image, final int left, final int top) {
+
+        return new TImage(this, x, y, width, height, image, left, top);
+    }
+
+    /**
+     * Convenience function to add an image to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width number of text cells for width of the image
+     * @param height number of text cells for height of the image
+     * @param image the image to display
+     * @param left left column of the image.  0 is the left-most column.
+     * @param top top row of the image.  0 is the top-most row.
+     * @param clickAction function to call when mouse is pressed
+     */
+    public final TImage addImage(final int x, final int y,
+        final int width, final int height,
+        final BufferedImage image, final int left, final int top,
+        final TAction clickAction) {
+
+        return new TImage(this, x, y, width, height, image, left, top,
+            clickAction);
+    }
+
+    /**
+     * Convenience function to add an editable 2D data table to this
+     * container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     */
+    public TTableWidget addTable(final int x, final int y, final int width,
+        final int height) {
+
+        return new TTableWidget(this, x, y, width, height);
     }
 
 }

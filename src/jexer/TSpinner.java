@@ -35,7 +35,7 @@ import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
 
 /**
- * TSpinner implements a simple up/down spinner.  Values can be numer
+ * TSpinner implements a simple up/down spinner.
  */
 public class TSpinner extends TWidget {
 

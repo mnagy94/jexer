@@ -75,7 +75,7 @@ public class TTableWindow extends TScrollableWindow {
         super(parent, title, 0, 0, parent.getScreen().getWidth() / 2,
             parent.getScreen().getHeight() / 2 - 2, RESIZABLE | CENTERED);
 
-        tableField = new TTableWidget(this, 0, 0, getWidth() - 2, getHeight() - 2);
+        tableField = addTable(0, 0, getWidth() - 2, getHeight() - 2);
         setupAfterTable();
     }
 

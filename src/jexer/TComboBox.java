@@ -96,13 +96,12 @@ public class TComboBox extends TWidget {
 
         this.updateAction = updateAction;
 
-        field = new TField(this, 0, 0, width - 3, false, "",
-            updateAction, null);
+        field = addField(0, 0, width - 3, false, "", updateAction, null);
         if (valuesIndex >= 0) {
             field.setText(values.get(valuesIndex));
         }
 
-        list = new TList(this, values, 0, 1, width, valuesHeight,
+        list = addList(values, 0, 1, width, valuesHeight,
             new TAction() {
                 public void DO() {
                     field.setText(list.getSelected());
