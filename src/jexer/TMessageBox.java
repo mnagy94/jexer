@@ -41,7 +41,7 @@ import static jexer.TKeypress.*;
  *
  * <pre>
  * {@code
- *     box = application.messageBox(title, caption,
+ *     box = messageBox(title, caption,
  *         TMessageBox.Type.OK | TMessageBox.Type.CANCEL);
  *
  *     if (box.getResult() == TMessageBox.OK) {

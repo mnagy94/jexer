@@ -34,7 +34,7 @@ package jexer;
  *
  * <pre>
  * {@code
- *     box = application.inputBox(title, caption);
+ *     box = inputBox(title, caption);
  *     if (box.getText().equals("yes")) {
  *         ... the user entered "yes", do stuff ...
  *     }

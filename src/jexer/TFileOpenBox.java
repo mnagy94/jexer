@@ -47,7 +47,7 @@ import static jexer.TKeypress.*;
  *
  * <pre>
  * {@code
- *     filename = application.fileOpenBox("/path/to/file.ext",
+ *     filename = fileOpenBox("/path/to/file.ext",
  *         TFileOpenBox.Type.OPEN);
  *     if (filename != null) {
  *         ... the user selected a file, go open it ...
