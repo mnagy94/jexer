@@ -801,7 +801,7 @@ public class TTableWidget extends TWidget {
     public void onResize(final TResizeEvent event) {
         super.onResize(event);
 
-        alignGrid();
+        bottomRightCorner();
     }
 
     /**
@@ -1274,6 +1274,24 @@ public class TTableWidget extends TWidget {
      */
     public int getRowCount() {
         return rows.size();
+    }
+
+
+    /**
+     * Push top and left to the bottom-most right corner of the available
+     * grid.
+     */
+    private void bottomRightCorner() {
+        int viewColumns = getWidth();
+        if (showRowLabels == true) {
+            viewColumns -= ROW_LABEL_WIDTH;
+        }
+
+        // Set left and top such that the table stays on screen if possible.
+        top = rows.size() - getHeight();
+        left = columns.size() - (getWidth() / (viewColumns / (COLUMN_DEFAULT_WIDTH + 1)));
+        // Now ensure the selection is visible.
+        alignGrid();
     }
 
     /**
@@ -1768,7 +1786,7 @@ public class TTableWidget extends TWidget {
         if (selectedRow == rows.size()) {
             selectedRow--;
         }
-        alignGrid();
+        bottomRightCorner();
     }
 
     /**
@@ -1878,21 +1896,29 @@ public class TTableWidget extends TWidget {
         if (selectedColumn == columns.size()) {
             selectedColumn--;
         }
-        alignGrid();
+        bottomRightCorner();
     }
 
     /**
      * Delete the selected cell, shifting cells over to the left.
      */
     public void deleteCellShiftLeft() {
-        // TODO
+        // All we do is copy the text from every cell in this row over.
+        for (int i = selectedColumn + 1; i < columns.size(); i++) {
+            setCellText(i - 1, selectedRow, getCellText(i, selectedRow));
+        }
+        setCellText(columns.size() - 1, selectedRow, "");
     }
 
     /**
      * Delete the selected cell, shifting cells from below up.
      */
     public void deleteCellShiftUp() {
-        // TODO
+        // All we do is copy the text from every cell in this column up.
+        for (int i = selectedRow + 1; i < rows.size(); i++) {
+            setCellText(selectedColumn, i - 1, getCellText(selectedColumn, i));
+        }
+        setCellText(selectedColumn, rows.size() - 1, "");
     }
 
     /**
