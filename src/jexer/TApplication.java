@@ -3116,6 +3116,10 @@ public class TApplication implements Runnable {
      */
     public final TMenu addTableMenu() {
         TMenu tableMenu = addMenu(i18n.getString("tableMenuTitle"));
+        tableMenu.addDefaultItem(TMenu.MID_TABLE_RENAME_COLUMN, false);
+        tableMenu.addDefaultItem(TMenu.MID_TABLE_RENAME_ROW, false);
+        tableMenu.addSeparator();
+
         TSubMenu viewMenu = tableMenu.addSubMenu(i18n.
             getString("tableSubMenuView"));
         viewMenu.addDefaultItem(TMenu.MID_TABLE_VIEW_ROW_LABELS, false);

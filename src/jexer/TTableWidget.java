@@ -31,6 +31,7 @@ package jexer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ResourceBundle;
 
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
@@ -49,6 +50,11 @@ import static jexer.TKeypress.*;
  * https://github.com/nikiroo/jexer/tree/ttable_pull.
  */
 public class TTableWidget extends TWidget {
+
+    /**
+     * Translated strings.
+     */
+    private static final ResourceBundle i18n = ResourceBundle.getBundle(TTableWidget.class.getName());
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -205,15 +211,7 @@ public class TTableWidget extends TWidget {
          * "A", column 1 will be "B", column 26 will be "AA", and so on.
          */
         Column(int col) {
-            StringBuilder sb = new StringBuilder();
-            for (;;) {
-                sb.append((char) ('A' + (col % 26)));
-                if (col < 26) {
-                    break;
-                }
-                col /= 26;
-            }
-            label = sb.reverse().toString();
+            label = makeColumnLabel(col);
         }
 
         /**
@@ -370,6 +368,11 @@ public class TTableWidget extends TWidget {
         private boolean isEditing = false;
 
         /**
+         * If true, the cell is read-only (non-editable).
+         */
+        private boolean readOnly = false;
+
+        /**
          * Text of field before editing.
          */
         private String fieldText;
@@ -475,16 +478,24 @@ public class TTableWidget extends TWidget {
         public void onKeypress(final TKeypressEvent keypress) {
             // System.err.println("Cell onKeypress: " + keypress);
 
+            if (readOnly) {
+                // Read only: do nothing.
+                return;
+            }
+
             if (isEditing) {
                 if (keypress.equals(kbEsc)) {
                     // ESC cancels the edit.
-                    field.setText(fieldText);
-                    isEditing = false;
-                    field.setEnabled(false);
+                    cancelEdit();
                     return;
                 }
                 if (keypress.equals(kbEnter)) {
                     // Enter ends editing.
+
+                    // Pass down to field first so that it can execute
+                    // enterAction if specified.
+                    super.onKeypress(keypress);
+
                     fieldText = field.getText();
                     isEditing = false;
                     field.setEnabled(false);
@@ -562,6 +573,28 @@ public class TTableWidget extends TWidget {
          */
         public void setText(final String text) {
             field.setText(text);
+        }
+
+        /**
+         * Cancel any pending edit.
+         */
+        public void cancelEdit() {
+            // Cancel any pending edit.
+            if (fieldText != null) {
+                field.setText(fieldText);
+            }
+            isEditing = false;
+            field.setEnabled(false);
+        }
+
+        /**
+         * Set an entire column of cells read-only (non-editable) or not.
+         *
+         * @param readOnly if true, the cells will be non-editable
+         */
+        public void setReadOnly(final boolean readOnly) {
+            cancelEdit();
+            this.readOnly = readOnly;
         }
 
     }
@@ -778,7 +811,25 @@ public class TTableWidget extends TWidget {
      */
     @Override
     public void onMenu(final TMenuEvent menu) {
+        TInputBox inputBox;
+
         switch (menu.getId()) {
+        case TMenu.MID_TABLE_RENAME_COLUMN:
+            inputBox = inputBox(i18n.getString("renameColumnInputTitle"),
+                i18n.getString("renameColumnInputCaption"),
+                getColumnLabel(selectedColumn), TMessageBox.Type.OKCANCEL);
+            if (inputBox.isOk()) {
+                setColumnLabel(selectedColumn, inputBox.getText());
+            }
+            break;
+        case TMenu.MID_TABLE_RENAME_ROW:
+            inputBox = inputBox(i18n.getString("renameRowInputTitle"),
+                i18n.getString("renameRowInputCaption"),
+                getRowLabel(selectedRow), TMessageBox.Type.OKCANCEL);
+            if (inputBox.isOk()) {
+                setRowLabel(selectedRow, inputBox.getText());
+            }
+            break;
         case TMenu.MID_TABLE_VIEW_ROW_LABELS:
             showRowLabels = getApplication().getMenuItem(menu.getId()).getChecked();
             break;
@@ -854,25 +905,48 @@ public class TTableWidget extends TWidget {
             }
             break;
         case TMenu.MID_TABLE_BORDER_BOTTOM:
-                rows.get(selectedRow).bottomBorder = Border.SINGLE;
-                rows.get(selectedRow).height = 2;
-                break;
+            rows.get(selectedRow).bottomBorder = Border.SINGLE;
+            rows.get(selectedRow).height = 2;
+            break;
         case TMenu.MID_TABLE_BORDER_DOUBLE_BOTTOM:
-                rows.get(selectedRow).bottomBorder = Border.DOUBLE;
-                rows.get(selectedRow).height = 2;
-                break;
+            rows.get(selectedRow).bottomBorder = Border.DOUBLE;
+            rows.get(selectedRow).height = 2;
+            break;
         case TMenu.MID_TABLE_BORDER_THICK_BOTTOM:
-                rows.get(selectedRow).bottomBorder = Border.THICK;
-                rows.get(selectedRow).height = 2;
-                break;
+            rows.get(selectedRow).bottomBorder = Border.THICK;
+            rows.get(selectedRow).height = 2;
+            break;
         case TMenu.MID_TABLE_DELETE_LEFT:
+            deleteCellShiftLeft();
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_DELETE_UP:
+            deleteCellShiftUp();
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_DELETE_ROW:
+            deleteRow(selectedColumn);
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_DELETE_COLUMN:
+            deleteColumn(selectedColumn);
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_INSERT_LEFT:
+            insertColumnLeft(selectedColumn);
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_INSERT_RIGHT:
+            insertColumnRight(selectedColumn);
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_INSERT_ABOVE:
+            insertRowAbove(selectedColumn);
+            activate(columns.get(selectedColumn).get(selectedRow));
+            break;
         case TMenu.MID_TABLE_INSERT_BELOW:
+            insertRowBelow(selectedColumn);
+            activate(columns.get(selectedColumn).get(selectedRow));
             break;
         case TMenu.MID_TABLE_COLUMN_NARROW:
             columns.get(selectedColumn).width--;
@@ -1077,6 +1151,24 @@ public class TTableWidget extends TWidget {
     // ------------------------------------------------------------------------
     // TTable -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Generate the default letter name for a column number.
+     *
+     * @param col column number to use for this column.  Column 0 will be
+     * "A", column 1 will be "B", column 26 will be "AA", and so on.
+     */
+    private String makeColumnLabel(int col) {
+        StringBuilder sb = new StringBuilder();
+        for (;;) {
+            sb.append((char) ('A' + (col % 26)));
+            if (col < 26) {
+                break;
+            }
+            col /= 26;
+        }
+        return sb.reverse().toString();
+    }
 
     /**
      * Get the currently-selected cell.
@@ -1341,6 +1433,15 @@ public class TTableWidget extends TWidget {
             topCellY += rows.get(y).height;
         }
 
+        // Last thing: cancel any edits that are not the selected cell.
+        for (int y = 0; y < rows.size(); y++) {
+            for (int x = 0; x < columns.size(); x++) {
+                if ((x == selectedColumn) && (y == selectedRow)) {
+                    continue;
+                }
+                rows.get(y).get(x).cancelEdit();
+            }
+        }
     }
 
     /**
@@ -1351,6 +1452,450 @@ public class TTableWidget extends TWidget {
      */
     public void saveToFilename(final String filename) throws IOException {
         // TODO
+    }
+
+    /**
+     * Set the selected cell location.
+     *
+     * @param column the selected cell location column
+     * @param row the selected cell location row
+     */
+    public void setSelectedCell(final int column, final int row) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        selectedColumn = column;
+        selectedRow = row;
+        alignGrid();
+    }
+
+    /**
+     * Get a particular cell.
+     *
+     * @param column the cell column
+     * @param row the cell row
+     * @return the cell
+     */
+    public Cell getCell(final int column, final int row) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        return rows.get(row).get(column);
+    }
+
+    /**
+     * Get the text of a particular cell.
+     *
+     * @param column the cell column
+     * @param row the cell row
+     * @return the text in the cell
+     */
+    public String getCellText(final int column, final int row) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        return rows.get(row).get(column).getText();
+    }
+
+    /**
+     * Set the text of a particular cell.
+     *
+     * @param column the cell column
+     * @param row the cell row
+     * @param text the text to put into the cell
+     */
+    public void setCellText(final int column, final int row,
+        final String text) {
+
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        rows.get(row).get(column).setText(text);
+    }
+
+    /**
+     * Set the action to perform when the user presses enter on a particular
+     * cell.
+     *
+     * @param column the cell column
+     * @param row the cell row
+     * @param action the action to perform when the user presses enter on the
+     * cell
+     */
+    public void setCellEnterAction(final int column, final int row,
+        final TAction action) {
+
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        rows.get(row).get(column).field.setEnterAction(action);
+    }
+
+    /**
+     * Set the action to perform when the user updates a particular cell.
+     *
+     * @param column the cell column
+     * @param row the cell row
+     * @param action the action to perform when the user updates the cell
+     */
+    public void setCellUpdateAction(final int column, final int row,
+        final TAction action) {
+
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        rows.get(row).get(column).field.setUpdateAction(action);
+    }
+
+    /**
+     * Get the width of a column.
+     *
+     * @param column the column number
+     * @return the width of the column
+     */
+    public int getColumnWidth(final int column) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        return columns.get(column).width;
+    }
+
+    /**
+     * Set the width of a column.
+     *
+     * @param column the column number
+     * @param width the new width of the column
+     */
+    public void setColumnWidth(final int column, final int width) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        columns.get(column).width = width;
+    }
+
+    /**
+     * Get the label of a column.
+     *
+     * @param column the column number
+     * @return the label of the column
+     */
+    public String getColumnLabel(final int column) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        return columns.get(column).label;
+    }
+
+    /**
+     * Set the label of a column.
+     *
+     * @param column the column number
+     * @param label the new label of the column
+     */
+    public void setColumnLabel(final int column, final String label) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        columns.get(column).label = label;
+    }
+
+    /**
+     * Get the label of a row.
+     *
+     * @param row the row number
+     * @return the label of the row
+     */
+    public String getRowLabel(final int row) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        return rows.get(row).label;
+    }
+
+    /**
+     * Set the label of a row.
+     *
+     * @param row the row number
+     * @param label the new label of the row
+     */
+    public void setRowLabel(final int row, final String label) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        rows.get(row).label = label;
+    }
+
+    /**
+     * Insert one row at a particular index.
+     *
+     * @param idx the row number
+     */
+    private void insertRowAt(final int idx) {
+        Row newRow = new Row(idx);
+        for (int i = 0; i < columns.size(); i++) {
+            Cell cell = new Cell(this, columns.get(i).getX(),
+                rows.get(selectedRow).getY(), COLUMN_DEFAULT_WIDTH, 1, i, idx);
+            newRow.add(cell);
+            columns.get(i).cells.add(idx, cell);
+        }
+        rows.add(idx, newRow);
+
+        for (int x = 0; x < columns.size(); x++) {
+            for (int y = idx; y < rows.size(); y++) {
+                columns.get(x).get(y).row = y;
+                columns.get(x).get(y).column = x;
+            }
+        }
+        for (int i = idx + 1; i < rows.size(); i++) {
+            String oldRowLabel = Integer.toString(i - 1);
+            if (rows.get(i).label.equals(oldRowLabel)) {
+                rows.get(i).label = Integer.toString(i);
+            }
+        }
+        alignGrid();
+    }
+
+    /**
+     * Insert one row above a particular row.
+     *
+     * @param row the row number
+     */
+    public void insertRowAbove(final int row) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        insertRowAt(selectedRow);
+        selectedRow++;
+    }
+
+    /**
+     * Insert one row below a particular row.
+     *
+     * @param row the row number
+     */
+    public void insertRowBelow(final int row) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        int idx = selectedRow + 1;
+        if (idx < rows.size()) {
+            insertRowAt(idx);
+            return;
+        }
+
+        // selectedRow is the last row, we need to perform an append.
+        Row newRow = new Row(idx);
+        for (int i = 0; i < columns.size(); i++) {
+            Cell cell = new Cell(this, columns.get(i).getX(),
+                rows.get(selectedRow).getY(), COLUMN_DEFAULT_WIDTH, 1, i, idx);
+            newRow.add(cell);
+            columns.get(i).cells.add(cell);
+        }
+        rows.add(newRow);
+        alignGrid();
+    }
+
+    /**
+     * Delete a particular row.
+     *
+     * @param row the row number
+     */
+    public void deleteRow(final int row) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        // TODO
+    }
+
+    /**
+     * Insert one column at a particular index.
+     *
+     * @param idx the column number
+     */
+    private void insertColumnAt(final int idx) {
+        Column newColumn = new Column(idx);
+        for (int i = 0; i < rows.size(); i++) {
+            Cell cell = new Cell(this, columns.get(selectedColumn).getX(),
+                rows.get(i).getY(), COLUMN_DEFAULT_WIDTH, 1, idx, i);
+            newColumn.add(cell);
+            rows.get(i).cells.add(idx, cell);
+        }
+        columns.add(idx, newColumn);
+
+        for (int x = idx; x < columns.size(); x++) {
+            for (int y = 0; y < rows.size(); y++) {
+                columns.get(x).get(y).row = y;
+                columns.get(x).get(y).column = x;
+            }
+        }
+        for (int i = idx + 1; i < columns.size(); i++) {
+            String oldColumnLabel = makeColumnLabel(i - 1);
+            if (columns.get(i).label.equals(oldColumnLabel)) {
+                columns.get(i).label = makeColumnLabel(i);
+            }
+        }
+        alignGrid();
+    }
+
+    /**
+     * Insert one column to the left of a particular column.
+     *
+     * @param column the column number
+     */
+    public void insertColumnLeft(final int column) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        insertColumnAt(selectedColumn);
+        selectedColumn++;
+    }
+
+    /**
+     * Insert one column to the right of a particular column.
+     *
+     * @param column the column number
+     */
+    public void insertColumnRight(final int column) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        int idx = selectedColumn + 1;
+        if (idx < columns.size()) {
+            insertColumnAt(idx);
+            return;
+        }
+
+        // selectedColumn is the last column, we need to perform an append.
+        Column newColumn = new Column(idx);
+        for (int i = 0; i < rows.size(); i++) {
+            Cell cell = new Cell(this, columns.get(selectedColumn).getX(),
+                rows.get(i).getY(), COLUMN_DEFAULT_WIDTH, 1, idx, i);
+            newColumn.add(cell);
+            rows.get(i).cells.add(cell);
+        }
+        columns.add(newColumn);
+        alignGrid();
+    }
+
+    /**
+     * Delete a particular column.
+     *
+     * @param column the column number
+     */
+    public void deleteColumn(final int column) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        // TODO
+    }
+
+    /**
+     * Delete the selected cell, shifting cells over to the left.
+     */
+    public void deleteCellShiftLeft() {
+        // TODO
+    }
+
+    /**
+     * Delete the selected cell, shifting cells from below up.
+     */
+    public void deleteCellShiftUp() {
+        // TODO
+    }
+
+    /**
+     * Set a particular cell read-only (non-editable) or not.
+     *
+     * @param column the cell column
+     * @param row the cell row
+     * @param readOnly if true, the cell will be non-editable
+     */
+    public void setCellReadOnly(final int column, final int row,
+        final boolean readOnly) {
+
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        rows.get(row).get(column).setReadOnly(readOnly);
+    }
+
+    /**
+     * Set an entire row of cells read-only (non-editable) or not.
+     *
+     * @param row the row number
+     * @param readOnly if true, the cells will be non-editable
+     */
+    public void setRowReadOnly(final int row, final boolean readOnly) {
+        if ((row < 0) || (row > rows.size() - 1)) {
+            throw new IndexOutOfBoundsException("Row count is " +
+                rows.size() + ", requested index " + row);
+        }
+        for (Cell cell: rows.get(row).cells) {
+            cell.setReadOnly(readOnly);
+        }
+    }
+
+    /**
+     * Set an entire column of cells read-only (non-editable) or not.
+     *
+     * @param column the column number
+     * @param readOnly if true, the cells will be non-editable
+     */
+    public void setColumnReadOnly(final int column, final boolean readOnly) {
+        if ((column < 0) || (column > columns.size() - 1)) {
+            throw new IndexOutOfBoundsException("Column count is " +
+                columns.size() + ", requested index " + column);
+        }
+        for (Cell cell: columns.get(column).cells) {
+            cell.setReadOnly(readOnly);
+        }
     }
 
 }

@@ -573,5 +573,22 @@ public class TField extends TWidget {
         this.inactiveColorKey = inactiveColorKey;
     }
 
+    /**
+     * Set the action to perform when the user presses enter.
+     *
+     * @param action the action to perform when the user presses enter
+     */
+    public void setEnterAction(final TAction action) {
+        enterAction = action;
+    }
+
+    /**
+     * Set the action to perform when the field is updated.
+     *
+     * @param action the action to perform when the field is updated
+     */
+    public void setUpdateAction(final TAction action) {
+        updateAction = action;
+    }
 
 }

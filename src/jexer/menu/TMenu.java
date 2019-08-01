@@ -671,6 +671,12 @@ public class TMenu extends TWindow {
             label = i18n.getString("menuHelpAbout");
             break;
 
+        case MID_TABLE_RENAME_COLUMN:
+            label = i18n.getString("menuTableRenameColumn");
+            break;
+        case MID_TABLE_RENAME_ROW:
+            label = i18n.getString("menuTableRenameRow");
+            break;
         case MID_TABLE_VIEW_ROW_LABELS:
             label = i18n.getString("menuTableViewRowLabels");
             checkable = true;

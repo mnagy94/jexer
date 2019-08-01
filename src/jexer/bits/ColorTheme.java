@@ -647,7 +647,7 @@ public class ColorTheme {
         colors.put("ttable.active", color);
         color = new CellAttributes();
         color.setForeColor(Color.YELLOW);
-        color.setBackColor(Color.BLUE);
+        color.setBackColor(Color.CYAN);
         color.setBold(true);
         colors.put("ttable.selected", color);
         color = new CellAttributes();
