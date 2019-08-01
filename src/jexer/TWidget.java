@@ -204,6 +204,13 @@ public abstract class TWidget implements Comparable<TWidget> {
     protected TWidget(final TWidget parent, final boolean enabled,
         final int x, final int y, final int width, final int height) {
 
+        if (width < 0) {
+            throw new IllegalArgumentException("width cannot be negative");
+        }
+        if (height < 0) {
+            throw new IllegalArgumentException("height cannot be negative");
+        }
+
         this.enabled = enabled;
         this.parent = parent;
         this.window = parent.window;
@@ -233,6 +240,13 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     protected final void setupForTWindow(final TWindow window,
         final int x, final int y, final int width, final int height) {
+
+        if (width < 0) {
+            throw new IllegalArgumentException("width cannot be negative");
+        }
+        if (height < 0) {
+            throw new IllegalArgumentException("height cannot be negative");
+        }
 
         this.parent = window;
         this.window = window;
