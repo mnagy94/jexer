@@ -925,7 +925,7 @@ public class TTableWidget extends TWidget {
             activate(columns.get(selectedColumn).get(selectedRow));
             break;
         case TMenu.MID_TABLE_DELETE_ROW:
-            deleteRow(selectedColumn);
+            deleteRow(selectedRow);
             activate(columns.get(selectedColumn).get(selectedRow));
             break;
         case TMenu.MID_TABLE_DELETE_COLUMN:
@@ -1743,7 +1743,32 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Row count is " +
                 rows.size() + ", requested index " + row);
         }
-        // TODO
+        if (rows.size() == 1) {
+            // Don't delete the last row.
+            return;
+        }
+        for (int i = 0; i < columns.size(); i++) {
+            Cell cell = columns.get(i).cells.remove(row);
+            getChildren().remove(cell);
+        }
+        rows.remove(row);
+
+        for (int x = 0; x < columns.size(); x++) {
+            for (int y = row; y < rows.size(); y++) {
+                columns.get(x).get(y).row = y;
+                columns.get(x).get(y).column = x;
+            }
+        }
+        for (int i = row; i < rows.size(); i++) {
+            String oldRowLabel = Integer.toString(i + 1);
+            if (rows.get(i).label.equals(oldRowLabel)) {
+                rows.get(i).label = Integer.toString(i);
+            }
+        }
+        if (selectedRow == rows.size()) {
+            selectedRow--;
+        }
+        alignGrid();
     }
 
     /**
@@ -1828,7 +1853,32 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Column count is " +
                 columns.size() + ", requested index " + column);
         }
-        // TODO
+        if (columns.size() == 1) {
+            // Don't delete the last column.
+            return;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            Cell cell = rows.get(i).cells.remove(column);
+            getChildren().remove(cell);
+        }
+        columns.remove(column);
+
+        for (int x = column; x < columns.size(); x++) {
+            for (int y = 0; y < rows.size(); y++) {
+                columns.get(x).get(y).row = y;
+                columns.get(x).get(y).column = x;
+            }
+        }
+        for (int i = column; i < columns.size(); i++) {
+            String oldColumnLabel = makeColumnLabel(i + 1);
+            if (columns.get(i).label.equals(oldColumnLabel)) {
+                columns.get(i).label = makeColumnLabel(i);
+            }
+        }
+        if (selectedColumn == columns.size()) {
+            selectedColumn--;
+        }
+        alignGrid();
     }
 
     /**
