@@ -3157,6 +3157,7 @@ public class TApplication implements Runnable {
         columnMenu.addDefaultItem(TMenu.MID_TABLE_COLUMN_WIDEN, false);
         TSubMenu fileMenu = tableMenu.addSubMenu(i18n.
             getString("tableSubMenuFile"));
+        fileMenu.addDefaultItem(TMenu.MID_TABLE_FILE_OPEN_CSV, false);
         fileMenu.addDefaultItem(TMenu.MID_TABLE_FILE_SAVE_CSV, false);
         fileMenu.addDefaultItem(TMenu.MID_TABLE_FILE_SAVE_TEXT, false);
 

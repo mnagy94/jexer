@@ -34,9 +34,11 @@ import java.util.ResourceBundle;
 
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
+import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.menu.TMenu;
+import jexer.menu.TMenuItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -116,8 +118,30 @@ public class TTableWindow extends TScrollableWindow {
         getApplication().enableMenuItem(TMenu.MID_TABLE_INSERT_BELOW);
         getApplication().enableMenuItem(TMenu.MID_TABLE_COLUMN_NARROW);
         getApplication().enableMenuItem(TMenu.MID_TABLE_COLUMN_WIDEN);
+        getApplication().enableMenuItem(TMenu.MID_TABLE_FILE_OPEN_CSV);
         getApplication().enableMenuItem(TMenu.MID_TABLE_FILE_SAVE_CSV);
         getApplication().enableMenuItem(TMenu.MID_TABLE_FILE_SAVE_TEXT);
+
+        if (tableField != null) {
+
+            // Set the menu to match the flags.
+            TMenuItem menuItem = getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS);
+            if (menuItem != null) {
+                menuItem.setChecked(tableField.getShowRowLabels());
+            }
+            menuItem = getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_COLUMN_LABELS);
+            if (menuItem != null) {
+                menuItem.setChecked(tableField.getShowColumnLabels());
+            }
+            menuItem = getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW);
+            if (menuItem != null) {
+                menuItem.setChecked(tableField.getHighlightRow());
+            }
+            menuItem = getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN);
+            if (menuItem != null) {
+                menuItem.setChecked(tableField.getHighlightColumn());
+            }
+        }
     }
 
     /**
@@ -153,6 +177,7 @@ public class TTableWindow extends TScrollableWindow {
         getApplication().disableMenuItem(TMenu.MID_TABLE_INSERT_BELOW);
         getApplication().disableMenuItem(TMenu.MID_TABLE_COLUMN_NARROW);
         getApplication().disableMenuItem(TMenu.MID_TABLE_COLUMN_WIDEN);
+        getApplication().disableMenuItem(TMenu.MID_TABLE_FILE_OPEN_CSV);
         getApplication().disableMenuItem(TMenu.MID_TABLE_FILE_SAVE_CSV);
         getApplication().disableMenuItem(TMenu.MID_TABLE_FILE_SAVE_TEXT);
     }
@@ -284,7 +309,7 @@ public class TTableWindow extends TScrollableWindow {
                     try {
                         // TODO
                         if (false) {
-                            tableField.saveToFilename(filename);
+                            tableField.saveToCsvFilename(filename);
                         }
                     } catch (IOException e) {
                         messageBox(i18n.getString("errorDialogTitle"),
@@ -300,22 +325,132 @@ public class TTableWindow extends TScrollableWindow {
             return;
         }
 
-        if (command.equals(cmSave)) {
-            try {
-                String filename = fileSaveBox(".");
-                if (filename != null) {
-                    tableField.saveToFilename(filename);
-                }
-            } catch (IOException e) {
-                messageBox(i18n.getString("errorDialogTitle"),
-                    MessageFormat.format(i18n.
-                        getString("errorSavingFile"), e.getMessage()));
-            }
-            return;
-        }
-
         // Didn't handle it, let children get it instead
         super.onCommand(command);
+    }
+
+    /**
+     * Handle posted menu events.
+     *
+     * @param menu menu event
+     */
+    @Override
+    public void onMenu(final TMenuEvent menu) {
+        TInputBox inputBox;
+
+        switch (menu.getId()) {
+        case TMenu.MID_TABLE_RENAME_COLUMN:
+            inputBox = inputBox(i18n.getString("renameColumnInputTitle"),
+                i18n.getString("renameColumnInputCaption"),
+                tableField.getColumnLabel(tableField.getSelectedColumnNumber()),
+                TMessageBox.Type.OKCANCEL);
+            if (inputBox.isOk()) {
+                tableField.setColumnLabel(tableField.getSelectedColumnNumber(),
+                    inputBox.getText());
+            }
+            return;
+        case TMenu.MID_TABLE_RENAME_ROW:
+            inputBox = inputBox(i18n.getString("renameRowInputTitle"),
+                i18n.getString("renameRowInputCaption"),
+                tableField.getRowLabel(tableField.getSelectedRowNumber()),
+                TMessageBox.Type.OKCANCEL);
+            if (inputBox.isOk()) {
+                tableField.setRowLabel(tableField.getSelectedRowNumber(),
+                    inputBox.getText());
+            }
+            return;
+        case TMenu.MID_TABLE_VIEW_ROW_LABELS:
+            tableField.setShowRowLabels(getApplication().getMenuItem(
+                menu.getId()).getChecked());
+            return;
+        case TMenu.MID_TABLE_VIEW_COLUMN_LABELS:
+            tableField.setShowColumnLabels(getApplication().getMenuItem(
+                menu.getId()).getChecked());
+            return;
+        case TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW:
+            tableField.setHighlightRow(getApplication().getMenuItem(
+                menu.getId()).getChecked());
+            return;
+        case TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN:
+            tableField.setHighlightColumn(getApplication().getMenuItem(
+                menu.getId()).getChecked());
+            return;
+        case TMenu.MID_TABLE_BORDER_NONE:
+            tableField.setBorderAllNone();
+            return;
+        case TMenu.MID_TABLE_BORDER_ALL:
+            tableField.setBorderAllSingle();
+            return;
+        case TMenu.MID_TABLE_BORDER_CELL_NONE:
+            tableField.setBorderCellNone();
+            return;
+        case TMenu.MID_TABLE_BORDER_CELL_ALL:
+            tableField.setBorderCellSingle();
+            return;
+        case TMenu.MID_TABLE_BORDER_RIGHT:
+            tableField.setBorderColumnRightSingle();
+            return;
+        case TMenu.MID_TABLE_BORDER_LEFT:
+            tableField.setBorderColumnLeftSingle();
+            return;
+        case TMenu.MID_TABLE_BORDER_TOP:
+            tableField.setBorderRowAboveSingle();
+            return;
+        case TMenu.MID_TABLE_BORDER_BOTTOM:
+            tableField.setBorderRowBelowSingle();
+            return;
+        case TMenu.MID_TABLE_BORDER_DOUBLE_BOTTOM:
+            tableField.setBorderRowBelowDouble();
+            return;
+        case TMenu.MID_TABLE_BORDER_THICK_BOTTOM:
+            tableField.setBorderRowBelowThick();
+            return;
+        case TMenu.MID_TABLE_DELETE_LEFT:
+            tableField.deleteCellShiftLeft();
+            return;
+        case TMenu.MID_TABLE_DELETE_UP:
+            tableField.deleteCellShiftUp();
+            return;
+        case TMenu.MID_TABLE_DELETE_ROW:
+            tableField.deleteRow(tableField.getSelectedRowNumber());
+            return;
+        case TMenu.MID_TABLE_DELETE_COLUMN:
+            tableField.deleteColumn(tableField.getSelectedColumnNumber());
+            return;
+        case TMenu.MID_TABLE_INSERT_LEFT:
+            tableField.insertColumnLeft(tableField.getSelectedColumnNumber());
+            return;
+        case TMenu.MID_TABLE_INSERT_RIGHT:
+            tableField.insertColumnRight(tableField.getSelectedColumnNumber());
+            return;
+        case TMenu.MID_TABLE_INSERT_ABOVE:
+            tableField.insertRowAbove(tableField.getSelectedColumnNumber());
+            return;
+        case TMenu.MID_TABLE_INSERT_BELOW:
+            tableField.insertRowBelow(tableField.getSelectedColumnNumber());
+            return;
+        case TMenu.MID_TABLE_COLUMN_NARROW:
+            tableField.setColumnWidth(tableField.getSelectedColumnNumber(),
+                tableField.getColumnWidth(tableField.getSelectedColumnNumber()) - 1);
+            return;
+        case TMenu.MID_TABLE_COLUMN_WIDEN:
+            tableField.setColumnWidth(tableField.getSelectedColumnNumber(),
+                tableField.getColumnWidth(tableField.getSelectedColumnNumber()) + 1);
+            return;
+        case TMenu.MID_TABLE_FILE_OPEN_CSV:
+            // TODO
+            return;
+        case TMenu.MID_TABLE_FILE_SAVE_CSV:
+            // TODO
+            return;
+        case TMenu.MID_TABLE_FILE_SAVE_TEXT:
+            // TODO
+            return;
+        default:
+            break;
+        }
+
+        super.onMenu(menu);
     }
 
     // ------------------------------------------------------------------------
@@ -345,6 +480,9 @@ public class TTableWindow extends TScrollableWindow {
             i18n.getString("statusBarOpen"));
         statusBar.addShortcutKeypress(kbF10, cmMenu,
             i18n.getString("statusBarMenu"));
+
+        // Synchronize the menu with tableField's flags.
+        onFocus();
     }
 
     /**

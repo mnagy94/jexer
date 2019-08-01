@@ -128,8 +128,9 @@ public class TMenu extends TWindow {
     public static final int MID_TABLE_INSERT_BELOW              = 107;
     public static final int MID_TABLE_COLUMN_NARROW             = 110;
     public static final int MID_TABLE_COLUMN_WIDEN              = 111;
-    public static final int MID_TABLE_FILE_SAVE_CSV             = 115;
-    public static final int MID_TABLE_FILE_SAVE_TEXT            = 116;
+    public static final int MID_TABLE_FILE_OPEN_CSV             = 115;
+    public static final int MID_TABLE_FILE_SAVE_CSV             = 116;
+    public static final int MID_TABLE_FILE_SAVE_TEXT            = 117;
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -759,6 +760,9 @@ public class TMenu extends TWindow {
         case MID_TABLE_COLUMN_WIDEN:
             label = i18n.getString("menuTableColumnWiden");
             key = kbShiftRight;
+            break;
+        case MID_TABLE_FILE_OPEN_CSV:
+            label = i18n.getString("menuTableFileOpenCsv");
             break;
         case MID_TABLE_FILE_SAVE_CSV:
             label = i18n.getString("menuTableFileSaveCsv");

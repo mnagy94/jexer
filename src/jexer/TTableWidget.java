@@ -35,10 +35,8 @@ import java.util.ResourceBundle;
 
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
-import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.menu.TMenu;
 import static jexer.TKeypress.*;
 
 /**
@@ -86,6 +84,11 @@ public class TTableWidget extends TWidget {
     }
 
     /**
+     * If true, put a grid of numbers in the cells.
+     */
+    private static final boolean DEBUG = false;
+
+    /**
      * Row label width.
      */
     private static final int ROW_LABEL_WIDTH = 8;
@@ -103,12 +106,12 @@ public class TTableWidget extends TWidget {
     /**
      * Extra rows to add.
      */
-    private static final int EXTRA_ROWS = 10;
+    private static final int EXTRA_ROWS = (DEBUG ? 10 : 0);
 
     /**
      * Extra columns to add.
      */
-    private static final int EXTRA_COLUMNS = 10 * (8 + 1);
+    private static final int EXTRA_COLUMNS = (DEBUG ? 10 * (8 + 1) : 0);
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -628,12 +631,13 @@ public class TTableWidget extends TWidget {
             for (int j = 0; j < width + EXTRA_COLUMNS;
                  j += columns.get(0).width) {
 
-                Cell cell = new Cell(this, 0, 0, /* j, i, */ columns.get(0).width,
+                Cell cell = new Cell(this, 0, 0, columns.get(0).width,
                     rows.get(0).height, column, row);
 
-                // DEBUG: set a grid of cell index labels
-                // TODO: remove this
-                cell.setText("" + row + " " + column);
+                if (DEBUG) {
+                    // For debugging: set a grid of cell index labels.
+                    cell.setText("" + row + " " + column);
+                }
                 rows.get(row).add(cell);
                 columns.get(column).add(cell);
                 if ((i == 0) &&
@@ -658,18 +662,6 @@ public class TTableWidget extends TWidget {
         activate(columns.get(selectedColumn).get(selectedRow));
 
         alignGrid();
-
-        // Set the menu to match the flags.
-        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS).
-                setChecked(showRowLabels);
-        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_COLUMN_LABELS).
-                setChecked(showColumnLabels);
-        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW).
-                setChecked(highlightRow);
-        getApplication().getMenuItem(TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN).
-                setChecked(highlightColumn);
-
-
     }
 
     // ------------------------------------------------------------------------
@@ -802,184 +794,6 @@ public class TTableWidget extends TWidget {
         super.onResize(event);
 
         bottomRightCorner();
-    }
-
-    /**
-     * Handle posted menu events.
-     *
-     * @param menu menu event
-     */
-    @Override
-    public void onMenu(final TMenuEvent menu) {
-        TInputBox inputBox;
-
-        switch (menu.getId()) {
-        case TMenu.MID_TABLE_RENAME_COLUMN:
-            inputBox = inputBox(i18n.getString("renameColumnInputTitle"),
-                i18n.getString("renameColumnInputCaption"),
-                getColumnLabel(selectedColumn), TMessageBox.Type.OKCANCEL);
-            if (inputBox.isOk()) {
-                setColumnLabel(selectedColumn, inputBox.getText());
-            }
-            break;
-        case TMenu.MID_TABLE_RENAME_ROW:
-            inputBox = inputBox(i18n.getString("renameRowInputTitle"),
-                i18n.getString("renameRowInputCaption"),
-                getRowLabel(selectedRow), TMessageBox.Type.OKCANCEL);
-            if (inputBox.isOk()) {
-                setRowLabel(selectedRow, inputBox.getText());
-            }
-            break;
-        case TMenu.MID_TABLE_VIEW_ROW_LABELS:
-            showRowLabels = getApplication().getMenuItem(menu.getId()).getChecked();
-            break;
-        case TMenu.MID_TABLE_VIEW_COLUMN_LABELS:
-            showColumnLabels = getApplication().getMenuItem(menu.getId()).getChecked();
-            break;
-        case TMenu.MID_TABLE_VIEW_HIGHLIGHT_ROW:
-            highlightRow = getApplication().getMenuItem(menu.getId()).getChecked();
-            break;
-        case TMenu.MID_TABLE_VIEW_HIGHLIGHT_COLUMN:
-            highlightColumn = getApplication().getMenuItem(menu.getId()).getChecked();
-            break;
-        case TMenu.MID_TABLE_BORDER_NONE:
-            topBorder = Border.NONE;
-            leftBorder = Border.NONE;
-            for (int i = 0; i < columns.size(); i++) {
-                columns.get(i).rightBorder = Border.NONE;
-            }
-            for (int i = 0; i < rows.size(); i++) {
-                rows.get(i).bottomBorder = Border.NONE;
-                rows.get(i).height = 1;
-            }
-            break;
-        case TMenu.MID_TABLE_BORDER_ALL:
-            topBorder = Border.SINGLE;
-            leftBorder = Border.SINGLE;
-            for (int i = 0; i < columns.size(); i++) {
-                columns.get(i).rightBorder = Border.SINGLE;
-            }
-            for (int i = 0; i < rows.size(); i++) {
-                rows.get(i).bottomBorder = Border.SINGLE;
-                rows.get(i).height = 2;
-            }
-            break;
-        case TMenu.MID_TABLE_BORDER_CELL_NONE:
-            if (selectedRow == 0) {
-                topBorder = Border.NONE;
-            }
-            if (selectedColumn == 0) {
-                leftBorder = Border.NONE;
-            }
-            columns.get(selectedColumn).rightBorder = Border.NONE;
-            rows.get(selectedRow).bottomBorder = Border.NONE;
-            rows.get(selectedRow).height = 1;
-            break;
-        case TMenu.MID_TABLE_BORDER_CELL_ALL:
-            if (selectedRow == 0) {
-                topBorder = Border.SINGLE;
-            }
-            if (selectedColumn == 0) {
-                leftBorder = Border.SINGLE;
-            }
-            columns.get(selectedColumn).rightBorder = Border.SINGLE;
-            rows.get(selectedRow).bottomBorder = Border.SINGLE;
-            rows.get(selectedRow).height = 2;
-            break;
-        case TMenu.MID_TABLE_BORDER_RIGHT:
-            columns.get(selectedColumn).rightBorder = Border.SINGLE;
-            break;
-        case TMenu.MID_TABLE_BORDER_LEFT:
-            if (selectedColumn == 0) {
-                leftBorder = Border.SINGLE;
-            } else {
-                columns.get(selectedColumn - 1).rightBorder = Border.SINGLE;
-            }
-            break;
-        case TMenu.MID_TABLE_BORDER_TOP:
-            if (selectedRow == 0) {
-                topBorder = Border.SINGLE;
-            } else {
-                rows.get(selectedRow - 1).bottomBorder = Border.SINGLE;
-                rows.get(selectedRow - 1).height = 2;
-            }
-            break;
-        case TMenu.MID_TABLE_BORDER_BOTTOM:
-            rows.get(selectedRow).bottomBorder = Border.SINGLE;
-            rows.get(selectedRow).height = 2;
-            break;
-        case TMenu.MID_TABLE_BORDER_DOUBLE_BOTTOM:
-            rows.get(selectedRow).bottomBorder = Border.DOUBLE;
-            rows.get(selectedRow).height = 2;
-            break;
-        case TMenu.MID_TABLE_BORDER_THICK_BOTTOM:
-            rows.get(selectedRow).bottomBorder = Border.THICK;
-            rows.get(selectedRow).height = 2;
-            break;
-        case TMenu.MID_TABLE_DELETE_LEFT:
-            deleteCellShiftLeft();
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_DELETE_UP:
-            deleteCellShiftUp();
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_DELETE_ROW:
-            deleteRow(selectedRow);
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_DELETE_COLUMN:
-            deleteColumn(selectedColumn);
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_INSERT_LEFT:
-            insertColumnLeft(selectedColumn);
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_INSERT_RIGHT:
-            insertColumnRight(selectedColumn);
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_INSERT_ABOVE:
-            insertRowAbove(selectedColumn);
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_INSERT_BELOW:
-            insertRowBelow(selectedColumn);
-            activate(columns.get(selectedColumn).get(selectedRow));
-            break;
-        case TMenu.MID_TABLE_COLUMN_NARROW:
-            columns.get(selectedColumn).width--;
-            for (Cell cell: getSelectedColumn().cells) {
-                cell.setWidth(columns.get(selectedColumn).width);
-                cell.field.setWidth(columns.get(selectedColumn).width);
-            }
-            for (int i = selectedColumn + 1; i < columns.size(); i++) {
-                columns.get(i).setX(columns.get(i).getX() - 1);
-            }
-            break;
-        case TMenu.MID_TABLE_COLUMN_WIDEN:
-            columns.get(selectedColumn).width++;
-            for (Cell cell: getSelectedColumn().cells) {
-                cell.setWidth(columns.get(selectedColumn).width);
-                cell.field.setWidth(columns.get(selectedColumn).width);
-            }
-            for (int i = selectedColumn + 1; i < columns.size(); i++) {
-                columns.get(i).setX(columns.get(i).getX() + 1);
-            }
-            break;
-        case TMenu.MID_TABLE_FILE_SAVE_CSV:
-            // TODO
-            break;
-        case TMenu.MID_TABLE_FILE_SAVE_TEXT:
-            // TODO
-            break;
-        default:
-            super.onMenu(menu);
-        }
-
-        // Fix/redraw the display.
-        alignGrid();
     }
 
     // ------------------------------------------------------------------------
@@ -1259,6 +1073,78 @@ public class TTableWidget extends TWidget {
     }
 
     /**
+     * Get the highlight row flag.
+     *
+     * @return true if the selected row is highlighted
+     */
+    public boolean getHighlightRow() {
+        return highlightRow;
+    }
+
+    /**
+     * Set the highlight row flag.
+     *
+     * @param highlightRow if true, the selected row will be highlighted
+     */
+    public void setHighlightRow(final boolean highlightRow) {
+        this.highlightRow = highlightRow;
+    }
+
+    /**
+     * Get the highlight column flag.
+     *
+     * @return true if the selected column is highlighted
+     */
+    public boolean getHighlightColumn() {
+        return highlightColumn;
+    }
+
+    /**
+     * Set the highlight column flag.
+     *
+     * @param highlightColumn if true, the selected column will be highlighted
+     */
+    public void setHighlightColumn(final boolean highlightColumn) {
+        this.highlightColumn = highlightColumn;
+    }
+
+    /**
+     * Get the show row labels flag.
+     *
+     * @return true if row labels are shown
+     */
+    public boolean getShowRowLabels() {
+        return showRowLabels;
+    }
+
+    /**
+     * Set the show row labels flag.
+     *
+     * @param showRowLabels if true, the row labels will be shown
+     */
+    public void setShowRowLabels(final boolean showRowLabels) {
+        this.showRowLabels = showRowLabels;
+    }
+
+    /**
+     * Get the show column labels flag.
+     *
+     * @return true if column labels are shown
+     */
+    public boolean getShowColumnLabels() {
+        return showColumnLabels;
+    }
+
+    /**
+     * Set the show column labels flag.
+     *
+     * @param showColumnLabels if true, the column labels will be shown
+     */
+    public void setShowColumnLabels(final boolean showColumnLabels) {
+        this.showColumnLabels = showColumnLabels;
+    }
+
+    /**
      * Get the number of columns.
      *
      * @return the number of columns
@@ -1463,12 +1349,22 @@ public class TTableWidget extends TWidget {
     }
 
     /**
-     * Save contents to file.
+     * Save contents to file in CSV format.
      *
      * @param filename file to save to
      * @throws IOException if a java.io operation throws
      */
-    public void saveToFilename(final String filename) throws IOException {
+    public void saveToCsvFilename(final String filename) throws IOException {
+        // TODO
+    }
+
+    /**
+     * Save contents to file in text format with lines.
+     *
+     * @param filename file to save to
+     * @throws IOException if a java.io operation throws
+     */
+    public void saveToTextFilename(final String filename) throws IOException {
         // TODO
     }
 
@@ -1620,7 +1516,26 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Column count is " +
                 columns.size() + ", requested index " + column);
         }
+
+        if (width < 4) {
+            // Columns may not be smaller than 4 cells wide.
+            return;
+        }
+
+        int delta = width - columns.get(column).width;
         columns.get(column).width = width;
+        for (Cell cell: columns.get(column).cells) {
+            cell.setWidth(columns.get(column).width);
+            cell.field.setWidth(columns.get(column).width);
+        }
+        for (int i = column + 1; i < columns.size(); i++) {
+            columns.get(i).setX(columns.get(i).getX() + delta);
+        }
+        if (column == columns.size() - 1) {
+            bottomRightCorner();
+        } else {
+            alignGrid();
+        }
     }
 
     /**
@@ -1721,6 +1636,7 @@ public class TTableWidget extends TWidget {
         }
         insertRowAt(selectedRow);
         selectedRow++;
+        activate(columns.get(selectedColumn).get(selectedRow));
     }
 
     /**
@@ -1736,6 +1652,7 @@ public class TTableWidget extends TWidget {
         int idx = selectedRow + 1;
         if (idx < rows.size()) {
             insertRowAt(idx);
+            activate(columns.get(selectedColumn).get(selectedRow));
             return;
         }
 
@@ -1749,6 +1666,7 @@ public class TTableWidget extends TWidget {
         }
         rows.add(newRow);
         alignGrid();
+        activate(columns.get(selectedColumn).get(selectedRow));
     }
 
     /**
@@ -1786,6 +1704,7 @@ public class TTableWidget extends TWidget {
         if (selectedRow == rows.size()) {
             selectedRow--;
         }
+        activate(columns.get(selectedColumn).get(selectedRow));
         bottomRightCorner();
     }
 
@@ -1831,6 +1750,7 @@ public class TTableWidget extends TWidget {
         }
         insertColumnAt(selectedColumn);
         selectedColumn++;
+        activate(columns.get(selectedColumn).get(selectedRow));
     }
 
     /**
@@ -1846,6 +1766,7 @@ public class TTableWidget extends TWidget {
         int idx = selectedColumn + 1;
         if (idx < columns.size()) {
             insertColumnAt(idx);
+            activate(columns.get(selectedColumn).get(selectedRow));
             return;
         }
 
@@ -1859,6 +1780,7 @@ public class TTableWidget extends TWidget {
         }
         columns.add(newColumn);
         alignGrid();
+        activate(columns.get(selectedColumn).get(selectedRow));
     }
 
     /**
@@ -1896,6 +1818,7 @@ public class TTableWidget extends TWidget {
         if (selectedColumn == columns.size()) {
             selectedColumn--;
         }
+        activate(columns.get(selectedColumn).get(selectedRow));
         bottomRightCorner();
     }
 
@@ -1972,6 +1895,132 @@ public class TTableWidget extends TWidget {
         for (Cell cell: columns.get(column).cells) {
             cell.setReadOnly(readOnly);
         }
+    }
+
+    /**
+     * Set all borders across the entire table to Border.NONE.
+     */
+    public void setBorderAllNone() {
+        topBorder = Border.NONE;
+        leftBorder = Border.NONE;
+        for (int i = 0; i < columns.size(); i++) {
+            columns.get(i).rightBorder = Border.NONE;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            rows.get(i).bottomBorder = Border.NONE;
+            rows.get(i).height = 1;
+        }
+        bottomRightCorner();
+    }
+
+    /**
+     * Set all borders across the entire table to Border.SINGLE.
+     */
+    public void setBorderAllSingle() {
+        topBorder = Border.SINGLE;
+        leftBorder = Border.SINGLE;
+        for (int i = 0; i < columns.size(); i++) {
+            columns.get(i).rightBorder = Border.SINGLE;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            rows.get(i).bottomBorder = Border.SINGLE;
+            rows.get(i).height = 2;
+        }
+        alignGrid();
+    }
+
+    /**
+     * Set all borders around the selected cell to Border.NONE.
+     */
+    public void setBorderCellNone() {
+        if (selectedRow == 0) {
+            topBorder = Border.NONE;
+        }
+        if (selectedColumn == 0) {
+            leftBorder = Border.NONE;
+        }
+        columns.get(selectedColumn).rightBorder = Border.NONE;
+        rows.get(selectedRow).bottomBorder = Border.NONE;
+        rows.get(selectedRow).height = 1;
+        bottomRightCorner();
+    }
+
+    /**
+     * Set all borders around the selected cell to Border.SINGLE.
+     */
+    public void setBorderCellSingle() {
+        if (selectedRow == 0) {
+            topBorder = Border.SINGLE;
+        }
+        if (selectedColumn == 0) {
+            leftBorder = Border.SINGLE;
+        }
+        columns.get(selectedColumn).rightBorder = Border.SINGLE;
+        rows.get(selectedRow).bottomBorder = Border.SINGLE;
+        rows.get(selectedRow).height = 2;
+        alignGrid();
+    }
+
+    /**
+     * Set the column border to the right of the selected cell to
+     * Border.SINGLE.
+     */
+    public void setBorderColumnRightSingle() {
+        columns.get(selectedColumn).rightBorder = Border.SINGLE;
+        alignGrid();
+    }
+
+    /**
+     * Set the column border to the right of the selected cell to
+     * Border.SINGLE.
+     */
+    public void setBorderColumnLeftSingle() {
+        if (selectedColumn == 0) {
+            leftBorder = Border.SINGLE;
+        } else {
+            columns.get(selectedColumn - 1).rightBorder = Border.SINGLE;
+        }
+        alignGrid();
+    }
+
+    /**
+     * Set the row border above the selected cell to Border.SINGLE.
+     */
+    public void setBorderRowAboveSingle() {
+        if (selectedRow == 0) {
+            topBorder = Border.SINGLE;
+        } else {
+            rows.get(selectedRow - 1).bottomBorder = Border.SINGLE;
+            rows.get(selectedRow - 1).height = 2;
+        }
+        alignGrid();
+    }
+
+    /**
+     * Set the row border below the selected cell to Border.SINGLE.
+     */
+    public void setBorderRowBelowSingle() {
+        rows.get(selectedRow).bottomBorder = Border.SINGLE;
+        rows.get(selectedRow).height = 2;
+        alignGrid();
+    }
+
+    /**
+     * Set the row border below the selected cell to Border.DOUBLE.
+     */
+    public void setBorderRowBelowDouble() {
+        rows.get(selectedRow).bottomBorder = Border.DOUBLE;
+        rows.get(selectedRow).height = 2;
+        alignGrid();
+    }
+
+    /**
+     * Set the row border below the selected cell to Border.THICK.
+     */
+    public void setBorderRowBelowThick() {
+        rows.get(selectedRow).bottomBorder = Border.THICK;
+        rows.get(selectedRow).height = 2;
+        alignGrid();
     }
 
 }
