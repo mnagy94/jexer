@@ -29,7 +29,7 @@
 package jexer.bits;
 
 import java.util.List;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 /**
  * StringUtils contains methods to:
@@ -39,6 +39,8 @@ import java.util.LinkedList;
  *
  *    - Unescape C0 control codes.
  *
+ *    - Read/write a line of RFC4180 comma-separated values strings to/from a
+ *      list of strings.
  */
 public class StringUtils {
 
@@ -50,7 +52,7 @@ public class StringUtils {
      * @return the list of lines
      */
     public static List<String> left(final String str, final int n) {
-        List<String> result = new LinkedList<String>();
+        List<String> result = new ArrayList<String>();
 
         /*
          * General procedure:
@@ -137,7 +139,7 @@ public class StringUtils {
      * @return the list of lines
      */
     public static List<String> right(final String str, final int n) {
-        List<String> result = new LinkedList<String>();
+        List<String> result = new ArrayList<String>();
 
         /*
          * Same as left(), but preceed each line with spaces to make it n
@@ -164,7 +166,7 @@ public class StringUtils {
      * @return the list of lines
      */
     public static List<String> center(final String str, final int n) {
-        List<String> result = new LinkedList<String>();
+        List<String> result = new ArrayList<String>();
 
         /*
          * Same as left(), but preceed/succeed each line with spaces to make
@@ -196,7 +198,7 @@ public class StringUtils {
      * @return the list of lines
      */
     public static List<String> full(final String str, final int n) {
-        List<String> result = new LinkedList<String>();
+        List<String> result = new ArrayList<String>();
 
         /*
          * Same as left(), but insert spaces between words to make each line
@@ -281,6 +283,125 @@ public class StringUtils {
             sb.append(ch);
         }
         return sb.toString();
+    }
+
+    /**
+     * Read a line of RFC4180 comma-separated values (CSV) into a list of
+     * strings.
+     *
+     * @param line the CSV line, with or without without line terminators
+     * @return the list of strings
+     */
+    public static List<String> fromCsv(final String line) {
+        List<String> result = new ArrayList<String>();
+
+        StringBuilder str = new StringBuilder();
+        boolean quoted = false;
+        boolean fieldQuoted = false;
+
+        for (int i = 0; i < line.length(); i++) {
+            char ch = line.charAt(i);
+
+            /*
+            System.err.println("ch '" + ch + "' str '" + str + "' " +
+                " fieldQuoted " + fieldQuoted + " quoted " + quoted);
+             */
+
+            if (ch == ',') {
+                if (fieldQuoted && quoted) {
+                    // Terminating a quoted field.
+                    result.add(str.toString());
+                    str = new StringBuilder();
+                    quoted = false;
+                    fieldQuoted = false;
+                } else if (fieldQuoted) {
+                    // Still waiting to see the terminating quote for this
+                    // field.
+                    str.append(ch);
+                } else if (quoted) {
+                    // An unmatched double-quote and comma.  This should be
+                    // an invalid sequence.  We will treat it as a quote
+                    // terminating the field.
+                    str.append('\"');
+                    result.add(str.toString());
+                    str = new StringBuilder();
+                    quoted = false;
+                    fieldQuoted = false;
+                } else {
+                    // A field separator.
+                    result.add(str.toString());
+                    str = new StringBuilder();
+                    quoted = false;
+                    fieldQuoted = false;
+                }
+                continue;
+            }
+
+            if (ch == '\"') {
+                if ((str.length() == 0) && (!fieldQuoted)) {
+                    // The opening quote to a quoted field.
+                    fieldQuoted = true;
+                } else if (quoted) {
+                    // This is a double-quote.
+                    str.append('\"');
+                    quoted = false;
+                } else {
+                    // This is the beginning of a quote.
+                    quoted = true;
+                }
+                continue;
+            }
+
+            // Normal character, pass it on.
+            str.append(ch);
+        }
+
+        // Include the final field.
+        result.add(str.toString());
+
+        return result;
+    }
+
+    /**
+     * Write a list of strings to on line of RFC4180 comma-separated values
+     * (CSV).
+     *
+     * @param list the list of strings
+     * @return the CSV line, without any line terminators
+     */
+    public static String toCsv(final List<String> list) {
+        StringBuilder result = new StringBuilder();
+        int i = 0;
+        for (String str: list) {
+
+            if (!str.contains("\"") && !str.contains(",")) {
+                // Just append the string with a comma.
+                result.append(str);
+            } else if (!str.contains("\"") && str.contains(",")) {
+                // Contains commas, but no quotes.  Just double-quote it.
+                result.append("\"");
+                result.append(str);
+                result.append("\"");
+            } else if (str.contains("\"")) {
+                // Contains quotes and maybe commas.  Double-quote it and
+                // replace quotes inside.
+                result.append("\"");
+                for (int j = 0; j < str.length(); j++) {
+                    char ch = str.charAt(j);
+                    result.append(ch);
+                    if (ch == '\"') {
+                        result.append("\"");
+                    }
+                }
+                result.append("\"");
+            }
+
+            if (i < list.size() - 1) {
+                result.append(",");
+            }
+            i++;
+        }
+        return result.toString();
     }
 
 }

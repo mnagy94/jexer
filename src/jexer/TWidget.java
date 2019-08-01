@@ -2272,4 +2272,22 @@ public abstract class TWidget implements Comparable<TWidget> {
         return new TTableWidget(this, x, y, width, height);
     }
 
+    /**
+     * Convenience function to add an editable 2D data table to this
+     * container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     * @param gridColumns number of columns in grid
+     * @param gridRows number of rows in grid
+     */
+    public TTableWidget addTable(final int x, final int y, final int width,
+        final int height, final int gridColumns, final int gridRows) {
+
+        return new TTableWidget(this, x, y, width, height, gridColumns,
+            gridRows);
+    }
+
 }

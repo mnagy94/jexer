@@ -28,11 +28,17 @@
  */
 package jexer;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
@@ -105,7 +111,7 @@ public class TTableWidget extends TWidget {
     /**
      * Extra columns to add.
      */
-    private static final int EXTRA_COLUMNS = (DEBUG ? 10 * (8 + 1) : 0);
+    private static final int EXTRA_COLUMNS = (DEBUG ? 3 : 0);
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -608,25 +614,39 @@ public class TTableWidget extends TWidget {
      * @param y row relative to parent
      * @param width width of widget
      * @param height height of widget
+     * @param gridColumns number of columns in grid
+     * @param gridRows number of rows in grid
      */
     public TTableWidget(final TWidget parent, final int x, final int y,
-        final int width, final int height) {
+        final int width, final int height, final int gridColumns,
+        final int gridRows) {
 
         super(parent, x, y, width, height);
+
+        /*
+        System.err.println("gridColumns " + gridColumns +
+            " gridRows " + gridRows);
+         */
+
+        if (gridColumns < 1) {
+            throw new IllegalArgumentException("Column count cannot be less " +
+                "than 1");
+        }
+        if (gridRows < 1) {
+            throw new IllegalArgumentException("Row count cannot be less " +
+                "than 1");
+        }
 
         // Initialize the starting row and column.
         rows.add(new Row(0));
         columns.add(new Column(0));
+        assert (rows.get(0).height == 1);
 
         // Place a grid of cells that fit in this space.
-        int row = 0;
-        for (int i = 0; i < height + EXTRA_ROWS; i += rows.get(0).height) {
-            int column = 0;
-            for (int j = 0; j < width + EXTRA_COLUMNS;
-                 j += columns.get(0).width) {
-
-                Cell cell = new Cell(this, 0, 0, columns.get(0).width,
-                    rows.get(0).height, column, row);
+        for (int row = 0; row < gridRows; row++) {
+            for (int column = 0; column < gridColumns; column++) {
+                Cell cell = new Cell(this, 0, 0, COLUMN_DEFAULT_WIDTH, 1,
+                    column, row);
 
                 if (DEBUG) {
                     // For debugging: set a grid of cell index labels.
@@ -634,28 +654,42 @@ public class TTableWidget extends TWidget {
                 }
                 rows.get(row).add(cell);
                 columns.get(column).add(cell);
-                if ((i == 0) &&
-                    (j + columns.get(0).width < width + EXTRA_COLUMNS)
-                ) {
+
+                if (columns.size() < gridColumns) {
                     columns.add(new Column(column + 1));
                 }
-                column++;
             }
-            if (i + rows.get(0).height < height + EXTRA_ROWS) {
+            if (row < gridRows - 1) {
                 rows.add(new Row(row + 1));
             }
-            row++;
         }
         for (int i = 0; i < rows.size(); i++) {
             rows.get(i).setY(i + (showColumnLabels ? COLUMN_LABEL_HEIGHT : 0));
         }
         for (int j = 0; j < columns.size(); j++) {
-            columns.get(j).setX((j * COLUMN_DEFAULT_WIDTH) +
+            columns.get(j).setX((j * (COLUMN_DEFAULT_WIDTH + 1)) +
                 (showRowLabels ? ROW_LABEL_WIDTH : 0));
         }
         activate(columns.get(selectedColumn).get(selectedRow));
 
         alignGrid();
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     */
+    public TTableWidget(final TWidget parent, final int x, final int y,
+        final int width, final int height) {
+
+        this(parent, x, y, width, height,
+            width / (COLUMN_DEFAULT_WIDTH + 1) + EXTRA_COLUMNS,
+            height + EXTRA_ROWS);
     }
 
     // ------------------------------------------------------------------------
@@ -1178,6 +1212,12 @@ public class TTableWidget extends TWidget {
      * Align the grid so that the selected cell is fully visible.
      */
     private void alignGrid() {
+
+        /*
+        System.err.println("alignGrid() # columns " + columns.size() +
+            " # rows " + rows.size());
+         */
+
         int viewColumns = getWidth();
         if (showRowLabels == true) {
             viewColumns -= ROW_LABEL_WIDTH;
@@ -1345,11 +1385,88 @@ public class TTableWidget extends TWidget {
     /**
      * Save contents to file in CSV format.
      *
+     * @param csvFile a File referencing the CSV data
+     * @throws IOException if a java.io operation throws
+     */
+    public void loadCsvFile(final File csvFile) throws IOException {
+        BufferedReader reader = null;
+
+        try {
+            reader = new BufferedReader(new FileReader(csvFile));
+
+            String line = null;
+            boolean first = true;
+            for (line = reader.readLine(); line != null;
+                 line = reader.readLine()) {
+
+                List<String> list = StringUtils.fromCsv(line);
+                if (list.size() == 0) {
+                    continue;
+                }
+
+                if (list.size() > columns.size()) {
+                    int n = list.size() - columns.size();
+                    for (int i = 0; i < n; i++) {
+                        selectedColumn = columns.size() - 1;
+                        insertColumnRight(selectedColumn);
+                    }
+                }
+                assert (list.size() == columns.size());
+
+                if (first) {
+                    // First row: just replace what is here.
+                    selectedRow = 0;
+                    first = false;
+                } else {
+                    // All other rows: append to the end.
+                    selectedRow = rows.size() - 1;
+                    insertRowBelow(selectedRow);
+                    selectedRow = rows.size() - 1;
+                }
+                for (int i = 0; i < list.size(); i++) {
+                    rows.get(selectedRow).get(i).setText(list.get(i));
+                }
+
+                // TODO: detect header line
+            }
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+
+        left = 0;
+        top = 0;
+        selectedRow = 0;
+        selectedColumn = 0;
+        alignGrid();
+        activate(columns.get(selectedColumn).get(selectedRow));
+    }
+
+    /**
+     * Save contents to file in CSV format.
+     *
      * @param filename file to save to
      * @throws IOException if a java.io operation throws
      */
     public void saveToCsvFilename(final String filename) throws IOException {
-        // TODO
+        BufferedWriter writer = null;
+
+        try {
+            writer = new BufferedWriter(new FileWriter(filename));
+            for (Row row: rows) {
+                List<String> list = new ArrayList<String>(row.cells.size());
+                for (Cell cell: row.cells) {
+                    list.add(cell.getText());
+                }
+                writer.write(StringUtils.toCsv(list));
+                writer.write("\n");
+            }
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
     }
 
     /**
@@ -1359,7 +1476,217 @@ public class TTableWidget extends TWidget {
      * @throws IOException if a java.io operation throws
      */
     public void saveToTextFilename(final String filename) throws IOException {
-        // TODO
+        BufferedWriter writer = null;
+
+        try {
+            writer = new BufferedWriter(new FileWriter(filename));
+
+            if ((topBorder == Border.SINGLE) && (leftBorder == Border.SINGLE)) {
+                // Emit top-left corner.
+                writer.write("\u250c");
+            }
+
+            if (topBorder == Border.SINGLE) {
+                int cellI = 0;
+                for (Cell cell: rows.get(0).cells) {
+                    for (int i = 0; i < columns.get(cellI).width; i++) {
+                        writer.write("\u2500");
+                    }
+
+                    if (columns.get(cellI).rightBorder == Border.SINGLE) {
+                        if (cellI < columns.size() - 1) {
+                            // Emit top tee.
+                            writer.write("\u252c");
+                        } else {
+                            // Emit top-right corner.
+                            writer.write("\u2510");
+                        }
+                    }
+                    cellI++;
+                }
+            }
+            writer.write("\n");
+
+            int rowI = 0;
+            for (Row row: rows) {
+
+                if (leftBorder == Border.SINGLE) {
+                    // Emit left border.
+                    writer.write("\u2502");
+                }
+
+                int cellI = 0;
+                for (Cell cell: row.cells) {
+                    writer.write(String.format("%" +
+                            columns.get(cellI).width + "s", cell.getText()));
+
+                    if (columns.get(cellI).rightBorder == Border.SINGLE) {
+                        // Emit right border.
+                        writer.write("\u2502");
+                    }
+                    cellI++;
+                }
+                writer.write("\n");
+
+                if (row.bottomBorder == Border.NONE) {
+                    // All done, move on to the next row.
+                    continue;
+                }
+
+                // Emit the bottom borders and intersections.
+                if ((leftBorder == Border.SINGLE)
+                    && (row.bottomBorder != Border.NONE)
+                ) {
+                    if (rowI < rows.size() - 1) {
+                        if (row.bottomBorder == Border.SINGLE) {
+                            // Emit left tee.
+                            writer.write("\u251c");
+                        } else if (row.bottomBorder == Border.DOUBLE) {
+                            // Emit left tee (double).
+                            writer.write("\u255e");
+                        } else if (row.bottomBorder == Border.THICK) {
+                            // Emit left tee (thick).
+                            writer.write("\u251d");
+                        }
+                    }
+
+                    if (rowI == rows.size() - 1) {
+                        if (row.bottomBorder == Border.SINGLE) {
+                            // Emit left bottom corner.
+                            writer.write("\u2514");
+                        } else if (row.bottomBorder == Border.DOUBLE) {
+                            // Emit left bottom corner (double).
+                            writer.write("\u2558");
+                        } else if (row.bottomBorder == Border.THICK) {
+                            // Emit left bottom corner (thick).
+                            writer.write("\u2515");
+                        }
+                    }
+                }
+
+                cellI = 0;
+                for (Cell cell: row.cells) {
+
+                    for (int i = 0; i < columns.get(cellI).width; i++) {
+                        if (row.bottomBorder == Border.SINGLE) {
+                            writer.write("\u2500");
+                        }
+                        if (row.bottomBorder == Border.DOUBLE) {
+                            writer.write("\u2550");
+                        }
+                        if (row.bottomBorder == Border.THICK) {
+                            writer.write("\u2501");
+                        }
+                    }
+
+                    if ((rowI < rows.size() - 1)
+                        && (cellI == columns.size() - 1)
+                        && (row.bottomBorder == Border.SINGLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit right tee.
+                        writer.write("\u2524");
+                    }
+                    if ((rowI < rows.size() - 1)
+                        && (cellI == columns.size() - 1)
+                        && (row.bottomBorder == Border.DOUBLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit right tee (double).
+                        writer.write("\u2561");
+                    }
+                    if ((rowI < rows.size() - 1)
+                        && (cellI == columns.size() - 1)
+                        && (row.bottomBorder == Border.THICK)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit right tee (thick).
+                        writer.write("\u2525");
+                    }
+                    if ((rowI == rows.size() - 1)
+                        && (cellI == columns.size() - 1)
+                        && (row.bottomBorder == Border.SINGLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit right bottom corner.
+                        writer.write("\u2518");
+                    }
+                    if ((rowI == rows.size() - 1)
+                        && (cellI == columns.size() - 1)
+                        && (row.bottomBorder == Border.DOUBLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit right bottom corner (double).
+                        writer.write("\u255b");
+                    }
+                    if ((rowI == rows.size() - 1)
+                        && (cellI == columns.size() - 1)
+                        && (row.bottomBorder == Border.THICK)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit right bottom corner (thick).
+                        writer.write("\u2519");
+                    }
+                    if ((rowI < rows.size() - 1)
+                        && (cellI < columns.size() - 1)
+                        && (row.bottomBorder == Border.SINGLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit intersection.
+                        writer.write("\u253c");
+                    }
+                    if ((rowI < rows.size() - 1)
+                        && (cellI < columns.size() - 1)
+                        && (row.bottomBorder == Border.DOUBLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit intersection (double).
+                        writer.write("\u256a");
+                    }
+                    if ((rowI < rows.size() - 1)
+                        && (cellI < columns.size() - 1)
+                        && (row.bottomBorder == Border.THICK)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit intersection (thick).
+                        writer.write("\u253f");
+                    }
+                    if ((rowI == rows.size() - 1)
+                        && (cellI < columns.size() - 1)
+                        && (row.bottomBorder == Border.SINGLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit bottom tee.
+                        writer.write("\u2534");
+                    }
+                    if ((rowI == rows.size() - 1)
+                        && (cellI < columns.size() - 1)
+                        && (row.bottomBorder == Border.DOUBLE)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit bottom tee (double).
+                        writer.write("\u2567");
+                    }
+                    if ((rowI == rows.size() - 1)
+                        && (cellI < columns.size() - 1)
+                        && (row.bottomBorder == Border.THICK)
+                        && (columns.get(cellI).rightBorder == Border.SINGLE)
+                    ) {
+                        // Emit bottom tee (thick).
+                        writer.write("\u2537");
+                    }
+
+                    cellI++;
+                }
+
+                writer.write("\n");
+                rowI++;
+            }
+        } finally {
+            if (writer != null) {
+                writer.close();
+            }
+        }
     }
 
     /**
@@ -1597,7 +1924,7 @@ public class TTableWidget extends TWidget {
         Row newRow = new Row(idx);
         for (int i = 0; i < columns.size(); i++) {
             Cell cell = new Cell(this, columns.get(i).getX(),
-                rows.get(selectedRow).getY(), COLUMN_DEFAULT_WIDTH, 1, i, idx);
+                rows.get(idx).getY(), COLUMN_DEFAULT_WIDTH, 1, i, idx);
             newRow.add(cell);
             columns.get(i).cells.add(idx, cell);
         }
@@ -1628,7 +1955,7 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Row count is " +
                 rows.size() + ", requested index " + row);
         }
-        insertRowAt(selectedRow);
+        insertRowAt(row);
         selectedRow++;
         activate(columns.get(selectedColumn).get(selectedRow));
     }
@@ -1643,18 +1970,18 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Row count is " +
                 rows.size() + ", requested index " + row);
         }
-        int idx = selectedRow + 1;
+        int idx = row + 1;
         if (idx < rows.size()) {
             insertRowAt(idx);
             activate(columns.get(selectedColumn).get(selectedRow));
             return;
         }
 
-        // selectedRow is the last row, we need to perform an append.
+        // row is the last row, we need to perform an append.
         Row newRow = new Row(idx);
         for (int i = 0; i < columns.size(); i++) {
             Cell cell = new Cell(this, columns.get(i).getX(),
-                rows.get(selectedRow).getY(), COLUMN_DEFAULT_WIDTH, 1, i, idx);
+                rows.get(row).getY(), COLUMN_DEFAULT_WIDTH, 1, i, idx);
             newRow.add(cell);
             columns.get(i).cells.add(cell);
         }
@@ -1710,7 +2037,7 @@ public class TTableWidget extends TWidget {
     private void insertColumnAt(final int idx) {
         Column newColumn = new Column(idx);
         for (int i = 0; i < rows.size(); i++) {
-            Cell cell = new Cell(this, columns.get(selectedColumn).getX(),
+            Cell cell = new Cell(this, columns.get(idx).getX(),
                 rows.get(i).getY(), COLUMN_DEFAULT_WIDTH, 1, idx, i);
             newColumn.add(cell);
             rows.get(i).cells.add(idx, cell);
@@ -1742,7 +2069,7 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Column count is " +
                 columns.size() + ", requested index " + column);
         }
-        insertColumnAt(selectedColumn);
+        insertColumnAt(column);
         selectedColumn++;
         activate(columns.get(selectedColumn).get(selectedRow));
     }
@@ -1757,17 +2084,17 @@ public class TTableWidget extends TWidget {
             throw new IndexOutOfBoundsException("Column count is " +
                 columns.size() + ", requested index " + column);
         }
-        int idx = selectedColumn + 1;
+        int idx = column + 1;
         if (idx < columns.size()) {
             insertColumnAt(idx);
             activate(columns.get(selectedColumn).get(selectedRow));
             return;
         }
 
-        // selectedColumn is the last column, we need to perform an append.
+        // column is the last column, we need to perform an append.
         Column newColumn = new Column(idx);
         for (int i = 0; i < rows.size(); i++) {
-            Cell cell = new Cell(this, columns.get(selectedColumn).getX(),
+            Cell cell = new Cell(this, columns.get(column).getX(),
                 rows.get(i).getY(), COLUMN_DEFAULT_WIDTH, 1, idx, i);
             newColumn.add(cell);
             rows.get(i).cells.add(cell);
@@ -1933,7 +2260,14 @@ public class TTableWidget extends TWidget {
         if (selectedColumn == 0) {
             leftBorder = Border.NONE;
         }
+        if (selectedColumn > 0) {
+            columns.get(selectedColumn - 1).rightBorder = Border.NONE;
+        }
         columns.get(selectedColumn).rightBorder = Border.NONE;
+        if (selectedRow > 0) {
+            rows.get(selectedRow - 1).bottomBorder = Border.NONE;
+            rows.get(selectedRow - 1).height = 1;
+        }
         rows.get(selectedRow).bottomBorder = Border.NONE;
         rows.get(selectedRow).height = 1;
         bottomRightCorner();
@@ -1949,7 +2283,14 @@ public class TTableWidget extends TWidget {
         if (selectedColumn == 0) {
             leftBorder = Border.SINGLE;
         }
+        if (selectedColumn > 0) {
+            columns.get(selectedColumn - 1).rightBorder = Border.SINGLE;
+        }
         columns.get(selectedColumn).rightBorder = Border.SINGLE;
+        if (selectedRow > 0) {
+            rows.get(selectedRow - 1).bottomBorder = Border.SINGLE;
+            rows.get(selectedRow - 1).height = 2;
+        }
         rows.get(selectedRow).bottomBorder = Border.SINGLE;
         rows.get(selectedRow).height = 2;
         alignGrid();

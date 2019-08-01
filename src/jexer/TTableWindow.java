@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
@@ -79,6 +80,26 @@ public class TTableWindow extends TScrollableWindow {
 
         tableField = addTable(0, 0, getWidth() - 2, getHeight() - 2);
         setupAfterTable();
+    }
+
+    /**
+     * Public constructor loads a grid from a RFC4180 CSV file.
+     *
+     * @param parent the main application
+     * @param csvFile a File referencing the CSV data
+     * @throws IOException if a java.io operation throws
+     */
+    public TTableWindow(final TApplication parent,
+        final File csvFile) throws IOException {
+
+        super(parent, csvFile.getName(), 0, 0,
+            parent.getScreen().getWidth() / 2,
+            parent.getScreen().getHeight() / 2 - 2,
+            RESIZABLE | CENTERED);
+
+        tableField = addTable(0, 0, getWidth() - 2, getHeight() - 2, 1, 1);
+        setupAfterTable();
+        tableField.loadCsvFile(csvFile);
     }
 
     // ------------------------------------------------------------------------
@@ -307,10 +328,7 @@ public class TTableWindow extends TScrollableWindow {
                 String filename = fileOpenBox(".");
                 if (filename != null) {
                     try {
-                        // TODO
-                        if (false) {
-                            tableField.saveToCsvFilename(filename);
-                        }
+                        new TTableWindow(getApplication(), new File(filename));
                     } catch (IOException e) {
                         messageBox(i18n.getString("errorDialogTitle"),
                             MessageFormat.format(i18n.
@@ -336,7 +354,8 @@ public class TTableWindow extends TScrollableWindow {
      */
     @Override
     public void onMenu(final TMenuEvent menu) {
-        TInputBox inputBox;
+        TInputBox inputBox = null;
+        String filename = null;
 
         switch (menu.getId()) {
         case TMenu.MID_TABLE_RENAME_COLUMN:
@@ -438,13 +457,46 @@ public class TTableWindow extends TScrollableWindow {
                 tableField.getColumnWidth(tableField.getSelectedColumnNumber()) + 1);
             return;
         case TMenu.MID_TABLE_FILE_OPEN_CSV:
-            // TODO
+            try {
+                filename = fileOpenBox(".");
+                if (filename != null) {
+                    try {
+                        new TTableWindow(getApplication(), new File(filename));
+                    } catch (IOException e) {
+                        messageBox(i18n.getString("errorDialogTitle"),
+                            MessageFormat.format(i18n.
+                                getString("errorReadingFile"), e.getMessage()));
+                    }
+                }
+            } catch (IOException e) {
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorOpeningFileDialog"), e.getMessage()));
+            }
             return;
         case TMenu.MID_TABLE_FILE_SAVE_CSV:
-            // TODO
+            try {
+                filename = fileSaveBox(".");
+                if (filename != null) {
+                    tableField.saveToCsvFilename(filename);
+                }
+            } catch (IOException e) {
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorWritingFile"), e.getMessage()));
+            }
             return;
         case TMenu.MID_TABLE_FILE_SAVE_TEXT:
-            // TODO
+            try {
+                filename = fileSaveBox(".");
+                if (filename != null) {
+                    tableField.saveToTextFilename(filename);
+                }
+            } catch (IOException e) {
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorWritingFile"), e.getMessage()));
+            }
             return;
         default:
             break;
