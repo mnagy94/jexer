@@ -31,7 +31,6 @@ package jexer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ResourceBundle;
 
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
@@ -48,11 +47,6 @@ import static jexer.TKeypress.*;
  * https://github.com/nikiroo/jexer/tree/ttable_pull.
  */
 public class TTableWidget extends TWidget {
-
-    /**
-     * Translated strings.
-     */
-    private static final ResourceBundle i18n = ResourceBundle.getBundle(TTableWidget.class.getName());
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
