@@ -343,6 +343,20 @@ public class TTableWindow extends TScrollableWindow {
             return;
         }
 
+        if (command.equals(cmSave)) {
+            try {
+                String filename = fileSaveBox(".");
+                if (filename != null) {
+                    tableField.saveToCsvFilename(filename);
+                }
+            } catch (IOException e) {
+                messageBox(i18n.getString("errorDialogTitle"),
+                    MessageFormat.format(i18n.
+                        getString("errorWritingFile"), e.getMessage()));
+            }
+            return;
+        }
+
         // Didn't handle it, let children get it instead
         super.onCommand(command);
     }
