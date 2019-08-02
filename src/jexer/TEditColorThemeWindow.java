@@ -658,6 +658,12 @@ public class TEditColorThemeWindow extends TWindow {
                 public void DO() {
                     refreshFromTheme(colorNames.getSelected());
                 }
+            },
+            new TAction() {
+                // When the user navigates with keyboard
+                public void DO() {
+                    refreshFromTheme(colorNames.getSelected());
+                }
             }
         );
         foreground = new ForegroundPicker(this, 42, 1, 14, 6);

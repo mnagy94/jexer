@@ -93,7 +93,7 @@ public class TList extends TScrollableWidget {
     public TList(final TWidget parent, final List<String> strings, final int x,
         final int y, final int width, final int height) {
 
-        this(parent, strings, x, y, width, height, null);
+        this(parent, strings, x, y, width, height, null, null, null);
     }
 
     /**
@@ -112,16 +112,7 @@ public class TList extends TScrollableWidget {
         final int y, final int width, final int height,
         final TAction enterAction) {
 
-        super(parent, x, y, width, height);
-        this.enterAction = enterAction;
-        this.strings = new ArrayList<String>();
-        if (strings != null) {
-            this.strings.addAll(strings);
-        }
-
-        hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
-        vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
-        reflowData();
+        this(parent, strings, x, y, width, height, enterAction, null, null);
     }
 
     /**
@@ -142,9 +133,35 @@ public class TList extends TScrollableWidget {
         final int y, final int width, final int height,
         final TAction enterAction, final TAction moveAction) {
 
+        this(parent, strings, x, y, width, height, enterAction, moveAction,
+            null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param strings list of strings to show.  This is allowed to be null
+     * and set later with setList() or by subclasses.
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param enterAction action to perform when an item is selected
+     * @param moveAction action to perform when the user navigates to a new
+     * item with arrow/page keys
+     * @param singleClickAction action to perform when the user clicks on an
+     * item
+     */
+    public TList(final TWidget parent, final List<String> strings, final int x,
+        final int y, final int width, final int height,
+        final TAction enterAction, final TAction moveAction,
+        final TAction singleClickAction) {
+
         super(parent, x, y, width, height);
         this.enterAction = enterAction;
         this.moveAction = moveAction;
+        this.singleClickAction = singleClickAction;
         this.strings = new ArrayList<String>();
         if (strings != null) {
             this.strings.addAll(strings);

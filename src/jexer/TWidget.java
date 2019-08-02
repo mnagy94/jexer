@@ -2335,6 +2335,31 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Convenience function to add a list to this container/window.
+     *
+     * @param strings list of strings to show.  This is allowed to be null
+     * and set later with setList() or by subclasses.
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param enterAction action to perform when an item is selected
+     * @param moveAction action to perform when the user navigates to a new
+     * item with arrow/page keys
+     * @param singleClickAction action to perform when the user clicks on an
+     * item
+     */
+    public TList addList(final List<String> strings, final int x,
+        final int y, final int width, final int height,
+        final TAction enterAction, final TAction moveAction,
+        final TAction singleClickAction) {
+
+        return new TList(this, strings, x, y, width, height, enterAction,
+            moveAction, singleClickAction);
+    }
+
+
+    /**
      * Convenience function to add an image to this container/window.
      *
      * @param x column relative to parent
