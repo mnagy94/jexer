@@ -307,12 +307,8 @@ class ImageViewerDesktop extends TDesktop {
         imageWidget = new TImage(this, getWidth() - width,
             getHeight() - height, width, height, image, 0, 0, null);
 
-        // Resize the image down until it can fit within the pane.
-        while ((imageWidget.getRows() > height)
-            || (imageWidget.getColumns() > width)
-        ) {
-            imageWidget.onKeypress(new TKeypressEvent(kbAltDown));
-        }
+        // Resize the image to fit within the pane.
+        imageWidget.setScaleType(TImage.Scale.SCALE);
 
         imageWidget.setActive(false);
         activate(directoryList);
