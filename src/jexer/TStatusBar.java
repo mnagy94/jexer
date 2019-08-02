@@ -125,24 +125,26 @@ public class TStatusBar extends TWidget {
     /**
      * Public constructor.
      *
-     * @param parent parent widget
+     * @param window the window associated with this status bar
      * @param text text for the bar on the bottom row
      */
-    public TStatusBar(final TWidget parent, final String text) {
+    public TStatusBar(final TWindow window, final String text) {
 
-        // Set parent and window
-        super(parent, false, 0, 0, text.length(), 1);
+        // TStatusBar is a parentless widget, because TApplication handles
+        // its drawing and event routing directly.
+        super(null, false, 0, 0, text.length(), 1);
 
         this.text = text;
+        setWindow(window);
     }
 
     /**
      * Public constructor.
      *
-     * @param parent parent widget
+     * @param window the window associated with this status bar
      */
-    public TStatusBar(final TWidget parent) {
-        this(parent, "");
+    public TStatusBar(final TWindow window) {
+        this(window, "");
     }
 
     // ------------------------------------------------------------------------

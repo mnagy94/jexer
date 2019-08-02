@@ -1383,7 +1383,7 @@ public class TTableWidget extends TWidget {
     }
 
     /**
-     * Save contents to file in CSV format.
+     * Load contents from file in CSV format.
      *
      * @param csvFile a File referencing the CSV data
      * @throws IOException if a java.io operation throws

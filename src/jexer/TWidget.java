@@ -180,13 +180,10 @@ public abstract class TWidget implements Comparable<TWidget> {
     protected TWidget(final TWidget parent, final boolean enabled) {
         this.enabled = enabled;
         this.parent = parent;
-        this.window = parent.window;
         children = new ArrayList<TWidget>();
 
-        // Do not add TStatusBars, they are drawn by TApplication.
-        if (this instanceof TStatusBar) {
-            // NOP
-        } else {
+        if (parent != null) {
+            this.window = parent.window;
             parent.addChild(this);
         }
     }
@@ -213,13 +210,10 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         this.enabled = enabled;
         this.parent = parent;
-        this.window = parent.window;
         children = new ArrayList<TWidget>();
 
-        // Do not add TStatusBars, they are drawn by TApplication.
-        if (this instanceof TStatusBar) {
-            // NOP
-        } else {
+        if (parent != null) {
+            this.window = parent.window;
             parent.addChild(this);
         }
 
@@ -306,6 +300,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param keypress keystroke event
      */
     public void onKeypress(final TKeypressEvent keypress) {
+        assert (parent != null);
 
         if ((children.size() == 0)
             || (this instanceof TTreeView)
@@ -701,6 +696,97 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Remove this widget from its parent container.  close() will be called
+     * before it is removed.
+     */
+    public final void remove() {
+        remove(true);
+    }
+
+    /**
+     * Remove this widget from its parent container.
+     *
+     * @param doClose if true, call the close() method before removing the
+     * child
+     */
+    public final void remove(final boolean doClose) {
+        if (parent != null) {
+            parent.remove(this, doClose);
+        }
+    }
+
+    /**
+     * Remove a child widget from this container.
+     *
+     * @param child the child widget to remove
+     * @param doClose if true, call the close() method before removing the
+     * child
+     */
+    public final void remove(final TWidget child, final boolean doClose) {
+        if (!children.contains(child)) {
+            throw new IndexOutOfBoundsException("child widget is not in " +
+                "list of children of this parent");
+        }
+        if (doClose) {
+            child.close();
+        }
+        children.remove(child);
+        child.parent = null;
+    }
+
+    /**
+     * Set this widget's parent to a different widget.
+     *
+     * @param newParent new parent widget
+     * @param doClose if true, call the close() method before removing the
+     * child from its existing parent widget
+     */
+    public final void setParent(final TWidget newParent,
+        final boolean doClose) {
+
+        if (parent != null) {
+            parent.remove(this, doClose);
+        }
+        assert (parent == null);
+        window = newParent.window;
+        newParent.addChild(this);
+    }
+
+    /**
+     * Set this widget's window to a specific window.  Parent must already be
+     * null.  Having a null parent with a specified window is only used
+     * within Jexer by TStatusBar because TApplication routes events directly
+     * to it and calls its draw() method.  Any other non-parented widgets
+     * will require similar special case functionality to receive events or
+     * be drawn to screen.
+     *
+     * @param window the window to use
+     */
+    public final void setWindow(final TWindow window) {
+
+        if (parent != null) {
+            throw new IllegalArgumentException("Cannot have different " +
+                "windows for parent and child");
+        }
+        this.window = window;
+    }
+
+    /**
+     * Remove a child widget from this container, and all of its children
+     * recursively from their parent containers.
+     *
+     * @param child the child widget to remove
+     * @param doClose if true, call the close() method before removing each
+     * child
+     */
+    public final void removeAll(final TWidget child, final boolean doClose) {
+        remove(child, doClose);
+        for (TWidget w: child.children) {
+            child.removeAll(w, doClose);
+        }
+    }
+
+    /**
      * Get active flag.
      *
      * @return if true, this widget will receive events
@@ -896,6 +982,8 @@ public abstract class TWidget implements Comparable<TWidget> {
             return false;
         }
 
+        assert (window != null);
+
         // If cursor is out of my window's bounds, it is not visible.
         if ((getCursorAbsoluteX() >= window.getAbsoluteX()
                 + window.getWidth() - 1)
@@ -1000,7 +1088,7 @@ public abstract class TWidget implements Comparable<TWidget> {
         if (parent == this) {
             return active;
         }
-        return (active && parent.isAbsoluteActive());
+        return (active && (parent == null ? true : parent.isAbsoluteActive()));
     }
 
     /**
@@ -1252,6 +1340,18 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Make this widget the active child of its parent.  Note that this is
+     * not final since TWindow overrides activate().
+     */
+    public void activate() {
+        if (enabled) {
+            if (parent != null) {
+                parent.activate(this);
+            }
+        }
+    }
+
+    /**
      * Switch the active widget with the next in the tab order.
      *
      * @param forward if true, then switch to the next enabled widget in the
@@ -1263,6 +1363,8 @@ public abstract class TWidget implements Comparable<TWidget> {
         if (children.size() == 0) {
             return;
         }
+
+        assert (parent != null);
 
         // If there is only one child, make it active if it is enabled.
         if (children.size() == 1) {

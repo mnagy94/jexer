@@ -1186,6 +1186,7 @@ public class TWindow extends TWidget {
     /**
      * Activate window (bring to top and receive events).
      */
+    @Override
     public void activate() {
         application.activateWindow(this);
     }
