@@ -36,6 +36,7 @@ import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
+import jexer.event.TResizeEvent;
 import static jexer.TKeypress.*;
 
 /**
@@ -44,8 +45,45 @@ import static jexer.TKeypress.*;
 public class TImage extends TWidget {
 
     // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Selections for fitting the image to the text cells.
+     */
+    public enum Scale {
+        /**
+         * No scaling.
+         */
+        NONE,
+
+        /**
+         * Stretch/shrink the image in both directions to fully fill the text
+         * area width/height.
+         */
+        STRETCH,
+
+        /**
+         * Scale the image, preserving aspect ratio, to fill the text area
+         * width/height (like letterbox).  The background color for the
+         * letterboxed area is specified in scaleBackColor.
+         */
+        SCALE,
+    }
+
+    // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Scaling strategy to use.
+     */
+    private Scale scale = Scale.NONE;
+
+    /**
+     * Scaling strategy to use.
+     */
+    private java.awt.Color scaleBackColor = java.awt.Color.BLACK;
 
     /**
      * The action to perform when the user clicks on the image.
@@ -71,6 +109,12 @@ public class TImage extends TWidget {
      * The current clockwise rotation for the image.
      */
     private int clockwise = 0;
+
+    /**
+     * If true, this widget was resized and a new scaled image must be
+     * produced.
+     */
+    private boolean resized = false;
 
     /**
      * Left column of the image.  0 is the left-most column.
@@ -245,8 +289,52 @@ public class TImage extends TWidget {
             return;
         }
 
+        if (keypress.equals(kbShiftLeft)) {
+            switch (scale) {
+            case NONE:
+                setScaleType(Scale.SCALE);
+                return;
+            case STRETCH:
+                setScaleType(Scale.NONE);
+                return;
+            case SCALE:
+                setScaleType(Scale.STRETCH);
+                return;
+            }
+        }
+        if (keypress.equals(kbShiftRight)) {
+            switch (scale) {
+            case NONE:
+                setScaleType(Scale.STRETCH);
+                return;
+            case STRETCH:
+                setScaleType(Scale.SCALE);
+                return;
+            case SCALE:
+                setScaleType(Scale.NONE);
+                return;
+            }
+        }
+
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
+    }
+
+    /**
+     * Handle resize events.
+     *
+     * @param event resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent event) {
+        // Get my width/height set correctly.
+        super.onResize(event);
+
+        if (scale == Scale.NONE) {
+            return;
+        }
+        image = null;
+        resized = true;
     }
 
     // ------------------------------------------------------------------------
@@ -311,16 +399,20 @@ public class TImage extends TWidget {
         }
 
         if (image == null) {
-            image = scaleImage(originalImage, scaleFactor);
-            image = rotateImage(image, clockwise);
+            image = rotateImage(originalImage, clockwise);
+            image = scaleImage(image, scaleFactor, getWidth(), getHeight(),
+                textWidth, textHeight);
         }
 
         if ((always == true) ||
+            (resized == true) ||
             ((textWidth > 0)
                 && (textWidth != lastTextWidth)
                 && (textHeight > 0)
                 && (textHeight != lastTextHeight))
         ) {
+            resized = false;
+
             cellColumns = image.getWidth() / textWidth;
             if (cellColumns * textWidth < image.getWidth()) {
                 cellColumns++;
@@ -438,29 +530,213 @@ public class TImage extends TWidget {
     }
 
     /**
+     * Get the raw (unprocessed) image.
+     *
+     * @return the image
+     */
+    public BufferedImage getImage() {
+        return originalImage;
+    }
+
+    /**
+     * Set the raw image, and reprocess to make the visible image.
+     *
+     * @param image the new image
+     */
+    public void setImage(final BufferedImage image) {
+        this.originalImage = image;
+        this.image = null;
+        sizeToImage(true);
+    }
+
+    /**
+     * Get the visible (processed) image.
+     *
+     * @return the image that is currently on screen
+     */
+    public BufferedImage getVisibleImage() {
+        return image;
+    }
+
+    /**
+     * Get the scaling strategy.
+     *
+     * @return Scale.NONE, Scale.STRETCH, etc.
+     */
+    public Scale getScaleType() {
+        return scale;
+    }
+
+    /**
+     * Set the scaling strategy.
+     *
+     * @param scale Scale.NONE, Scale.STRETCH, etc.
+     */
+    public void setScaleType(final Scale scale) {
+        this.scale = scale;
+        this.image = null;
+        sizeToImage(true);
+    }
+
+    /**
+     * Get the scale factor.
+     *
+     * @return the scale factor
+     */
+    public double getScaleFactor() {
+        return scaleFactor;
+    }
+
+    /**
+     * Set the scale factor.  1.0 means no scaling.
+     *
+     * @param scaleFactor the new scale factor
+     */
+    public void setScaleFactor(final double scaleFactor) {
+        this.scaleFactor = scaleFactor;
+        image = null;
+        sizeToImage(true);
+    }
+
+    /**
+     * Get the rotation, as degrees.
+     *
+     * @return the rotation in degrees
+     */
+    public int getRotation() {
+        switch (clockwise) {
+        case 0:
+            return 0;
+        case 1:
+            return 90;
+        case 2:
+            return 180;
+        case 3:
+            return 270;
+        default:
+            // Don't know how this happened, but fix it.
+            clockwise = 0;
+            image = null;
+            sizeToImage(true);
+            return 0;
+        }
+    }
+
+    /**
+     * Set the rotation, as degrees clockwise.
+     *
+     * @param rotation 0, 90, 180, or 270
+     */
+    public void setRotation(final int rotation) {
+        switch (rotation) {
+        case 0:
+            clockwise = 0;
+            break;
+        case 90:
+            clockwise = 1;
+            break;
+        case 180:
+            clockwise = 2;
+            break;
+        case 270:
+            clockwise = 3;
+            break;
+        default:
+            // Don't know how this happened, but fix it.
+            clockwise = 0;
+            break;
+        }
+
+        image = null;
+        sizeToImage(true);
+    }
+
+    /**
      * Scale an image by to be scaleFactor size.
      *
      * @param image the image to scale
      * @param factor the scale to make the new image
+     * @param width the number of text cell columns for the destination image
+     * @param height the number of text cell rows for the destination image
+     * @param textWidth the width in pixels for one text cell
+     * @param textHeight the height in pixels for one text cell
      */
     private BufferedImage scaleImage(final BufferedImage image,
-        final double factor) {
+        final double factor, final int width, final int height,
+        final int textWidth, final int textHeight) {
 
-        if (Math.abs(factor - 1.0) < 0.03) {
+        if ((scale == Scale.NONE) && (Math.abs(factor - 1.0) < 0.03)) {
             // If we are within 3% of 1.0, just return the original image.
             return image;
         }
 
-        int width = (int) (image.getWidth() * factor);
-        int height = (int) (image.getHeight() * factor);
+        int destWidth = 0;
+        int destHeight = 0;
+        int x = 0;
+        int y = 0;
 
-        BufferedImage newImage = new BufferedImage(width, height,
-            BufferedImage.TYPE_INT_ARGB);
+        BufferedImage newImage = null;
+
+        switch (scale) {
+        case NONE:
+            destWidth = (int) (image.getWidth() * factor);
+            destHeight = (int) (image.getHeight() * factor);
+            newImage = new BufferedImage(destWidth, destHeight,
+                BufferedImage.TYPE_INT_ARGB);
+            break;
+        case STRETCH:
+            destWidth = width * textWidth;
+            destHeight = height * textHeight;
+            newImage = new BufferedImage(destWidth, destHeight,
+                BufferedImage.TYPE_INT_ARGB);
+            break;
+        case SCALE:
+            double a = (double) image.getWidth() / image.getHeight();
+            double b = (double) (width * textWidth) / (height * textHeight);
+            assert (a > 0);
+            assert (b > 0);
+
+            /*
+            System.err.println("Scale: original " + image.getWidth() +
+                "x" + image.getHeight());
+            System.err.println("         screen " + (width * textWidth) +
+                "x" + (height * textHeight));
+            System.err.println("A " + a + " B " + b);
+             */
+
+            if (a > b) {
+                // Horizontal letterbox
+                destWidth = width * textWidth;
+                destHeight = (int) (destWidth / a);
+                y = ((height * textHeight) - destHeight) / 2;
+                assert (y >= 0);
+                /*
+                System.err.println("Horizontal letterbox: " + destWidth +
+                    "x" + destHeight + ", Y offset " + y);
+                 */
+            } else {
+                // Vertical letterbox
+                destHeight = height * textHeight;
+                destWidth = (int) (destHeight * a);
+                x = ((width * textWidth) - destWidth) / 2;
+                assert (x >= 0);
+                /*
+                System.err.println("Vertical letterbox: " + destWidth +
+                    "x" + destHeight + ", X offset " + x);
+                 */
+            }
+            newImage = new BufferedImage(width * textWidth, height * textHeight,
+                BufferedImage.TYPE_INT_ARGB);
+            break;
+        }
 
         java.awt.Graphics gr = newImage.createGraphics();
-        gr.drawImage(image, 0, 0, width, height, null);
+        if (scale == Scale.SCALE) {
+            gr.setColor(scaleBackColor);
+            gr.fillRect(0, 0, width * textWidth, height * textHeight);
+        }
+        gr.drawImage(image, x, y, destWidth, destHeight, null);
         gr.dispose();
-
         return newImage;
     }
 
