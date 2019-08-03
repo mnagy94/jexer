@@ -716,6 +716,15 @@ public class SwingTerminal extends LogicalScreen
     }
 
     /**
+     * Get the current status of the blink flag.
+     *
+     * @return true if the cursor and blinking text should be visible
+     */
+    public boolean getCursorBlinkVisible() {
+        return cursorBlinkVisible;
+    }
+
+    /**
      * Get the font size in points.
      *
      * @return font size in points

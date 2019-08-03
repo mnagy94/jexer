@@ -132,6 +132,18 @@ public class TTerminalWindow extends TScrollableWindow
      */
     private Map<Cell, BufferedImage> glyphCache;
 
+    /**
+     * A cache of previously-rendered double-width glyphs for blinking text,
+     * when it is not visible.
+     */
+    private Map<Cell, BufferedImage> glyphCacheBlink;
+
+    /**
+     * The blink state, used only by ECMA48 backend and when double-width
+     * chars must be drawn.
+     */
+    private boolean blinkState = true;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -931,17 +943,20 @@ public class TTerminalWindow extends TScrollableWindow
 
         int textWidth = 16;
         int textHeight = 20;
+        boolean cursorBlinkVisible = true;
 
         if (getScreen() instanceof SwingTerminal) {
             SwingTerminal terminal = (SwingTerminal) getScreen();
 
             textWidth = terminal.getTextWidth();
             textHeight = terminal.getTextHeight();
+            cursorBlinkVisible = terminal.getCursorBlinkVisible();
         } else if (getScreen() instanceof ECMA48Terminal) {
             ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
 
             textWidth = terminal.getTextWidth();
             textHeight = terminal.getTextHeight();
+            cursorBlinkVisible = blinkState;
         } else {
             // We don't know how to dray glyphs to this screen, draw them as
             // text and bail out.
@@ -959,8 +974,11 @@ public class TTerminalWindow extends TScrollableWindow
         assert (doubleFont != null);
 
         BufferedImage image = null;
-
-        image = glyphCache.get(cell);
+        if (cell.isBlink() && !cursorBlinkVisible) {
+            image = glyphCacheBlink.get(cell);
+        } else {
+            image = glyphCache.get(cell);
+        }
         if (image == null) {
             // Generate glyph and draw it to an image.
             image = new BufferedImage(textWidth * 2, textHeight * 2,
@@ -976,14 +994,18 @@ public class TTerminalWindow extends TScrollableWindow
                 gr2.setColor(SwingTerminal.attrToBackgroundColor(cell));
                 gr2.fillRect(0, 0, image.getWidth(), image.getHeight());
             }
-            gr2.setColor(SwingTerminal.attrToForegroundColor(cell));
-            char [] chars = new char[1];
-            chars[0] = cell.getChar();
-            gr2.drawChars(chars, 0, 1, doubleTextAdjustX,
-                (textHeight * 2) - doubleMaxDescent + doubleTextAdjustY);
+            if (!cell.isBlink()
+                || (cell.isBlink() && cursorBlinkVisible)
+            ) {
+                gr2.setColor(SwingTerminal.attrToForegroundColor(cell));
+                char [] chars = new char[1];
+                chars[0] = cell.getChar();
+                gr2.drawChars(chars, 0, 1, doubleTextAdjustX,
+                    (textHeight * 2) - doubleMaxDescent + doubleTextAdjustY);
 
-            if (cell.isUnderline() && (line.getDoubleHeight() != 1)) {
-                gr2.fillRect(0, textHeight - 2, textWidth, 2);
+                if (cell.isUnderline() && (line.getDoubleHeight() != 1)) {
+                    gr2.fillRect(0, textHeight - 2, textWidth, 2);
+                }
             }
             gr2.dispose();
 
@@ -991,7 +1013,11 @@ public class TTerminalWindow extends TScrollableWindow
             // be mutated by invertCell().
             Cell key = new Cell();
             key.setTo(cell);
-            glyphCache.put(key, image);
+            if (cell.isBlink() && !cursorBlinkVisible) {
+                glyphCacheBlink.put(key, image);
+            } else {
+                glyphCache.put(key, image);
+            }
         }
 
         // Now that we have the double-wide glyph drawn, copy the right
@@ -1066,8 +1092,25 @@ public class TTerminalWindow extends TScrollableWindow
 
         gr.dispose();
 
-        // (Re)create the glyph cache.
+        // (Re)create the glyph caches.
         glyphCache = new HashMap<Cell, BufferedImage>();
+        glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+
+        // Special case: the ECMA48 backend needs to have a timer to drive
+        // its blink state.
+        if (getScreen() instanceof jexer.backend.ECMA48Terminal) {
+            // Blink every 500 millis.
+            long millis = 500;
+            getApplication().addTimer(millis, true,
+                new TAction() {
+                    public void DO() {
+                        blinkState = !blinkState;
+                        getApplication().doRepaint();
+                    }
+                }
+            );
+        }
+
     }
 
 }
