@@ -98,7 +98,7 @@ public class SwingTerminal extends LogicalScreen
     /**
      * The terminus font resource filename.
      */
-    private static final String FONTFILE = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
+    public static final String FONTFILE = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
 
     /**
      * Cursor style to draw.
@@ -882,7 +882,7 @@ public class SwingTerminal extends LogicalScreen
      * @param attr the text attributes
      * @return the Swing Color
      */
-    private Color attrToForegroundColor(final CellAttributes attr) {
+    public static Color attrToForegroundColor(final CellAttributes attr) {
         int rgb = attr.getForeColorRGB();
         if (rgb >= 0) {
             int red     = (rgb >> 16) & 0xFF;
@@ -939,7 +939,7 @@ public class SwingTerminal extends LogicalScreen
      * @param attr the text attributes
      * @return the Swing Color
      */
-    private Color attrToBackgroundColor(final CellAttributes attr) {
+    public static Color attrToBackgroundColor(final CellAttributes attr) {
         int rgb = attr.getBackColorRGB();
         if (rgb >= 0) {
             int red     = (rgb >> 16) & 0xFF;

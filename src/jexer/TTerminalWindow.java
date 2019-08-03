@@ -28,14 +28,24 @@
  */
 package jexer;
 
+import java.awt.image.BufferedImage;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+
+import java.io.InputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+import jexer.backend.ECMA48Terminal;
+import jexer.backend.MultiScreen;
+import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.event.TKeypressEvent;
@@ -53,7 +63,6 @@ import static jexer.TKeypress.*;
  */
 public class TTerminalWindow extends TScrollableWindow
                              implements DisplayListener {
-
 
     /**
      * Translated strings.
@@ -85,6 +94,43 @@ public class TTerminalWindow extends TScrollableWindow
      * If true, close the window when the shell exits.
      */
     private boolean closeOnExit = false;
+
+    /**
+     * System-dependent Y adjustment for text in the character cell
+     * (double-height).
+     */
+    private int doubleTextAdjustY = 0;
+
+    /**
+     * System-dependent X adjustment for text in the character cell
+     * (double-height).
+     */
+    private int doubleTextAdjustX = 0;
+
+    /**
+     * Descent of a character cell in pixels (double-height).
+     */
+    private int doubleMaxDescent = 0;
+
+    /**
+     * Double-width font.
+     */
+    private Font doubleFont = null;
+
+    /**
+     * Last text width value.
+     */
+    private int lastTextWidth = -1;
+
+    /**
+     * Last text height value.
+     */
+    private int lastTextHeight = -1;
+
+    /**
+     * A cache of previously-rendered double-width glyphs.
+     */
+    private Map<Cell, BufferedImage> glyphCache;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -341,8 +387,7 @@ public class TTerminalWindow extends TScrollableWindow
                         }
                     }
                     if (line.isDoubleWidth()) {
-                        putCharXY((i * 2) + 1, row, newCell);
-                        putCharXY((i * 2) + 2, row, ' ', newCell);
+                        putDoubleWidthCharXY(line, (i * 2) + 1, row, newCell);
                     } else {
                         putCharXY(i + 1, row, newCell);
                     }
@@ -870,6 +915,159 @@ public class TTerminalWindow extends TScrollableWindow
             return true;
         }
         return false;
+    }
+
+    /**
+     * Draw glyphs for a double-width or double-height VT100 cell to two
+     * screen cells.
+     *
+     * @param line the line this VT100 cell is in
+     * @param x the X position to draw the left half to
+     * @param y the Y position to draw to
+     * @param cell the cell to draw
+     */
+    private void putDoubleWidthCharXY(final DisplayLine line, final int x,
+        final int y, final Cell cell) {
+
+        int textWidth = 16;
+        int textHeight = 20;
+
+        if (getScreen() instanceof SwingTerminal) {
+            SwingTerminal terminal = (SwingTerminal) getScreen();
+
+            textWidth = terminal.getTextWidth();
+            textHeight = terminal.getTextHeight();
+        } else if (getScreen() instanceof ECMA48Terminal) {
+            ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
+
+            textWidth = terminal.getTextWidth();
+            textHeight = terminal.getTextHeight();
+        } else {
+            // We don't know how to dray glyphs to this screen, draw them as
+            // text and bail out.
+            putCharXY(x, y, cell);
+            putCharXY(x + 1, y, ' ', cell);
+            return;
+        }
+
+        if ((textWidth != lastTextWidth) || (textHeight != lastTextHeight)) {
+            // Screen size has changed, reset all fonts.
+            setupFonts(textHeight);
+            lastTextWidth = textWidth;
+            lastTextHeight = textHeight;
+        }
+        assert (doubleFont != null);
+
+        BufferedImage image = null;
+
+        image = glyphCache.get(cell);
+        if (image == null) {
+            // Generate glyph and draw it to an image.
+            image = new BufferedImage(textWidth * 2, textHeight * 2,
+                BufferedImage.TYPE_INT_ARGB);
+            Graphics2D gr2 = image.createGraphics();
+            gr2.setFont(doubleFont);
+
+            // Draw the background rectangle, then the foreground character.
+            if (getScreen() instanceof ECMA48Terminal) {
+                // BUG: the background color is coming in the same as the
+                // foreground color.  For now, don't draw it.
+            } else {
+                gr2.setColor(SwingTerminal.attrToBackgroundColor(cell));
+                gr2.fillRect(0, 0, image.getWidth(), image.getHeight());
+            }
+            gr2.setColor(SwingTerminal.attrToForegroundColor(cell));
+            char [] chars = new char[1];
+            chars[0] = cell.getChar();
+            gr2.drawChars(chars, 0, 1, doubleTextAdjustX,
+                (textHeight * 2) - doubleMaxDescent + doubleTextAdjustY);
+
+            if (cell.isUnderline() && (line.getDoubleHeight() != 1)) {
+                gr2.fillRect(0, textHeight - 2, textWidth, 2);
+            }
+            gr2.dispose();
+
+            // Now save this generated image, using a new key that will not
+            // be mutated by invertCell().
+            Cell key = new Cell();
+            key.setTo(cell);
+            glyphCache.put(key, image);
+        }
+
+        // Now that we have the double-wide glyph drawn, copy the right
+        // pieces of it to the cells.
+        Cell left = new Cell();
+        Cell right = new Cell();
+        left.setTo(cell);
+        right.setTo(cell);
+        right.setChar(' ');
+        BufferedImage leftImage = null;
+        BufferedImage rightImage = null;
+        switch (line.getDoubleHeight()) {
+        case 1:
+            // Top half double height
+            leftImage = image.getSubimage(0, 0, textWidth, textHeight);
+            rightImage = image.getSubimage(textWidth, 0, textWidth, textHeight);
+            break;
+        case 2:
+            // Bottom half double height
+            leftImage = image.getSubimage(0, textHeight, textWidth, textHeight);
+            rightImage = image.getSubimage(textWidth, textHeight,
+                textWidth, textHeight);
+            break;
+        default:
+            // Either single height double-width, or error fallback
+            BufferedImage wideImage = new BufferedImage(textWidth * 2,
+                textHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D grWide = wideImage.createGraphics();
+            grWide.drawImage(image, 0, 0, wideImage.getWidth(),
+                wideImage.getHeight(), null);
+            grWide.dispose();
+            leftImage = wideImage.getSubimage(0, 0, textWidth, textHeight);
+            rightImage = wideImage.getSubimage(textWidth, 0, textWidth,
+                textHeight);
+            break;
+        }
+        left.setImage(leftImage);
+        right.setImage(rightImage);
+        putCharXY(x, y, left);
+        putCharXY(x + 1, y, right);
+    }
+
+    /**
+     * Set up the single and double-width fonts.
+     *
+     * @param fontSize the size of font to request for the single-width font.
+     * The double-width font will be 2x this value.
+     */
+    private void setupFonts(final int fontSize) {
+        try {
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            InputStream in = loader.getResourceAsStream(SwingTerminal.FONTFILE);
+            Font terminusRoot = Font.createFont(Font.TRUETYPE_FONT, in);
+            Font terminusDouble = terminusRoot.deriveFont(Font.PLAIN,
+                fontSize * 2);
+            doubleFont = terminusDouble;
+        } catch (java.awt.FontFormatException e) {
+            new TExceptionDialog(getApplication(), e);
+            doubleFont = new Font(Font.MONOSPACED, Font.PLAIN, fontSize * 2);
+        } catch (java.io.IOException e) {
+            new TExceptionDialog(getApplication(), e);
+            doubleFont = new Font(Font.MONOSPACED, Font.PLAIN, fontSize * 2);
+        }
+
+        // Get font descent.
+        BufferedImage image = new BufferedImage(fontSize * 10, fontSize * 10,
+            BufferedImage.TYPE_INT_ARGB);
+        Graphics2D gr = image.createGraphics();
+        gr.setFont(doubleFont);
+        FontMetrics fm = gr.getFontMetrics();
+        doubleMaxDescent = fm.getMaxDescent();
+
+        gr.dispose();
+
+        // (Re)create the glyph cache.
+        glyphCache = new HashMap<Cell, BufferedImage>();
     }
 
 }
