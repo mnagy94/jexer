@@ -28,10 +28,10 @@
  */
 package jexer;
 
-import java.awt.image.BufferedImage;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -761,6 +761,22 @@ public class TTerminalWindow extends TScrollableWindow
 
         // Add shortcut text
         newStatusBar(i18n.getString("statusBarRunning"));
+
+        // Pass the correct text cell width/height to the emulator
+        int textWidth = 16;
+        int textHeight = 20;
+        if (getScreen() instanceof SwingTerminal) {
+            SwingTerminal terminal = (SwingTerminal) getScreen();
+
+            textWidth = terminal.getTextWidth();
+            textHeight = terminal.getTextHeight();
+        } else if (getScreen() instanceof ECMA48Terminal) {
+            ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
+            textWidth = terminal.getTextWidth();
+            textHeight = terminal.getTextHeight();
+        }
+        emulator.setTextWidth(textWidth);
+        emulator.setTextHeight(textHeight);
     }
 
     /**
@@ -953,6 +969,14 @@ public class TTerminalWindow extends TScrollableWindow
             cursorBlinkVisible = terminal.getCursorBlinkVisible();
         } else if (getScreen() instanceof ECMA48Terminal) {
             ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
+
+            if (!terminal.hasSixel()) {
+                // The backend does not have sixel support, draw this as text
+                // and bail out.
+                putCharXY(x, y, cell);
+                putCharXY(x + 1, y, ' ', cell);
+                return;
+            }
 
             textWidth = terminal.getTextWidth();
             textHeight = terminal.getTextHeight();

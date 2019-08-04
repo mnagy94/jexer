@@ -28,6 +28,8 @@
  */
 package jexer.tterminal;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.CharArrayWriter;
 import java.io.InputStream;
@@ -41,6 +43,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import jexer.TKeypress;
@@ -136,6 +139,7 @@ public class ECMA48 implements Runnable {
         DCS_PARAM,
         DCS_PASSTHROUGH,
         DCS_IGNORE,
+        DCS_SIXEL,
         SOSPMAPC_STRING,
         OSC_STRING,
         VT52_DIRECT_CURSOR_ADDRESS
@@ -457,6 +461,21 @@ public class ECMA48 implements Runnable {
      * The 88- or 256-color support RGB colors.
      */
     private List<Integer> colors88;
+
+    /**
+     * Sixel collection buffer.
+     */
+    private StringBuilder sixelParseBuffer;
+
+    /**
+     * The width of a character cell in pixels.
+     */
+    private int textWidth = 16;
+
+    /**
+     * The height of a character cell in pixels.
+     */
+    private int textHeight = 20;
 
     /**
      * DECSC/DECRC save/restore a subset of the total state.  This class
@@ -4609,7 +4628,7 @@ public class ECMA48 implements Runnable {
     private void consume(char ch) {
 
         // DEBUG
-        // System.err.printf("%c", ch);
+        // System.err.printf("%c STATE = %s\n", ch, scanState);
 
         // Special case for VT10x: 7-bit characters only
         if ((type == DeviceType.VT100) || (type == DeviceType.VT102)) {
@@ -4631,9 +4650,11 @@ public class ECMA48 implements Runnable {
         if (ch == 0x1B) {
             if ((type == DeviceType.XTERM)
                 && ((scanState == ScanState.OSC_STRING)
+                    || (scanState == ScanState.DCS_SIXEL)
                     || (scanState == ScanState.SOSPMAPC_STRING))
             ) {
                 // Xterm can pass ESCAPE to its OSC sequence.
+                // Xterm can pass ESCAPE to its DCS sequence.
                 // Jexer can pass ESCAPE to its PM sequence.
             } else if ((scanState != ScanState.DCS_ENTRY)
                 && (scanState != ScanState.DCS_INTERMEDIATE)
@@ -4641,7 +4662,6 @@ public class ECMA48 implements Runnable {
                 && (scanState != ScanState.DCS_PARAM)
                 && (scanState != ScanState.DCS_PASSTHROUGH)
             ) {
-
                 scanState = ScanState.ESCAPE;
                 return;
             }
@@ -6353,8 +6373,12 @@ public class ECMA48 implements Runnable {
                 scanState = ScanState.DCS_IGNORE;
             }
 
-            // 0x40-7E goes to DCS_PASSTHROUGH
-            if ((ch >= 0x40) && (ch <= 0x7E)) {
+            // 0x71 goes to DCS_SIXEL
+            if (ch == 0x71) {
+                sixelParseBuffer = new StringBuilder();
+                scanState = ScanState.DCS_SIXEL;
+            } else if ((ch >= 0x40) && (ch <= 0x7E)) {
+                // 0x40-7E goes to DCS_PASSTHROUGH
                 scanState = ScanState.DCS_PASSTHROUGH;
             }
             return;
@@ -6434,8 +6458,12 @@ public class ECMA48 implements Runnable {
                 scanState = ScanState.DCS_IGNORE;
             }
 
-            // 0x40-7E goes to DCS_PASSTHROUGH
-            if ((ch >= 0x40) && (ch <= 0x7E)) {
+            // 0x71 goes to DCS_SIXEL
+            if (ch == 0x71) {
+                sixelParseBuffer = new StringBuilder();
+                scanState = ScanState.DCS_SIXEL;
+            } else if ((ch >= 0x40) && (ch <= 0x7E)) {
+                // 0x40-7E goes to DCS_PASSTHROUGH
                 scanState = ScanState.DCS_PASSTHROUGH;
             }
             return;
@@ -6484,6 +6512,48 @@ public class ECMA48 implements Runnable {
             if (ch == 0x9C) {
                 toGround();
             }
+
+            return;
+
+        case DCS_SIXEL:
+            // 0x9C goes to GROUND
+            if (ch == 0x9C) {
+                parseSixel();
+                toGround();
+            }
+
+            // 0x1B 0x5C goes to GROUND
+            if (ch == 0x1B) {
+                collect(ch);
+            }
+            if (ch == 0x5C) {
+                if ((collectBuffer.length() > 0)
+                    && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
+                ) {
+                    parseSixel();
+                    toGround();
+                }
+            }
+
+            // 00-17, 19, 1C-1F, 20-7E   --> put
+            if (ch <= 0x17) {
+                sixelParseBuffer.append(ch);
+                return;
+            }
+            if (ch == 0x19) {
+                sixelParseBuffer.append(ch);
+                return;
+            }
+            if ((ch >= 0x1C) && (ch <= 0x1F)) {
+                sixelParseBuffer.append(ch);
+                return;
+            }
+            if ((ch >= 0x20) && (ch <= 0x7E)) {
+                sixelParseBuffer.append(ch);
+                return;
+            }
+
+            // 7F                        --> ignore
 
             return;
 
@@ -6571,6 +6641,123 @@ public class ECMA48 implements Runnable {
      */
     public final boolean hasHiddenMousePointer() {
         return hideMousePointer;
+    }
+
+    // ------------------------------------------------------------------------
+    // Sixel support ----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set the width of a character cell in pixels.
+     *
+     * @param textWidth the width in pixels of a character cell
+     */
+    public void setTextWidth(final int textWidth) {
+        this.textWidth = textWidth;
+    }
+
+    /**
+     * Set the height of a character cell in pixels.
+     *
+     * @param textHeight the height in pixels of a character cell
+     */
+    public void setTextHeight(final int textHeight) {
+        this.textHeight = textHeight;
+    }
+
+    /**
+     * Parse a sixel string into a bitmap image, and overlay that image onto
+     * the text cells.
+     */
+    private void parseSixel() {
+        System.err.println("parseSixel(): '" + sixelParseBuffer.toString() +
+            "'");
+
+        Sixel sixel = new Sixel(sixelParseBuffer.toString());
+        BufferedImage image = sixel.getImage();
+
+        System.err.println("parseSixel(): image " + image);
+
+        if (image == null) {
+            // Sixel data was malformed in some way, bail out.
+            return;
+        }
+
+        /*
+         * Procedure:
+         *
+         * Break up the image into text cell sized pieces as a new array of
+         * Cells.
+         *
+         * Note original column position x0.
+         *
+         * For each cell:
+         *
+         * 1. Advance (printCharacter(' ')) for horizontal increment, or
+         *    index (linefeed() + cursorPosition(y, x0)) for vertical
+         *    increment.
+         *
+         * 2. Set (x, y) cell image data.
+         *
+         * 3. For the right and bottom edges:
+         *
+         *   a. Render the text to pixels using Terminus font.
+         *
+         *   b. Blit the image on top of the text, using alpha channel.
+         */
+        int cellColumns = image.getWidth() / textWidth;
+        if (cellColumns * textWidth < image.getWidth()) {
+            cellColumns++;
+        }
+        int cellRows = image.getHeight() / textHeight;
+        if (cellRows * textHeight < image.getHeight()) {
+            cellRows++;
+        }
+
+        // Break the image up into an array of cells.
+        Cell [][] cells = new Cell[cellColumns][cellRows];
+
+        for (int x = 0; x < cellColumns; x++) {
+            for (int y = 0; y < cellRows; y++) {
+
+                int width = textWidth;
+                if ((x + 1) * textWidth > image.getWidth()) {
+                    width = image.getWidth() - (x * textWidth);
+                }
+                int height = textHeight;
+                if ((y + 1) * textHeight > image.getHeight()) {
+                    height = image.getHeight() - (y * textHeight);
+                }
+
+                Cell cell = new Cell();
+                cell.setImage(image.getSubimage(x * textWidth,
+                        y * textHeight, width, height));
+
+                cells[x][y] = cell;
+            }
+        }
+
+        int x0 = currentState.cursorX;
+        for (int y = 0; y < cellRows; y++) {
+            for (int x = 0; x < cellColumns; x++) {
+                printCharacter(' ');
+                cursorLeft(1, false);
+                if ((x == cellColumns - 1) || (y == cellRows - 1)) {
+                    // TODO: render text of current cell first, then image
+                    // over it.  For now, just copy the cell.
+                    DisplayLine line = display.get(currentState.cursorY);
+                    line.replace(currentState.cursorX, cells[x][y]);
+                } else {
+                    // Copy the image cell into the display.
+                    DisplayLine line = display.get(currentState.cursorY);
+                    line.replace(currentState.cursorX, cells[x][y]);
+                }
+                cursorRight(1, false);
+            }
+            linefeed();
+            cursorPosition(currentState.cursorY, x0);
+        }
+
     }
 
 }

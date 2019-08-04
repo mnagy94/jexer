@@ -3012,6 +3012,15 @@ public class ECMA48Terminal extends LogicalScreen
         return (startSixel(x, y) + sb.toString() + endSixel());
     }
 
+    /**
+     * Get the sixel support flag.
+     *
+     * @return true if this terminal is emitting sixel
+     */
+    public boolean hasSixel() {
+        return sixel;
+    }
+
     // ------------------------------------------------------------------------
     // End sixel output support -----------------------------------------------
     // ------------------------------------------------------------------------
