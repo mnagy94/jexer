@@ -103,7 +103,7 @@ controls.  The demos can be run as follows:
 More Screenshots
 ----------------
 
-![Yo Dawg...](/screenshots/yodawg.png?raw=true "Yo Dawg, I heard you like text windowing systems, so I ran a text windowing system inside your text windowing system so you can have a terminal in your terminal.")
+![Yo Dawg...](/screenshots/jexer_sixel_in_sixel.png?raw=true "Yo Dawg, I heard you like text windowing systems, so I ran a text windowing system inside your text windowing system so you can have a terminal in your terminal.")
 
 ![Sixel Pictures Of Cliffs Of Moher And Buoy](/screenshots/sixel_images.png?raw=true "Sixel Pictures Of Cliffs Of Moher And Buoy")
 
