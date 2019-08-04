@@ -124,7 +124,10 @@ public class TImageWindow extends TScrollableWindow {
             setWidth(imageField.getColumns() + 2);
         }
 
-        hScroller = new THScroller(this, 17, getHeight() - 2, getWidth() - 20);
+        hScroller = new THScroller(this,
+            Math.min(Math.max(0, getWidth() - 17), 17),
+            getHeight() - 2,
+            getWidth() - Math.min(Math.max(0, getWidth() - 17), 17) - 3);
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
         setTopValue(0);
         setBottomValue(imageField.getRows() - imageField.getHeight());

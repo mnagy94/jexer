@@ -213,7 +213,7 @@ public class ECMA48 implements Runnable {
     /**
      * XTERM mouse reporting protocols.
      */
-    private enum MouseProtocol {
+    public enum MouseProtocol {
         OFF,
         X10,
         NORMAL,
@@ -4621,6 +4621,30 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Perform xterm window operations.
+     */
+    private void xtermWindowOps() {
+        boolean xtermPrivateModeFlag = false;
+
+        for (int i = 0; i < collectBuffer.length(); i++) {
+            if (collectBuffer.charAt(i) == '?') {
+                xtermPrivateModeFlag = true;
+                break;
+            }
+        }
+
+        int i = getCsiParam(0, 0);
+
+        if (!xtermPrivateModeFlag) {
+            if (i == 14) {
+                // Report xterm window in pixels as CSI 4 ; height ; width t
+                writeRemote(String.format("\033[4;%d;%dt", textHeight * height,
+                        textWidth * width));
+            }
+        }
+    }
+
+    /**
      * Run this input character through the ECMA48 state machine.
      *
      * @param ch character from the remote side
@@ -5906,6 +5930,10 @@ public class ECMA48 implements Runnable {
                     }
                     break;
                 case 't':
+                    if (type == DeviceType.XTERM) {
+                        // Window operations
+                        xtermWindowOps();
+                    }
                     break;
                 case 'u':
                     // Restore cursor (ANSI.SYS)
@@ -6169,7 +6197,13 @@ public class ECMA48 implements Runnable {
                     decstbm();
                     break;
                 case 's':
+                    break;
                 case 't':
+                    if (type == DeviceType.XTERM) {
+                        // Window operations
+                        xtermWindowOps();
+                    }
+                    break;
                 case 'u':
                 case 'v':
                 case 'w':
@@ -6643,6 +6677,15 @@ public class ECMA48 implements Runnable {
         return hideMousePointer;
     }
 
+    /**
+     * Get the mouse protocol.
+     *
+     * @return MouseProtocol.OFF, MouseProtocol.X10, etc.
+     */
+    public MouseProtocol getMouseProtocol() {
+        return mouseProtocol;
+    }
+
     // ------------------------------------------------------------------------
     // Sixel support ----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -6670,13 +6713,16 @@ public class ECMA48 implements Runnable {
      * the text cells.
      */
     private void parseSixel() {
-        System.err.println("parseSixel(): '" + sixelParseBuffer.toString() +
-            "'");
+
+        /*
+        System.err.println("parseSixel(): '" + sixelParseBuffer.toString()
+            + "'");
+         */
 
         Sixel sixel = new Sixel(sixelParseBuffer.toString());
         BufferedImage image = sixel.getImage();
 
-        System.err.println("parseSixel(): image " + image);
+        // System.err.println("parseSixel(): image " + image);
 
         if (image == null) {
             // Sixel data was malformed in some way, bail out.

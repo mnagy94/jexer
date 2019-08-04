@@ -550,13 +550,17 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
-        if (mouse.isMouseWheelUp()) {
-            verticalDecrement();
-            return;
-        }
-        if (mouse.isMouseWheelDown()) {
-            verticalIncrement();
-            return;
+        // If the emulator is tracking mouse buttons, it needs to see wheel
+        // events.
+        if (emulator.getMouseProtocol() == ECMA48.MouseProtocol.OFF) {
+            if (mouse.isMouseWheelUp()) {
+                verticalDecrement();
+                return;
+            }
+            if (mouse.isMouseWheelDown()) {
+                verticalIncrement();
+                return;
+            }
         }
         if (mouseOnEmulator(mouse)) {
             synchronized (emulator) {

@@ -49,10 +49,8 @@ public class Sixel {
     private enum ScanState {
         GROUND,
         QUOTE,
-        COLOR_ENTRY,
-        COLOR_PARAM,
-        COLOR_PIXELS,
-        SIXEL_REPEAT,
+        COLOR,
+        REPEAT,
     }
 
     // ------------------------------------------------------------------------
@@ -62,7 +60,7 @@ public class Sixel {
     /**
      * If true, enable debug messages.
      */
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
 
     /**
      * Number of pixels to increment when we need more horizontal room.
@@ -154,7 +152,7 @@ public class Sixel {
      */
     public BufferedImage getImage() {
         if ((width > 0) && (height > 0)) {
-            return image.getSubimage(0, 0, width, height);
+            return image.getSubimage(0, 0, width, height + 6);
         }
         return null;
     }
@@ -257,6 +255,8 @@ public class Sixel {
                 Integer.toHexString(n) + " color " + color);
         }
 
+        assert (n >= 0);
+
         if (x + rep > image.getWidth()) {
             // Resize the image, give us another max(rep, WIDTH_INCREASE)
             // pixels of horizontal length.
@@ -274,22 +274,22 @@ public class Sixel {
         }
 
         for (int i = 0; i < rep; i++) {
-            if ((n & 0x01) == 0x01) {
-                image.setRGB(x, height, rgb);
+            if ((n & 0x01) != 0) {
+                image.setRGB(x, height + 0, rgb);
             }
-            if ((n & 0x02) == 0x02) {
+            if ((n & 0x02) != 0) {
                 image.setRGB(x, height + 1, rgb);
             }
-            if ((n & 0x04) == 0x04) {
+            if ((n & 0x04) != 0) {
                 image.setRGB(x, height + 2, rgb);
             }
-            if ((n & 0x08) == 0x08) {
+            if ((n & 0x08) != 0) {
                 image.setRGB(x, height + 3, rgb);
             }
-            if ((n & 0x10) == 0x10) {
+            if ((n & 0x10) != 0) {
                 image.setRGB(x, height + 4, rgb);
             }
-            if ((n & 0x20) == 0x20) {
+            if ((n & 0x20) != 0) {
                 image.setRGB(x, height + 5, rgb);
             }
             x++;
@@ -310,10 +310,12 @@ public class Sixel {
             Color newColor = palette.get(idx);
             if (newColor != null) {
                 color = newColor;
+            } else {
+                System.err.println("COLOR " + idx + " NOT FOUND");
             }
 
             if (DEBUG) {
-                System.err.println("set color: " + color);
+                System.err.println("set color " + idx + " " + color);
             }
             return;
         }
@@ -329,6 +331,11 @@ public class Sixel {
             if (DEBUG) {
                 System.err.println("Palette color " + idx + " --> " + newColor);
             }
+        } else {
+            if (DEBUG) {
+                System.err.println("UNKNOWN COLOR TYPE " + type + ": " + type +
+                    " " + idx + " R " + red + " G " + green + " B " + blue);
+            }
         }
     }
 
@@ -342,164 +349,97 @@ public class Sixel {
         // DEBUG
         // System.err.printf("Sixel.consume() %c STATE = %s\n", ch, scanState);
 
+        // Between decimal 63 (inclusive) and 127 (exclusive) --> pixels
+        if ((ch >= 63) && (ch < 127)) {
+            if (scanState == ScanState.COLOR) {
+                setPalette();
+                toGround();
+            }
+            addSixel(ch);
+            toGround();
+            return;
+        }
+
+        if (ch == '#') {
+            // Next color is here, parse what we had before.
+            if (scanState == ScanState.COLOR) {
+                setPalette();
+                toGround();
+            }
+            scanState = ScanState.COLOR;
+            return;
+        }
+
+        if (ch == '!') {
+            // Repeat count
+            if (scanState == ScanState.COLOR) {
+                setPalette();
+                toGround();
+            }
+            scanState = ScanState.REPEAT;
+            repeatCount = 0;
+            return;
+        }
+
+        if (ch == '-') {
+            if (scanState == ScanState.COLOR) {
+                setPalette();
+                toGround();
+            }
+
+            if (height + 6 < image.getHeight()) {
+                // Resize the image, give us another HEIGHT_INCREASE
+                // pixels of vertical length.
+                resizeImage(image.getWidth(),
+                    image.getHeight() + HEIGHT_INCREASE);
+            }
+            height += 6;
+            x = 0;
+            return;
+        }
+
+        if (ch == '$') {
+            if (scanState == ScanState.COLOR) {
+                setPalette();
+                toGround();
+            }
+            x = 0;
+            return;
+        }
+
+        if (ch == '"') {
+            if (scanState == ScanState.COLOR) {
+                setPalette();
+                toGround();
+            }
+            scanState = ScanState.QUOTE;
+            return;
+        }
+
         switch (scanState) {
 
         case GROUND:
-            switch (ch) {
-            case '#':
-                scanState = ScanState.COLOR_ENTRY;
-                return;
-            case '\"':
-                scanState = ScanState.QUOTE;
-                return;
-            default:
-                break;
-            }
-
-            if (ch == '!') {
-                // Repeat count
-                scanState = ScanState.SIXEL_REPEAT;
-            }
-            if (ch == '-') {
-                if (height + 6 < image.getHeight()) {
-                    // Resize the image, give us another HEIGHT_INCREASE
-                    // pixels of vertical length.
-                    resizeImage(image.getWidth(),
-                        image.getHeight() + HEIGHT_INCREASE);
-                }
-                height += 6;
-                x = 0;
-            }
-
-            if (ch == '$') {
-                x = 0;
+            // Unknown character.
+            if (DEBUG) {
+                System.err.println("UNKNOWN CHAR: " + ch);
             }
             return;
 
         case QUOTE:
-            switch (ch) {
-            case '#':
-                scanState = ScanState.COLOR_ENTRY;
-                return;
-            default:
-                break;
-            }
-
             // Ignore everything else in the quote header.
             return;
 
-        case COLOR_ENTRY:
-            // Between decimal 63 (inclusive) and 189 (exclusive) --> pixels
-            if ((ch >= 63) && (ch < 189)) {
-                addSixel(ch);
-                return;
-            }
-
-            // 30-39, 3B           --> param, then switch to COLOR_PARAM
-            if ((ch >= '0') && (ch <= '9')) {
-                param((byte) ch);
-                scanState = ScanState.COLOR_PARAM;
-            }
-            if (ch == ';') {
-                param((byte) ch);
-                scanState = ScanState.COLOR_PARAM;
-            }
-
-            if (ch == '#') {
-                // Next color is here, parse what we had before.
-                setPalette();
-                toGround();
-            }
-
-            if (ch == '!') {
-                setPalette();
-                toGround();
-
-                // Repeat count
-                scanState = ScanState.SIXEL_REPEAT;
-            }
-            if (ch == '-') {
-                setPalette();
-                toGround();
-
-                if (height + 6 < image.getHeight()) {
-                    // Resize the image, give us another HEIGHT_INCREASE
-                    // pixels of vertical length.
-                    resizeImage(image.getWidth(),
-                        image.getHeight() + HEIGHT_INCREASE);
-                }
-                height += 6;
-                x = 0;
-            }
-
-            if (ch == '$') {
-                setPalette();
-                toGround();
-
-                x = 0;
-            }
-            return;
-
-        case COLOR_PARAM:
-
-            // Between decimal 63 (inclusive) and 189 (exclusive) --> pixels
-            if ((ch >= 63) && (ch < 189)) {
-                addSixel(ch);
-                return;
-            }
-
-            // 30-39, 3B           --> param, then switch to COLOR_PARAM
+        case COLOR:
+            // 30-39, 3B --> param
             if ((ch >= '0') && (ch <= '9')) {
                 param((byte) ch);
             }
             if (ch == ';') {
                 param((byte) ch);
             }
-
-            if (ch == '#') {
-                // Next color is here, parse what we had before.
-                setPalette();
-                toGround();
-                scanState = ScanState.COLOR_ENTRY;
-            }
-
-            if (ch == '!') {
-                setPalette();
-                toGround();
-
-                // Repeat count
-                scanState = ScanState.SIXEL_REPEAT;
-            }
-            if (ch == '-') {
-                setPalette();
-                toGround();
-
-                if (height + 6 < image.getHeight()) {
-                    // Resize the image, give us another HEIGHT_INCREASE
-                    // pixels of vertical length.
-                    resizeImage(image.getWidth(),
-                        image.getHeight() + HEIGHT_INCREASE);
-                }
-                height += 6;
-                x = 0;
-            }
-
-            if (ch == '$') {
-                setPalette();
-                toGround();
-
-                x = 0;
-            }
             return;
 
-        case SIXEL_REPEAT:
-
-            // Between decimal 63 (inclusive) and 189 (exclusive) --> pixels
-            if ((ch >= 63) && (ch < 189)) {
-                addSixel(ch);
-                toGround();
-            }
-
+        case REPEAT:
             if ((ch >= '0') && (ch <= '9')) {
                 if (repeatCount == -1) {
                     repeatCount = (int) (ch - '0');
@@ -508,14 +448,8 @@ public class Sixel {
                     repeatCount += (int) (ch - '0');
                 }
             }
-
-            if (ch == '#') {
-                // Next color.
-                toGround();
-                scanState = ScanState.COLOR_ENTRY;
-            }
-
             return;
+
         }
 
     }
