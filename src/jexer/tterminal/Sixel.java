@@ -118,6 +118,11 @@ public class Sixel {
     private int x = 0;
 
     /**
+     * The maximum y drawn to.  This will set the final image height.
+     */
+    private int y = 0;
+
+    /**
      * The current drawing color.
      */
     private Color color = Color.BLACK;
@@ -152,7 +157,7 @@ public class Sixel {
      */
     public BufferedImage getImage() {
         if ((width > 0) && (height > 0)) {
-            return image.getSubimage(0, 0, width, height + 6);
+            return image.getSubimage(0, 0, width, y + 1);
         }
         return null;
     }
@@ -282,21 +287,27 @@ public class Sixel {
         for (int i = 0; i < rep; i++) {
             if ((n & 0x01) != 0) {
                 image.setRGB(x, height + 0, rgb);
+                y = Math.max(y, height);
             }
             if ((n & 0x02) != 0) {
                 image.setRGB(x, height + 1, rgb);
+                y = Math.max(y, height + 1);
             }
             if ((n & 0x04) != 0) {
                 image.setRGB(x, height + 2, rgb);
+                y = Math.max(y, height + 2);
             }
             if ((n & 0x08) != 0) {
                 image.setRGB(x, height + 3, rgb);
+                y = Math.max(y, height + 3);
             }
             if ((n & 0x10) != 0) {
                 image.setRGB(x, height + 4, rgb);
+                y = Math.max(y, height + 4);
             }
             if ((n & 0x20) != 0) {
                 image.setRGB(x, height + 5, rgb);
+                y = Math.max(y, height + 5);
             }
             x++;
             if (x > width) {
