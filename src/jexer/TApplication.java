@@ -284,11 +284,6 @@ public class TApplication implements Runnable {
     private boolean focusFollowsMouse = false;
 
     /**
-     * The images that might be displayed.  Note package private access.
-     */
-    private List<TImage> images;
-
-    /**
      * The list of commands to run before the next I/O check.
      */
     private List<Runnable> invokeLaters = new LinkedList<Runnable>();
@@ -606,7 +601,6 @@ public class TApplication implements Runnable {
         accelerators    = new HashMap<TKeypress, TMenuItem>();
         menuItems       = new LinkedList<TMenuItem>();
         desktop         = new TDesktop(this);
-        images          = new LinkedList<TImage>();
 
         // Special case: the Swing backend needs to have a timer to drive its
         // blink state.
@@ -1617,7 +1611,7 @@ public class TApplication implements Runnable {
                 getScreen().putCharXY(oldDrawnMouseX, oldDrawnMouseY,
                     oldDrawnMouseCell);
                 oldDrawnMouseCell = getScreen().getCharXY(mouseX, mouseY);
-                if ((images.size() > 0) && (backend instanceof ECMA48Backend)) {
+                if (backend instanceof ECMA48Backend) {
                     // Special case: the entire row containing the mouse has
                     // to be re-drawn if it has any image data, AND any rows
                     // in between.
@@ -1644,7 +1638,7 @@ public class TApplication implements Runnable {
                 oldDrawnMouseX = mouseX;
                 oldDrawnMouseY = mouseY;
             }
-            if ((images.size() > 0) || getScreen().isDirty()) {
+            if (getScreen().isDirty()) {
                 backend.flushScreen();
             }
             return;
@@ -1746,7 +1740,7 @@ public class TApplication implements Runnable {
                 oldDrawnMouseX, oldDrawnMouseY);
         }
         oldDrawnMouseCell = getScreen().getCharXY(mouseX, mouseY);
-        if ((images.size() > 0) && (backend instanceof ECMA48Backend)) {
+        if (backend instanceof ECMA48Backend) {
             // Special case: the entire row containing the mouse has to be
             // re-drawn if it has any image data, AND any rows in between.
             if (oldDrawnMouseY != mouseY) {
@@ -1797,7 +1791,7 @@ public class TApplication implements Runnable {
         }
 
         // Flush the screen contents
-        if ((images.size() > 0) || getScreen().isDirty()) {
+        if (getScreen().isDirty()) {
             if (debugThreads) {
                 System.err.printf("%d %s backend.flushScreen()\n",
                     System.currentTimeMillis(), Thread.currentThread());
@@ -2527,46 +2521,6 @@ public class TApplication implements Runnable {
         // Finally, set the window's new coordinates.
         window.setX(windowX);
         window.setY(windowY);
-    }
-
-    // ------------------------------------------------------------------------
-    // TImage management ------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Add an image to the list.  Note package private access.
-     *
-     * @param image the image to add
-     * @throws IllegalArgumentException if the image is already used in
-     * another TApplication
-     */
-    final void addImage(final TImage image) {
-        if ((image.getApplication() != null)
-            && (image.getApplication() != this)
-        ) {
-            throw new IllegalArgumentException("Image " + image +
-                " is already " + "part of application " +
-                image.getApplication());
-        }
-        images.add(image);
-    }
-
-    /**
-     * Remove an image from the list.  Note package private access.
-     *
-     * @param image the image to remove
-     * @throws IllegalArgumentException if the image is already used in
-     * another TApplication
-     */
-    final void removeImage(final TImage image) {
-        if ((image.getApplication() != null)
-            && (image.getApplication() != this)
-        ) {
-            throw new IllegalArgumentException("Image " + image +
-                " is already " + "part of application " +
-                image.getApplication());
-        }
-        images.remove(image);
     }
 
     // ------------------------------------------------------------------------

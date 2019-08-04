@@ -202,23 +202,11 @@ public class TImage extends TWidget {
         this.clickAction = clickAction;
 
         sizeToImage(true);
-
-        getApplication().addImage(this);
     }
 
     // ------------------------------------------------------------------------
     // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Subclasses should override this method to cleanup resources.  This is
-     * called by TWindow.onClose().
-     */
-    @Override
-    protected void close() {
-        getApplication().removeImage(this);
-        super.close();
-    }
 
     /**
      * Handle mouse press events.

@@ -247,6 +247,12 @@ public class Sixel {
      */
     private void addSixel(final char ch) {
         int n = ((int) ch - 63);
+
+        if (DEBUG && (color == null)) {
+            System.err.println("color is null?!");
+            System.err.println(buffer);
+        }
+
         int rgb = color.getRGB();
         int rep = (repeatCount == -1 ? 1 : repeatCount);
 
@@ -311,7 +317,10 @@ public class Sixel {
             if (newColor != null) {
                 color = newColor;
             } else {
-                System.err.println("COLOR " + idx + " NOT FOUND");
+                if (DEBUG) {
+                    System.err.println("COLOR " + idx + " NOT FOUND");
+                }
+                color = Color.BLACK;
             }
 
             if (DEBUG) {

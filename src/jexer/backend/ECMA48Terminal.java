@@ -2994,6 +2994,7 @@ public class ECMA48Terminal extends LogicalScreen
                     assert (data >= 0);
                     assert (data < 64);
                     data += 63;
+
                     if (data == oldData) {
                         oldDataCount++;
                     } else {
@@ -3006,6 +3007,7 @@ public class ECMA48Terminal extends LogicalScreen
                         oldDataCount = 1;
                         oldData = data;
                     }
+
                 } // for (int imageX = 0; imageX < image.getWidth(); imageX++)
 
                 // Emit the last sequence.
