@@ -119,6 +119,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | Terminal       | Environment        | Mouse Click | Mouse Cursor | Images |
 | -------------- | ------------------ | ----------- | ------------ | ------ |
 | xterm          | X11                | yes         | yes          | yes    |
+| jexer          | X11                | yes         | yes          | yes    |
 | lcxterm(3)     | CLI, Linux console | yes         | yes          | no     |
 | rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | alacritty(3)   | X11                | yes         | yes          | no     |
@@ -134,6 +135,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | Linux          | Linux console      | no          | no           | no(2)  |
 | qodem(3)       | CLI, Linux console | yes         | yes(4)       | no     |
 | qodem-x11(3)   | X11                | yes         | no           | no     |
+| yaft           | Linux console (FB) | no          | no           | yes    |
 
 1 - Requires mouse support from host terminal.
 
