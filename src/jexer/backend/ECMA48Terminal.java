@@ -2958,6 +2958,8 @@ public class ECMA48Terminal extends LogicalScreen
                 // colored pixels, and select the color.
                 sb.append(String.format("$#%d", i));
 
+                int oldData = -1;
+                int oldDataCount = 0;
                 for (int imageX = 0; imageX < image.getWidth(); imageX++) {
 
                     // Add up all the pixels that match this color.
@@ -2990,10 +2992,30 @@ public class ECMA48Terminal extends LogicalScreen
                         }
                     }
                     assert (data >= 0);
-                    assert (data < 127);
+                    assert (data < 64);
                     data += 63;
-                    sb.append((char) data);
+                    if (data == oldData) {
+                        oldDataCount++;
+                    } else {
+                        if (oldDataCount == 1) {
+                            sb.append((char) oldData);
+                        } else if (oldDataCount > 1) {
+                            sb.append(String.format("!%d", oldDataCount));
+                            sb.append((char) oldData);
+                        }
+                        oldDataCount = 1;
+                        oldData = data;
+                    }
                 } // for (int imageX = 0; imageX < image.getWidth(); imageX++)
+
+                // Emit the last sequence.
+                if (oldDataCount == 1) {
+                    sb.append((char) oldData);
+                } else if (oldDataCount > 1) {
+                    sb.append(String.format("!%d", oldDataCount));
+                    sb.append((char) oldData);
+                }
+
             } // for (int i = 0; i < MAX_COLOR_REGISTERS; i++)
 
             // Advance to the next scan line.
