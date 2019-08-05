@@ -646,14 +646,7 @@ public class MultiScreen implements Screen {
     public int getTextWidth() {
         int textWidth = 16;
         for (Screen screen: screens) {
-            int newTextWidth = textWidth;
-            if (screen instanceof MultiScreen) {
-                newTextWidth = ((MultiScreen) screen).getTextWidth();
-            } else if (screen instanceof ECMA48Terminal) {
-                newTextWidth = ((ECMA48Terminal) screen).getTextWidth();
-            } else if (screen instanceof SwingTerminal) {
-                newTextWidth = ((SwingTerminal) screen).getTextWidth();
-            }
+            int newTextWidth = screen.getTextWidth();
             if (newTextWidth < textWidth) {
                 textWidth = newTextWidth;
             }
@@ -669,14 +662,7 @@ public class MultiScreen implements Screen {
     public int getTextHeight() {
         int textHeight = 20;
         for (Screen screen: screens) {
-            int newTextHeight = textHeight;
-            if (screen instanceof MultiScreen) {
-                newTextHeight = ((MultiScreen) screen).getTextHeight();
-            } else if (screen instanceof ECMA48Terminal) {
-                newTextHeight = ((ECMA48Terminal) screen).getTextHeight();
-            } else if (screen instanceof SwingTerminal) {
-                newTextHeight = ((SwingTerminal) screen).getTextHeight();
-            }
+            int newTextHeight = screen.getTextHeight();
             if (newTextHeight < textHeight) {
                 textHeight = newTextHeight;
             }

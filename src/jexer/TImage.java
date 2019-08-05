@@ -366,25 +366,8 @@ public class TImage extends TWidget {
      * @param always if true, always resize the cells
      */
     private void sizeToImage(final boolean always) {
-        int textWidth = 16;
-        int textHeight = 20;
-
-        if (getScreen() instanceof SwingTerminal) {
-            SwingTerminal terminal = (SwingTerminal) getScreen();
-
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
-        } if (getScreen() instanceof MultiScreen) {
-            MultiScreen terminal = (MultiScreen) getScreen();
-
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
-        } else if (getScreen() instanceof ECMA48Terminal) {
-            ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
-
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
-        }
+        int textWidth = getScreen().getTextWidth();
+        int textHeight = getScreen().getTextHeight();
 
         if (image == null) {
             image = rotateImage(originalImage, clockwise);

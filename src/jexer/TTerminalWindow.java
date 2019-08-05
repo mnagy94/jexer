@@ -767,20 +767,8 @@ public class TTerminalWindow extends TScrollableWindow
         newStatusBar(i18n.getString("statusBarRunning"));
 
         // Pass the correct text cell width/height to the emulator
-        int textWidth = 16;
-        int textHeight = 20;
-        if (getScreen() instanceof SwingTerminal) {
-            SwingTerminal terminal = (SwingTerminal) getScreen();
-
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
-        } else if (getScreen() instanceof ECMA48Terminal) {
-            ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
-        }
-        emulator.setTextWidth(textWidth);
-        emulator.setTextHeight(textHeight);
+        emulator.setTextWidth(getScreen().getTextWidth());
+        emulator.setTextHeight(getScreen().getTextHeight());
     }
 
     /**
@@ -961,15 +949,12 @@ public class TTerminalWindow extends TScrollableWindow
     private void putDoubleWidthCharXY(final DisplayLine line, final int x,
         final int y, final Cell cell) {
 
-        int textWidth = 16;
-        int textHeight = 20;
+        int textWidth = getScreen().getTextWidth();
+        int textHeight = getScreen().getTextHeight();
         boolean cursorBlinkVisible = true;
 
         if (getScreen() instanceof SwingTerminal) {
             SwingTerminal terminal = (SwingTerminal) getScreen();
-
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
             cursorBlinkVisible = terminal.getCursorBlinkVisible();
         } else if (getScreen() instanceof ECMA48Terminal) {
             ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
@@ -981,9 +966,6 @@ public class TTerminalWindow extends TScrollableWindow
                 putCharXY(x + 1, y, ' ', cell);
                 return;
             }
-
-            textWidth = terminal.getTextWidth();
-            textHeight = terminal.getTextHeight();
             cursorBlinkVisible = blinkState;
         } else {
             // We don't know how to dray glyphs to this screen, draw them as

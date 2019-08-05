@@ -172,6 +172,11 @@ public class Sixel {
         BufferedImage newImage = new BufferedImage(newWidth, newHeight,
             BufferedImage.TYPE_INT_ARGB);
 
+        if (DEBUG) {
+            System.err.println("resizeImage(); old " + image.getWidth() + "x" +
+                image.getHeight() + " new " + newWidth + "x" + newHeight);
+        }
+
         Graphics2D gr = newImage.createGraphics();
         gr.drawImage(image, 0, 0, image.getWidth(), image.getHeight(), null);
         gr.dispose();
@@ -407,14 +412,15 @@ public class Sixel {
                 toGround();
             }
 
-            if (height + 6 < image.getHeight()) {
+            height += 6;
+            x = 0;
+
+            if (height + 6 > image.getHeight()) {
                 // Resize the image, give us another HEIGHT_INCREASE
                 // pixels of vertical length.
                 resizeImage(image.getWidth(),
                     image.getHeight() + HEIGHT_INCREASE);
             }
-            height += 6;
-            x = 0;
             return;
         }
 

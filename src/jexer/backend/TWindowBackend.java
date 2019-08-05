@@ -112,6 +112,26 @@ public class TWindowBackend extends TWindow implements Backend {
             window.setHeight(getHeight() + 2);
         }
 
+        /**
+         * Get the width of a character cell in pixels.
+         *
+         * @return the width in pixels of a character cell
+         */
+        @Override
+        public int getTextWidth() {
+            return window.getScreen().getTextWidth();
+        }
+
+        /**
+         * Get the height of a character cell in pixels.
+         *
+         * @return the height in pixels of a character cell
+         */
+        @Override
+        public int getTextHeight() {
+            return window.getScreen().getTextHeight();
+        }
+
     }
 
 

@@ -395,4 +395,18 @@ public interface Screen {
      */
     public void setTitle(final String title);
 
+    /**
+     * Get the width of a character cell in pixels.
+     *
+     * @return the width in pixels of a character cell
+     */
+    public int getTextWidth();
+
+    /**
+     * Get the height of a character cell in pixels.
+     *
+     * @return the height in pixels of a character cell
+     */
+    public int getTextHeight();
+
 }
