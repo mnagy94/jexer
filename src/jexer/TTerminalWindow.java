@@ -1061,6 +1061,11 @@ public class TTerminalWindow extends TScrollableWindow
         }
         left.setImage(leftImage);
         right.setImage(rightImage);
+        // Since we have image data, ditch the character here.  Otherwise, a
+        // drawBoxShadow() over the terminal window will show the characters
+        // which looks wrong.
+        left.setChar(' ');
+        right.setChar(' ');
         putCharXY(x, y, left);
         putCharXY(x + 1, y, right);
     }
