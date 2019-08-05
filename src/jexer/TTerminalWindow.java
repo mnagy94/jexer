@@ -997,13 +997,8 @@ public class TTerminalWindow extends TScrollableWindow
             gr2.setFont(doubleFont);
 
             // Draw the background rectangle, then the foreground character.
-            if (getScreen() instanceof ECMA48Terminal) {
-                // BUG: the background color is coming in the same as the
-                // foreground color.  For now, don't draw it.
-            } else {
-                gr2.setColor(SwingTerminal.attrToBackgroundColor(cell));
-                gr2.fillRect(0, 0, image.getWidth(), image.getHeight());
-            }
+            gr2.setColor(SwingTerminal.attrToBackgroundColor(cell));
+            gr2.fillRect(0, 0, image.getWidth(), image.getHeight());
             if (!cell.isBlink()
                 || (cell.isBlink() && cursorBlinkVisible)
             ) {

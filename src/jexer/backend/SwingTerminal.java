@@ -302,6 +302,13 @@ public class SwingTerminal extends LogicalScreen
     // ------------------------------------------------------------------------
 
     /**
+     * Static constructor.
+     */
+    static {
+        setDOSColors();
+    }
+
+    /**
      * Public constructor creates a new JFrame to render to.
      *
      * @param windowWidth the number of text columns to start with
@@ -316,7 +323,6 @@ public class SwingTerminal extends LogicalScreen
 
         this.fontSize = fontSize;
 
-        setDOSColors();
         reloadOptions();
 
         try {
@@ -438,7 +444,6 @@ public class SwingTerminal extends LogicalScreen
 
         this.fontSize = fontSize;
 
-        setDOSColors();
         reloadOptions();
 
         try {
