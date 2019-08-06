@@ -28,9 +28,13 @@
  */
 package jexer.backend;
 
+import java.awt.image.BufferedImage;
+
+import jexer.backend.GlyphMaker;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 
 /**
  * A logical screen composed of a 2D array of Cells.
@@ -112,6 +116,17 @@ public class LogicalScreen implements Screen {
      * Cursor Y position if visible.
      */
     protected int cursorY;
+
+    /**
+     * The last used height of a character cell in pixels, only used for
+     * full-width chars.
+     */
+    private int lastTextHeight = -1;
+
+    /**
+     * The glyph drawer for full-width chars.
+     */
+    private GlyphMaker glyphMaker = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -379,6 +394,11 @@ public class LogicalScreen implements Screen {
             return;
         }
 
+        if ((StringUtils.width(ch.getChar()) == 2) && (!ch.isImage())) {
+            putFullwidthCharXY(x, y, ch);
+            return;
+        }
+
         int X = x + offsetX;
         int Y = y + offsetY;
 
@@ -421,6 +441,11 @@ public class LogicalScreen implements Screen {
             return;
         }
 
+        if (StringUtils.width(ch) == 2) {
+            putFullwidthCharXY(x, y, ch, attr);
+            return;
+        }
+
         int X = x + offsetX;
         int Y = y + offsetY;
 
@@ -458,6 +483,11 @@ public class LogicalScreen implements Screen {
             || (y < clipTop)
             || (y >= clipBottom)
         ) {
+            return;
+        }
+
+        if (StringUtils.width(ch) == 2) {
+            putFullwidthCharXY(x, y, ch);
             return;
         }
 
@@ -925,6 +955,75 @@ public class LogicalScreen implements Screen {
                 physical[x][y].unset();
             }
         }
+    }
+
+    /**
+     * Render one fullwidth cell.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param cell the cell to draw
+     */
+    public final void putFullwidthCharXY(final int x, final int y,
+        final Cell cell) {
+
+        if (lastTextHeight != getTextHeight()) {
+            glyphMaker = GlyphMaker.getInstance(getTextHeight());
+            lastTextHeight = getTextHeight();
+        }
+        BufferedImage image = glyphMaker.getImage(cell, getTextWidth() * 2,
+            getTextHeight());
+        BufferedImage leftImage = image.getSubimage(0, 0, getTextWidth(),
+            getTextHeight());
+        BufferedImage rightImage = image.getSubimage(getTextWidth(), 0,
+            getTextWidth(), getTextHeight());
+
+        Cell left = new Cell();
+        left.setTo(cell);
+        left.setImage(leftImage);
+        left.setWidth(Cell.Width.LEFT);
+        // Blank out the char itself, so that shadows do not leave artifacts.
+        left.setChar(' ');
+        putCharXY(x, y, left);
+
+        Cell right = new Cell();
+        right.setTo(cell);
+        right.setImage(rightImage);
+        right.setWidth(Cell.Width.RIGHT);
+        // Blank out the char itself, so that shadows do not leave artifacts.
+        right.setChar(' ');
+        putCharXY(x + 1, y, right);
+    }
+
+    /**
+     * Render one fullwidth character with attributes.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param ch character to draw
+     * @param attr attributes to use (bold, foreColor, backColor)
+     */
+    public final void putFullwidthCharXY(final int x, final int y,
+        final char ch, final CellAttributes attr) {
+
+        Cell cell = new Cell(ch);
+        cell.setAttr(attr);
+        putFullwidthCharXY(x, y, cell);
+    }
+
+    /**
+     * Render one fullwidth character with attributes.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param ch character to draw
+     */
+    public final void putFullwidthCharXY(final int x, final int y,
+        final char ch) {
+
+        Cell cell = new Cell(ch);
+        cell.setAttr(getAttrXY(x, y));
+        putFullwidthCharXY(x, y, cell);
     }
 
 }

@@ -1534,6 +1534,19 @@ public class TApplication implements Runnable {
      * @param y row position
      */
     private void invertCell(final int x, final int y) {
+        invertCell(x, y, false);
+    }
+
+    /**
+     * Invert the cell color at a position.  This is used to track the mouse.
+     *
+     * @param x column position
+     * @param y row position
+     * @param onlyThisCell if true, only invert this cell
+     */
+    private void invertCell(final int x, final int y,
+        final boolean onlyThisCell) {
+
         if (debugThreads) {
             System.err.printf("%d %s invertCell() %d %d\n",
                 System.currentTimeMillis(), Thread.currentThread(), x, y);
@@ -1573,6 +1586,29 @@ public class TApplication implements Runnable {
             }
         }
         getScreen().putCharXY(x, y, cell);
+        if ((onlyThisCell == true) || (cell.getWidth() == Cell.Width.SINGLE)) {
+            return;
+        }
+
+        // This cell is one half of a fullwidth glyph.  Invert the other
+        // half.
+        if (cell.getWidth() == Cell.Width.LEFT) {
+            if (x < getScreen().getWidth() - 1) {
+                Cell rightHalf = getScreen().getCharXY(x + 1, y);
+                if (rightHalf.getWidth() == Cell.Width.RIGHT) {
+                    invertCell(x + 1, y, true);
+                    return;
+                }
+            }
+        }
+        assert (cell.getWidth() == Cell.Width.RIGHT);
+
+        if (x > 0) {
+            Cell leftHalf = getScreen().getCharXY(x - 1, y);
+            if (leftHalf.getWidth() == Cell.Width.LEFT) {
+                invertCell(x - 1, y, true);
+            }
+        }
     }
 
     /**

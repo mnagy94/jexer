@@ -32,6 +32,7 @@ import jexer.bits.CellAttributes;
 import jexer.bits.Color;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.kbEnter;
@@ -98,7 +99,7 @@ public class TButton extends TWidget {
         setX(x);
         setY(y);
         setHeight(2);
-        setWidth(mnemonic.getRawLabel().length() + 3);
+        setWidth(StringUtils.width(mnemonic.getRawLabel()) + 3);
 
         shadowColor = new CellAttributes();
         shadowColor.setTo(getWindow().getBackground());

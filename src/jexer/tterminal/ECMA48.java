@@ -488,7 +488,7 @@ public class ECMA48 implements Runnable {
     /**
      * The glyph drawer for full-width chars.
      */
-    GlyphMaker glyphMaker = null;
+    private GlyphMaker glyphMaker = null;
 
     /**
      * DECSC/DECRC save/restore a subset of the total state.  This class

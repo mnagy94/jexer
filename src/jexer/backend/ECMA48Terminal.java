@@ -2851,7 +2851,9 @@ public class ECMA48Terminal extends LogicalScreen
 
         int [] rgbArray;
         for (int i = 0; i < cells.size() - 1; i++) {
-            if (cells.get(i).isInvertedImage()) {
+            if (false && cells.get(i).isInvertedImage()) {
+                // I used to put an all-white cell over the cursor, don't do
+                // that anymore.
                 rgbArray = new int[imageWidth * imageHeight];
                 for (int j = 0; j < rgbArray.length; j++) {
                     rgbArray[j] = 0xFFFFFF;
@@ -2883,7 +2885,9 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
         totalWidth -= ((cells.size() - 1) * imageWidth);
-        if (cells.get(cells.size() - 1).isInvertedImage()) {
+        if (false && cells.get(cells.size() - 1).isInvertedImage()) {
+            // I used to put an all-white cell over the cursor, don't do that
+            // anymore.
             rgbArray = new int[totalWidth * imageHeight];
             for (int j = 0; j < rgbArray.length; j++) {
                 rgbArray[j] = 0xFFFFFF;
