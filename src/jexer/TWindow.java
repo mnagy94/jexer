@@ -34,6 +34,7 @@ import java.util.Set;
 import jexer.backend.Screen;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
@@ -886,10 +887,11 @@ public class TWindow extends TWidget {
             true);
 
         // Draw the title
-        int titleLeft = (getWidth() - title.length() - 2) / 2;
+        int titleLength = StringUtils.width(title);
+        int titleLeft = (getWidth() - titleLength - 2) / 2;
         putCharXY(titleLeft, 0, ' ', border);
-        putStringXY(titleLeft + 1, 0, title);
-        putCharXY(titleLeft + title.length() + 1, 0, ' ', border);
+        putStringXY(titleLeft + 1, 0, title, border);
+        putCharXY(titleLeft + titleLength + 1, 0, ' ', border);
 
         if (isActive()) {
 

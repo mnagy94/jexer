@@ -523,7 +523,7 @@ public class LogicalScreen implements Screen {
         for (int j = 0; j < str.length(); j++) {
             char ch = str.charAt(j);
             putCharXY(i, y, ch, attr);
-            i++;
+            i += StringUtils.width(ch);
             if (i == width) {
                 break;
             }
@@ -544,7 +544,7 @@ public class LogicalScreen implements Screen {
         for (int j = 0; j < str.length(); j++) {
             char ch = str.charAt(j);
             putCharXY(i, y, ch);
-            i++;
+            i += StringUtils.width(ch);
             if (i == width) {
                 break;
             }
