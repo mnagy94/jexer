@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 
 import jexer.backend.ECMA48Terminal;
+import jexer.backend.GlyphMaker;
 import jexer.backend.MultiScreen;
 import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
@@ -96,26 +97,9 @@ public class TTerminalWindow extends TScrollableWindow
     private boolean closeOnExit = false;
 
     /**
-     * System-dependent Y adjustment for text in the character cell
-     * (double-height).
+     * Double-height font.
      */
-    private int doubleTextAdjustY = 0;
-
-    /**
-     * System-dependent X adjustment for text in the character cell
-     * (double-height).
-     */
-    private int doubleTextAdjustX = 0;
-
-    /**
-     * Descent of a character cell in pixels (double-height).
-     */
-    private int doubleMaxDescent = 0;
-
-    /**
-     * Double-width font.
-     */
-    private Font doubleFont = null;
+    private GlyphMaker doubleFont;
 
     /**
      * Last text width value.
@@ -128,21 +112,16 @@ public class TTerminalWindow extends TScrollableWindow
     private int lastTextHeight = -1;
 
     /**
-     * A cache of previously-rendered double-width glyphs.
-     */
-    private Map<Cell, BufferedImage> glyphCache;
-
-    /**
-     * A cache of previously-rendered double-width glyphs for blinking text,
-     * when it is not visible.
-     */
-    private Map<Cell, BufferedImage> glyphCacheBlink;
-
-    /**
      * The blink state, used only by ECMA48 backend and when double-width
      * chars must be drawn.
      */
     private boolean blinkState = true;
+
+    /**
+     * Timer flag, used only by ECMA48 backend and when double-width chars
+     * must be drawn.
+     */
+    private boolean haveTimer = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -976,53 +955,24 @@ public class TTerminalWindow extends TScrollableWindow
         }
 
         if ((textWidth != lastTextWidth) || (textHeight != lastTextHeight)) {
-            // Screen size has changed, reset all fonts.
-            setupFonts(textHeight);
+            // Screen size has changed, reset the font.
+            setupFont(textHeight);
             lastTextWidth = textWidth;
             lastTextHeight = textHeight;
         }
         assert (doubleFont != null);
 
-        BufferedImage image = null;
-        if (cell.isBlink() && !cursorBlinkVisible) {
-            image = glyphCacheBlink.get(cell);
+        BufferedImage image;
+        if (line.getDoubleHeight() == 1) {
+            // Double-height top half: don't draw the underline.
+            Cell newCell = new Cell();
+            newCell.setTo(cell);
+            newCell.setUnderline(false);
+            image = doubleFont.getImage(newCell, textWidth * 2, textHeight * 2,
+                cursorBlinkVisible);
         } else {
-            image = glyphCache.get(cell);
-        }
-        if (image == null) {
-            // Generate glyph and draw it to an image.
-            image = new BufferedImage(textWidth * 2, textHeight * 2,
-                BufferedImage.TYPE_INT_ARGB);
-            Graphics2D gr2 = image.createGraphics();
-            gr2.setFont(doubleFont);
-
-            // Draw the background rectangle, then the foreground character.
-            gr2.setColor(SwingTerminal.attrToBackgroundColor(cell));
-            gr2.fillRect(0, 0, image.getWidth(), image.getHeight());
-            if (!cell.isBlink()
-                || (cell.isBlink() && cursorBlinkVisible)
-            ) {
-                gr2.setColor(SwingTerminal.attrToForegroundColor(cell));
-                char [] chars = new char[1];
-                chars[0] = cell.getChar();
-                gr2.drawChars(chars, 0, 1, doubleTextAdjustX,
-                    (textHeight * 2) - doubleMaxDescent + doubleTextAdjustY);
-
-                if (cell.isUnderline() && (line.getDoubleHeight() != 1)) {
-                    gr2.fillRect(0, textHeight - 2, textWidth, 2);
-                }
-            }
-            gr2.dispose();
-
-            // Now save this generated image, using a new key that will not
-            // be mutated by invertCell().
-            Cell key = new Cell();
-            key.setTo(cell);
-            if (cell.isBlink() && !cursorBlinkVisible) {
-                glyphCacheBlink.put(key, image);
-            } else {
-                glyphCache.put(key, image);
-            }
+            image = doubleFont.getImage(cell,  textWidth * 2, textHeight * 2,
+                cursorBlinkVisible);
         }
 
         // Now that we have the double-wide glyph drawn, copy the right
@@ -1034,6 +984,11 @@ public class TTerminalWindow extends TScrollableWindow
         right.setChar(' ');
         BufferedImage leftImage = null;
         BufferedImage rightImage = null;
+        /*
+        System.err.println("image " + image + " textWidth " + textWidth +
+            " textHeight " + textHeight);
+         */
+
         switch (line.getDoubleHeight()) {
         case 1:
             // Top half double height
@@ -1071,56 +1026,31 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
-     * Set up the single and double-width fonts.
+     * Set up the double-width font.
      *
      * @param fontSize the size of font to request for the single-width font.
      * The double-width font will be 2x this value.
      */
-    private void setupFonts(final int fontSize) {
-        try {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            InputStream in = loader.getResourceAsStream(SwingTerminal.FONTFILE);
-            Font terminusRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-            Font terminusDouble = terminusRoot.deriveFont(Font.PLAIN,
-                fontSize * 2);
-            doubleFont = terminusDouble;
-        } catch (java.awt.FontFormatException e) {
-            new TExceptionDialog(getApplication(), e);
-            doubleFont = new Font(Font.MONOSPACED, Font.PLAIN, fontSize * 2);
-        } catch (java.io.IOException e) {
-            new TExceptionDialog(getApplication(), e);
-            doubleFont = new Font(Font.MONOSPACED, Font.PLAIN, fontSize * 2);
-        }
-
-        // Get font descent.
-        BufferedImage image = new BufferedImage(fontSize * 10, fontSize * 10,
-            BufferedImage.TYPE_INT_ARGB);
-        Graphics2D gr = image.createGraphics();
-        gr.setFont(doubleFont);
-        FontMetrics fm = gr.getFontMetrics();
-        doubleMaxDescent = fm.getMaxDescent();
-
-        gr.dispose();
-
-        // (Re)create the glyph caches.
-        glyphCache = new HashMap<Cell, BufferedImage>();
-        glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+    private void setupFont(final int fontSize) {
+        doubleFont = GlyphMaker.getDefault().size(fontSize * 2);
 
         // Special case: the ECMA48 backend needs to have a timer to drive
         // its blink state.
         if (getScreen() instanceof jexer.backend.ECMA48Terminal) {
-            // Blink every 500 millis.
-            long millis = 500;
-            getApplication().addTimer(millis, true,
-                new TAction() {
-                    public void DO() {
-                        blinkState = !blinkState;
-                        getApplication().doRepaint();
+            if (!haveTimer) {
+                // Blink every 500 millis.
+                long millis = 500;
+                getApplication().addTimer(millis, true,
+                    new TAction() {
+                        public void DO() {
+                            blinkState = !blinkState;
+                            getApplication().doRepaint();
+                        }
                     }
-                }
-            );
+                );
+                haveTimer = true;
+            }
         }
-
     }
 
 }
