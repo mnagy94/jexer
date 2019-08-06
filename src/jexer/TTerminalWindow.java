@@ -359,6 +359,12 @@ public class TTerminalWindow extends TScrollableWindow
                 }
                 for (int i = 0; i < widthMax; i++) {
                     Cell ch = line.charAt(i);
+
+                    if (ch.isImage()) {
+                        putCharXY(i + 1, row, ch);
+                        continue;
+                    }
+
                     Cell newCell = new Cell();
                     newCell.setTo(ch);
                     boolean reverse = line.isReverseColor() ^ ch.isReverse();
@@ -1032,7 +1038,7 @@ public class TTerminalWindow extends TScrollableWindow
      * The double-width font will be 2x this value.
      */
     private void setupFont(final int fontSize) {
-        doubleFont = GlyphMaker.getDefault().size(fontSize * 2);
+        doubleFont = GlyphMaker.getInstance(fontSize * 2);
 
         // Special case: the ECMA48 backend needs to have a timer to drive
         // its blink state.

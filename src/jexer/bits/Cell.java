@@ -41,6 +41,26 @@ public final class Cell extends CellAttributes {
     // ------------------------------------------------------------------------
 
     /**
+     * How this cell needs to be displayed if it is part of a larger glyph.
+     */
+    public enum Width {
+        /**
+         * This cell is an entire glyph on its own.
+         */
+        SINGLE,
+
+        /**
+         * This cell is the left half of a wide glyph.
+         */
+        LEFT,
+
+        /**
+         * This cell is the right half of a wide glyph.
+         */
+        RIGHT,
+    }
+
+    /**
      * The special "this cell is unset" (null) value.  This is the Unicode
      * "not a character" value.
      */
@@ -54,6 +74,11 @@ public final class Cell extends CellAttributes {
      * The character at this cell.
      */
     private char ch;
+
+    /**
+     * The display width of this cell.
+     */
+    private Width width = Width.SINGLE;
 
     /**
      * The image at this cell.
@@ -113,7 +138,6 @@ public final class Cell extends CellAttributes {
     // Cell -------------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-
     /**
      * Set the image data for this cell.
      *
@@ -122,6 +146,7 @@ public final class Cell extends CellAttributes {
     public void setImage(final BufferedImage image) {
         this.image = image;
         imageHashCode = image.hashCode();
+        width = Width.SINGLE;
     }
 
     /**
@@ -224,12 +249,32 @@ public final class Cell extends CellAttributes {
     }
 
     /**
+     * Getter for cell width.
+     *
+     * @return Width.SINGLE, Width.LEFT, or Width.RIGHT
+     */
+    public Width getWidth() {
+        return width;
+    }
+
+    /**
+     * Setter for cell width.
+     *
+     * @param ch new cell width, one of Width.SINGLE, Width.LEFT, or
+     * Width.RIGHT
+     */
+    public void setWidth(final Width width) {
+        this.width = width;
+    }
+
+    /**
      * Reset this cell to a blank.
      */
     @Override
     public void reset() {
         super.reset();
         ch = ' ';
+        width = Width.SINGLE;
         image = null;
         imageHashCode = 0;
         invertedImage = null;
@@ -244,6 +289,7 @@ public final class Cell extends CellAttributes {
     public void unset() {
         super.reset();
         ch = UNSET_VALUE;
+        width = Width.SINGLE;
         image = null;
         imageHashCode = 0;
         invertedImage = null;
@@ -271,6 +317,7 @@ public final class Cell extends CellAttributes {
             && !isProtect()
             && !isRGB()
             && !isImage()
+            && (width == Width.SINGLE)
             && (ch == ' ')
         ) {
             return true;
@@ -327,7 +374,7 @@ public final class Cell extends CellAttributes {
         }
 
         // Normal case: character and attributes must match.
-        if (ch == that.ch) {
+        if ((ch == that.ch) && (width == that.width)) {
             return super.equals(rhs);
         }
         return false;
@@ -345,6 +392,7 @@ public final class Cell extends CellAttributes {
         int hash = A;
         hash = (B * hash) + super.hashCode();
         hash = (B * hash) + (int)ch;
+        hash = (B * hash) + width.hashCode();
         if (image != null) {
             /*
             hash = (B * hash) + image.hashCode();
@@ -371,11 +419,13 @@ public final class Cell extends CellAttributes {
         this.image = null;
         this.imageHashCode = 0;
         this.backgroundHashCode = 0;
+        this.width = Width.SINGLE;
         super.setTo(thatAttr);
 
         if (rhs instanceof Cell) {
             Cell that = (Cell) rhs;
             this.ch = that.ch;
+            this.width = that.width;
             this.image = that.image;
             this.invertedImage = that.invertedImage;
             this.background = that.background;

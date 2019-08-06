@@ -404,4 +404,72 @@ public class StringUtils {
         return result.toString();
     }
 
+    /**
+     * Determine display width of a Unicode code point.
+     *
+     * @param ch the code point, can be char
+     * @return the number of text cell columns required to display this code
+     * point, one of 0, 1, or 2
+     */
+    public static int width(final int ch) {
+        /*
+         * This routine is a modified version of mk_wcwidth() available
+         * at: http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c
+         *
+         * The combining characters list has been omitted from this
+         * implementation.  Hopefully no users will be impacted.
+         */
+
+        // 8-bit control characters: width 0
+        if (ch == 0) {
+            return 0;
+        }
+        if ((ch < 32) || ((ch >= 0x7f) && (ch < 0xa0))) {
+            return 0;
+        }
+
+        // All others: either 1 or 2
+        if ((ch >= 0x1100)
+            && ((ch <= 0x115f)
+                // Hangul Jamo init. consonants
+                || (ch == 0x2329)
+                || (ch == 0x232a)
+                // CJK ... Yi
+                || ((ch >= 0x2e80) && (ch <= 0xa4cf) && (ch != 0x303f))
+                // Hangul Syllables
+                || ((ch >= 0xac00) && (ch <= 0xd7a3))
+                // CJK Compatibility Ideographs
+                || ((ch >= 0xf900) && (ch <= 0xfaff))
+                // Vertical forms
+                || ((ch >= 0xfe10) && (ch <= 0xfe19))
+                // CJK Compatibility Forms
+                || ((ch >= 0xfe30) && (ch <= 0xfe6f))
+                // Fullwidth Forms
+                || ((ch >= 0xff00) && (ch <= 0xff60))
+                || ((ch >= 0xffe0) && (ch <= 0xffe6))
+                || ((ch >= 0x20000) && (ch <= 0x2fffd))
+                || ((ch >= 0x30000) && (ch <= 0x3fffd))
+                // TODO: emoji / twemoji
+            )
+        ) {
+            return 2;
+        }
+        return 1;
+    }
+
+    /**
+     * Determine display width of a string.  This ASSUMES that no characters
+     * are combining.  Hopefully no users will be impacted.
+     *
+     * @param str the string
+     * @return the number of text cell columns required to display this string
+     */
+    public static int width(final String str) {
+        int n = 0;
+        for (int i = 0; i < str.length(); i++) {
+            n += width(str.charAt(i));
+        }
+        return n;
+    }
+
 }

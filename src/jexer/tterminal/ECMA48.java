@@ -47,10 +47,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import jexer.TKeypress;
-import jexer.event.TMouseEvent;
+import jexer.backend.GlyphMaker;
 import jexer.bits.Color;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
+import jexer.event.TMouseEvent;
 import jexer.io.ReadTimeoutException;
 import jexer.io.TimeoutInputStream;
 import static jexer.TKeypress.*;
@@ -476,6 +478,17 @@ public class ECMA48 implements Runnable {
      * The height of a character cell in pixels.
      */
     private int textHeight = 20;
+
+    /**
+     * The last used height of a character cell in pixels, only used for
+     * full-width chars.
+     */
+    private int lastTextHeight = -1;
+
+    /**
+     * The glyph drawer for full-width chars.
+     */
+    GlyphMaker glyphMaker = null;
 
     /**
      * DECSC/DECRC save/restore a subset of the total state.  This class
@@ -1377,6 +1390,35 @@ public class ECMA48 implements Runnable {
     private void printCharacter(final char ch) {
         int rightMargin = this.rightMargin;
 
+        if (StringUtils.width(ch) == 2) {
+            // This is a full-width character.  Save two spaces, and then
+            // draw the character as two image halves.
+            int x0 = currentState.cursorX;
+            int y0 = currentState.cursorY;
+            printCharacter(' ');
+            printCharacter(' ');
+            if ((currentState.cursorX == x0 + 2)
+                && (currentState.cursorY == y0)
+            ) {
+                // We can draw both halves of the character.
+                drawHalves(x0, y0, x0 + 1, y0, ch);
+            } else if ((currentState.cursorX == x0 + 1)
+                && (currentState.cursorY == y0)
+            ) {
+                // VT100 line wrap behavior: we should be at the right
+                // margin.  We can draw both halves of the character.
+                drawHalves(x0, y0, x0 + 1, y0, ch);
+            } else {
+                // The character splits across the line.  Draw the entire
+                // character on the new line, giving one more space for it.
+                x0 = currentState.cursorX - 1;
+                y0 = currentState.cursorY;
+                printCharacter(' ');
+                drawHalves(x0, y0, x0 + 1, y0, ch);
+            }
+            return;
+        }
+
         // Check if we have double-width, and if so chop at 40/66 instead of
         // 80/132
         if (display.get(currentState.cursorY).isDoubleWidth()) {
@@ -1427,19 +1469,22 @@ public class ECMA48 implements Runnable {
         CellAttributes newCellAttributes = (CellAttributes) newCell;
         newCellAttributes.setTo(currentState.attr);
         DisplayLine line = display.get(currentState.cursorY);
-        // Insert mode special case
-        if (insertMode == true) {
-            line.insert(currentState.cursorX, newCell);
-        } else {
-            // Replace an existing character
-            line.replace(currentState.cursorX, newCell);
-        }
 
-        // Increment horizontal
-        if (wrapLineFlag == false) {
-            currentState.cursorX++;
-            if (currentState.cursorX > rightMargin) {
-                currentState.cursorX--;
+        if (StringUtils.width(ch) == 1) {
+            // Insert mode special case
+            if (insertMode == true) {
+                line.insert(currentState.cursorX, newCell);
+            } else {
+                // Replace an existing character
+                line.replace(currentState.cursorX, newCell);
+            }
+
+            // Increment horizontal
+            if (wrapLineFlag == false) {
+                currentState.cursorX++;
+                if (currentState.cursorX > rightMargin) {
+                    currentState.cursorX--;
+                }
             }
         }
     }
@@ -6804,6 +6849,47 @@ public class ECMA48 implements Runnable {
             cursorPosition(currentState.cursorY, x0);
         }
 
+    }
+
+    /**
+     * Draw the left and right cells of a two-cell-wide (full-width) glyph.
+     *
+     * @param leftX the x position to draw the left half to
+     * @param leftY the y position to draw the left half to
+     * @param rightX the x position to draw the right half to
+     * @param rightY the y position to draw the right half to
+     * @param ch the character to draw
+     */
+    private void drawHalves(final int leftX, final int leftY,
+        final int rightX, final int rightY, final char ch) {
+
+        // System.err.println("drawHalves(): " + Integer.toHexString(ch));
+
+        if (lastTextHeight != textHeight) {
+            glyphMaker = GlyphMaker.getInstance(textHeight);
+            lastTextHeight = textHeight;
+        }
+
+        Cell cell = new Cell(ch);
+        cell.setAttr(currentState.attr);
+        BufferedImage image = glyphMaker.getImage(cell, textWidth * 2,
+            textHeight);
+        BufferedImage leftImage = image.getSubimage(0, 0, textWidth,
+            textHeight);
+        BufferedImage rightImage = image.getSubimage(textWidth, 0, textWidth,
+            textHeight);
+
+        Cell left = new Cell();
+        left.setTo(cell);
+        left.setImage(leftImage);
+        left.setWidth(Cell.Width.LEFT);
+        display.get(leftY).replace(leftX, left);
+
+        Cell right = new Cell();
+        right.setTo(cell);
+        right.setImage(rightImage);
+        right.setWidth(Cell.Width.RIGHT);
+        display.get(rightY).replace(rightX, right);
     }
 
 }

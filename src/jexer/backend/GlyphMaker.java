@@ -40,23 +40,13 @@ import java.util.HashMap;
 import jexer.bits.Cell;
 
 /**
- * GlyphMaker creates glyphs as bitmaps from a font.
+ * GlyphMakerFont creates glyphs as bitmaps from a font.
  */
-public class GlyphMaker {
+class GlyphMakerFont {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * The mono font resource filename (terminus).
-     */
-    public static final String MONO = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
-
-    /**
-     * The CJK font resource filename.
-     */
-    public static final String CJK = "NotoSansMonoCJKhk-Regular.otf";
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -68,16 +58,6 @@ public class GlyphMaker {
     private static boolean DEBUG = false;
 
     /**
-     * The instance that has the mono (default) font.
-     */
-    private static GlyphMaker INSTANCE_MONO;
-
-    /**
-     * The instance that has the CJK font.
-     */
-    private static GlyphMaker INSTANCE_CJK;
-
-    /**
      * If true, we were successful at getting the font dimensions.
      */
     private boolean gotFontDimensions = false;
@@ -86,11 +66,6 @@ public class GlyphMaker {
      * The currently selected font.
      */
     private Font font = null;
-
-    /**
-     * The currently selected font size in points.
-     */
-    private int fontSize = 16;
 
     /**
      * Width of a character cell in pixels.
@@ -154,131 +129,30 @@ public class GlyphMaker {
     // ------------------------------------------------------------------------
 
     /**
-     * Private constructor used by the static instance methods.
-     *
-     * @param font the font to use
-     */
-    private GlyphMaker(final Font font) {
-        this.font = font;
-        fontSize = font.getSize();
-    }
-
-    /**
      * Public constructor.
      *
-     * @param fontName the name of the font to use
+     * @param filename the resource filename of the font to use
      * @param fontSize the size of font to use
      */
-    public GlyphMaker(final String fontName, final int fontSize) {
-        font = new Font(fontName, Font.PLAIN, fontSize);
+    public GlyphMakerFont(final String filename, final int fontSize) {
+        Font fontRoot = null;
+        try {
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            InputStream in = loader.getResourceAsStream(filename);
+            fontRoot = Font.createFont(Font.TRUETYPE_FONT, in);
+            font = fontRoot.deriveFont(Font.PLAIN, fontSize);
+        } catch (java.awt.FontFormatException e) {
+            e.printStackTrace();
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+        }
     }
 
     // ------------------------------------------------------------------------
-    // GlyphMaker -------------------------------------------------------------
+    // GlyphMakerFont ---------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Obtain the GlyphMaker instance that uses the default monospace font.
-     *
-     * @return the instance
-     */
-    public static GlyphMaker getDefault() {
-
-        synchronized (GlyphMaker.class) {
-            if (INSTANCE_MONO != null) {
-                return INSTANCE_MONO;
-            }
-
-            int fallbackFontSize = 16;
-            Font monoRoot = null;
-            try {
-                ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                InputStream in = loader.getResourceAsStream(MONO);
-                monoRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-            } catch (java.awt.FontFormatException e) {
-                e.printStackTrace();
-                monoRoot = new Font(Font.MONOSPACED, Font.PLAIN,
-                    fallbackFontSize);
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-                monoRoot = new Font(Font.MONOSPACED, Font.PLAIN,
-                    fallbackFontSize);
-            }
-            INSTANCE_MONO = new GlyphMaker(monoRoot);
-            return INSTANCE_MONO;
-        }
-    }
-
-    /**
-     * Obtain the GlyphMaker instance that uses the CJK font.
-     *
-     * @return the instance
-     */
-    public static GlyphMaker getCJK() {
-
-        synchronized (GlyphMaker.class) {
-            if (INSTANCE_CJK != null) {
-                return INSTANCE_CJK;
-            }
-
-            int fallbackFontSize = 16;
-            Font cjkRoot = null;
-            try {
-                ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                InputStream in = loader.getResourceAsStream(CJK);
-                cjkRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-            } catch (java.awt.FontFormatException e) {
-                e.printStackTrace();
-                cjkRoot = new Font(Font.MONOSPACED, Font.PLAIN,
-                    fallbackFontSize);
-            } catch (java.io.IOException e) {
-                e.printStackTrace();
-                cjkRoot = new Font(Font.MONOSPACED, Font.PLAIN,
-                    fallbackFontSize);
-            }
-            INSTANCE_CJK = new GlyphMaker(cjkRoot);
-            return INSTANCE_CJK;
-        }
-    }
-
-    /**
-     * Obtain the GlyphMaker instance that uses the correct font for this
-     * character.
-     *
-     * @param ch the character
-     * @return the instance
-     */
-    public static GlyphMaker getInstance(final int ch) {
-        if (((ch >= 0x4e00) && (ch <= 0x9fff))
-            || ((ch >= 0x3400) && (ch <= 0x4dbf))
-            || ((ch >= 0x20000) && (ch <= 0x2ebef))
-        ) {
-            return getCJK();
-        }
-        return getDefault();
-    }
-
-    /**
-     * Get a derived font at a specific size.
-     *
-     * @param fontSize the size to use
-     * @return a new instance at that font size
-     */
-    public GlyphMaker size(final int fontSize) {
-        GlyphMaker maker = new GlyphMaker(font.deriveFont(Font.PLAIN,
-                fontSize));
-        return maker;
-    }
-
-    /**
-     * Get a glyph image, using the font's idea of cell width and height.
-     *
-     * @param cell the character to draw
-     * @return the glyph as an image
-     */
-    public BufferedImage getImage(final Cell cell) {
-        return getImage(cell, textWidth, textHeight, true);
-    }
 
     /**
      * Get a glyph image.
@@ -375,8 +249,8 @@ public class GlyphMaker {
         glyphCacheBlink = new HashMap<Cell, BufferedImage>();
         glyphCache = new HashMap<Cell, BufferedImage>();
 
-        BufferedImage image = new BufferedImage(fontSize * 2, fontSize * 2,
-            BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = new BufferedImage(font.getSize() * 2,
+            font.getSize() * 2, BufferedImage.TYPE_INT_ARGB);
         Graphics2D gr = image.createGraphics();
         gr.setFont(font);
         FontMetrics fm = gr.getFontMetrics();
@@ -395,6 +269,152 @@ public class GlyphMaker {
         textWidth = fontTextWidth + textAdjustWidth;
 
         gotFontDimensions = true;
+    }
+
+}
+
+/**
+ * GlyphMaker presents unified interface to all of its supported fonts to
+ * clients.
+ */
+public class GlyphMaker {
+
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The mono font resource filename (terminus).
+     */
+    private static final String MONO = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
+
+    /**
+     * The CJKhk font resource filename.
+     */
+    // private static final String CJKhk = "NotoSansMonoCJKhk-Regular.otf";
+
+    /**
+     * The CJKkr font resource filename.
+     */
+    // private static final String CJKkr = "NotoSansMonoCJKkr-Regular.otf";
+
+    /**
+     * The CJKtc font resource filename.
+     */
+    private static final String CJKtc = "NotoSansMonoCJKtc-Regular.otf";
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * If true, enable debug messages.
+     */
+    private static boolean DEBUG = false;
+
+    /**
+     * Cache of font bundles by size.
+     */
+    private static HashMap<Integer, GlyphMaker> makers = new HashMap<Integer, GlyphMaker>();
+
+    /**
+     * The instance that has the mono (default) font.
+     */
+    private GlyphMakerFont makerMono;
+
+    /**
+     * The instance that has the CJKhk font.
+     */
+    // private GlyphMakerFont makerCJKhk;
+
+    /**
+     * The instance that has the CJKkr font.
+     */
+    // private GlyphMakerFont makerCJKkr;
+
+    /**
+     * The instance that has the CJKtc font.
+     */
+    private GlyphMakerFont makerCJKtc;
+
+    // ------------------------------------------------------------------------
+    // Constructors -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Create an instance with references to the necessary fonts.
+     *
+     * @param fontSize the size of these fonts in pixels
+     */
+    private GlyphMaker(final int fontSize) {
+        makerMono = new GlyphMakerFont(MONO, fontSize);
+        // makerCJKhk = new GlyphMakerFont(CJKhk, fontSize);
+        // makerCJKkr = new GlyphMakerFont(CJKkr, fontSize);
+        makerCJKtc = new GlyphMakerFont(CJKtc, fontSize);
+    }
+
+    // ------------------------------------------------------------------------
+    // GlyphMaker -------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Obtain the GlyphMaker instance for a particular font size.
+     *
+     * @param fontSize the size of these fonts in pixels
+     * @return the instance
+     */
+    public static GlyphMaker getInstance(final int fontSize) {
+        synchronized (GlyphMaker.class) {
+            GlyphMaker maker = makers.get(fontSize);
+            if (maker == null) {
+                maker = new GlyphMaker(fontSize);
+                makers.put(fontSize, maker);
+            }
+            return maker;
+        }
+    }
+
+    /**
+     * Get a glyph image.
+     *
+     * @param cell the character to draw
+     * @param cellWidth the width of the text cell to draw into
+     * @param cellHeight the height of the text cell to draw into
+     * @return the glyph as an image
+     */
+    public BufferedImage getImage(final Cell cell, final int cellWidth,
+        final int cellHeight) {
+
+        return getImage(cell, cellWidth, cellHeight, true);
+    }
+
+    /**
+     * Get a glyph image.
+     *
+     * @param cell the character to draw
+     * @param cellWidth the width of the text cell to draw into
+     * @param cellHeight the height of the text cell to draw into
+     * @param blinkVisible if true, the cell is visible if it is blinking
+     * @return the glyph as an image
+     */
+    public BufferedImage getImage(final Cell cell, final int cellWidth,
+        final int cellHeight, final boolean blinkVisible) {
+
+        char ch = cell.getChar();
+        /*
+        if ((ch >= 0x4e00) && (ch <= 0x9fff)) {
+            return makerCJKhk.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        }
+        if ((ch >= 0x4e00) && (ch <= 0x9fff)) {
+            return makerCJKkr.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        }
+         */
+        if ((ch >= 0x2e80) && (ch <= 0x9fff)) {
+            return makerCJKtc.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        }
+
+        // When all else fails, use the default.
+        return makerMono.getImage(cell, cellWidth, cellHeight, blinkVisible);
     }
 
 }
