@@ -81,6 +81,21 @@ public class DisplayLine {
     // ------------------------------------------------------------------------
 
     /**
+     * Public constructor makes a duplicate (deep copy).
+     *
+     * @param line the line to duplicate
+     */
+    public DisplayLine(final DisplayLine line) {
+        chars = new Cell[MAX_LINE_LENGTH];
+        for (int i = 0; i < chars.length; i++) {
+            chars[i] = new Cell(line.chars[i]);
+        }
+        doubleWidth = line.doubleWidth;
+        doubleHeight = line.doubleHeight;
+        reverseColor = line.reverseColor;
+    }
+
+    /**
      * Public constructor sets everything to drawing attributes.
      *
      * @param attr current drawing attributes

@@ -123,6 +123,26 @@ public class TTerminalWindow extends TScrollableWindow
      */
     private boolean haveTimer = false;
 
+    /**
+     * The last seen scrollback lines.
+     */
+    private List<DisplayLine> scrollback;
+
+    /**
+     * The last seen display lines.
+     */
+    private List<DisplayLine> display;
+
+    /**
+     * If true, the display has changed and needs updating.
+     */
+    private volatile boolean dirty = true;
+
+    /**
+     * Time that the display was last updated.
+     */
+    private long lastUpdateTime = 0;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -306,102 +326,125 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void draw() {
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
 
-            // Update the scroll bars
-            reflowData();
+        int width = getDisplayWidth();
+        boolean syncEmulator = false;
+        if ((System.currentTimeMillis() - lastUpdateTime > 125)
+            && (dirty == true)
+        ) {
+            // Too much time has passed, draw it all.
+            syncEmulator = true;
+        } else if (emulator.isReading() && (dirty == false)) {
+            // Wait until the emulator has brought more data in.
+            syncEmulator = false;
+        } else if (!emulator.isReading() && (dirty == true)) {
+            // The emulator won't receive more data, update the display.
+            syncEmulator = true;
+        }
 
-            // Draw the box using my superclass
-            super.draw();
+        if ((syncEmulator == true)
+            || (scrollback == null)
+            || (display == null)
+        ) {
+            // We want to minimize the amount of time we have the emulator
+            // locked.  Grab a copy of its display.
+            synchronized (emulator) {
+                // Update the scroll bars
+                reflowData();
 
-            List<DisplayLine> scrollback = emulator.getScrollbackBuffer();
-            List<DisplayLine> display = emulator.getDisplayBuffer();
+                if ((scrollback == null) || emulator.isReading()) {
+                    scrollback = copyBuffer(emulator.getScrollbackBuffer());
+                    display = copyBuffer(emulator.getDisplayBuffer());
+                }
+                width = emulator.getWidth();
+            }
+            dirty = false;
+        }
 
-            // Put together the visible rows
-            int visibleHeight = getHeight() - 2;
-            int visibleBottom = scrollback.size() + display.size()
+        // Draw the box using my superclass
+        super.draw();
+
+        // Put together the visible rows
+        int visibleHeight = getHeight() - 2;
+        int visibleBottom = scrollback.size() + display.size()
                 + getVerticalValue();
-            assert (visibleBottom >= 0);
+        assert (visibleBottom >= 0);
 
-            List<DisplayLine> preceedingBlankLines = new ArrayList<DisplayLine>();
-            int visibleTop = visibleBottom - visibleHeight;
-            if (visibleTop < 0) {
-                for (int i = visibleTop; i < 0; i++) {
-                    preceedingBlankLines.add(emulator.getBlankDisplayLine());
-                }
-                visibleTop = 0;
+        List<DisplayLine> preceedingBlankLines = new ArrayList<DisplayLine>();
+        int visibleTop = visibleBottom - visibleHeight;
+        if (visibleTop < 0) {
+            for (int i = visibleTop; i < 0; i++) {
+                preceedingBlankLines.add(emulator.getBlankDisplayLine());
             }
-            assert (visibleTop >= 0);
+            visibleTop = 0;
+        }
+        assert (visibleTop >= 0);
 
-            List<DisplayLine> displayLines = new ArrayList<DisplayLine>();
-            displayLines.addAll(scrollback);
-            displayLines.addAll(display);
+        List<DisplayLine> displayLines = new ArrayList<DisplayLine>();
+        displayLines.addAll(scrollback);
+        displayLines.addAll(display);
 
-            List<DisplayLine> visibleLines = new ArrayList<DisplayLine>();
-            visibleLines.addAll(preceedingBlankLines);
-            visibleLines.addAll(displayLines.subList(visibleTop,
-                    visibleBottom));
+        List<DisplayLine> visibleLines = new ArrayList<DisplayLine>();
+        visibleLines.addAll(preceedingBlankLines);
+        visibleLines.addAll(displayLines.subList(visibleTop,
+                visibleBottom));
 
-            visibleHeight -= visibleLines.size();
-            assert (visibleHeight >= 0);
+        visibleHeight -= visibleLines.size();
+        assert (visibleHeight >= 0);
 
-            // Now draw the emulator screen
-            int row = 1;
-            for (DisplayLine line: visibleLines) {
-                int widthMax = emulator.getWidth();
-                if (line.isDoubleWidth()) {
-                    widthMax /= 2;
+        // Now draw the emulator screen
+        int row = 1;
+        for (DisplayLine line: visibleLines) {
+            int widthMax = width;
+            if (line.isDoubleWidth()) {
+                widthMax /= 2;
+            }
+            if (widthMax > getWidth() - 2) {
+                widthMax = getWidth() - 2;
+            }
+            for (int i = 0; i < widthMax; i++) {
+                Cell ch = line.charAt(i);
+
+                if (ch.isImage()) {
+                    putCharXY(i + 1, row, ch);
+                    continue;
                 }
-                if (widthMax > getWidth() - 2) {
-                    widthMax = getWidth() - 2;
-                }
-                for (int i = 0; i < widthMax; i++) {
-                    Cell ch = line.charAt(i);
 
-                    if (ch.isImage()) {
-                        putCharXY(i + 1, row, ch);
-                        continue;
-                    }
-
-                    Cell newCell = new Cell();
-                    newCell.setTo(ch);
-                    boolean reverse = line.isReverseColor() ^ ch.isReverse();
-                    newCell.setReverse(false);
-                    if (reverse) {
-                        if (ch.getForeColorRGB() < 0) {
-                            newCell.setBackColor(ch.getForeColor());
-                            newCell.setBackColorRGB(-1);
-                        } else {
-                            newCell.setBackColorRGB(ch.getForeColorRGB());
-                        }
-                        if (ch.getBackColorRGB() < 0) {
-                            newCell.setForeColor(ch.getBackColor());
-                            newCell.setForeColorRGB(-1);
-                        } else {
-                            newCell.setForeColorRGB(ch.getBackColorRGB());
-                        }
-                    }
-                    if (line.isDoubleWidth()) {
-                        putDoubleWidthCharXY(line, (i * 2) + 1, row, newCell);
+                Cell newCell = new Cell();
+                newCell.setTo(ch);
+                boolean reverse = line.isReverseColor() ^ ch.isReverse();
+                newCell.setReverse(false);
+                if (reverse) {
+                    if (ch.getForeColorRGB() < 0) {
+                        newCell.setBackColor(ch.getForeColor());
+                        newCell.setBackColorRGB(-1);
                     } else {
-                        putCharXY(i + 1, row, newCell);
+                        newCell.setBackColorRGB(ch.getForeColorRGB());
+                    }
+                    if (ch.getBackColorRGB() < 0) {
+                        newCell.setForeColor(ch.getBackColor());
+                        newCell.setForeColorRGB(-1);
+                    } else {
+                        newCell.setForeColorRGB(ch.getBackColorRGB());
                     }
                 }
-                row++;
-                if (row == getHeight() - 1) {
-                    // Don't overwrite the box edge
-                    break;
+                if (line.isDoubleWidth()) {
+                    putDoubleWidthCharXY(line, (i * 2) + 1, row, newCell);
+                } else {
+                    putCharXY(i + 1, row, newCell);
                 }
             }
-            CellAttributes background = new CellAttributes();
-            // Fill in the blank lines on bottom
-            for (int i = 0; i < visibleHeight; i++) {
-                hLineXY(1, i + row, getWidth() - 2, ' ', background);
+            row++;
+            if (row == getHeight() - 1) {
+                // Don't overwrite the box edge
+                break;
             }
-
-        } // synchronized (emulator)
+        }
+        CellAttributes background = new CellAttributes();
+        // Fill in the blank lines on bottom
+        for (int i = 0; i < visibleHeight; i++) {
+            hLineXY(1, i + row, getWidth() - 2, ' ', background);
+        }
 
     }
 
@@ -497,25 +540,21 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
-            if (emulator.isReading()) {
-                // Get out of scrollback
-                setVerticalValue(0);
-                emulator.keypress(keypress.getKey());
+        if (emulator.isReading()) {
+            // Get out of scrollback
+            setVerticalValue(0);
+            emulator.addUserEvent(keypress);
 
-                // UGLY HACK TIME!  cmd.exe needs CRLF, not just CR, so if
-                // this is kBEnter then also send kbCtrlJ.
-                if (System.getProperty("os.name").startsWith("Windows")) {
-                    if (keypress.equals(kbEnter)) {
-                        emulator.keypress(kbCtrlJ);
-                    }
+            // UGLY HACK TIME!  cmd.exe needs CRLF, not just CR, so if
+            // this is kBEnter then also send kbCtrlJ.
+            if (System.getProperty("os.name").startsWith("Windows")) {
+                if (keypress.equals(kbEnter)) {
+                    emulator.addUserEvent(new TKeypressEvent(kbCtrlJ));
                 }
-
-                readEmulatorState();
-                return;
             }
+
+            readEmulatorState();
+            return;
         }
 
         // Process is closed, honor "normal" TUI keystrokes
@@ -548,13 +587,11 @@ public class TTerminalWindow extends TScrollableWindow
             }
         }
         if (mouseOnEmulator(mouse)) {
-            synchronized (emulator) {
-                mouse.setX(mouse.getX() - 1);
-                mouse.setY(mouse.getY() - 1);
-                emulator.mouse(mouse);
-                readEmulatorState();
-                return;
-            }
+            mouse.setX(mouse.getX() - 1);
+            mouse.setY(mouse.getY() - 1);
+            emulator.addUserEvent(mouse);
+            readEmulatorState();
+            return;
         }
 
         // Emulator didn't consume it, pass it on
@@ -575,13 +612,11 @@ public class TTerminalWindow extends TScrollableWindow
         }
 
         if (mouseOnEmulator(mouse)) {
-            synchronized (emulator) {
-                mouse.setX(mouse.getX() - 1);
-                mouse.setY(mouse.getY() - 1);
-                emulator.mouse(mouse);
-                readEmulatorState();
-                return;
-            }
+            mouse.setX(mouse.getX() - 1);
+            mouse.setY(mouse.getY() - 1);
+            emulator.addUserEvent(mouse);
+            readEmulatorState();
+            return;
         }
 
         // Emulator didn't consume it, pass it on
@@ -602,13 +637,11 @@ public class TTerminalWindow extends TScrollableWindow
         }
 
         if (mouseOnEmulator(mouse)) {
-            synchronized (emulator) {
-                mouse.setX(mouse.getX() - 1);
-                mouse.setY(mouse.getY() - 1);
-                emulator.mouse(mouse);
-                readEmulatorState();
-                return;
-            }
+            mouse.setX(mouse.getX() - 1);
+            mouse.setY(mouse.getY() - 1);
+            emulator.addUserEvent(mouse);
+            readEmulatorState();
+            return;
         }
 
         // Emulator didn't consume it, pass it on
@@ -790,37 +823,6 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
-     * Called by emulator when fresh data has come in.
-     */
-    public void displayChanged() {
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
-    }
-
-    /**
-     * Function to call to obtain the display width.
-     *
-     * @return the number of columns in the display
-     */
-    public int getDisplayWidth() {
-        if (ptypipe) {
-            return getWidth() - 2;
-        }
-        return 80;
-    }
-
-    /**
-     * Function to call to obtain the display height.
-     *
-     * @return the number of rows in the display
-     */
-    public int getDisplayHeight() {
-        if (ptypipe) {
-            return getHeight() - 2;
-        }
-        return 24;
-    }
-
-    /**
      * Hook for subclasses to be notified of the shell termination.
      */
     public void onShellExit() {
@@ -906,10 +908,8 @@ public class TTerminalWindow extends TScrollableWindow
      */
     private boolean mouseOnEmulator(final TMouseEvent mouse) {
 
-        synchronized (emulator) {
-            if (!emulator.isReading()) {
-                return false;
-            }
+        if (!emulator.isReading()) {
+            return false;
         }
 
         if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
@@ -920,6 +920,20 @@ public class TTerminalWindow extends TScrollableWindow
             return true;
         }
         return false;
+    }
+
+    /**
+     * Copy a display buffer.
+     *
+     * @param buffer the buffer to copy
+     * @return a deep copy of the buffer's data
+     */
+    private List<DisplayLine> copyBuffer(final List<DisplayLine> buffer) {
+        ArrayList<DisplayLine> result = new ArrayList<DisplayLine>(buffer.size());
+        for (DisplayLine line: buffer) {
+            result.add(new DisplayLine(line));
+        }
+        return result;
     }
 
     /**
@@ -1057,6 +1071,42 @@ public class TTerminalWindow extends TScrollableWindow
                 haveTimer = true;
             }
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // DisplayListener --------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Called by emulator when fresh data has come in.
+     */
+    public void displayChanged() {
+        dirty = true;
+        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+    }
+
+    /**
+     * Function to call to obtain the display width.
+     *
+     * @return the number of columns in the display
+     */
+    public int getDisplayWidth() {
+        if (ptypipe) {
+            return getWidth() - 2;
+        }
+        return 80;
+    }
+
+    /**
+     * Function to call to obtain the display height.
+     *
+     * @return the number of rows in the display
+     */
+    public int getDisplayHeight() {
+        if (ptypipe) {
+            return getHeight() - 2;
+        }
+        return 24;
     }
 
 }

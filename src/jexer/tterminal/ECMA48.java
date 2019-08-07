@@ -52,6 +52,8 @@ import jexer.bits.Color;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.StringUtils;
+import jexer.event.TInputEvent;
+import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.io.ReadTimeoutException;
 import jexer.io.TimeoutInputStream;
@@ -491,6 +493,12 @@ public class ECMA48 implements Runnable {
     private GlyphMaker glyphMaker = null;
 
     /**
+     * Input queue for keystrokes and mouse events to send to the remote
+     * side.
+     */
+    private ArrayList<TInputEvent> userQueue = new ArrayList<TInputEvent>();
+
+    /**
      * DECSC/DECRC save/restore a subset of the total state.  This class
      * encapsulates those specific flags/modes.
      */
@@ -688,6 +696,12 @@ public class ECMA48 implements Runnable {
         }
 
         while (!done && !stopReaderThread) {
+            synchronized (userQueue) {
+                while (userQueue.size() > 0) {
+                    handleUserEvent(userQueue.remove(0));
+                }
+            }
+
             try {
                 int n = inputStream.available();
 
@@ -809,6 +823,31 @@ public class ECMA48 implements Runnable {
     // ------------------------------------------------------------------------
     // ECMA48 -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Process keyboard and mouse events from the user.
+     *
+     * @param event the input event to consume
+     */
+    private void handleUserEvent(final TInputEvent event) {
+        if (event instanceof TKeypressEvent) {
+            keypress(((TKeypressEvent) event).getKey());
+        }
+        if (event instanceof TMouseEvent) {
+            mouse((TMouseEvent) event);
+        }
+    }
+
+    /**
+     * Add a keyboard and mouse event from the user to the queue.
+     *
+     * @param event the input event to consume
+     */
+    public void addUserEvent(final TInputEvent event) {
+        synchronized (userQueue) {
+            userQueue.add(event);
+        }
+    }
 
     /**
      * Return the proper primary Device Attributes string.
@@ -1495,7 +1534,7 @@ public class ECMA48 implements Runnable {
      *
      * @param mouse mouse event received from the local user
      */
-    public void mouse(final TMouseEvent mouse) {
+    private void mouse(final TMouseEvent mouse) {
 
         /*
         System.err.printf("mouse(): protocol %s encoding %s mouse %s\n",
@@ -1643,7 +1682,7 @@ public class ECMA48 implements Runnable {
      *
      * @param keypress keypress received from the local user
      */
-    public void keypress(final TKeypress keypress) {
+    private void keypress(final TKeypress keypress) {
         writeRemote(keypressToString(keypress));
     }
 

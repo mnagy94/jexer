@@ -78,9 +78,14 @@ public class Sixel {
     private ScanState scanState = ScanState.GROUND;
 
     /**
-     * Parameter characters being collected.
+     * Parameters being collected.
      */
-    private ArrayList<Integer> colorParams;
+    private int [] params = new int[5];
+
+    /**
+     * Current parameter being collected.
+     */
+    private int paramsI = 0;
 
     /**
      * The sixel palette colors specified.
@@ -138,7 +143,6 @@ public class Sixel {
      */
     public Sixel(final String buffer) {
         this.buffer = buffer;
-        colorParams = new ArrayList<Integer>();
         palette = new HashMap<Integer, Color>();
         image = new BufferedImage(200, 100, BufferedImage.TYPE_INT_ARGB);
         for (int i = 0; i < buffer.length(); i++) {
@@ -187,30 +191,12 @@ public class Sixel {
      * Clear the parameters and flags.
      */
     private void toGround() {
-        colorParams.clear();
+        paramsI = 0;
+        for (int i = 0; i < params.length; i++) {
+            params[i] = 0;
+        }
         scanState = ScanState.GROUND;
         repeatCount = -1;
-    }
-
-    /**
-     * Save a byte into the color parameters buffer.
-     *
-     * @param ch byte to save
-     */
-    private void param(final byte ch) {
-        if (colorParams.size() == 0) {
-            colorParams.add(Integer.valueOf(0));
-        }
-        Integer n = colorParams.get(colorParams.size() - 1);
-        if ((ch >= '0') && (ch <= '9')) {
-            n *= 10;
-            n += (ch - '0');
-            colorParams.set(colorParams.size() - 1, n);
-        }
-
-        if ((ch == ';') && (colorParams.size() < 16)) {
-            colorParams.add(Integer.valueOf(0));
-        }
     }
 
     /**
@@ -221,10 +207,10 @@ public class Sixel {
      * @return parameter value
      */
     private int getColorParam(final int position, final int defaultValue) {
-        if (colorParams.size() < position + 1) {
+        if (position > paramsI) {
             return defaultValue;
         }
-        return colorParams.get(position).intValue();
+        return params[position];
     }
 
     /**
@@ -289,36 +275,39 @@ public class Sixel {
             return;
         }
 
+        int dy = 0;
         for (int i = 0; i < rep; i++) {
             if ((n & 0x01) != 0) {
-                image.setRGB(x, height + 0, rgb);
-                y = Math.max(y, height);
+                dy = 0;
+                image.setRGB(x, height + dy, rgb);
             }
             if ((n & 0x02) != 0) {
-                image.setRGB(x, height + 1, rgb);
-                y = Math.max(y, height + 1);
+                dy = 1;
+                image.setRGB(x, height + dy, rgb);
             }
             if ((n & 0x04) != 0) {
-                image.setRGB(x, height + 2, rgb);
-                y = Math.max(y, height + 2);
+                dy = 2;
+                image.setRGB(x, height + dy, rgb);
             }
             if ((n & 0x08) != 0) {
-                image.setRGB(x, height + 3, rgb);
-                y = Math.max(y, height + 3);
+                dy = 3;
+                image.setRGB(x, height + dy, rgb);
             }
             if ((n & 0x10) != 0) {
-                image.setRGB(x, height + 4, rgb);
-                y = Math.max(y, height + 4);
+                dy = 4;
+                image.setRGB(x, height + dy, rgb);
             }
             if ((n & 0x20) != 0) {
-                image.setRGB(x, height + 5, rgb);
-                y = Math.max(y, height + 5);
+                dy = 5;
+                image.setRGB(x, height + dy, rgb);
+            }
+            if (height + dy > y) {
+                y = height + dy;
             }
             x++;
-            if (x > width) {
-                width++;
-                assert (x == width);
-            }
+        }
+        if (x > width) {
+            width = x;
         }
     }
 
@@ -328,7 +317,7 @@ public class Sixel {
     private void setPalette() {
         int idx = getColorParam(0, 0);
 
-        if (colorParams.size() == 1) {
+        if (paramsI == 0) {
             Color newColor = palette.get(idx);
             if (newColor != null) {
                 color = newColor;
@@ -378,7 +367,6 @@ public class Sixel {
         if ((ch >= 63) && (ch < 127)) {
             if (scanState == ScanState.COLOR) {
                 setPalette();
-                toGround();
             }
             addSixel(ch);
             toGround();
@@ -458,10 +446,13 @@ public class Sixel {
         case COLOR:
             // 30-39, 3B --> param
             if ((ch >= '0') && (ch <= '9')) {
-                param((byte) ch);
+                params[paramsI] *= 10;
+                params[paramsI] += (ch - '0');
             }
             if (ch == ';') {
-                param((byte) ch);
+                if (paramsI < params.length - 1) {
+                    paramsI++;
+                }
             }
             return;
 

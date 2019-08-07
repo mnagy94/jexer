@@ -134,6 +134,15 @@ public final class Cell extends CellAttributes {
         this.ch = ch;
     }
 
+    /**
+     * Public constructor creates a duplicate.
+     *
+     * @param cell the instance to copy
+     */
+    public Cell(final Cell cell) {
+        setTo(cell);
+    }
+
     // ------------------------------------------------------------------------
     // Cell -------------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -260,7 +269,7 @@ public final class Cell extends CellAttributes {
     /**
      * Setter for cell width.
      *
-     * @param ch new cell width, one of Width.SINGLE, Width.LEFT, or
+     * @param width new cell width, one of Width.SINGLE, Width.LEFT, or
      * Width.RIGHT
      */
     public void setWidth(final Width width) {
