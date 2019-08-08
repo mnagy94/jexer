@@ -134,6 +134,15 @@ public final class Cell extends CellAttributes {
     }
 
     /**
+     * Public constructor sets the attributes.
+     *
+     * @param attr attributes to use
+     */
+    public Cell(final CellAttributes attr) {
+        super(attr);
+    }
+
+    /**
      * Public constructor sets the character and attributes.
      *
      * @param ch character to set to
