@@ -572,7 +572,6 @@ public class SwingTerminal extends LogicalScreen
             && (swing.getBufferStrategy() != null)
         ) {
             do {
-                clearPhysical();
                 do {
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
@@ -1201,8 +1200,7 @@ public class SwingTerminal extends LogicalScreen
             gr2 = (Graphics2D) gr;
         }
 
-        Cell cellColor = new Cell();
-        cellColor.setTo(cell);
+        Cell cellColor = new Cell(cell);
 
         // Check for reverse
         if (cell.isReverse()) {
@@ -1234,8 +1232,7 @@ public class SwingTerminal extends LogicalScreen
 
             // We need a new key that will not be mutated by
             // invertCell().
-            Cell key = new Cell();
-            key.setTo(cell);
+            Cell key = new Cell(cell);
             if (cell.isBlink() && !cursorBlinkVisible) {
                 glyphCacheBlink.put(key, image);
             } else {

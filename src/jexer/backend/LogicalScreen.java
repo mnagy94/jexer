@@ -978,16 +978,14 @@ public class LogicalScreen implements Screen {
         BufferedImage rightImage = image.getSubimage(getTextWidth(), 0,
             getTextWidth(), getTextHeight());
 
-        Cell left = new Cell();
-        left.setTo(cell);
+        Cell left = new Cell(cell);
         left.setImage(leftImage);
         left.setWidth(Cell.Width.LEFT);
         // Blank out the char itself, so that shadows do not leave artifacts.
         left.setChar(' ');
         putCharXY(x, y, left);
 
-        Cell right = new Cell();
-        right.setTo(cell);
+        Cell right = new Cell(cell);
         right.setImage(rightImage);
         right.setWidth(Cell.Width.RIGHT);
         // Blank out the char itself, so that shadows do not leave artifacts.
@@ -1006,8 +1004,7 @@ public class LogicalScreen implements Screen {
     public final void putFullwidthCharXY(final int x, final int y,
         final char ch, final CellAttributes attr) {
 
-        Cell cell = new Cell(ch);
-        cell.setAttr(attr);
+        Cell cell = new Cell(ch, attr);
         putFullwidthCharXY(x, y, cell);
     }
 

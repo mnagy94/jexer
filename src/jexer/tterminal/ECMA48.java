@@ -690,9 +690,9 @@ public class ECMA48 implements Runnable {
         char [] readBufferUTF8 = null;
         byte [] readBuffer = null;
         if (utf8) {
-            readBufferUTF8 = new char[128];
+            readBufferUTF8 = new char[2048];
         } else {
-            readBuffer = new byte[128];
+            readBuffer = new byte[2048];
         }
 
         while (!done && !stopReaderThread) {
@@ -3458,8 +3458,7 @@ public class ECMA48 implements Runnable {
      * DECALN - Screen alignment display.
      */
     private void decaln() {
-        Cell newCell = new Cell();
-        newCell.setChar('E');
+        Cell newCell = new Cell('E');
         for (DisplayLine line: display) {
             for (int i = 0; i < line.length(); i++) {
                 line.replace(i, newCell);
@@ -6909,8 +6908,7 @@ public class ECMA48 implements Runnable {
             lastTextHeight = textHeight;
         }
 
-        Cell cell = new Cell(ch);
-        cell.setAttr(currentState.attr);
+        Cell cell = new Cell(ch, currentState.attr);
         BufferedImage image = glyphMaker.getImage(cell, textWidth * 2,
             textHeight);
         BufferedImage leftImage = image.getSubimage(0, 0, textWidth,
@@ -6918,14 +6916,12 @@ public class ECMA48 implements Runnable {
         BufferedImage rightImage = image.getSubimage(textWidth, 0, textWidth,
             textHeight);
 
-        Cell left = new Cell();
-        left.setTo(cell);
+        Cell left = new Cell(cell);
         left.setImage(leftImage);
         left.setWidth(Cell.Width.LEFT);
         display.get(leftY).replace(leftX, left);
 
-        Cell right = new Cell();
-        right.setTo(cell);
+        Cell right = new Cell(cell);
         right.setImage(rightImage);
         right.setWidth(Cell.Width.RIGHT);
         display.get(rightY).replace(rightX, right);

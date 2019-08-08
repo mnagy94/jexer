@@ -201,8 +201,7 @@ class GlyphMakerFont {
         Graphics2D gr2 = image.createGraphics();
         gr2.setFont(font);
 
-        Cell cellColor = new Cell();
-        cellColor.setTo(cell);
+        Cell cellColor = new Cell(cell);
 
         // Check for reverse
         if (cell.isReverse()) {
@@ -231,8 +230,7 @@ class GlyphMakerFont {
         gr2.dispose();
 
         // We need a new key that will not be mutated by invertCell().
-        Cell key = new Cell();
-        key.setTo(cell);
+        Cell key = new Cell(cell);
         if (cell.isBlink() && !blinkVisible) {
             glyphCacheBlink.put(key, image);
         } else {

@@ -103,8 +103,7 @@ public class DisplayLine {
     public DisplayLine(final CellAttributes attr) {
         chars = new Cell[MAX_LINE_LENGTH];
         for (int i = 0; i < chars.length; i++) {
-            chars[i] = new Cell();
-            chars[i].setTo(attr);
+            chars[i] = new Cell(attr);
         }
     }
 
@@ -193,8 +192,7 @@ public class DisplayLine {
      */
     public void insert(final int idx, final Cell newCell) {
         System.arraycopy(chars, idx, chars, idx + 1, chars.length - idx - 1);
-        chars[idx] = new Cell();
-        chars[idx].setTo(newCell);
+        chars[idx] = new Cell(newCell);
     }
 
     /**
@@ -247,8 +245,7 @@ public class DisplayLine {
      */
     public void delete(final int idx, final Cell newCell) {
         System.arraycopy(chars, idx + 1, chars, idx, chars.length - idx - 1);
-        chars[chars.length - 1] = new Cell();
-        chars[chars.length - 1].setTo(newCell);
+        chars[chars.length - 1] = new Cell(newCell);
     }
 
 }

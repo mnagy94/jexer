@@ -34,43 +34,53 @@ package jexer.bits;
 public class CellAttributes {
 
     // ------------------------------------------------------------------------
-    // Variables --------------------------------------------------------------
+    // Constants --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
      * Bold attribute.
      */
-    private boolean bold;
+    private static final int BOLD       = 0x01;
 
     /**
      * Blink attribute.
      */
-    private boolean blink;
+    private static final int BLINK      = 0x02;
 
     /**
      * Reverse attribute.
      */
-    private boolean reverse;
+    private static final int REVERSE    = 0x04;
 
     /**
      * Underline attribute.
      */
-    private boolean underline;
+    private static final int UNDERLINE  = 0x08;
 
     /**
      * Protected attribute.
      */
-    private boolean protect;
+    private static final int PROTECT    = 0x10;
+
+
+    // ------------------------------------------------------------------------
+    // Variables --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Boolean flags.
+     */
+    private int flags = 0;
 
     /**
      * Foreground color.  Color.WHITE, Color.RED, etc.
      */
-    private Color foreColor;
+    private Color foreColor = Color.WHITE;
 
     /**
      * Background color.  Color.WHITE, Color.RED, etc.
      */
-    private Color backColor;
+    private Color backColor = Color.BLACK;
 
     /**
      * Foreground color as 24-bit RGB value.  Negative value means not set.
@@ -93,7 +103,7 @@ public class CellAttributes {
      * @see #reset()
      */
     public CellAttributes() {
-        reset();
+        // NOP
     }
 
     /**
@@ -116,7 +126,7 @@ public class CellAttributes {
      * @return bold value
      */
     public final boolean isBold() {
-        return bold;
+        return ((flags & BOLD) == 0 ? false : true);
     }
 
     /**
@@ -125,7 +135,11 @@ public class CellAttributes {
      * @param bold new bold value
      */
     public final void setBold(final boolean bold) {
-        this.bold = bold;
+        if (bold) {
+            flags |= BOLD;
+        } else {
+            flags &= ~BOLD;
+        }
     }
 
     /**
@@ -134,7 +148,7 @@ public class CellAttributes {
      * @return blink value
      */
     public final boolean isBlink() {
-        return blink;
+        return ((flags & BLINK) == 0 ? false : true);
     }
 
     /**
@@ -143,7 +157,11 @@ public class CellAttributes {
      * @param blink new blink value
      */
     public final void setBlink(final boolean blink) {
-        this.blink = blink;
+        if (blink) {
+            flags |= BLINK;
+        } else {
+            flags &= ~BLINK;
+        }
     }
 
     /**
@@ -152,7 +170,7 @@ public class CellAttributes {
      * @return reverse value
      */
     public final boolean isReverse() {
-        return reverse;
+        return ((flags & REVERSE) == 0 ? false : true);
     }
 
     /**
@@ -161,7 +179,11 @@ public class CellAttributes {
      * @param reverse new reverse value
      */
     public final void setReverse(final boolean reverse) {
-        this.reverse = reverse;
+        if (reverse) {
+            flags |= REVERSE;
+        } else {
+            flags &= ~REVERSE;
+        }
     }
 
     /**
@@ -170,7 +192,7 @@ public class CellAttributes {
      * @return underline value
      */
     public final boolean isUnderline() {
-        return underline;
+        return ((flags & UNDERLINE) == 0 ? false : true);
     }
 
     /**
@@ -179,7 +201,11 @@ public class CellAttributes {
      * @param underline new underline value
      */
     public final void setUnderline(final boolean underline) {
-        this.underline = underline;
+        if (underline) {
+            flags |= UNDERLINE;
+        } else {
+            flags &= ~UNDERLINE;
+        }
     }
 
     /**
@@ -188,7 +214,7 @@ public class CellAttributes {
      * @return protect value
      */
     public final boolean isProtect() {
-        return protect;
+        return ((flags & PROTECT) == 0 ? false : true);
     }
 
     /**
@@ -197,7 +223,11 @@ public class CellAttributes {
      * @param protect new protect value
      */
     public final void setProtect(final boolean protect) {
-        this.protect = protect;
+        if (protect) {
+            flags |= PROTECT;
+        } else {
+            flags &= ~PROTECT;
+        }
     }
 
     /**
@@ -286,11 +316,7 @@ public class CellAttributes {
      * bold/underline/blink/rever/protect.
      */
     public void reset() {
-        bold            = false;
-        blink           = false;
-        reverse         = false;
-        underline       = false;
-        protect         = false;
+        flags           = 0;
         foreColor       = Color.WHITE;
         backColor       = Color.BLACK;
         foreColorRGB    = -1;
@@ -310,15 +336,11 @@ public class CellAttributes {
         }
 
         CellAttributes that = (CellAttributes) rhs;
-        return ((foreColor == that.foreColor)
+        return ((flags == that.flags)
+            && (foreColor == that.foreColor)
             && (backColor == that.backColor)
             && (foreColorRGB == that.foreColorRGB)
-            && (backColorRGB == that.backColorRGB)
-            && (bold == that.bold)
-            && (reverse == that.reverse)
-            && (underline == that.underline)
-            && (blink == that.blink)
-            && (protect == that.protect));
+            && (backColorRGB == that.backColorRGB));
     }
 
     /**
@@ -331,11 +353,7 @@ public class CellAttributes {
         int A = 13;
         int B = 23;
         int hash = A;
-        hash = (B * hash) + (bold ? 1 : 0);
-        hash = (B * hash) + (blink ? 1 : 0);
-        hash = (B * hash) + (underline ? 1 : 0);
-        hash = (B * hash) + (reverse ? 1 : 0);
-        hash = (B * hash) + (protect ? 1 : 0);
+        hash = (B * hash) + flags;
         hash = (B * hash) + foreColor.hashCode();
         hash = (B * hash) + backColor.hashCode();
         hash = (B * hash) + foreColorRGB;
@@ -351,11 +369,7 @@ public class CellAttributes {
     public void setTo(final Object rhs) {
         CellAttributes that = (CellAttributes) rhs;
 
-        this.bold               = that.bold;
-        this.blink              = that.blink;
-        this.reverse            = that.reverse;
-        this.underline          = that.underline;
-        this.protect            = that.protect;
+        this.flags              = that.flags;
         this.foreColor          = that.foreColor;
         this.backColor          = that.backColor;
         this.foreColorRGB       = that.foreColorRGB;
@@ -374,8 +388,8 @@ public class CellAttributes {
                 (foreColorRGB & 0xFFFFFF),
                 (backColorRGB & 0xFFFFFF));
         }
-        return String.format("%s%s%s on %s", (bold == true ? "bold " : ""),
-            (blink == true ? "blink " : ""), foreColor, backColor);
+        return String.format("%s%s%s on %s", (isBold() ? "bold " : ""),
+            (isBlink() ? "blink " : ""), foreColor, backColor);
     }
 
 }

@@ -326,10 +326,9 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void draw() {
-
         int width = getDisplayWidth();
         boolean syncEmulator = false;
-        if ((System.currentTimeMillis() - lastUpdateTime > 125)
+        if ((System.currentTimeMillis() - lastUpdateTime >= 25)
             && (dirty == true)
         ) {
             // Too much time has passed, draw it all.
@@ -410,8 +409,7 @@ public class TTerminalWindow extends TScrollableWindow
                     continue;
                 }
 
-                Cell newCell = new Cell();
-                newCell.setTo(ch);
+                Cell newCell = new Cell(ch);
                 boolean reverse = line.isReverseColor() ^ ch.isReverse();
                 newCell.setReverse(false);
                 if (reverse) {
@@ -985,8 +983,7 @@ public class TTerminalWindow extends TScrollableWindow
         BufferedImage image;
         if (line.getDoubleHeight() == 1) {
             // Double-height top half: don't draw the underline.
-            Cell newCell = new Cell();
-            newCell.setTo(cell);
+            Cell newCell = new Cell(cell);
             newCell.setUnderline(false);
             image = doubleFont.getImage(newCell, textWidth * 2, textHeight * 2,
                 cursorBlinkVisible);
@@ -997,10 +994,8 @@ public class TTerminalWindow extends TScrollableWindow
 
         // Now that we have the double-wide glyph drawn, copy the right
         // pieces of it to the cells.
-        Cell left = new Cell();
-        Cell right = new Cell();
-        left.setTo(cell);
-        right.setTo(cell);
+        Cell left = new Cell(cell);
+        Cell right = new Cell(cell);
         right.setChar(' ');
         BufferedImage leftImage = null;
         BufferedImage rightImage = null;

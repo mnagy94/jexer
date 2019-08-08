@@ -73,7 +73,7 @@ public final class Cell extends CellAttributes {
     /**
      * The character at this cell.
      */
-    private char ch;
+    private char ch = ' ';
 
     /**
      * The display width of this cell.
@@ -94,7 +94,7 @@ public final class Cell extends CellAttributes {
      * The background color used for the area the image portion might not
      * cover.
      */
-    private Color background = null;
+    private Color background = Color.BLACK;
 
     /**
      * hashCode() needs to call image.hashCode(), which can get quite
@@ -119,7 +119,7 @@ public final class Cell extends CellAttributes {
      * @see #reset()
      */
     public Cell() {
-        reset();
+        // NOP
     }
 
     /**
@@ -130,7 +130,17 @@ public final class Cell extends CellAttributes {
      * @see #reset()
      */
     public Cell(final char ch) {
-        reset();
+        this.ch = ch;
+    }
+
+    /**
+     * Public constructor sets the character and attributes.
+     *
+     * @param ch character to set to
+     * @param attr attributes to use
+     */
+    public Cell(final char ch, final CellAttributes attr) {
+        super(attr);
         this.ch = ch;
     }
 
