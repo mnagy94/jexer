@@ -133,6 +133,11 @@ public class TApplication implements Runnable {
     private volatile WidgetEventHandler secondaryEventHandler;
 
     /**
+     * The screen handler thread.
+     */
+    private volatile ScreenHandler screenHandler;
+
+    /**
      * The widget receiving events from the secondary event handler thread.
      */
     private volatile TWidget secondaryEventReceiver;
@@ -450,6 +455,96 @@ public class TApplication implements Runnable {
         }
     }
 
+    /**
+     * ScreenHandler pushes screen updates to the physical device.
+     */
+    private class ScreenHandler implements Runnable {
+        /**
+         * The main application.
+         */
+        private TApplication application;
+
+        /**
+         * The dirty flag.
+         */
+        private boolean dirty = false;
+
+        /**
+         * Public constructor.
+         *
+         * @param application the main application
+         */
+        public ScreenHandler(final TApplication application) {
+            this.application = application;
+        }
+
+        /**
+         * The screen update loop.
+         */
+        public void run() {
+            // Wrap everything in a try, so that if we go belly up we can let
+            // the user have their terminal back.
+            try {
+                runImpl();
+            } catch (Throwable t) {
+                this.application.restoreConsole();
+                t.printStackTrace();
+                this.application.exit();
+            }
+        }
+
+        /**
+         * The update loop.
+         */
+        private void runImpl() {
+
+            // Loop forever
+            while (!application.quit) {
+
+                // Wait until application notifies me
+                while (!application.quit) {
+                    try {
+                        synchronized (this) {
+                            if (dirty) {
+                                dirty = false;
+                                break;
+                            }
+
+                            // Always check within 50 milliseconds.
+                            this.wait(50);
+                        }
+                    } catch (InterruptedException e) {
+                        // SQUASH
+                    }
+                } // while (!application.quit)
+
+                assert (dirty == true);
+
+                // Flush the screen contents
+                if (debugThreads) {
+                    System.err.printf("%d %s backend.flushScreen()\n",
+                        System.currentTimeMillis(), Thread.currentThread());
+                }
+                synchronized (getScreen()) {
+                    backend.flushScreen();
+                }
+            } // while (true) (main runnable loop)
+
+            // Shutdown the user I/O thread(s)
+            backend.shutdown();
+        }
+
+        /**
+         * Set the dirty flag.
+         */
+        public void setDirty() {
+            synchronized (this) {
+                dirty = true;
+            }
+        }
+
+    }
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -635,6 +730,10 @@ public class TApplication implements Runnable {
     public void run() {
         // System.err.println("*** TApplication.run() begins ***");
 
+        // Start the screen updater thread
+        screenHandler = new ScreenHandler(this);
+        (new Thread(screenHandler)).start();
+
         // Start the main consumer thread
         primaryEventHandler = new WidgetEventHandler(this, true);
         (new Thread(primaryEventHandler)).start();
@@ -710,9 +809,6 @@ public class TApplication implements Runnable {
                 primaryEventHandler.notify();
             }
         }
-
-        // Shutdown the user I/O thread(s)
-        backend.shutdown();
 
         // Close all the windows.  This gives them an opportunity to release
         // resources.
@@ -885,6 +981,9 @@ public class TApplication implements Runnable {
         synchronized (getScreen()) {
             drawAll();
         }
+
+        // Wake up the screen repainter
+        wakeScreenHandler();
 
         if (debugThreads) {
             System.err.printf(System.currentTimeMillis() + " " +
@@ -1323,6 +1422,19 @@ public class TApplication implements Runnable {
         }
     }
 
+    /**
+     * Wake the sleeping screen handler.
+     */
+    private void wakeScreenHandler() {
+        if (!started) {
+            return;
+        }
+
+        synchronized (screenHandler) {
+            screenHandler.notify();
+        }
+    }
+
     // ------------------------------------------------------------------------
     // TApplication -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1675,7 +1787,7 @@ public class TApplication implements Runnable {
                 oldDrawnMouseY = mouseY;
             }
             if (getScreen().isDirty()) {
-                backend.flushScreen();
+                screenHandler.setDirty();
             }
             return;
         }
@@ -1826,15 +1938,9 @@ public class TApplication implements Runnable {
             getScreen().hideCursor();
         }
 
-        // Flush the screen contents
         if (getScreen().isDirty()) {
-            if (debugThreads) {
-                System.err.printf("%d %s backend.flushScreen()\n",
-                    System.currentTimeMillis(), Thread.currentThread());
-            }
-            backend.flushScreen();
+            screenHandler.setDirty();
         }
-
         repaint = false;
     }
 
