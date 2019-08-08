@@ -51,6 +51,12 @@ public class MnemonicString {
     private int shortcutIdx = -1;
 
     /**
+     * Screen location of the highlighted character (number of text cells
+     * required to display from the beginning to shortcutIdx).
+     */
+    private int screenShortcutIdx = -1;
+
+    /**
      * The raw (uncolored) string.
      */
     private String rawLabel;
@@ -72,12 +78,14 @@ public class MnemonicString {
         boolean foundAmp = false;
         boolean foundShortcut = false;
         int scanShortcutIdx = 0;
+        int scanScreenShortcutIdx = 0;
         for (int i = 0; i < label.length(); i++) {
             char c = label.charAt(i);
             if (c == '&') {
                 if (foundAmp) {
                     newLabel += '&';
                     scanShortcutIdx++;
+                    scanScreenShortcutIdx++;
                 } else {
                     foundAmp = true;
                 }
@@ -89,9 +97,11 @@ public class MnemonicString {
                         foundAmp = false;
                         foundShortcut = true;
                         shortcutIdx = scanShortcutIdx;
+                        screenShortcutIdx = scanScreenShortcutIdx;
                     }
                 } else {
                     scanShortcutIdx++;
+                    scanScreenShortcutIdx += StringUtils.width(c);
                 }
             }
         }
@@ -118,6 +128,16 @@ public class MnemonicString {
      */
     public int getShortcutIdx() {
         return shortcutIdx;
+    }
+
+    /**
+     * Get the screen location of the highlighted character.
+     *
+     * @return the number of text cells required to display from the
+     * beginning of the label to shortcutIdx
+     */
+    public int getScreenShortcutIdx() {
+        return screenShortcutIdx;
     }
 
     /**

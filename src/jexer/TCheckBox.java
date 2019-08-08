@@ -34,6 +34,7 @@ import static jexer.TKeypress.kbSpace;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 
@@ -78,7 +79,7 @@ public class TCheckBox extends TWidget {
         final String label, final boolean checked) {
 
         // Set parent and window
-        super(parent, x, y, label.length() + 4, 1);
+        super(parent, x, y, StringUtils.width(label) + 4, 1);
 
         mnemonic = new MnemonicString(label);
         this.checked = checked;

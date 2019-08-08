@@ -1002,7 +1002,8 @@ public class ECMA48Terminal extends LogicalScreen
     // ------------------------------------------------------------------------
 
     /**
-     * Constructor sets up state for getEvent().
+     * Constructor sets up state for getEvent().  If either windowWidth or
+     * windowHeight are less than 1, the terminal is not resized.
      *
      * @param listener the object this backend needs to wake up when new
      * input comes in
@@ -1026,10 +1027,12 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Send dtterm/xterm sequences, which will probably not work because
         // allowWindowOps is defaulted to false.
-        String resizeString = String.format("\033[8;%d;%dt", windowHeight,
-            windowWidth);
-        this.output.write(resizeString);
-        this.output.flush();
+        if ((windowWidth > 0) && (windowHeight > 0)) {
+            String resizeString = String.format("\033[8;%d;%dt", windowHeight,
+                windowWidth);
+            this.output.write(resizeString);
+            this.output.flush();
+        }
     }
 
     /**

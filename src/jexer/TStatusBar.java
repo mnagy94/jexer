@@ -33,6 +33,7 @@ import java.util.List;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
@@ -97,7 +98,8 @@ public class TStatusBar extends TWidget {
          * @return the number of columns this takes when drawn
          */
         public int width() {
-            return this.label.length() + this.key.toString().length() + 3;
+            return StringUtils.width(this.label) +
+                StringUtils.width(this.key.toString()) + 3;
         }
 
         /**
@@ -132,7 +134,7 @@ public class TStatusBar extends TWidget {
 
         // TStatusBar is a parentless widget, because TApplication handles
         // its drawing and event routing directly.
-        super(null, false, 0, 0, text.length(), 1);
+        super(null, false, 0, 0, StringUtils.width(text), 1);
 
         this.text = text;
         setWindow(window);
@@ -269,17 +271,17 @@ public class TStatusBar extends TWidget {
             if (key.selected) {
                 putCharXY(col++, row, ' ', selectedColor);
                 putStringXY(col, row, keyStr, selectedColor);
-                col += keyStr.length();
+                col += StringUtils.width(keyStr);
                 putCharXY(col++, row, ' ', selectedColor);
                 putStringXY(col, row, key.label, selectedColor);
-                col += key.label.length();
+                col += StringUtils.width(key.label);
                 putCharXY(col++, row, ' ', selectedColor);
             } else {
                 putCharXY(col++, row, ' ', barColor);
                 putStringXY(col, row, keyStr, keyColor);
-                col += keyStr.length() + 1;
+                col += StringUtils.width(keyStr) + 1;
                 putStringXY(col, row, key.label, barColor);
-                col += key.label.length();
+                col += StringUtils.width(key.label);
                 putCharXY(col++, row, ' ', barColor);
             }
         }

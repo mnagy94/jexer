@@ -31,6 +31,7 @@ package jexer;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
@@ -81,7 +82,7 @@ public class TRadioButton extends TWidget {
         final String label, final int id) {
 
         // Set parent and window
-        super(parent, x, y, label.length() + 4, 1);
+        super(parent, x, y, StringUtils.width(label) + 4, 1);
 
         mnemonic = new MnemonicString(label);
         this.id = id;
@@ -179,8 +180,8 @@ public class TRadioButton extends TWidget {
         }
         putCharXY(2, 0, ')', radioButtonColor);
         putStringXY(4, 0, mnemonic.getRawLabel(), radioButtonColor);
-        if (mnemonic.getShortcutIdx() >= 0) {
-            putCharXY(4 + mnemonic.getShortcutIdx(), 0,
+        if (mnemonic.getScreenShortcutIdx() >= 0) {
+            putCharXY(4 + mnemonic.getScreenShortcutIdx(), 0,
                 mnemonic.getShortcut(), mnemonicColor);
         }
     }

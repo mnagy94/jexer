@@ -37,6 +37,7 @@ import jexer.TWindow;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
@@ -177,7 +178,7 @@ public class TMenu extends TWindow {
         assert (mnemonic.getShortcutIdx() >= 0);
 
         // Recompute width and height to reflect an empty menu
-        setWidth(getTitle().length() + 4);
+        setWidth(StringUtils.width(getTitle()) + 4);
         setHeight(2);
 
         setActive(false);

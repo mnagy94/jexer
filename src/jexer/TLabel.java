@@ -30,6 +30,7 @@ package jexer;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.MnemonicString;
+import jexer.bits.StringUtils;
 
 /**
  * TLabel implements a simple label, with an optional mnemonic hotkey action
@@ -157,7 +158,7 @@ public class TLabel extends TWidget {
         final TAction action) {
 
         // Set parent and window
-        super(parent, false, x, y, text.length(), 1);
+        super(parent, false, x, y, StringUtils.width(text), 1);
 
         mnemonic = new MnemonicString(text);
         this.colorKey = colorKey;

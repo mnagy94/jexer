@@ -29,6 +29,7 @@
 package jexer;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 
 /**
  * TRadioGroup is a collection of TRadioButtons with a box and label.
@@ -71,7 +72,7 @@ public class TRadioGroup extends TWidget {
         final String label) {
 
         // Set parent and window
-        super(parent, x, y, label.length() + 4, 2);
+        super(parent, x, y, StringUtils.width(label) + 4, 2);
 
         this.label = label;
     }
@@ -96,7 +97,7 @@ public class TRadioGroup extends TWidget {
         drawBox(0, 0, getWidth(), getHeight(), radioGroupColor, radioGroupColor,
             3, false);
 
-        hLineXY(1, 0, label.length() + 2, ' ', radioGroupColor);
+        hLineXY(1, 0, StringUtils.width(label) + 2, ' ', radioGroupColor);
         putStringXY(2, 0, label, radioGroupColor);
     }
 
@@ -161,8 +162,8 @@ public class TRadioGroup extends TWidget {
     public TRadioButton addRadioButton(final String label) {
         int buttonX = 1;
         int buttonY = getChildren().size() + 1;
-        if (label.length() + 4 > getWidth()) {
-            setWidth(label.length() + 7);
+        if (StringUtils.width(label) + 4 > getWidth()) {
+            setWidth(StringUtils.width(label) + 7);
         }
         setHeight(getChildren().size() + 3);
         TRadioButton button = new TRadioButton(this, buttonX, buttonY, label,

@@ -34,6 +34,7 @@ import java.util.List;
 import jexer.TWidget;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
@@ -266,9 +267,9 @@ public class TTreeItem extends TWidget {
         }
         putStringXY(offset, 0, line, color);
         if (selected) {
-            putStringXY(offset + line.length(), 0, text, selectedColor);
+            putStringXY(offset + StringUtils.width(line), 0, text, selectedColor);
         } else {
-            putStringXY(offset + line.length(), 0, text, textColor);
+            putStringXY(offset + StringUtils.width(line), 0, text, textColor);
         }
         if ((level > 0) && (expandable)) {
             if (expanded) {
@@ -402,10 +403,10 @@ public class TTreeItem extends TWidget {
      * @return the maximum number of columns for this item or its children
      */
     public int getMaximumColumn() {
-        int max = prefix.length() + 4 + text.length();
+        int max = prefix.length() + 4 + StringUtils.width(text);
         for (TWidget widget: getChildren()) {
             TTreeItem item = (TTreeItem) widget;
-            int n = item.prefix.length() + 4 + item.text.length();
+            int n = item.prefix.length() + 4 + StringUtils.width(item.text);
             if (n > max) {
                 max = n;
             }

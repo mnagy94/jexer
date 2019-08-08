@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
@@ -338,8 +339,9 @@ public class TList extends TScrollableWidget {
 
         for (int i = 0; i < strings.size(); i++) {
             String line = strings.get(i);
-            if (line.length() > maxLineWidth) {
-                maxLineWidth = line.length();
+            int lineLength = StringUtils.width(line);
+            if (lineLength > maxLineWidth) {
+                maxLineWidth = lineLength;
             }
         }
 

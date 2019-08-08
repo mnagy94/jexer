@@ -33,6 +33,7 @@ import jexer.TWidget;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TMenuEvent;
@@ -104,7 +105,7 @@ public class TMenuItem extends TWidget {
         setY(y);
         setHeight(1);
         this.label = mnemonic.getRawLabel();
-        setWidth(label.length() + 4);
+        setWidth(StringUtils.width(label) + 4);
         this.id = id;
 
         // Default state for some known menu items
@@ -227,8 +228,8 @@ public class TMenuItem extends TWidget {
         putStringXY(2, 0, mnemonic.getRawLabel(), menuColor);
         if (key != null) {
             String keyLabel = key.toString();
-            putStringXY((getWidth() - keyLabel.length() - 2), 0, keyLabel,
-                menuColor);
+            putStringXY((getWidth() - StringUtils.width(keyLabel) - 2), 0,
+                keyLabel, menuColor);
         }
         if (mnemonic.getShortcutIdx() >= 0) {
             putCharXY(2 + mnemonic.getShortcutIdx(), 0, mnemonic.getShortcut(),
@@ -315,7 +316,8 @@ public class TMenuItem extends TWidget {
         this.key = key;
 
         if (key != null) {
-            int newWidth = (label.length() + 4 + key.toString().length() + 2);
+            int newWidth = (StringUtils.width(label) + 4 +
+                StringUtils.width(key.toString()) + 2);
             if (newWidth > getWidth()) {
                 setWidth(newWidth);
             }

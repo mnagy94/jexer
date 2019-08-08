@@ -1265,18 +1265,31 @@ public class SwingTerminal extends LogicalScreen
             int xPixel = cursorX * textWidth + left;
             int yPixel = cursorY * textHeight + top;
             Cell lCell = logical[cursorX][cursorY];
+            int cursorWidth = textWidth;
+            switch (lCell.getWidth()) {
+            case SINGLE:
+                // NOP
+                break;
+            case LEFT:
+                cursorWidth *= 2;
+                break;
+            case RIGHT:
+                cursorWidth *= 2;
+                xPixel -= textWidth;
+                break;
+            }
             gr.setColor(attrToForegroundColor(lCell));
             switch (cursorStyle) {
             default:
                 // Fall through...
             case UNDERLINE:
-                gr.fillRect(xPixel, yPixel + textHeight - 2, textWidth, 2);
+                gr.fillRect(xPixel, yPixel + textHeight - 2, cursorWidth, 2);
                 break;
             case BLOCK:
-                gr.fillRect(xPixel, yPixel, textWidth, textHeight);
+                gr.fillRect(xPixel, yPixel, cursorWidth, textHeight);
                 break;
             case OUTLINE:
-                gr.drawRect(xPixel, yPixel, textWidth - 1, textHeight - 1);
+                gr.drawRect(xPixel, yPixel, cursorWidth - 1, textHeight - 1);
                 break;
             }
         }
