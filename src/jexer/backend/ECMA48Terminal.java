@@ -2851,6 +2851,10 @@ public class ECMA48Terminal extends LogicalScreen
 
         int [] rgbArray;
         for (int i = 0; i < cells.size() - 1; i++) {
+            int tileWidth = Math.min(cells.get(i).getImage().getWidth(),
+                imageWidth);
+            int tileHeight = Math.min(cells.get(i).getImage().getHeight(),
+                imageHeight);
             if (false && cells.get(i).isInvertedImage()) {
                 // I used to put an all-white cell over the cursor, don't do
                 // that anymore.
@@ -2859,8 +2863,20 @@ public class ECMA48Terminal extends LogicalScreen
                     rgbArray[j] = 0xFFFFFF;
                 }
             } else {
-                rgbArray = cells.get(i).getImage().getRGB(0, 0,
-                    imageWidth, imageHeight, null, 0, imageWidth);
+                try {
+                    rgbArray = cells.get(i).getImage().getRGB(0, 0,
+                        tileWidth, tileHeight, null, 0, tileWidth);
+                } catch (Exception e) {
+                    throw new RuntimeException("image " + imageWidth + "x" +
+                        imageHeight +
+                        "tile " + tileWidth + "x" +
+                        tileHeight +
+                        " cells.get(i).getImage() " +
+                        cells.get(i).getImage() +
+                        " i " + i +
+                        " fullWidth " + fullWidth +
+                        " fullHeight " + fullHeight, e);
+                }
             }
 
             /*
@@ -2871,9 +2887,9 @@ public class ECMA48Terminal extends LogicalScreen
                 fullWidth, fullHeight, cells.size(), getTextWidth());
              */
 
-            image.setRGB(i * imageWidth, 0, imageWidth, imageHeight,
-                rgbArray, 0, imageWidth);
-            if (imageHeight < fullHeight) {
+            image.setRGB(i * imageWidth, 0, tileWidth, tileHeight,
+                rgbArray, 0, tileWidth);
+            if (tileHeight < fullHeight) {
                 int backgroundColor = cells.get(i).getBackground().getRGB();
                 for (int imageX = 0; imageX < image.getWidth(); imageX++) {
                     for (int imageY = imageHeight; imageY < fullHeight;
@@ -2893,8 +2909,14 @@ public class ECMA48Terminal extends LogicalScreen
                 rgbArray[j] = 0xFFFFFF;
             }
         } else {
-            rgbArray = cells.get(cells.size() - 1).getImage().getRGB(0, 0,
-                totalWidth, imageHeight, null, 0, totalWidth);
+            try {
+                rgbArray = cells.get(cells.size() - 1).getImage().getRGB(0, 0,
+                    totalWidth, imageHeight, null, 0, totalWidth);
+            } catch (Exception e) {
+                throw new RuntimeException("image " + imageWidth + "x" +
+                    imageHeight + " cells.get(cells.size() - 1).getImage() " +
+                    cells.get(cells.size() - 1).getImage(), e);
+            }
         }
         image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
             imageHeight, rgbArray, 0, totalWidth);
