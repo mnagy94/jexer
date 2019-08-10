@@ -30,6 +30,7 @@ package jexer;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 
 /**
  * TPasswordField implements an editable text field that displays
@@ -112,15 +113,16 @@ public class TPasswordField extends TField {
         }
 
         int end = windowStart + getWidth();
-        if (end > text.length()) {
-            end = text.length();
+        if (end > StringUtils.width(text)) {
+            end = StringUtils.width(text);
         }
 
         hLineXY(0, 0, getWidth(), backgroundChar, fieldColor);
         if (showStars) {
             hLineXY(0, 0, getWidth() - 2, '*', fieldColor);
         } else {
-            putStringXY(0, 0, text.substring(windowStart, end), fieldColor);
+            putStringXY(0, 0, text.substring(screenToTextPosition(windowStart),
+                    screenToTextPosition(end)), fieldColor);
         }
 
         // Fix the cursor, it will be rendered by TApplication.drawAll().
