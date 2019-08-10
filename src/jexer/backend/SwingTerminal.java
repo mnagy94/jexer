@@ -572,6 +572,7 @@ public class SwingTerminal extends LogicalScreen
             && (swing.getBufferStrategy() != null)
         ) {
             do {
+                clearPhysical();
                 do {
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
