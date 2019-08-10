@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import static jexer.TKeypress.*;
 
@@ -187,11 +188,11 @@ public class TMessageBox extends TWindow {
 
         // Determine width and height
         String [] lines = caption.split("\n");
-        int width = title.length() + 12;
+        int width = StringUtils.width(title) + 12;
         setHeight(6 + lines.length);
         for (String line: lines) {
-            if (line.length() + 4 > width) {
-                width = line.length() + 4;
+            if (StringUtils.width(line) + 4 > width) {
+                width = StringUtils.width(line) + 4;
             }
         }
         setWidth(width);

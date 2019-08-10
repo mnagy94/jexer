@@ -33,6 +33,7 @@ import java.util.GregorianCalendar;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.*;
@@ -238,10 +239,13 @@ public class TCalendar extends TWidget {
         // Draw the title
         String title = String.format("%tB %tY", displayCalendar,
             displayCalendar);
-        int titleLeft = (getWidth() - title.length() - 2) / 2;
+        // This particular title is always single-width (see format string
+        // above), but for completeness let's treat it the same as every
+        // other window title string.
+        int titleLeft = (getWidth() - StringUtils.width(title) - 2) / 2;
         putCharXY(titleLeft, 0, ' ', titleColor);
         putStringXY(titleLeft + 1, 0, title, titleColor);
-        putCharXY(titleLeft + title.length() + 1, 0, ' ',
+        putCharXY(titleLeft + StringUtils.width(title) + 1, 0, ' ',
             titleColor);
 
         // Arrows

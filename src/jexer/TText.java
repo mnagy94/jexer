@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import static jexer.TKeypress.kbDown;
@@ -184,7 +185,7 @@ public class TText extends TScrollableWidget {
         int topY = 0;
         for (int i = begin; i < lines.size(); i++) {
             String line = lines.get(i);
-            if (hScroller.getValue() < line.length()) {
+            if (hScroller.getValue() < StringUtils.width(line)) {
                 line = line.substring(hScroller.getValue());
             } else {
                 line = "";
@@ -323,7 +324,7 @@ public class TText extends TScrollableWidget {
      * @param line new line to add
      */
     public void addLine(final String line) {
-        if (text.length() == 0) {
+        if (StringUtils.width(text) == 0) {
             text = line;
         } else {
             text += "\n\n";
@@ -338,8 +339,8 @@ public class TText extends TScrollableWidget {
     private void computeBounds() {
         maxLineWidth = 0;
         for (String line : lines) {
-            if (line.length() > maxLineWidth) {
-                maxLineWidth = line.length();
+            if (StringUtils.width(line) > maxLineWidth) {
+                maxLineWidth = StringUtils.width(line);
             }
         }
 

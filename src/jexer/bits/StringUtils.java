@@ -80,14 +80,14 @@ public class StringUtils {
                         // We have just transitioned from a word to
                         // whitespace.  See if we have enough space to add
                         // the word to the line.
-                        if (word.length() + line.length() > n) {
+                        if (width(word.toString()) + width(line.toString()) > n) {
                             // This word will exceed the line length.  Wrap
                             // at it instead.
                             result.add(line.toString());
                             line = new StringBuilder();
                         }
                         if ((word.toString().startsWith(" "))
-                            && (line.length() == 0)
+                            && (width(line.toString()) == 0)
                         ) {
                             line.append(word.substring(1));
                         } else {
@@ -112,14 +112,14 @@ public class StringUtils {
                 }
             } // for (int j = 0; j < rawLines[i].length(); j++)
 
-            if (word.length() + line.length() > n) {
+            if (width(word.toString()) + width(line.toString()) > n) {
                 // This word will exceed the line length.  Wrap at it
                 // instead.
                 result.add(line.toString());
                 line = new StringBuilder();
             }
             if ((word.toString().startsWith(" "))
-                && (line.length() == 0)
+                && (width(line.toString()) == 0)
             ) {
                 line.append(word.substring(1));
             } else {
@@ -148,7 +148,7 @@ public class StringUtils {
         List<String> lines = left(str, n);
         for (String line: lines) {
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < n - line.length(); i++) {
+            for (int i = 0; i < n - width(line); i++) {
                 sb.append(' ');
             }
             sb.append(line);
@@ -175,8 +175,8 @@ public class StringUtils {
         List<String> lines = left(str, n);
         for (String line: lines) {
             StringBuilder sb = new StringBuilder();
-            int l = (n - line.length()) / 2;
-            int r = n - line.length() - l;
+            int l = (n - width(line)) / 2;
+            int r = n - width(line) - l;
             for (int i = 0; i < l; i++) {
                 sb.append(' ');
             }

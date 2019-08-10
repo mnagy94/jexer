@@ -48,6 +48,7 @@ import java.util.ResourceBundle;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.ColorTheme;
+import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
@@ -518,9 +519,7 @@ public class TApplication implements Runnable {
                     }
                 } // while (!application.quit)
 
-                assert (dirty == true);
-
-                // Flush the screen contents
+                 // Flush the screen contents
                 if (debugThreads) {
                     System.err.printf("%d %s backend.flushScreen()\n",
                         System.currentTimeMillis(), Thread.currentThread());
@@ -1842,7 +1841,7 @@ public class TApplication implements Runnable {
                 menuMnemonicColor = theme.getColor("tmenu.mnemonic");
             }
             // Draw the menu title
-            getScreen().hLineXY(x, 0, menu.getTitle().length() + 2, ' ',
+            getScreen().hLineXY(x, 0, StringUtils.width(menu.getTitle()) + 2, ' ',
                 menuColor);
             getScreen().putStringXY(x + 1, 0, menu.getTitle(), menuColor);
             // Draw the highlight character
@@ -1854,7 +1853,7 @@ public class TApplication implements Runnable {
                 // Reset the screen clipping so we can draw the next title.
                 getScreen().resetClipping();
             }
-            x += menu.getTitle().length() + 2;
+            x += StringUtils.width(menu.getTitle()) + 2;
         }
 
         for (TMenu menu: subMenus) {
@@ -2729,7 +2728,7 @@ public class TApplication implements Runnable {
             for (TMenu menu: menus) {
                 if ((mouse.getAbsoluteX() >= menu.getTitleX())
                     && (mouse.getAbsoluteX() < menu.getTitleX()
-                        + menu.getTitle().length() + 2)
+                        + StringUtils.width(menu.getTitle()) + 2)
                 ) {
                     menu.setActive(true);
                     activeMenu = menu;
@@ -2757,7 +2756,7 @@ public class TApplication implements Runnable {
             for (TMenu menu: menus) {
                 if ((mouse.getAbsoluteX() >= menu.getTitleX())
                     && (mouse.getAbsoluteX() < menu.getTitleX()
-                        + menu.getTitle().length() + 2)
+                        + StringUtils.width(menu.getTitle()) + 2)
                 ) {
                     menu.setActive(true);
                     activeMenu = menu;
@@ -3042,7 +3041,7 @@ public class TApplication implements Runnable {
         for (TMenu menu: menus) {
             menu.setX(x);
             menu.setTitleX(x);
-            x += menu.getTitle().length() + 2;
+            x += StringUtils.width(menu.getTitle()) + 2;
 
             // Don't let the menu window exceed the screen width
             int rightEdge = menu.getX() + menu.getWidth();

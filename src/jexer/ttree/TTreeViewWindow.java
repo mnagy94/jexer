@@ -34,6 +34,7 @@ import jexer.THScroller;
 import jexer.TScrollableWindow;
 import jexer.TVScroller;
 import jexer.TWidget;
+import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
@@ -301,7 +302,7 @@ public class TTreeViewWindow extends TScrollableWindow {
                 selectedRow++;
             }
 
-            int lineWidth = item.getText().length()
+            int lineWidth = StringUtils.width(item.getText())
                 + item.getPrefix().length() + 4;
             if (lineWidth > maxLineWidth) {
                 maxLineWidth = lineWidth;

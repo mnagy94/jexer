@@ -34,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jexer.bits.StringUtils;
+
 /**
  * TDirectoryList shows the files within a directory.
  */
@@ -223,7 +225,7 @@ public class TDirectoryList extends TList {
      */
     private String renderFile(final File file) {
         String name = file.getName();
-        if (name.length() > 20) {
+        if (StringUtils.width(name) > 20) {
             name = name.substring(0, 17) + "...";
         }
         return String.format("%-20s %5dk", name, (file.length() / 1024));
