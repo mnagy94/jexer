@@ -723,7 +723,7 @@ public class ECMA48 implements Runnable {
                 }
                 if (n == 0) {
                     try {
-                        Thread.sleep(2);
+                        Thread.sleep(10);
                     } catch (InterruptedException e) {
                         // SQUASH
                     }
