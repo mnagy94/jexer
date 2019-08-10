@@ -295,6 +295,11 @@ public class TApplication implements Runnable {
     private List<Runnable> invokeLaters = new LinkedList<Runnable>();
 
     /**
+     * The last time the screen was resized.
+     */
+    private long screenResizeTime = 0;
+
+    /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
      * two such threads in existence: the primary for normal case and a
      * secondary that is used for TMessageBox, TInputBox, and similar.
@@ -1025,8 +1030,14 @@ public class TApplication implements Runnable {
             if (event instanceof TResizeEvent) {
                 TResizeEvent resize = (TResizeEvent) event;
                 synchronized (getScreen()) {
-                    getScreen().setDimensions(resize.getWidth(),
-                        resize.getHeight());
+                    if ((System.currentTimeMillis() - screenResizeTime >= 15)
+                        || (resize.getWidth() < getScreen().getWidth())
+                        || (resize.getHeight() < getScreen().getHeight())
+                    ) {
+                        getScreen().setDimensions(resize.getWidth(),
+                            resize.getHeight());
+                        screenResizeTime = System.currentTimeMillis();
+                    }
                     desktopBottom = getScreen().getHeight() - 1;
                     mouseX = 0;
                     mouseY = 0;
