@@ -403,7 +403,7 @@ public class SwingTerminal extends LogicalScreen
                     SwingTerminal.this.setDimensions(sessionInfo.
                         getWindowWidth(), sessionInfo.getWindowHeight());
 
-                    SwingTerminal.this.resizeToScreen();
+                    SwingTerminal.this.resizeToScreen(true);
                     SwingTerminal.this.swing.setVisible(true);
                 }
             });
@@ -572,8 +572,8 @@ public class SwingTerminal extends LogicalScreen
             && (swing.getBufferStrategy() != null)
         ) {
             do {
-                clearPhysical();
                 do {
+                    clearPhysical();
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
 
@@ -761,7 +761,7 @@ public class SwingTerminal extends LogicalScreen
             swing.setFont(font);
             glyphCacheBlink = new HashMap<Cell, BufferedImage>();
             glyphCache = new HashMap<Cell, BufferedImage>();
-            resizeToScreen();
+            resizeToScreen(true);
         }
     }
 
@@ -1112,11 +1112,22 @@ public class SwingTerminal extends LogicalScreen
 
     /**
      * Resize the physical screen to match the logical screen dimensions.
+     *
+     * @param resizeComponent if true, resize the Swing component
+     */
+    private void resizeToScreen(final boolean resizeComponent) {
+        if (resizeComponent) {
+            swing.setDimensions(textWidth * width, textHeight * height);
+        }
+        clearPhysical();
+    }
+
+    /**
+     * Resize the physical screen to match the logical screen dimensions.
      */
     @Override
     public void resizeToScreen() {
-        swing.setDimensions(textWidth * width, textHeight * height);
-        clearPhysical();
+        resizeToScreen(false);
     }
 
     /**
