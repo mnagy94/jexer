@@ -237,6 +237,11 @@ class GlyphMakerFont {
             glyphCache.put(key, image);
         }
 
+        /*
+        System.err.println("cellWidth " + cellWidth +
+            " cellHeight " + cellHeight + " image " + image);
+         */
+
         return image;
     }
 
@@ -265,6 +270,13 @@ class GlyphMakerFont {
 
         textHeight = fontTextHeight + textAdjustHeight;
         textWidth = fontTextWidth + textAdjustWidth;
+        /*
+        System.err.println("font " + font);
+        System.err.println("fontTextWidth " + fontTextWidth);
+        System.err.println("fontTextHeight " + fontTextHeight);
+        System.err.println("textWidth " + textWidth);
+        System.err.println("textHeight " + textHeight);
+         */
 
         gotFontDimensions = true;
     }
@@ -345,6 +357,7 @@ public class GlyphMaker {
      * @param fontSize the size of these fonts in pixels
      */
     private GlyphMaker(final int fontSize) {
+        assert (fontSize > 3);
         makerMono = new GlyphMakerFont(MONO, fontSize);
         // makerCJKhk = new GlyphMakerFont(CJKhk, fontSize);
         // makerCJKkr = new GlyphMakerFont(CJKkr, fontSize);

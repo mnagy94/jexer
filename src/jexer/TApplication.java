@@ -1723,12 +1723,12 @@ public class TApplication implements Runnable {
                 }
             }
         }
-        assert (cell.getWidth() == Cell.Width.RIGHT);
-
-        if (x > 0) {
-            Cell leftHalf = getScreen().getCharXY(x - 1, y);
-            if (leftHalf.getWidth() == Cell.Width.LEFT) {
-                invertCell(x - 1, y, true);
+        if (cell.getWidth() == Cell.Width.RIGHT) {
+            if (x > 0) {
+                Cell leftHalf = getScreen().getCharXY(x - 1, y);
+                if (leftHalf.getWidth() == Cell.Width.LEFT) {
+                    invertCell(x - 1, y, true);
+                }
             }
         }
     }

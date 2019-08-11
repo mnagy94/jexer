@@ -182,12 +182,12 @@ public class SwingTerminal extends LogicalScreen
     /**
      * Width of a character cell in pixels.
      */
-    private int textWidth = 1;
+    private int textWidth = 16;
 
     /**
      * Height of a character cell in pixels.
      */
-    private int textHeight = 1;
+    private int textHeight = 20;
 
     /**
      * Width of a character cell in pixels, as reported by font.

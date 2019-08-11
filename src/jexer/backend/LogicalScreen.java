@@ -967,16 +967,19 @@ public class LogicalScreen implements Screen {
     public final void putFullwidthCharXY(final int x, final int y,
         final Cell cell) {
 
-        if (lastTextHeight != getTextHeight()) {
-            glyphMaker = GlyphMaker.getInstance(getTextHeight());
-            lastTextHeight = getTextHeight();
+        int cellWidth = getTextWidth();
+        int cellHeight = getTextHeight();
+
+        if (lastTextHeight != cellHeight) {
+            glyphMaker = GlyphMaker.getInstance(cellHeight);
+            lastTextHeight = cellHeight;
         }
-        BufferedImage image = glyphMaker.getImage(cell, getTextWidth() * 2,
-            getTextHeight());
-        BufferedImage leftImage = image.getSubimage(0, 0, getTextWidth(),
-            getTextHeight());
-        BufferedImage rightImage = image.getSubimage(getTextWidth(), 0,
-            getTextWidth(), getTextHeight());
+        BufferedImage image = glyphMaker.getImage(cell, cellWidth * 2,
+            cellHeight);
+        BufferedImage leftImage = image.getSubimage(0, 0, cellWidth,
+            cellHeight);
+        BufferedImage rightImage = image.getSubimage(cellWidth, 0, cellWidth,
+            cellHeight);
 
         Cell left = new Cell(cell);
         left.setImage(leftImage);
