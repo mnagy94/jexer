@@ -135,7 +135,10 @@ public class DemoApplication extends TApplication {
      * @throws Exception if TApplication can't instantiate the Backend.
      */
     public DemoApplication(final BackendType backendType) throws Exception {
-        super(backendType);
+        // For the Swing demo, use an initial size of 82x28 so that a
+        // terminal window precisely fits the window.
+        super(backendType, (backendType == BackendType.SWING ? 82 : -1),
+            (backendType == BackendType.SWING ? 28 : -1), 20);
         addAllWidgets();
         getBackend().setTitle(i18n.getString("applicationTitle"));
     }

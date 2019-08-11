@@ -929,7 +929,7 @@ public class TApplication implements Runnable {
             openImage();
             return true;
         }
-        if (menu.getId() == TMenu.MID_CHANGE_FONT) {
+        if (menu.getId() == TMenu.MID_SCREEN_OPTIONS) {
             new TFontChooserWindow(this);
             return true;
         }
@@ -3132,7 +3132,7 @@ public class TApplication implements Runnable {
         TMenu toolMenu = addMenu(i18n.getString("toolMenuTitle"));
         toolMenu.addDefaultItem(TMenu.MID_REPAINT);
         toolMenu.addDefaultItem(TMenu.MID_VIEW_IMAGE);
-        toolMenu.addDefaultItem(TMenu.MID_CHANGE_FONT);
+        toolMenu.addDefaultItem(TMenu.MID_SCREEN_OPTIONS);
         TStatusBar toolStatusBar = toolMenu.newStatusBar(i18n.
             getString("toolMenuStatus"));
         toolStatusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));

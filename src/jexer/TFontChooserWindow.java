@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import jexer.backend.ECMA48Terminal;
 import jexer.backend.SwingTerminal;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
@@ -61,6 +62,11 @@ public class TFontChooserWindow extends TWindow {
      * The Swing screen.
      */
     private SwingTerminal terminal = null;
+
+    /**
+     * The ECMA48 screen.
+     */
+    private ECMA48Terminal ecmaTerminal = null;
 
     /**
      * The font name.
@@ -93,6 +99,11 @@ public class TFontChooserWindow extends TWindow {
     private TField textAdjustWidth;
 
     /**
+     * The sixel palette size.
+     */
+    private TComboBox sixelPaletteSize;
+
+    /**
      * The original font size.
      */
     private int oldFontSize = 20;
@@ -122,6 +133,11 @@ public class TFontChooserWindow extends TWindow {
      */
     private int oldTextAdjustWidth = 0;
 
+    /**
+     * The original sixel palette (number of colors) value.
+     */
+    private int oldSixelPaletteSize = 1024;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -134,13 +150,16 @@ public class TFontChooserWindow extends TWindow {
     public TFontChooserWindow(final TApplication application) {
 
         // Register with the TApplication
-        super(application, i18n.getString("windowTitle"), 0, 0, 60, 18, MODAL);
+        super(application, i18n.getString("windowTitle"), 0, 0, 60, 21, MODAL);
 
         // Add shortcut text
         newStatusBar(i18n.getString("statusBar"));
 
         if (getScreen() instanceof SwingTerminal) {
             terminal = (SwingTerminal) getScreen();
+        }
+        if (getScreen() instanceof ECMA48Terminal) {
+            ecmaTerminal = (ECMA48Terminal) getScreen();
         }
 
         addLabel(i18n.getString("fontName"), 1, 1, "ttext", false);
@@ -149,8 +168,9 @@ public class TFontChooserWindow extends TWindow {
         addLabel(i18n.getString("textAdjustY"), 1, 5, "ttext", false);
         addLabel(i18n.getString("textAdjustHeight"), 1, 6, "ttext", false);
         addLabel(i18n.getString("textAdjustWidth"), 1, 7, "ttext", false);
+        addLabel(i18n.getString("sixelPaletteSize"), 1, 9, "ttext", false);
 
-        int col = 18;
+        int col = 21;
         if (terminal == null) {
             // Non-Swing case: we can't change anything
             addLabel(i18n.getString("unavailable"), col, 1);
@@ -159,7 +179,32 @@ public class TFontChooserWindow extends TWindow {
             addLabel(i18n.getString("unavailable"), col, 5);
             addLabel(i18n.getString("unavailable"), col, 6);
             addLabel(i18n.getString("unavailable"), col, 7);
-        } else {
+        }
+        if (ecmaTerminal == null) {
+            addLabel(i18n.getString("unavailable"), col, 9);
+        }
+        if (ecmaTerminal != null) {
+            oldSixelPaletteSize = ecmaTerminal.getSixelPaletteSize();
+
+            String [] sixelSizes = { "2", "256", "512", "1024", "2048" };
+            List<String> sizes = new ArrayList<String>();
+            sizes.addAll(Arrays.asList(sixelSizes));
+            sixelPaletteSize = addComboBox(col, 9, 10, sizes, 0, 6,
+                new TAction() {
+                    public void DO() {
+                        try {
+                            ecmaTerminal.setSixelPaletteSize(Integer.parseInt(
+                                sixelPaletteSize.getText()));
+                        } catch (NumberFormatException e) {
+                            // SQUASH
+                        }
+                    }
+                }
+            );
+            sixelPaletteSize.setText(Integer.toString(oldSixelPaletteSize));
+        }
+
+        if (terminal != null) {
             oldFont = terminal.getFont();
             oldFontSize = terminal.getFontSize();
             oldTextAdjustX = terminal.getTextAdjustX();
@@ -514,6 +559,9 @@ public class TFontChooserWindow extends TWindow {
                         terminal.setTextAdjustHeight(oldTextAdjustHeight);
                         terminal.setTextAdjustWidth(oldTextAdjustWidth);
                     }
+                    if (ecmaTerminal != null) {
+                        ecmaTerminal.setSixelPaletteSize(oldSixelPaletteSize);
+                    }
                     TFontChooserWindow.this.close();
                 }
             });
@@ -540,6 +588,9 @@ public class TFontChooserWindow extends TWindow {
             if (terminal != null) {
                 terminal.setFont(oldFont);
                 terminal.setFontSize(oldFontSize);
+            }
+            if (ecmaTerminal != null) {
+                ecmaTerminal.setSixelPaletteSize(oldSixelPaletteSize);
             }
             getApplication().closeWindow(this);
             return;
