@@ -185,6 +185,11 @@ class GlyphMakerFont {
             getFontDimensions();
         }
 
+        if (DEBUG && !font.canDisplay(cell.getChar())) {
+            System.err.println("font " + font + " has no glyph for " +
+                String.format("0x%x", cell.getChar()));
+        }
+
         BufferedImage image = null;
         if (cell.isBlink() && !blinkVisible) {
             image = glyphCacheBlink.get(cell);
@@ -218,9 +223,8 @@ class GlyphMakerFont {
             || (cell.isBlink() && blinkVisible)
         ) {
             gr2.setColor(SwingTerminal.attrToForegroundColor(cellColor));
-            char [] chars = new char[1];
-            chars[0] = cell.getChar();
-            gr2.drawChars(chars, 0, 1, textAdjustX,
+            char [] chars = Character.toChars(cell.getChar());
+            gr2.drawChars(chars, 0, chars.length, textAdjustX,
                 cellHeight - maxDescent + textAdjustY);
 
             if (cell.isUnderline()) {
@@ -299,19 +303,14 @@ public class GlyphMaker {
     private static final String MONO = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
 
     /**
-     * The CJKhk font resource filename.
+     * The CJK font resource filename.
      */
-    // private static final String CJKhk = "NotoSansMonoCJKhk-Regular.otf";
+    private static final String cjkFontFilename = "NotoSansMonoCJKtc-Regular.otf";
 
     /**
-     * The CJKkr font resource filename.
+     * The emoji font resource filename.
      */
-    // private static final String CJKkr = "NotoSansMonoCJKkr-Regular.otf";
-
-    /**
-     * The CJKtc font resource filename.
-     */
-    private static final String CJKtc = "NotoSansMonoCJKtc-Regular.otf";
+    private static final String emojiFontFilename = "OpenSansEmoji.ttf";
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -333,19 +332,14 @@ public class GlyphMaker {
     private GlyphMakerFont makerMono;
 
     /**
-     * The instance that has the CJKhk font.
+     * The instance that has the CJK font.
      */
-    // private GlyphMakerFont makerCJKhk;
+    private GlyphMakerFont makerCjk;
 
     /**
-     * The instance that has the CJKkr font.
+     * The instance that has the emoji font.
      */
-    // private GlyphMakerFont makerCJKkr;
-
-    /**
-     * The instance that has the CJKtc font.
-     */
-    private GlyphMakerFont makerCJKtc;
+    private GlyphMakerFont makerEmoji;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -357,11 +351,15 @@ public class GlyphMaker {
      * @param fontSize the size of these fonts in pixels
      */
     private GlyphMaker(final int fontSize) {
-        assert (fontSize > 3);
         makerMono = new GlyphMakerFont(MONO, fontSize);
-        // makerCJKhk = new GlyphMakerFont(CJKhk, fontSize);
-        // makerCJKkr = new GlyphMakerFont(CJKkr, fontSize);
-        makerCJKtc = new GlyphMakerFont(CJKtc, fontSize);
+
+        String fontFilename = null;
+        fontFilename = System.getProperty("jexer.cjkFont.filename",
+            cjkFontFilename);
+        makerCjk = new GlyphMakerFont(fontFilename, fontSize);
+        fontFilename = System.getProperty("jexer.emojiFont.filename",
+            emojiFontFilename);
+        makerEmoji = new GlyphMakerFont(fontFilename, fontSize);
     }
 
     // ------------------------------------------------------------------------
@@ -411,17 +409,12 @@ public class GlyphMaker {
     public BufferedImage getImage(final Cell cell, final int cellWidth,
         final int cellHeight, final boolean blinkVisible) {
 
-        char ch = cell.getChar();
-        /*
-        if ((ch >= 0x4e00) && (ch <= 0x9fff)) {
-            return makerCJKhk.getImage(cell, cellWidth, cellHeight, blinkVisible);
-        }
-        if ((ch >= 0x4e00) && (ch <= 0x9fff)) {
-            return makerCJKkr.getImage(cell, cellWidth, cellHeight, blinkVisible);
-        }
-         */
+        int ch = cell.getChar();
         if ((ch >= 0x2e80) && (ch <= 0x9fff)) {
-            return makerCJKtc.getImage(cell, cellWidth, cellHeight, blinkVisible);
+            return makerCjk.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        }
+        if ((ch >= 0x1f004) && (ch <= 0x1f9c0)) {
+            return makerEmoji.getImage(cell, cellWidth, cellHeight, blinkVisible);
         }
 
         // When all else fails, use the default.

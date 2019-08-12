@@ -1501,7 +1501,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    protected final void putAll(final char ch, final CellAttributes attr) {
+    protected final void putAll(final int ch, final CellAttributes attr) {
         getScreen().putAll(ch, attr);
     }
 
@@ -1524,7 +1524,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    protected final void putCharXY(final int x, final int y, final char ch,
+    protected final void putCharXY(final int x, final int y, final int ch,
         final CellAttributes attr) {
 
         getScreen().putCharXY(x, y, ch, attr);
@@ -1537,7 +1537,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param y row coordinate.  0 is the top-most row.
      * @param ch character to draw
      */
-    protected final void putCharXY(final int x, final int y, final char ch) {
+    protected final void putCharXY(final int x, final int y, final int ch) {
         getScreen().putCharXY(x, y, ch);
     }
 
@@ -1577,7 +1577,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     protected final void vLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         getScreen().vLineXY(x, y, n, ch, attr);
     }
@@ -1592,7 +1592,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     protected final void hLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         getScreen().hLineXY(x, y, n, ch, attr);
     }

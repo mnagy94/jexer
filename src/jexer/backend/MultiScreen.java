@@ -241,7 +241,7 @@ public class MultiScreen implements Screen {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    public void putAll(final char ch, final CellAttributes attr) {
+    public void putAll(final int ch, final CellAttributes attr) {
         for (Screen screen: screens) {
             screen.putAll(ch, attr);
         }
@@ -268,7 +268,7 @@ public class MultiScreen implements Screen {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    public void putCharXY(final int x, final int y, final char ch,
+    public void putCharXY(final int x, final int y, final int ch,
         final CellAttributes attr) {
 
         for (Screen screen: screens) {
@@ -283,7 +283,7 @@ public class MultiScreen implements Screen {
      * @param y row coordinate.  0 is the top-most row.
      * @param ch character to draw
      */
-    public void putCharXY(final int x, final int y, final char ch) {
+    public void putCharXY(final int x, final int y, final int ch) {
         for (Screen screen: screens) {
             screen.putCharXY(x, y, ch);
         }
@@ -329,7 +329,7 @@ public class MultiScreen implements Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public void vLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         for (Screen screen: screens) {
             screen.vLineXY(x, y, n, ch, attr);
@@ -346,7 +346,7 @@ public class MultiScreen implements Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public void hLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         for (Screen screen: screens) {
             screen.hLineXY(x, y, n, ch, attr);

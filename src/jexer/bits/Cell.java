@@ -73,7 +73,7 @@ public final class Cell extends CellAttributes {
     /**
      * The character at this cell.
      */
-    private char ch = ' ';
+    private int ch = ' ';
 
     /**
      * The display width of this cell.
@@ -129,7 +129,7 @@ public final class Cell extends CellAttributes {
      * @param ch character to set to
      * @see #reset()
      */
-    public Cell(final char ch) {
+    public Cell(final int ch) {
         this.ch = ch;
     }
 
@@ -148,7 +148,7 @@ public final class Cell extends CellAttributes {
      * @param ch character to set to
      * @param attr attributes to use
      */
-    public Cell(final char ch, final CellAttributes attr) {
+    public Cell(final int ch, final CellAttributes attr) {
         super(attr);
         this.ch = ch;
     }
@@ -263,7 +263,7 @@ public final class Cell extends CellAttributes {
      *
      * @return cell character
      */
-    public char getChar() {
+    public int getChar() {
         return ch;
     }
 
@@ -272,7 +272,7 @@ public final class Cell extends CellAttributes {
      *
      * @param ch new cell character
      */
-    public void setChar(final char ch) {
+    public void setChar(final int ch) {
         this.ch = ch;
     }
 

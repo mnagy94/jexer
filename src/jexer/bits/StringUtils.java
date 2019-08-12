@@ -449,7 +449,8 @@ public class StringUtils {
                 || ((ch >= 0xffe0) && (ch <= 0xffe6))
                 || ((ch >= 0x20000) && (ch <= 0x2fffd))
                 || ((ch >= 0x30000) && (ch <= 0x3fffd))
-                // TODO: emoji / twemoji
+                // emoji
+                || ((ch >= 0x1f004) && (ch <= 0x1f9c0))
             )
         ) {
             return 2;
@@ -466,8 +467,10 @@ public class StringUtils {
      */
     public static int width(final String str) {
         int n = 0;
-        for (int i = 0; i < str.length(); i++) {
-            n += width(str.charAt(i));
+        for (int i = 0; i < str.length();) {
+            int ch = str.codePointAt(i);
+            n += width(ch);
+            i += Character.charCount(ch);
         }
         return n;
     }

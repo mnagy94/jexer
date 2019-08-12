@@ -30,3 +30,6 @@ misc/**
 pmd.bash
 pmd-results.html
 examples/*.sh
+
+# Fonts for testing
+fonts/**

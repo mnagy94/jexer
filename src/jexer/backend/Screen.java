@@ -159,7 +159,7 @@ public interface Screen {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    public void putAll(final char ch, final CellAttributes attr);
+    public void putAll(final int ch, final CellAttributes attr);
 
     /**
      * Render one character with attributes.
@@ -178,7 +178,7 @@ public interface Screen {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    public void putCharXY(final int x, final int y, final char ch,
+    public void putCharXY(final int x, final int y, final int ch,
         final CellAttributes attr);
 
     /**
@@ -188,7 +188,7 @@ public interface Screen {
      * @param y row coordinate.  0 is the top-most row.
      * @param ch character to draw
      */
-    public void putCharXY(final int x, final int y, final char ch);
+    public void putCharXY(final int x, final int y, final int ch);
 
     /**
      * Render a string.  Does not wrap if the string exceeds the line.
@@ -221,7 +221,7 @@ public interface Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public void vLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr);
+        final int ch, final CellAttributes attr);
 
     /**
      * Draw a horizontal line from (x, y) to (x + n, y).
@@ -233,7 +233,7 @@ public interface Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public void hLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr);
+        final int ch, final CellAttributes attr);
 
     /**
      * Change the width.  Everything on-screen will be destroyed and must be

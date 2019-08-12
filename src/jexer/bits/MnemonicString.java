@@ -43,7 +43,7 @@ public class MnemonicString {
     /**
      * Keyboard shortcut to activate this item.
      */
-    private char shortcut;
+    private int shortcut;
 
     /**
      * Location of the highlighted character.
@@ -74,23 +74,25 @@ public class MnemonicString {
     public MnemonicString(final String label) {
 
         // Setup the menu shortcut
-        String newLabel = "";
+        StringBuilder newLabel = new StringBuilder();
         boolean foundAmp = false;
         boolean foundShortcut = false;
         int scanShortcutIdx = 0;
         int scanScreenShortcutIdx = 0;
-        for (int i = 0; i < label.length(); i++) {
-            char c = label.charAt(i);
+        for (int i = 0; i < label.length();) {
+            int c = label.codePointAt(i);
+            i += Character.charCount(c);
+
             if (c == '&') {
                 if (foundAmp) {
-                    newLabel += '&';
+                    newLabel.append('&');
                     scanShortcutIdx++;
                     scanScreenShortcutIdx++;
                 } else {
                     foundAmp = true;
                 }
             } else {
-                newLabel += c;
+                newLabel.append(Character.toChars(c));
                 if (foundAmp) {
                     if (!foundShortcut) {
                         shortcut = c;
@@ -105,7 +107,7 @@ public class MnemonicString {
                 }
             }
         }
-        this.rawLabel = newLabel;
+        this.rawLabel = newLabel.toString();
     }
 
     // ------------------------------------------------------------------------
@@ -117,7 +119,7 @@ public class MnemonicString {
      *
      * @return the highlighted character
      */
-    public char getShortcut() {
+    public int getShortcut() {
         return shortcut;
     }
 

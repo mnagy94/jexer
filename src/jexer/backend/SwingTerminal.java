@@ -1229,9 +1229,8 @@ public class SwingTerminal extends LogicalScreen
             || (cell.isBlink() && cursorBlinkVisible)
         ) {
             gr2.setColor(attrToForegroundColor(cellColor));
-            char [] chars = new char[1];
-            chars[0] = cell.getChar();
-            gr2.drawChars(chars, 0, 1, gr2x + textAdjustX,
+            char [] chars = Character.toChars(cell.getChar());
+            gr2.drawChars(chars, 0, chars.length, gr2x + textAdjustX,
                 gr2y + textHeight - maxDescent + textAdjustY);
 
             if (cell.isUnderline()) {

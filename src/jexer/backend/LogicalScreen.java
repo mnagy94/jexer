@@ -369,7 +369,7 @@ public class LogicalScreen implements Screen {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    public final void putAll(final char ch, final CellAttributes attr) {
+    public final void putAll(final int ch, final CellAttributes attr) {
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -430,7 +430,7 @@ public class LogicalScreen implements Screen {
      * @param ch character to draw
      * @param attr attributes to use (bold, foreColor, backColor)
      */
-    public final void putCharXY(final int x, final int y, final char ch,
+    public final void putCharXY(final int x, final int y, final int ch,
         final CellAttributes attr) {
 
         if ((x < clipLeft)
@@ -476,8 +476,7 @@ public class LogicalScreen implements Screen {
      * @param y row coordinate.  0 is the top-most row.
      * @param ch character to draw
      */
-    public final void putCharXY(final int x, final int y, final char ch) {
-
+    public final void putCharXY(final int x, final int y, final int ch) {
         if ((x < clipLeft)
             || (x >= clipRight)
             || (y < clipTop)
@@ -520,8 +519,9 @@ public class LogicalScreen implements Screen {
         final CellAttributes attr) {
 
         int i = x;
-        for (int j = 0; j < str.length(); j++) {
-            char ch = str.charAt(j);
+        for (int j = 0; j < str.length();) {
+            int ch = str.codePointAt(j);
+            j += Character.charCount(ch);
             putCharXY(i, y, ch, attr);
             i += StringUtils.width(ch);
             if (i == width) {
@@ -541,8 +541,9 @@ public class LogicalScreen implements Screen {
     public final void putStringXY(final int x, final int y, final String str) {
 
         int i = x;
-        for (int j = 0; j < str.length(); j++) {
-            char ch = str.charAt(j);
+        for (int j = 0; j < str.length();) {
+            int ch = str.codePointAt(j);
+            j += Character.charCount(ch);
             putCharXY(i, y, ch);
             i += StringUtils.width(ch);
             if (i == width) {
@@ -561,7 +562,7 @@ public class LogicalScreen implements Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public final void vLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         for (int i = y; i < y + n; i++) {
             putCharXY(x, i, ch, attr);
@@ -578,7 +579,7 @@ public class LogicalScreen implements Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public final void hLineXY(final int x, final int y, final int n,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         for (int i = x; i < x + n; i++) {
             putCharXY(i, y, ch, attr);
@@ -1005,7 +1006,7 @@ public class LogicalScreen implements Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public final void putFullwidthCharXY(final int x, final int y,
-        final char ch, final CellAttributes attr) {
+        final int ch, final CellAttributes attr) {
 
         Cell cell = new Cell(ch, attr);
         putFullwidthCharXY(x, y, cell);
@@ -1019,7 +1020,7 @@ public class LogicalScreen implements Screen {
      * @param ch character to draw
      */
     public final void putFullwidthCharXY(final int x, final int y,
-        final char ch) {
+        final int ch) {
 
         Cell cell = new Cell(ch);
         cell.setAttr(getAttrXY(x, y));
