@@ -622,7 +622,7 @@ public class TKeypress {
      * Backspace as ^?.
      */
     public static final TKeypress kbBackspaceDel = new TKeypress(false,
-            0, (char)0x7F, false, false, false);
+            0, (char) 0x7F, false, false, false);
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -656,7 +656,7 @@ public class TKeypress {
     /**
      * The character received.
      */
-    private char ch;
+    private int ch;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -672,7 +672,7 @@ public class TKeypress {
      * @param ctrl if true, CTRL was pressed with this keystroke
      * @param shift if true, SHIFT was pressed with this keystroke
      */
-    public TKeypress(final boolean isKey, final int fnKey, final char ch,
+    public TKeypress(final boolean isKey, final int fnKey, final int ch,
             final boolean alt, final boolean ctrl, final boolean shift) {
 
         this.isFunctionKey = isKey;
@@ -737,7 +737,7 @@ public class TKeypress {
      *
      * @return the character (only valid if isKey is false)
      */
-    public char getChar() {
+    public int getChar() {
         return ch;
     }
 

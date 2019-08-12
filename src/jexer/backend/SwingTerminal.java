@@ -1828,6 +1828,7 @@ public class SwingTerminal extends LogicalScreen
                 break;
             default:
                 if (!alt && ctrl && !shift) {
+                    // Control character, replace ch with 'A', 'B', etc.
                     ch = KeyEvent.getKeyText(key.getKeyCode()).charAt(0);
                 }
                 // Not a special key, put it together

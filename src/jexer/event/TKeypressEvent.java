@@ -67,7 +67,7 @@ public class TKeypressEvent extends TInputEvent {
      * @param ctrl if true, CTRL was pressed with this keystroke
      * @param shift if true, SHIFT was pressed with this keystroke
      */
-    public TKeypressEvent(final boolean isKey, final int fnKey, final char ch,
+    public TKeypressEvent(final boolean isKey, final int fnKey, final int ch,
         final boolean alt, final boolean ctrl, final boolean shift) {
 
         this.key = new TKeypress(isKey, fnKey, ch, alt, ctrl, shift);

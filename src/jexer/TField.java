@@ -47,7 +47,7 @@ public class TField extends TWidget {
     /**
      * Background character for unfilled-in text.
      */
-    protected char backgroundChar = GraphicsChars.HATCH;
+    protected int backgroundChar = GraphicsChars.HATCH;
 
     /**
      * Field text.
@@ -412,7 +412,7 @@ public class TField extends TWidget {
      *
      * @return background character
      */
-    public final char getBackgroundChar() {
+    public final int getBackgroundChar() {
         return backgroundChar;
     }
 
@@ -421,7 +421,7 @@ public class TField extends TWidget {
      *
      * @param backgroundChar the background character
      */
-    public void setBackgroundChar(final char backgroundChar) {
+    public void setBackgroundChar(final int backgroundChar) {
         this.backgroundChar = backgroundChar;
     }
 
@@ -521,9 +521,9 @@ public class TField extends TWidget {
     /**
      * Append char to the end of the field.
      *
-     * @param ch = char to append
+     * @param ch char to append
      */
-    protected void appendChar(final char ch) {
+    protected void appendChar(final int ch) {
         // Append the LAST character
         text += ch;
         position++;
@@ -548,8 +548,8 @@ public class TField extends TWidget {
      *
      * @param ch char to append
      */
-    protected void insertChar(final char ch) {
-        text = text.substring(0, position) + ch + text.substring(position);
+    protected void insertChar(final int ch) {
+        text = text.substring(0, position) + ((char) ch) + text.substring(position);
         position++;
         screenPosition += StringUtils.width(ch);
         if ((screenPosition - windowStart) == getWidth()) {

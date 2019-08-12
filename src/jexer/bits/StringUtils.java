@@ -450,7 +450,7 @@ public class StringUtils {
                 || ((ch >= 0x20000) && (ch <= 0x2fffd))
                 || ((ch >= 0x30000) && (ch <= 0x3fffd))
                 // emoji
-                || ((ch >= 0x1f004) && (ch <= 0x1f9c0))
+                || ((ch >= 0x1f004) && (ch <= 0x1fffd))
             )
         ) {
             return 2;

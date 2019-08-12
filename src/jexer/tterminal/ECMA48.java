@@ -350,7 +350,7 @@ public class ECMA48 implements Runnable {
     /**
      * Last character printed.
      */
-    private char repCh;
+    private int repCh;
 
     /**
      * VT100-style line wrapping: a character is placed in column 80 (or
@@ -750,15 +750,17 @@ public class ECMA48 implements Runnable {
                 } else {
                     // Don't step on UI events
                     synchronized (this) {
-                        for (int i = 0; i < rc; i++) {
-                            int ch = 0;
-                            if (utf8) {
-                                ch = readBufferUTF8[i];
-                            } else {
-                                ch = readBuffer[i];
+                        if (utf8) {
+                            for (int i = 0; i < rc;) {
+                                int ch = Character.codePointAt(readBufferUTF8,
+                                    i);
+                                i += Character.charCount(ch);
+                                consume(ch);
                             }
-
-                            consume((char) ch);
+                        } else {
+                            for (int i = 0; i < rc; i++) {
+                                consume(readBuffer[i]);
+                            }
                         }
                     }
                     // Permit my enclosing UI to know that I updated.
@@ -1426,7 +1428,7 @@ public class ECMA48 implements Runnable {
      *
      * @param ch character to display
      */
-    private void printCharacter(final char ch) {
+    private void printCharacter(final int ch) {
         int rightMargin = this.rightMargin;
 
         if (StringUtils.width(ch) == 2) {
@@ -1741,7 +1743,7 @@ public class ECMA48 implements Runnable {
              * the remote side.
              */
             if (keypress.getChar() < 0x20) {
-                handleControlChar(keypress.getChar());
+                handleControlChar((char) keypress.getChar());
             } else {
                 // Local echo for everything else
                 printCharacter(keypress.getChar());
@@ -1756,17 +1758,17 @@ public class ECMA48 implements Runnable {
         // Handle control characters
         if ((keypress.isCtrl()) && (!keypress.isFnKey())) {
             StringBuilder sb = new StringBuilder();
-            char ch = keypress.getChar();
+            int ch = keypress.getChar();
             ch -= 0x40;
-            sb.append(ch);
+            sb.append(Character.toChars(ch));
             return sb.toString();
         }
 
         // Handle alt characters
         if ((keypress.isAlt()) && (!keypress.isFnKey())) {
             StringBuilder sb = new StringBuilder("\033");
-            char ch = keypress.getChar();
-            sb.append(ch);
+            int ch = keypress.getChar();
+            sb.append(Character.toChars(ch));
             return sb.toString();
         }
 
@@ -2318,7 +2320,7 @@ public class ECMA48 implements Runnable {
         // Non-alt, non-ctrl characters
         if (!keypress.isFnKey()) {
             StringBuilder sb = new StringBuilder();
-            sb.append(keypress.getChar());
+            sb.append(Character.toChars(keypress.getChar()));
             return sb.toString();
         }
         return "";
@@ -2333,7 +2335,7 @@ public class ECMA48 implements Runnable {
      * @param charsetGr character set defined for GR
      * @return character to display on the screen
      */
-    private char mapCharacterCharset(final char ch,
+    private char mapCharacterCharset(final int ch,
         final CharacterSet charsetGl,
         final CharacterSet charsetGr) {
 
@@ -2411,7 +2413,7 @@ public class ECMA48 implements Runnable {
      * @param ch either 8-bit or Unicode character from the remote side
      * @return character to display on the screen
      */
-    private char mapCharacter(final char ch) {
+    private int mapCharacter(final int ch) {
         if (ch >= 0x100) {
             // Unicode character, just return it
             return ch;
@@ -4732,14 +4734,14 @@ public class ECMA48 implements Runnable {
      *
      * @param ch character from the remote side
      */
-    private void consume(char ch) {
+    private void consume(int ch) {
 
         // DEBUG
         // System.err.printf("%c STATE = %s\n", ch, scanState);
 
         // Special case for VT10x: 7-bit characters only
         if ((type == DeviceType.VT100) || (type == DeviceType.VT102)) {
-            ch = (char)(ch & 0x7F);
+            ch = (ch & 0x7F);
         }
 
         // Special "anywhere" states
@@ -4809,7 +4811,7 @@ public class ECMA48 implements Runnable {
             // 00-17, 19, 1C-1F --> execute
             // 80-8F, 91-9A, 9C --> execute
             if ((ch <= 0x1F) || ((ch >= 0x80) && (ch <= 0x9F))) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
             }
 
             // 20-7F            --> print
@@ -4836,13 +4838,13 @@ public class ECMA48 implements Runnable {
         case ESCAPE:
             // 00-17, 19, 1C-1F --> execute
             if (ch <= 0x1F) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
                 return;
             }
 
             // 20-2F            --> collect, then switch to ESCAPE_INTERMEDIATE
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.ESCAPE_INTERMEDIATE;
                 return;
             }
@@ -5178,12 +5180,12 @@ public class ECMA48 implements Runnable {
         case ESCAPE_INTERMEDIATE:
             // 00-17, 19, 1C-1F    --> execute
             if (ch <= 0x1F) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
             }
 
             // 20-2F               --> collect
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
             }
 
             // 30-7E               --> dispatch, then switch to GROUND
@@ -5785,12 +5787,12 @@ public class ECMA48 implements Runnable {
         case CSI_ENTRY:
             // 00-17, 19, 1C-1F    --> execute
             if (ch <= 0x1F) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
             }
 
             // 20-2F               --> collect, then switch to CSI_INTERMEDIATE
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.CSI_INTERMEDIATE;
             }
 
@@ -5806,7 +5808,7 @@ public class ECMA48 implements Runnable {
 
             // 3C-3F               --> collect, then switch to CSI_PARAM
             if ((ch >= 0x3C) && (ch <= 0x3F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.CSI_PARAM;
             }
 
@@ -6058,12 +6060,12 @@ public class ECMA48 implements Runnable {
         case CSI_PARAM:
             // 00-17, 19, 1C-1F    --> execute
             if (ch <= 0x1F) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
             }
 
             // 20-2F               --> collect, then switch to CSI_INTERMEDIATE
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.CSI_INTERMEDIATE;
             }
 
@@ -6312,12 +6314,12 @@ public class ECMA48 implements Runnable {
         case CSI_INTERMEDIATE:
             // 00-17, 19, 1C-1F    --> execute
             if (ch <= 0x1F) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
             }
 
             // 20-2F               --> collect
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
             }
 
             // 0x30-3F goes to CSI_IGNORE
@@ -6425,12 +6427,12 @@ public class ECMA48 implements Runnable {
         case CSI_IGNORE:
             // 00-17, 19, 1C-1F    --> execute
             if (ch <= 0x1F) {
-                handleControlChar(ch);
+                handleControlChar((char) ch);
             }
 
             // 20-2F               --> collect
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
             }
 
             // 40-7E               --> ignore, then switch to GROUND
@@ -6451,7 +6453,7 @@ public class ECMA48 implements Runnable {
 
             // 0x1B 0x5C goes to GROUND
             if (ch == 0x1B) {
-                collect(ch);
+                collect((char) ch);
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
@@ -6463,7 +6465,7 @@ public class ECMA48 implements Runnable {
 
             // 20-2F               --> collect, then switch to DCS_INTERMEDIATE
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.DCS_INTERMEDIATE;
             }
 
@@ -6479,7 +6481,7 @@ public class ECMA48 implements Runnable {
 
             // 3C-3F               --> collect, then switch to DCS_PARAM
             if ((ch >= 0x3C) && (ch <= 0x3F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.DCS_PARAM;
             }
 
@@ -6509,7 +6511,7 @@ public class ECMA48 implements Runnable {
 
             // 0x1B 0x5C goes to GROUND
             if (ch == 0x1B) {
-                collect(ch);
+                collect((char) ch);
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
@@ -6541,7 +6543,7 @@ public class ECMA48 implements Runnable {
 
             // 0x1B 0x5C goes to GROUND
             if (ch == 0x1B) {
-                collect(ch);
+                collect((char) ch);
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
@@ -6553,7 +6555,7 @@ public class ECMA48 implements Runnable {
 
             // 20-2F          --> collect, then switch to DCS_INTERMEDIATE
             if ((ch >= 0x20) && (ch <= 0x2F)) {
-                collect(ch);
+                collect((char) ch);
                 scanState = ScanState.DCS_INTERMEDIATE;
             }
 
@@ -6593,7 +6595,7 @@ public class ECMA48 implements Runnable {
 
             // 0x1B 0x5C goes to GROUND
             if (ch == 0x1B) {
-                collect(ch);
+                collect((char) ch);
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
@@ -6641,7 +6643,7 @@ public class ECMA48 implements Runnable {
 
             // 0x1B 0x5C goes to GROUND
             if (ch == 0x1B) {
-                collect(ch);
+                collect((char) ch);
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
@@ -6679,11 +6681,11 @@ public class ECMA48 implements Runnable {
 
             // Special case for Jexer: PM can pass one control character
             if (ch == 0x1B) {
-                pmPut(ch);
+                pmPut((char) ch);
             }
 
             if ((ch >= 0x20) && (ch <= 0x7F)) {
-                pmPut(ch);
+                pmPut((char) ch);
             }
 
             // 0x9C goes to GROUND
@@ -6696,14 +6698,14 @@ public class ECMA48 implements Runnable {
         case OSC_STRING:
             // Special case for Xterm: OSC can pass control characters
             if ((ch == 0x9C) || (ch == 0x07) || (ch == 0x1B)) {
-                oscPut(ch);
+                oscPut((char) ch);
             }
 
             // 00-17, 19, 1C-1F        --> ignore
 
             // 20-7F                   --> osc_put
             if ((ch >= 0x20) && (ch <= 0x7F)) {
-                oscPut(ch);
+                oscPut((char) ch);
             }
 
             // 0x9C goes to GROUND
@@ -6716,7 +6718,7 @@ public class ECMA48 implements Runnable {
         case VT52_DIRECT_CURSOR_ADDRESS:
             // This is a special case for the VT52 sequence "ESC Y l c"
             if (collectBuffer.length() == 0) {
-                collect(ch);
+                collect((char) ch);
             } else if (collectBuffer.length() == 1) {
                 // We've got the two characters, one in the buffer and the
                 // other in ch.
@@ -6899,7 +6901,7 @@ public class ECMA48 implements Runnable {
      * @param ch the character to draw
      */
     private void drawHalves(final int leftX, final int leftY,
-        final int rightX, final int rightY, final char ch) {
+        final int rightX, final int rightY, final int ch) {
 
         // System.err.println("drawHalves(): " + Integer.toHexString(ch));
 

@@ -221,7 +221,7 @@ public class DisplayLine {
      * @param idx the character index
      * @param ch the new char
      */
-    public void setChar(final int idx, final char ch) {
+    public void setChar(final int idx, final int ch) {
         chars[idx].setChar(ch);
     }
 

@@ -413,7 +413,8 @@ public class GlyphMaker {
         if ((ch >= 0x2e80) && (ch <= 0x9fff)) {
             return makerCjk.getImage(cell, cellWidth, cellHeight, blinkVisible);
         }
-        if ((ch >= 0x1f004) && (ch <= 0x1f9c0)) {
+        if ((ch >= 0x1f004) && (ch <= 0x1fffd)) {
+            // System.err.println("emoji: " + String.format("0x%x", ch));
             return makerEmoji.getImage(cell, cellWidth, cellHeight, blinkVisible);
         }
 
