@@ -803,11 +803,30 @@ public class LogicalScreen implements Screen {
         clipBottom = height - offsetY;
 
         for (int i = 0; i < boxHeight; i++) {
-            putAttrXY(boxLeft + boxWidth, boxTop + 1 + i, shadowAttr);
-            putAttrXY(boxLeft + boxWidth + 1, boxTop + 1 + i, shadowAttr);
+            Cell cell = getCharXY(offsetX + boxLeft + boxWidth,
+                offsetY + boxTop + 1 + i);
+            if (cell.getWidth() == Cell.Width.SINGLE) {
+                putAttrXY(boxLeft + boxWidth, boxTop + 1 + i, shadowAttr);
+            } else {
+                putCharXY(boxLeft + boxWidth, boxTop + 1 + i, ' ', shadowAttr);
+            }
+            cell = getCharXY(offsetX + boxLeft + boxWidth + 1,
+                offsetY + boxTop + 1 + i);
+            if (cell.getWidth() == Cell.Width.SINGLE) {
+                putAttrXY(boxLeft + boxWidth + 1, boxTop + 1 + i, shadowAttr);
+            } else {
+                putCharXY(boxLeft + boxWidth + 1, boxTop + 1 + i, ' ',
+                    shadowAttr);
+            }
         }
         for (int i = 0; i < boxWidth; i++) {
-            putAttrXY(boxLeft + 2 + i, boxTop + boxHeight, shadowAttr);
+            Cell cell = getCharXY(offsetX + boxLeft + 2 + i,
+                offsetY + boxTop + boxHeight);
+            if (cell.getWidth() == Cell.Width.SINGLE) {
+                putAttrXY(boxLeft + 2 + i, boxTop + boxHeight, shadowAttr);
+            } else {
+                putCharXY(boxLeft + 2 + i, boxTop + boxHeight, ' ', shadowAttr);
+            }
         }
         clipRight = oldClipRight;
         clipBottom = oldClipBottom;
@@ -985,15 +1004,11 @@ public class LogicalScreen implements Screen {
         Cell left = new Cell(cell);
         left.setImage(leftImage);
         left.setWidth(Cell.Width.LEFT);
-        // Blank out the char itself, so that shadows do not leave artifacts.
-        left.setChar(' ');
         putCharXY(x, y, left);
 
         Cell right = new Cell(cell);
         right.setImage(rightImage);
         right.setWidth(Cell.Width.RIGHT);
-        // Blank out the char itself, so that shadows do not leave artifacts.
-        right.setChar(' ');
         putCharXY(x + 1, y, right);
     }
 

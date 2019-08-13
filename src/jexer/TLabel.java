@@ -186,8 +186,8 @@ public class TLabel extends TWidget {
             mnemonicColor.setBackColor(background.getBackColor());
         }
         putStringXY(0, 0, mnemonic.getRawLabel(), color);
-        if (mnemonic.getShortcutIdx() >= 0) {
-            putCharXY(mnemonic.getShortcutIdx(), 0,
+        if (mnemonic.getScreenShortcutIdx() >= 0) {
+            putCharXY(mnemonic.getScreenShortcutIdx(), 0,
                 mnemonic.getShortcut(), mnemonicColor);
         }
     }

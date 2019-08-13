@@ -231,9 +231,9 @@ public class TMenuItem extends TWidget {
             putStringXY((getWidth() - StringUtils.width(keyLabel) - 2), 0,
                 keyLabel, menuColor);
         }
-        if (mnemonic.getShortcutIdx() >= 0) {
-            putCharXY(2 + mnemonic.getShortcutIdx(), 0, mnemonic.getShortcut(),
-                menuMnemonicColor);
+        if (mnemonic.getScreenShortcutIdx() >= 0) {
+            putCharXY(2 + mnemonic.getScreenShortcutIdx(), 0,
+                mnemonic.getShortcut(), menuMnemonicColor);
         }
         if (checked) {
             assert (checkable);

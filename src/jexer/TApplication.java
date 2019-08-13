@@ -1695,17 +1695,16 @@ public class TApplication implements Runnable {
         Cell cell = getScreen().getCharXY(x, y);
         if (cell.isImage()) {
             cell.invertImage();
+        }
+        if (cell.getForeColorRGB() < 0) {
+            cell.setForeColor(cell.getForeColor().invert());
         } else {
-            if (cell.getForeColorRGB() < 0) {
-                cell.setForeColor(cell.getForeColor().invert());
-            } else {
-                cell.setForeColorRGB(cell.getForeColorRGB() ^ 0x00ffffff);
-            }
-            if (cell.getBackColorRGB() < 0) {
-                cell.setBackColor(cell.getBackColor().invert());
-            } else {
-                cell.setBackColorRGB(cell.getBackColorRGB() ^ 0x00ffffff);
-            }
+            cell.setForeColorRGB(cell.getForeColorRGB() ^ 0x00ffffff);
+        }
+        if (cell.getBackColorRGB() < 0) {
+            cell.setBackColor(cell.getBackColor().invert());
+        } else {
+            cell.setBackColorRGB(cell.getBackColorRGB() ^ 0x00ffffff);
         }
         getScreen().putCharXY(x, y, cell);
         if ((onlyThisCell == true) || (cell.getWidth() == Cell.Width.SINGLE)) {
@@ -1856,7 +1855,7 @@ public class TApplication implements Runnable {
                 menuColor);
             getScreen().putStringXY(x + 1, 0, menu.getTitle(), menuColor);
             // Draw the highlight character
-            getScreen().putCharXY(x + 1 + menu.getMnemonic().getShortcutIdx(),
+            getScreen().putCharXY(x + 1 + menu.getMnemonic().getScreenShortcutIdx(),
                 0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
 
             if (menu.isActive()) {

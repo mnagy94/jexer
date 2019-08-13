@@ -176,8 +176,8 @@ public class TCheckBox extends TWidget {
         }
         putCharXY(2, 0, ']', checkboxColor);
         putStringXY(4, 0, mnemonic.getRawLabel(), checkboxColor);
-        if (mnemonic.getShortcutIdx() >= 0) {
-            putCharXY(4 + mnemonic.getShortcutIdx(), 0,
+        if (mnemonic.getScreenShortcutIdx() >= 0) {
+            putCharXY(4 + mnemonic.getScreenShortcutIdx(), 0,
                 mnemonic.getShortcut(), mnemonicColor);
         }
     }

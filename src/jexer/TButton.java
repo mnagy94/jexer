@@ -250,12 +250,12 @@ public class TButton extends TWidget {
                     GraphicsChars.CP437[0xDF], shadowColor);
             }
         }
-        if (mnemonic.getShortcutIdx() >= 0) {
+        if (mnemonic.getScreenShortcutIdx() >= 0) {
             if (inButtonPress) {
-                putCharXY(2 + mnemonic.getShortcutIdx(), 0,
+                putCharXY(2 + mnemonic.getScreenShortcutIdx(), 0,
                     mnemonic.getShortcut(), menuMnemonicColor);
             } else {
-                putCharXY(1 + mnemonic.getShortcutIdx(), 0,
+                putCharXY(1 + mnemonic.getScreenShortcutIdx(), 0,
                     mnemonic.getShortcut(), menuMnemonicColor);
             }
         }
