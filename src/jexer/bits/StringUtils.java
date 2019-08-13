@@ -475,4 +475,24 @@ public class StringUtils {
         return n;
     }
 
+    /**
+     * Check if character is in the CJK range.
+     *
+     * @param ch character to check
+     * @return true if this character is in the CJK range
+     */
+    public static boolean isCjk(final int ch) {
+        return ((ch >= 0x2e80) && (ch <= 0x9fff));
+    }
+
+    /**
+     * Check if character is in the emoji range.
+     *
+     * @param ch character to check
+     * @return true if this character is in the emoji range
+     */
+    public static boolean isEmoji(final int ch) {
+        return ((ch >= 0x1f004) && (ch <= 0x1fffd));
+    }
+
 }

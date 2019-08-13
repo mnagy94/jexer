@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import jexer.bits.Cell;
+import jexer.bits.StringUtils;
 
 /**
  * GlyphMakerFont creates glyphs as bitmaps from a font.
@@ -135,6 +136,13 @@ class GlyphMakerFont {
      * @param fontSize the size of font to use
      */
     public GlyphMakerFont(final String filename, final int fontSize) {
+
+        if (filename.length() == 0) {
+            // Fallback font
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+            return;
+        }
+
         Font fontRoot = null;
         try {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -142,10 +150,13 @@ class GlyphMakerFont {
             fontRoot = Font.createFont(Font.TRUETYPE_FONT, in);
             font = fontRoot.deriveFont(Font.PLAIN, fontSize);
         } catch (java.awt.FontFormatException e) {
-            e.printStackTrace();
+            // Ideally we would report an error here, either via System.err
+            // or TExceptionDialog.  However, I do not want GlyphMaker to
+            // know about available backends, so we quietly fallback to
+            // whatever is available as MONO.
             font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
         } catch (java.io.IOException e) {
-            e.printStackTrace();
+            // See comment above.
             font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
         }
     }
@@ -285,6 +296,17 @@ class GlyphMakerFont {
         gotFontDimensions = true;
     }
 
+    /**
+     * Checks if this maker's Font has a glyph for the specified character.
+     *
+     * @param codePoint the character (Unicode code point) for which a glyph
+     * is needed.
+     * @return true if this Font has a glyph for the character; false
+     * otherwise.
+     */
+    public boolean canDisplay(final int codePoint) {
+        return font.canDisplay(codePoint);
+    }
 }
 
 /**
@@ -311,6 +333,11 @@ public class GlyphMaker {
      * The emoji font resource filename.
      */
     private static final String emojiFontFilename = "OpenSansEmoji.ttf";
+
+    /**
+     * The fallback font resource filename.
+     */
+    private static final String fallbackFontFilename = "";
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -341,6 +368,11 @@ public class GlyphMaker {
      */
     private GlyphMakerFont makerEmoji;
 
+    /**
+     * The instance that has the fallback font.
+     */
+    private GlyphMakerFont makerFallback;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -360,6 +392,9 @@ public class GlyphMaker {
         fontFilename = System.getProperty("jexer.emojiFont.filename",
             emojiFontFilename);
         makerEmoji = new GlyphMakerFont(fontFilename, fontSize);
+        fontFilename = System.getProperty("jexer.fallbackFont.filename",
+            fallbackFontFilename);
+        makerFallback = new GlyphMakerFont(fontFilename, fontSize);
     }
 
     // ------------------------------------------------------------------------
@@ -410,16 +445,28 @@ public class GlyphMaker {
         final int cellHeight, final boolean blinkVisible) {
 
         int ch = cell.getChar();
-        if ((ch >= 0x2e80) && (ch <= 0x9fff)) {
-            return makerCjk.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        if (StringUtils.isCjk(ch)) {
+            if (makerCjk.canDisplay(ch)) {
+                return makerCjk.getImage(cell, cellWidth, cellHeight,
+                    blinkVisible);
+            }
         }
-        if ((ch >= 0x1f004) && (ch <= 0x1fffd)) {
-            // System.err.println("emoji: " + String.format("0x%x", ch));
-            return makerEmoji.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        if (StringUtils.isEmoji(ch)) {
+            if (makerEmoji.canDisplay(ch)) {
+                // System.err.println("emoji: " + String.format("0x%x", ch));
+                return makerEmoji.getImage(cell, cellWidth, cellHeight,
+                    blinkVisible);
+            }
         }
 
         // When all else fails, use the default.
-        return makerMono.getImage(cell, cellWidth, cellHeight, blinkVisible);
+        if (makerMono.canDisplay(ch)) {
+            return makerMono.getImage(cell, cellWidth, cellHeight,
+                blinkVisible);
+        }
+
+        return makerFallback.getImage(cell, cellWidth, cellHeight,
+            blinkVisible);
     }
 
 }
