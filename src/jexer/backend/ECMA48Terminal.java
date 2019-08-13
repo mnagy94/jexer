@@ -1865,7 +1865,7 @@ public class ECMA48Terminal extends LogicalScreen
 
                 }
                 // Emit the character
-                sb.append(lCell.getChar());
+                sb.append(Character.toChars(lCell.getChar()));
 
                 // Save the last rendered cell
                 lastX = x;
