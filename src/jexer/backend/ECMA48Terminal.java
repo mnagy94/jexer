@@ -168,6 +168,11 @@ public class ECMA48Terminal extends LogicalScreen
     private TResizeEvent windowResize = null;
 
     /**
+     * If true, emit wide-char (CJK/Emoji) characters as sixel images.
+     */
+    private boolean wideCharImages = true;
+
+    /**
      * Window width in pixels.  Used for sixel support.
      */
     private int widthPixels = 640;
@@ -1373,6 +1378,14 @@ public class ECMA48Terminal extends LogicalScreen
             doRgbColor = false;
         }
 
+        // Default to using sixel for full-width characters.
+        if (System.getProperty("jexer.ECMA48.wideCharImages",
+                "true").equals("true")) {
+            wideCharImages = true;
+        } else {
+            wideCharImages = false;
+        }
+
         // Pull the system properties for sixel output.
         if (System.getProperty("jexer.ECMA48.sixel", "true").equals("true")) {
             sixel = true;
@@ -1694,7 +1707,11 @@ public class ECMA48Terminal extends LogicalScreen
 
                 // Image cell: bypass the rest of the loop, it is not
                 // rendered here.
-                if (lCell.isImage()) {
+                if ((wideCharImages && lCell.isImage())
+                    || (!wideCharImages
+                        && lCell.isImage()
+                        && (lCell.getWidth() == Cell.Width.SINGLE))
+                ) {
                     hasImage = true;
 
                     // Save the last rendered cell
@@ -1705,7 +1722,16 @@ public class ECMA48Terminal extends LogicalScreen
                     continue;
                 }
 
-                assert (!lCell.isImage());
+                assert ((wideCharImages && !lCell.isImage())
+                    || (!wideCharImages
+                        && (!lCell.isImage()
+                            || (lCell.isImage()
+                                && (lCell.getWidth() != Cell.Width.SINGLE)))));
+
+                if (!wideCharImages && (lCell.getWidth() == Cell.Width.RIGHT)) {
+                    continue;
+                }
+
                 if (hasImage) {
                     hasImage = false;
                     sb.append(gotoXY(x, y));
@@ -1865,7 +1891,13 @@ public class ECMA48Terminal extends LogicalScreen
 
                 }
                 // Emit the character
-                sb.append(Character.toChars(lCell.getChar()));
+                if (wideCharImages
+                    // Don't emit the right-half of full-width chars.
+                    || (!wideCharImages
+                        && (lCell.getWidth() != Cell.Width.RIGHT))
+                ) {
+                    sb.append(Character.toChars(lCell.getChar()));
+                }
 
                 // Save the last rendered cell
                 lastX = x;
@@ -1917,7 +1949,10 @@ public class ECMA48Terminal extends LogicalScreen
                 Cell lCell = logical[x][y];
                 Cell pCell = physical[x][y];
 
-                if (!lCell.isImage()) {
+                if (!lCell.isImage()
+                    || (!wideCharImages
+                        && (lCell.getWidth() != Cell.Width.SINGLE))
+                ) {
                     continue;
                 }
 
