@@ -219,13 +219,8 @@ public class TField extends TWidget {
 
         if (keypress.equals(kbLeft)) {
             if (position > 0) {
-                if (position < codePointLength(text)) {
-                    screenPosition -= StringUtils.width(text.codePointBefore(position));
-                    position -= Character.charCount(text.codePointBefore(position));
-                } else {
-                    screenPosition--;
-                    position--;
-                }
+                screenPosition -= StringUtils.width(text.codePointBefore(position));
+                position -= Character.charCount(text.codePointBefore(position));
             }
             if (fixed == false) {
                 if ((screenPosition == windowStart) && (windowStart > 0)) {
@@ -238,7 +233,7 @@ public class TField extends TWidget {
         }
 
         if (keypress.equals(kbRight)) {
-            if (position < codePointLength(text)) {
+            if (position < text.length()) {
                 screenPosition += StringUtils.width(text.codePointAt(position));
                 position += Character.charCount(text.codePointAt(position));
                 if (fixed == true) {
@@ -247,12 +242,16 @@ public class TField extends TWidget {
                         position -= Character.charCount(text.codePointAt(position));
                     }
                 } else {
-                    if ((screenPosition - windowStart) >= getWidth()) {
+                    while ((screenPosition - windowStart +
+                            StringUtils.width(text.codePointAt(text.length() - 1)))
+                        > getWidth()
+                    ) {
                         windowStart += StringUtils.width(text.codePointAt(
                             screenToTextPosition(windowStart)));
                     }
                 }
             }
+            assert (position <= text.length());
             return;
         }
 
@@ -276,7 +275,7 @@ public class TField extends TWidget {
         }
 
         if (keypress.equals(kbDel)) {
-            if ((codePointLength(text) > 0) && (position < codePointLength(text))) {
+            if ((text.length() > 0) && (position < text.length())) {
                 text = text.substring(0, position)
                         + text.substring(position + 1);
                 screenPosition = StringUtils.width(text.substring(0, position));
@@ -310,12 +309,12 @@ public class TField extends TWidget {
             && !keypress.getKey().isCtrl()
         ) {
             // Plain old keystroke, process it
-            if ((position == codePointLength(text))
+            if ((position == text.length())
                 && (StringUtils.width(text) < getWidth())) {
 
                 // Append case
                 appendChar(keypress.getKey().getChar());
-            } else if ((position < codePointLength(text))
+            } else if ((position < text.length())
                 && (StringUtils.width(text) < getWidth())) {
 
                 // Overwrite or insert a character
@@ -330,7 +329,7 @@ public class TField extends TWidget {
                     // Insert character
                     insertChar(keypress.getKey().getChar());
                 }
-            } else if ((position < codePointLength(text))
+            } else if ((position < text.length())
                 && (StringUtils.width(text) >= getWidth())) {
 
                 // Multiple cases here
@@ -353,7 +352,7 @@ public class TField extends TWidget {
                     screenPosition += StringUtils.width(text.codePointAt(position));
                     position += Character.charCount(keypress.getKey().getChar());
                 } else {
-                    if (position == codePointLength(text)) {
+                    if (position == text.length()) {
                         // Append this character
                         appendChar(keypress.getKey().getChar());
                     } else {
@@ -417,17 +416,8 @@ public class TField extends TWidget {
     private String codePointString(final int ch) {
         StringBuilder sb = new StringBuilder(1);
         sb.append(Character.toChars(ch));
+        assert (Character.charCount(ch) == sb.length());
         return sb.toString();
-    }
-
-    /**
-     * Get the number of codepoints in a string.
-     *
-     * @param str the string
-     * @return the number of codepoints
-     */
-    private int codePointLength(final String str) {
-        return str.codePointCount(0, str.length());
     }
 
     /**
@@ -499,7 +489,7 @@ public class TField extends TWidget {
         }
 
         int n = 0;
-        for (int i = 0; i < codePointLength(text); i++) {
+        for (int i = 0; i < text.length(); i++) {
             n += StringUtils.width(text.codePointAt(i));
             if (n >= screenPosition) {
                 return i + 1;
@@ -507,7 +497,7 @@ public class TField extends TWidget {
         }
         // screenPosition exceeds the available text length.
         throw new IndexOutOfBoundsException("screenPosition " + screenPosition +
-            " exceeds available text length " + codePointLength(text));
+            " exceeds available text length " + text.length());
     }
 
     /**
@@ -552,7 +542,7 @@ public class TField extends TWidget {
         position += Character.charCount(ch);
         screenPosition += StringUtils.width(ch);
 
-        assert (position == codePointLength(text));
+        assert (position == text.length());
 
         if (fixed) {
             if (screenPosition >= getWidth()) {
@@ -597,11 +587,11 @@ public class TField extends TWidget {
      * adjust the window start to show as much of the field as possible.
      */
     public void end() {
-        position = codePointLength(text);
+        position = text.length();
         screenPosition = StringUtils.width(text);
         if (fixed == true) {
             if (screenPosition >= getWidth()) {
-                position = codePointLength(text) - 1;
+                position -= Character.charCount(text.codePointBefore(position));
                 screenPosition = StringUtils.width(text) - 1;
              }
         } else {
@@ -621,9 +611,9 @@ public class TField extends TWidget {
      * the available text
      */
     public void setPosition(final int position) {
-        if ((position < 0) || (position >= codePointLength(text))) {
+        if ((position < 0) || (position >= text.length())) {
             throw new IndexOutOfBoundsException("Max length is " +
-                codePointLength(text) + ", requested position " + position);
+                text.length() + ", requested position " + position);
         }
         this.position = position;
         normalizeWindowStart();
