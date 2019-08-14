@@ -220,7 +220,7 @@ public class TField extends TWidget {
         if (keypress.equals(kbLeft)) {
             if (position > 0) {
                 if (position < text.length()) {
-                    screenPosition -= StringUtils.width(text.charAt(position));
+                    screenPosition -= StringUtils.width(text.codePointAt(position));
                 } else {
                     screenPosition--;
                 }
@@ -228,7 +228,7 @@ public class TField extends TWidget {
             }
             if (fixed == false) {
                 if ((screenPosition == windowStart) && (windowStart > 0)) {
-                    windowStart -= StringUtils.width(text.charAt(
+                    windowStart -= StringUtils.width(text.codePointAt(
                         screenToTextPosition(windowStart)));
                 }
             }
@@ -238,7 +238,7 @@ public class TField extends TWidget {
 
         if (keypress.equals(kbRight)) {
             if (position < text.length()) {
-                screenPosition += StringUtils.width(text.charAt(position));
+                screenPosition += StringUtils.width(text.codePointAt(position));
                 position++;
                 if (fixed == true) {
                     if (screenPosition == getWidth()) {
@@ -247,7 +247,7 @@ public class TField extends TWidget {
                     }
                 } else {
                     if ((screenPosition - windowStart) >= getWidth()) {
-                        windowStart += StringUtils.width(text.charAt(
+                        windowStart += StringUtils.width(text.codePointAt(
                             screenToTextPosition(windowStart)));
                     }
                 }
@@ -295,7 +295,7 @@ public class TField extends TWidget {
                 if ((screenPosition >= windowStart)
                     && (windowStart > 0)
                 ) {
-                    windowStart -= StringUtils.width(text.charAt(
+                    windowStart -= StringUtils.width(text.codePointAt(
                         screenToTextPosition(windowStart)));
                 }
             }
@@ -321,10 +321,10 @@ public class TField extends TWidget {
                 if (insertMode == false) {
                     // Replace character
                     text = text.substring(0, position)
-                            + keypress.getKey().getChar()
+                            + codePointString(keypress.getKey().getChar())
                             + text.substring(position + 1);
-                    screenPosition += StringUtils.width(text.charAt(position));
-                    position++;
+                    screenPosition += StringUtils.width(text.codePointAt(position));
+                    position += Character.charCount(keypress.getKey().getChar());
                 } else {
                     // Insert character
                     insertChar(keypress.getKey().getChar());
@@ -338,19 +338,19 @@ public class TField extends TWidget {
                 } else if ((fixed == true) && (insertMode == false)) {
                     // Overwrite the last character, maybe move position
                     text = text.substring(0, position)
-                            + keypress.getKey().getChar()
+                            + codePointString(keypress.getKey().getChar())
                             + text.substring(position + 1);
                     if (screenPosition < getWidth() - 1) {
-                        screenPosition += StringUtils.width(text.charAt(position));
-                        position++;
+                        screenPosition += StringUtils.width(text.codePointAt(position));
+                        position += Character.charCount(keypress.getKey().getChar());
                     }
                 } else if ((fixed == false) && (insertMode == false)) {
                     // Overwrite the last character, definitely move position
                     text = text.substring(0, position)
-                            + keypress.getKey().getChar()
+                            + codePointString(keypress.getKey().getChar())
                             + text.substring(position + 1);
-                    screenPosition += StringUtils.width(text.charAt(position));
-                    position++;
+                    screenPosition += StringUtils.width(text.codePointAt(position));
+                    position += Character.charCount(keypress.getKey().getChar());
                 } else {
                     if (position == text.length()) {
                         // Append this character
@@ -406,6 +406,18 @@ public class TField extends TWidget {
     // ------------------------------------------------------------------------
     // TField -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Convert a char (codepoint) to a string.
+     *
+     * @param ch the char
+     * @return the string
+     */
+    private String codePointString(final int ch) {
+        StringBuilder sb = new StringBuilder(1);
+        sb.append(Character.toChars(ch));
+        return sb.toString();
+    }
 
     /**
      * Get field background character.
@@ -477,7 +489,7 @@ public class TField extends TWidget {
 
         int n = 0;
         for (int i = 0; i < text.length(); i++) {
-            n += StringUtils.width(text.charAt(i));
+            n += StringUtils.width(text.codePointAt(i));
             if (n >= screenPosition) {
                 return i + 1;
             }
@@ -525,15 +537,15 @@ public class TField extends TWidget {
      */
     protected void appendChar(final int ch) {
         // Append the LAST character
-        text += ch;
-        position++;
+        text += codePointString(ch);
+        position += Character.charCount(ch);
         screenPosition += StringUtils.width(ch);
 
         assert (position == text.length());
 
         if (fixed) {
             if (screenPosition >= getWidth()) {
-                position--;
+                position -= Character.charCount(ch);
                 screenPosition -= StringUtils.width(ch);
             }
         } else {
@@ -549,8 +561,9 @@ public class TField extends TWidget {
      * @param ch char to append
      */
     protected void insertChar(final int ch) {
-        text = text.substring(0, position) + ((char) ch) + text.substring(position);
-        position++;
+        text = text.substring(0, position) + codePointString(ch)
+                + text.substring(position);
+        position += Character.charCount(ch);
         screenPosition += StringUtils.width(ch);
         if ((screenPosition - windowStart) == getWidth()) {
             assert (!fixed);
