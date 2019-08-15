@@ -6,7 +6,7 @@ reminiscent of Borland's [Turbo
 Vision](http://en.wikipedia.org/wiki/Turbo_Vision) system.  It looks
 like this:
 
-![Several Windows Open Including A Terminal](/screenshots/screenshot1.png?raw=true "Several Windows Open Including A Terminal")
+![Terminal, Image, Table](/screenshots/new_demo1.png?raw=true "Terminal, Image, Table")
 
 Jexer works on both Xterm-like terminals and Swing, and supports
 images in both Xterm and Swing.  On Swing, images are true color:
