@@ -1180,7 +1180,7 @@ public class SwingTerminal extends LogicalScreen
         /*
         System.err.println("drawGlyph(): " + xPixel + " " + yPixel +
             " " + cell);
-        */
+         */
 
         BufferedImage image = null;
         if (cell.isBlink() && !cursorBlinkVisible) {
@@ -1348,7 +1348,7 @@ public class SwingTerminal extends LogicalScreen
         if (bounds != null) {
             // Only update what is in the bounds
             xCellMin = textColumn(bounds.x);
-            xCellMax = textColumn(bounds.x + bounds.width);
+            xCellMax = textColumn(bounds.x + bounds.width) + 1;
             if (xCellMax > width) {
                 xCellMax = width;
             }
@@ -1359,7 +1359,7 @@ public class SwingTerminal extends LogicalScreen
                 xCellMin = 0;
             }
             yCellMin = textRow(bounds.y);
-            yCellMax = textRow(bounds.y + bounds.height);
+            yCellMax = textRow(bounds.y + bounds.height) + 1;
             if (yCellMax > height) {
                 yCellMax = height;
             }
@@ -1381,7 +1381,7 @@ public class SwingTerminal extends LogicalScreen
             /*
             System.err.printf("bounds %s X %d %d Y %d %d\n",
                  bounds, xCellMin, xCellMax, yCellMin, yCellMax);
-            */
+             */
 
             for (int y = yCellMin; y < yCellMax; y++) {
                 for (int x = xCellMin; x < xCellMax; x++) {

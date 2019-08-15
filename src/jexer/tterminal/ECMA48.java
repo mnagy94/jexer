@@ -6656,19 +6656,19 @@ public class ECMA48 implements Runnable {
 
             // 00-17, 19, 1C-1F, 20-7E   --> put
             if (ch <= 0x17) {
-                sixelParseBuffer.append(ch);
+                sixelParseBuffer.append((char) ch);
                 return;
             }
             if (ch == 0x19) {
-                sixelParseBuffer.append(ch);
+                sixelParseBuffer.append((char) ch);
                 return;
             }
             if ((ch >= 0x1C) && (ch <= 0x1F)) {
-                sixelParseBuffer.append(ch);
+                sixelParseBuffer.append((char) ch);
                 return;
             }
             if ((ch >= 0x20) && (ch <= 0x7E)) {
-                sixelParseBuffer.append(ch);
+                sixelParseBuffer.append((char) ch);
                 return;
             }
 
