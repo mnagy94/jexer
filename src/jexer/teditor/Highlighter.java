@@ -69,11 +69,13 @@ public class Highlighter {
      * @param ch the character
      * @return true if the word should be split
      */
-    public boolean shouldSplit(final char ch) {
+    public boolean shouldSplit(final int ch) {
         // For now, split on punctuation
         String punctuation = "'\"\\<>{}[]!@#$%^&*();:.,-+/*?";
-        if (punctuation.indexOf(ch) != -1) {
-            return true;
+        if (ch < 0x100) {
+            if (punctuation.indexOf((char) ch) != -1) {
+                return true;
+            }
         }
         return false;
     }

@@ -430,7 +430,7 @@ public class Document {
      *
      * @param ch the character to replace or insert
      */
-    public void addChar(final char ch) {
+    public void addChar(final int ch) {
         dirty = true;
         if (overwrite) {
             lines.get(lineNumber).replaceChar(ch);

@@ -29,6 +29,7 @@
 package jexer.teditor;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 
 /**
  * A Word represents text that was entered by the user.  It can be either
@@ -76,12 +77,12 @@ public class Word {
      * @param defaultColor the color for unhighlighted text
      * @param highlighter the highlighter to use
      */
-    public Word(final char ch, final CellAttributes defaultColor,
+    public Word(final int ch, final CellAttributes defaultColor,
         final Highlighter highlighter) {
 
         this.defaultColor = defaultColor;
         this.highlighter = highlighter;
-        text.append(ch);
+        text.append(Character.toChars(ch));
     }
 
     /**
@@ -139,7 +140,7 @@ public class Word {
 
         // TODO: figure out how to handle the tab character.  Do we have a
         // global tab stops list and current word position?
-        return text.length();
+        return StringUtils.width(text.toString());
     }
 
     /**
@@ -184,9 +185,9 @@ public class Word {
      * @return either this word (if it was added), or a new word that
      * contains ch
      */
-    public Word addChar(final char ch) {
+    public Word addChar(final int ch) {
         if (text.length() == 0) {
-            text.append(ch);
+            text.append(Character.toChars(ch));
             return this;
         }
 
@@ -205,14 +206,14 @@ public class Word {
             && Character.isWhitespace(ch)
         ) {
             // Adding to a whitespace word, keep at it.
-            text.append(ch);
+            text.append(Character.toChars(ch));
             return this;
         }
         if (!Character.isWhitespace(text.charAt(0))
             && !Character.isWhitespace(ch)
         ) {
             // Adding to a non-whitespace word, keep at it.
-            text.append(ch);
+            text.append(Character.toChars(ch));
             return this;
         }
 

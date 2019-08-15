@@ -266,7 +266,7 @@ public class TEditorWidget extends TWidget {
         ) {
             // Plain old keystroke, process it
             // TODO: fix document to use ints, not chars
-            document.addChar((char) keypress.getKey().getChar());
+            document.addChar(keypress.getKey().getChar());
             alignCursor();
         } else {
             // Pass other keys (tab etc.) on to TWidget

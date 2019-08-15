@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 
 /**
  * A Line represents a single line of text on the screen, as a collection of
@@ -145,7 +146,7 @@ public class Line {
      * @return the number of cells needed to display this line
      */
     public int getDisplayLength() {
-        int n = rawText.length();
+        int n = StringUtils.width(rawText.toString());
 
         // For now just return the raw text length.
         if (n > 0) {
@@ -172,8 +173,9 @@ public class Line {
         words.clear();
         Word word = new Word(this.defaultColor, this.highlighter);
         words.add(word);
-        for (int i = 0; i < rawText.length(); i++) {
-            char ch = rawText.charAt(i);
+        for (int i = 0; i < rawText.length();) {
+            int ch = rawText.codePointAt(i);
+            i += Character.charCount(ch);
             Word newWord = word.addChar(ch);
             if (newWord != word) {
                 words.add(newWord);
@@ -194,7 +196,7 @@ public class Line {
         if (cursor == 0) {
             return false;
         }
-        cursor--;
+        cursor -= StringUtils.width(rawText.codePointAt(cursor - 1));
         return true;
     }
 
@@ -210,7 +212,11 @@ public class Line {
         if (cursor == getDisplayLength() - 1) {
             return false;
         }
-        cursor++;
+        if (cursor < getDisplayLength()) {
+            cursor += StringUtils.width(rawText.codePointAt(cursor));
+        } else {
+            cursor++;
+        }
         return true;
     }
 
@@ -250,7 +256,9 @@ public class Line {
         assert (words.size() > 0);
 
         if (cursor < getDisplayLength()) {
-            rawText.deleteCharAt(cursor);
+            for (int i = 0; i < Character.charCount(rawText.charAt(cursor)); i++) {
+                rawText.deleteCharAt(cursor);
+            }
         }
 
         // Re-scan the line to determine the new word boundaries.
@@ -271,11 +279,11 @@ public class Line {
      *
      * @param ch the character to insert
      */
-    public void addChar(final char ch) {
+    public void addChar(final int ch) {
         if (cursor < getDisplayLength() - 1) {
-            rawText.insert(cursor, ch);
+            rawText.insert(cursor, Character.toChars(ch));
         } else {
-            rawText.append(ch);
+            rawText.append(Character.toChars(ch));
         }
         scanLine();
         cursor++;
@@ -286,11 +294,14 @@ public class Line {
      *
      * @param ch the character to replace
      */
-    public void replaceChar(final char ch) {
+    public void replaceChar(final int ch) {
         if (cursor < getDisplayLength() - 1) {
-            rawText.setCharAt(cursor, ch);
+            for (int i = 0; i < Character.charCount(rawText.charAt(cursor)); i++) {
+                rawText.deleteCharAt(cursor);
+            }
+            rawText.insert(cursor, Character.toChars(ch));
         } else {
-            rawText.append(ch);
+            rawText.append(Character.toChars(ch));
         }
         scanLine();
         cursor++;
