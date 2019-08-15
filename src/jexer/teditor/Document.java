@@ -413,7 +413,7 @@ public class Document {
      */
     public void enter() {
         dirty = true;
-        int cursor = lines.get(lineNumber).getCursor();
+        int cursor = lines.get(lineNumber).getRawCursor();
         String original = lines.get(lineNumber).getRawString();
         String firstLine = original.substring(0, cursor);
         String secondLine = original.substring(cursor);

@@ -60,9 +60,14 @@ public class Line {
     private Highlighter highlighter = null;
 
     /**
-     * The current cursor position on this line.
+     * The current edition position on this line.
      */
-    private int cursor = 0;
+    private int position = 0;
+
+    /**
+     * The current editing position screen column number.
+     */
+    private int screenPosition = 0;
 
     /**
      * The raw text of this line, what is passed to Word to determine
@@ -116,12 +121,21 @@ public class Line {
     }
 
     /**
-     * Get the current cursor position.
+     * Get the current cursor position in the text.
+     *
+     * @return the cursor position
+     */
+    public int getRawCursor() {
+        return position;
+    }
+
+    /**
+     * Get the current cursor position on screen.
      *
      * @return the cursor position
      */
     public int getCursor() {
-        return cursor;
+        return screenPosition;
     }
 
     /**
@@ -137,7 +151,8 @@ public class Line {
             throw new IndexOutOfBoundsException("Max length is " +
                 getDisplayLength() + ", requested position " + cursor);
         }
-        this.cursor = cursor;
+        screenPosition = cursor;
+        position = screenToTextPosition(screenPosition);
     }
 
     /**
@@ -148,10 +163,9 @@ public class Line {
     public int getDisplayLength() {
         int n = StringUtils.width(rawText.toString());
 
-        // For now just return the raw text length.
         if (n > 0) {
             // If we have any visible characters, add one to the display so
-            // that the cursor is immediately after the data.
+            // that the position is immediately after the data.
             return n + 1;
         }
         return n;
@@ -193,10 +207,11 @@ public class Line {
      * @return true if the cursor position changed
      */
     public boolean left() {
-        if (cursor == 0) {
+        if (position == 0) {
             return false;
         }
-        cursor -= StringUtils.width(rawText.codePointAt(cursor - 1));
+        screenPosition -= StringUtils.width(rawText.codePointBefore(position));
+        position -= Character.charCount(rawText.codePointBefore(position));
         return true;
     }
 
@@ -209,14 +224,14 @@ public class Line {
         if (getDisplayLength() == 0) {
             return false;
         }
-        if (cursor == getDisplayLength() - 1) {
+        if (position == getDisplayLength() - 1) {
             return false;
         }
-        if (cursor < getDisplayLength()) {
-            cursor += StringUtils.width(rawText.codePointAt(cursor));
-        } else {
-            cursor++;
+        if (position < rawText.length()) {
+            screenPosition += StringUtils.width(rawText.codePointAt(position));
+            position += Character.charCount(rawText.codePointAt(position));
         }
+        assert (position <= rawText.length());
         return true;
     }
 
@@ -226,8 +241,9 @@ public class Line {
      * @return true if the cursor position changed
      */
     public boolean home() {
-        if (cursor > 0) {
-            cursor = 0;
+        if (position > 0) {
+            position = 0;
+            screenPosition = 0;
             return true;
         }
         return false;
@@ -239,11 +255,9 @@ public class Line {
      * @return true if the cursor position changed
      */
     public boolean end() {
-        if (cursor != getDisplayLength() - 1) {
-            cursor = getDisplayLength() - 1;
-            if (cursor < 0) {
-                cursor = 0;
-            }
+        if (position != getDisplayLength() - 1) {
+            position = rawText.length();
+            screenPosition = StringUtils.width(rawText.toString());
             return true;
         }
         return false;
@@ -255,9 +269,10 @@ public class Line {
     public void del() {
         assert (words.size() > 0);
 
-        if (cursor < getDisplayLength()) {
-            for (int i = 0; i < Character.charCount(rawText.charAt(cursor)); i++) {
-                rawText.deleteCharAt(cursor);
+        if (position < getDisplayLength()) {
+            int n = Character.charCount(rawText.codePointAt(position));
+            for (int i = 0; i < n; i++) {
+                rawText.deleteCharAt(position);
             }
         }
 
@@ -280,13 +295,14 @@ public class Line {
      * @param ch the character to insert
      */
     public void addChar(final int ch) {
-        if (cursor < getDisplayLength() - 1) {
-            rawText.insert(cursor, Character.toChars(ch));
+        if (position < getDisplayLength() - 1) {
+            rawText.insert(position, Character.toChars(ch));
         } else {
             rawText.append(Character.toChars(ch));
         }
+        position += Character.charCount(ch);
+        screenPosition += StringUtils.width(ch);
         scanLine();
-        cursor++;
     }
 
     /**
@@ -295,16 +311,43 @@ public class Line {
      * @param ch the character to replace
      */
     public void replaceChar(final int ch) {
-        if (cursor < getDisplayLength() - 1) {
-            for (int i = 0; i < Character.charCount(rawText.charAt(cursor)); i++) {
-                rawText.deleteCharAt(cursor);
-            }
-            rawText.insert(cursor, Character.toChars(ch));
+        if (position < getDisplayLength() - 1) {
+            // Replace character
+            String oldText = rawText.toString();
+            rawText = new StringBuilder(oldText.substring(0, position));
+            rawText.append(Character.toChars(ch));
+            rawText.append(oldText.substring(position + 1));
+            screenPosition += StringUtils.width(rawText.codePointAt(position));
+            position += Character.charCount(ch);
         } else {
             rawText.append(Character.toChars(ch));
+            position += Character.charCount(ch);
+            screenPosition += StringUtils.width(ch);
         }
         scanLine();
-        cursor++;
+    }
+
+    /**
+     * Determine string position from screen position.
+     *
+     * @param screenPosition the position on screen
+     * @return the equivalent position in text
+     */
+    protected int screenToTextPosition(final int screenPosition) {
+        if (screenPosition == 0) {
+            return 0;
+        }
+
+        int n = 0;
+        for (int i = 0; i < rawText.length(); i++) {
+            n += StringUtils.width(rawText.codePointAt(i));
+            if (n >= screenPosition) {
+                return i + 1;
+            }
+        }
+        // screenPosition exceeds the available text length.
+        throw new IndexOutOfBoundsException("screenPosition " + screenPosition +
+            " exceeds available text length " + rawText.length());
     }
 
 }

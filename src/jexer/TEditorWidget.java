@@ -247,7 +247,9 @@ public class TEditorWidget extends TWidget {
         } else if (keypress.equals(kbDel)) {
             document.del();
             alignCursor();
-        } else if (keypress.equals(kbBackspace)) {
+        } else if (keypress.equals(kbBackspace)
+            || keypress.equals(kbBackspaceDel)
+        ) {
             document.backspace();
             alignTopLine(false);
         } else if (keypress.equals(kbTab)) {
