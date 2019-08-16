@@ -1384,7 +1384,7 @@ public class TWindow extends TWidget {
      * @return true if this window does not want the application-wide mouse
      * cursor drawn over it
      */
-    public final boolean hasHiddenMouse() {
+    public boolean hasHiddenMouse() {
         return hideMouse;
     }
 

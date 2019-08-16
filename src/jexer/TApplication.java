@@ -290,6 +290,22 @@ public class TApplication implements Runnable {
     private boolean focusFollowsMouse = false;
 
     /**
+     * If true, display a text-based mouse cursor.
+     */
+    private boolean textMouse = true;
+
+    /**
+     * If true, hide the mouse after typing a keystroke.
+     */
+    private boolean hideMouseWhenTyping = false;
+
+    /**
+     * If true, the mouse should not be displayed because a keystroke was
+     * typed.
+     */
+    private boolean typingHidMouse = false;
+
+    /**
      * The list of commands to run before the next I/O check.
      */
     private List<Runnable> invokeLaters = new LinkedList<Runnable>();
@@ -722,6 +738,19 @@ public class TApplication implements Runnable {
                 );
             }
         }
+
+        // Text block mouse option
+        if (System.getProperty("jexer.textMouse", "true").equals("false")) {
+            textMouse = false;
+        }
+
+        // Hide mouse when typing option
+        if (System.getProperty("jexer.hideMouseWhenTyping",
+                "false").equals("true")) {
+
+            hideMouseWhenTyping = true;
+        }
+
     }
 
     // ------------------------------------------------------------------------
@@ -1086,8 +1115,16 @@ public class TApplication implements Runnable {
 
         // Special application-wide events -----------------------------------
 
+        if (event instanceof TKeypressEvent) {
+            if (hideMouseWhenTyping) {
+                typingHidMouse = true;
+            }
+        }
+
         // Peek at the mouse position
         if (event instanceof TMouseEvent) {
+            typingHidMouse = false;
+
             TMouseEvent mouse = (TMouseEvent) event;
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
                 oldMouseX = mouseX;
@@ -1273,6 +1310,8 @@ public class TApplication implements Runnable {
 
         // Peek at the mouse position
         if (event instanceof TMouseEvent) {
+            typingHidMouse = false;
+
             TMouseEvent mouse = (TMouseEvent) event;
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
                 oldMouseX = mouseX;
@@ -1789,8 +1828,10 @@ public class TApplication implements Runnable {
                     }
                 }
 
-                // Draw mouse at the new position.
-                invertCell(mouseX, mouseY);
+                if ((textMouse == true) && (typingHidMouse == false)) {
+                    // Draw mouse at the new position.
+                    invertCell(mouseX, mouseY);
+                }
 
                 oldDrawnMouseX = mouseX;
                 oldDrawnMouseY = mouseY;
@@ -1916,7 +1957,9 @@ public class TApplication implements Runnable {
                 getScreen().unsetImageRow(mouseY);
             }
         }
-        invertCell(mouseX, mouseY);
+        if ((textMouse == true) && (typingHidMouse == false)) {
+            invertCell(mouseX, mouseY);
+        }
         oldDrawnMouseX = mouseX;
         oldDrawnMouseY = mouseY;
 

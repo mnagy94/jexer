@@ -43,6 +43,8 @@ import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferStrategy;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -151,14 +153,26 @@ class SwingComponent {
     public void setupComponent() {
         component.setBackground(Color.black);
 
-        // Kill the X11 cursor
-        // Transparent 16 x 16 pixel cursor image.
-        BufferedImage cursorImg = new BufferedImage(16, 16,
-            BufferedImage.TYPE_INT_ARGB);
-        // Create a new blank cursor.
-        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-        cursorImg, new Point(0, 0), "blank cursor");
-        component.setCursor(blankCursor);
+        if (System.getProperty("jexer.Swing.mouseImage") != null) {
+            component.setCursor(getMouseImage());
+        } else if (System.getProperty("jexer.Swing.mouseStyle") != null) {
+            component.setCursor(getMouseCursor());
+        } else if (System.getProperty("jexer.textMouse",
+                "true").equals("false")
+        ) {
+            // If the user has suppressed the text mouse, don't kill the X11
+            // mouse.
+            component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        } else {
+            // Kill the X11 cursor
+            // Transparent 16 x 16 pixel cursor image.
+            BufferedImage cursorImg = new BufferedImage(16, 16,
+                BufferedImage.TYPE_INT_ARGB);
+            // Create a new blank cursor.
+            Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                cursorImg, new Point(0, 0), "blank cursor");
+            component.setCursor(blankCursor);
+        }
 
         // Be capable of seeing Tab / Shift-Tab
         component.setFocusTraversalKeysEnabled(false);
@@ -172,14 +186,26 @@ class SwingComponent {
         frame.setBackground(Color.black);
         frame.pack();
 
-        // Kill the X11 cursor
-        // Transparent 16 x 16 pixel cursor image.
-        BufferedImage cursorImg = new BufferedImage(16, 16,
-            BufferedImage.TYPE_INT_ARGB);
-        // Create a new blank cursor.
-        Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-        cursorImg, new Point(0, 0), "blank cursor");
-        frame.setCursor(blankCursor);
+        if (System.getProperty("jexer.Swing.mouseImage") != null) {
+            frame.setCursor(getMouseImage());
+        } else if (System.getProperty("jexer.Swing.mouseStyle") != null) {
+            frame.setCursor(getMouseCursor());
+        } else if (System.getProperty("jexer.textMouse",
+                "true").equals("false")
+        ) {
+            // If the user has suppressed the text mouse, don't kill the X11
+            // mouse.
+            frame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        } else {
+            // Kill the X11 cursor
+            // Transparent 16 x 16 pixel cursor image.
+            BufferedImage cursorImg = new BufferedImage(16, 16,
+                BufferedImage.TYPE_INT_ARGB);
+            // Create a new blank cursor.
+            Cursor blankCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                cursorImg, new Point(0, 0), "blank cursor");
+            frame.setCursor(blankCursor);
+        }
 
         // Be capable of seeing Tab / Shift-Tab
         frame.setFocusTraversalKeysEnabled(false);
@@ -189,6 +215,80 @@ class SwingComponent {
             frame.setIgnoreRepaint(true);
             frame.createBufferStrategy(3);
         }
+    }
+
+    /**
+     * Load an image named in jexer.Swing.mouseImage as the mouse cursor.
+     * The image must be on the classpath.
+     *
+     * @return the cursor
+     */
+    private Cursor getMouseImage() {
+        Cursor cursor = Cursor.getDefaultCursor();
+        String filename = System.getProperty("jexer.Swing.mouseImage");
+        assert (filename != null);
+
+        try {
+            ClassLoader loader = Thread.currentThread().
+                getContextClassLoader();
+
+            java.net.URL url = loader.getResource(filename);
+            if (url == null) {
+                // User named a file, but it's not on the classpath.  Bail
+                // out.
+                return cursor;
+            }
+
+            BufferedImage cursorImage = ImageIO.read(url);
+            java.awt.Dimension cursorSize = Toolkit.getDefaultToolkit().
+                getBestCursorSize(
+                        cursorImage.getWidth(), cursorImage.getHeight());
+
+            cursor = Toolkit.getDefaultToolkit().createCustomCursor(cursorImage,
+                new Point((int) Math.min(cursorImage.getWidth() / 2,
+                        cursorSize.getWidth() - 1),
+                    (int) Math.min(cursorImage.getHeight() / 2,
+                        cursorSize.getHeight() - 1)),
+                "custom cursor");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return cursor;
+    }
+
+    /**
+     * Get the appropriate mouse cursor based on jexer.Swing.mouseStyle.
+     *
+     * @return the cursor
+     */
+    private Cursor getMouseCursor() {
+        Cursor cursor = Cursor.getDefaultCursor();
+        String style = System.getProperty("jexer.Swing.mouseStyle");
+        assert (style != null);
+
+        style = style.toLowerCase();
+
+        if (style.equals("none")) {
+            // Transparent 16 x 16 pixel cursor image.
+            BufferedImage cursorImg = new BufferedImage(16, 16,
+                BufferedImage.TYPE_INT_ARGB);
+            // Create a new blank cursor.
+            cursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                cursorImg, new Point(0, 0), "blank cursor");
+        } else if (style.equals("default")) {
+            cursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
+        } else if (style.equals("hand")) {
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
+        } else if (style.equals("text")) {
+            cursor = Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
+        } else if (style.equals("move")) {
+            cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
+        } else if (style.equals("crosshair")) {
+            cursor = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
+        }
+
+        return cursor;
     }
 
     /**

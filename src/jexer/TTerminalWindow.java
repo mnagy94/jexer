@@ -143,6 +143,17 @@ public class TTerminalWindow extends TScrollableWindow
      */
     private long lastUpdateTime = 0;
 
+    /**
+     * If true, hide the mouse after typing a keystroke.
+     */
+    private boolean hideMouseWhenTyping = true;
+
+    /**
+     * If true, the mouse should not be displayed because a keystroke was
+     * typed.
+     */
+    private boolean typingHidMouse = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -521,6 +532,9 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
+        if (hideMouseWhenTyping) {
+            typingHidMouse = true;
+        }
 
         // Scrollback up/down
         if (keypress.equals(kbShiftPgUp)
@@ -572,6 +586,10 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
+        if (hideMouseWhenTyping) {
+            typingHidMouse = false;
+        }
+
         // If the emulator is tracking mouse buttons, it needs to see wheel
         // events.
         if (emulator.getMouseProtocol() == ECMA48.MouseProtocol.OFF) {
@@ -609,6 +627,10 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
+        if (hideMouseWhenTyping) {
+            typingHidMouse = false;
+        }
+
         if (mouseOnEmulator(mouse)) {
             mouse.setX(mouse.getX() - 1);
             mouse.setY(mouse.getY() - 1);
@@ -634,6 +656,10 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
+        if (hideMouseWhenTyping) {
+            typingHidMouse = false;
+        }
+
         if (mouseOnEmulator(mouse)) {
             mouse.setX(mouse.getX() - 1);
             mouse.setY(mouse.getY() - 1);
@@ -649,6 +675,18 @@ public class TTerminalWindow extends TScrollableWindow
     // ------------------------------------------------------------------------
     // TTerminalWindow --------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Returns true if this window does not want the application-wide mouse
+     * cursor drawn over it.
+     *
+     * @return true if this window does not want the application-wide mouse
+     * cursor drawn over it
+     */
+    @Override
+    public boolean hasHiddenMouse() {
+        return (super.hasHiddenMouse() || typingHidMouse);
+    }
 
     /**
      * Claim the keystrokes the emulator will need.
@@ -785,6 +823,13 @@ public class TTerminalWindow extends TScrollableWindow
         // Pass the correct text cell width/height to the emulator
         emulator.setTextWidth(getScreen().getTextWidth());
         emulator.setTextHeight(getScreen().getTextHeight());
+
+        // Hide mouse when typing option
+        if (System.getProperty("jexer.TTerminal.hideMouseWhenTyping",
+                "true").equals("false")) {
+
+            hideMouseWhenTyping = false;
+        }
     }
 
     /**
