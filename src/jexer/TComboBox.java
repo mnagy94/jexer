@@ -66,6 +66,11 @@ public class TComboBox extends TWidget {
      */
     private boolean limitToListValue = true;
 
+    /**
+     * The maximum height of the values drop-down when it is visible.
+     */
+    private int maxValuesHeight = 3;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -80,14 +85,14 @@ public class TComboBox extends TWidget {
      * @param values the possible values for the box, shown in the drop-down
      * @param valuesIndex the initial index in values, or -1 for no default
      * value
-     * @param valuesHeight the height of the values drop-down when it is
-     * visible
+     * @param maxValuesHeight the maximum height of the values drop-down when
+     * it is visible
      * @param updateAction action to call when a new value is selected from
      * the list or enter is pressed in the edit field
      */
     public TComboBox(final TWidget parent, final int x, final int y,
         final int width, final List<String> values, final int valuesIndex,
-        final int valuesHeight, final TAction updateAction) {
+        final int maxValuesHeight, final TAction updateAction) {
 
         // Set parent and window
         super(parent, x, y, width, 1);
@@ -95,13 +100,15 @@ public class TComboBox extends TWidget {
         assert (values != null);
 
         this.updateAction = updateAction;
+        this.maxValuesHeight = maxValuesHeight;
 
         field = addField(0, 0, width - 3, false, "", updateAction, null);
-        if (valuesIndex >= 0) {
+        if ((valuesIndex >= 0) && (valuesIndex < values.size())) {
             field.setText(values.get(valuesIndex));
         }
 
-        list = addList(values, 0, 1, width, valuesHeight,
+        list = addList(values, 0, 1, width,
+            Math.max(3, Math.min(values.size() + 1, maxValuesHeight)),
             new TAction() {
                 public void DO() {
                     field.setText(list.getSelected());
@@ -161,17 +168,9 @@ public class TComboBox extends TWidget {
         if ((mouseOnArrow(mouse)) && (mouse.isMouse1())) {
             // Make the list visible or not.
             if (list.isActive()) {
-                list.setEnabled(false);
-                list.setVisible(false);
-                setHeight(1);
-                if (limitToListValue == false) {
-                    activate(field);
-                }
+                hideList();
             } else {
-                list.setEnabled(true);
-                list.setVisible(true);
-                setHeight(list.getHeight() + 1);
-                activate(list);
+                showList();
             }
         }
 
@@ -188,21 +187,13 @@ public class TComboBox extends TWidget {
     public void onKeypress(final TKeypressEvent keypress) {
         if (keypress.equals(kbEsc)) {
             if (list.isActive()) {
-                list.setEnabled(false);
-                list.setVisible(false);
-                setHeight(1);
-                if (limitToListValue == false) {
-                    activate(field);
-                }
+                hideList();
                 return;
             }
         }
 
         if (keypress.equals(kbAltDown)) {
-            list.setEnabled(true);
-            list.setVisible(true);
-            setHeight(list.getHeight() + 1);
-            activate(list);
+            showList();
             return;
         }
 
@@ -211,12 +202,7 @@ public class TComboBox extends TWidget {
             || (keypress.equals(kbBackTab))
         ) {
             if (list.isActive()) {
-                list.setEnabled(false);
-                list.setVisible(false);
-                setHeight(1);
-                if (limitToListValue == false) {
-                    activate(field);
-                }
+                hideList();
                 return;
             }
         }
@@ -239,12 +225,7 @@ public class TComboBox extends TWidget {
         if (!isAbsoluteActive()) {
             // We lost focus, turn off the list.
             if (list.isActive()) {
-                list.setEnabled(false);
-                list.setVisible(false);
-                setHeight(1);
-                if (limitToListValue == false) {
-                    activate(field);
-                }
+                hideList();
             }
         }
 
@@ -265,6 +246,28 @@ public class TComboBox extends TWidget {
     // ------------------------------------------------------------------------
     // TComboBox --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Hide the drop-down list.
+     */
+    public void hideList() {
+        list.setEnabled(false);
+        list.setVisible(false);
+        setHeight(1);
+        if (limitToListValue == false) {
+            activate(field);
+        }
+    }
+
+    /**
+     * Show the drop-down list.
+     */
+    public void showList() {
+        list.setEnabled(true);
+        list.setVisible(true);
+        setHeight(list.getHeight() + 1);
+        activate(list);
+    }
 
     /**
      * Get combobox text value.
@@ -335,6 +338,8 @@ public class TComboBox extends TWidget {
      */
     public final void setList(final List<String> list) {
         this.list.setList(list);
+        this.list.setHeight(Math.max(3, Math.min(list.size() + 1,
+                    maxValuesHeight)));
         field.setText("");
     }
 

@@ -1791,18 +1791,18 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param values the possible values for the box, shown in the drop-down
      * @param valuesIndex the initial index in values, or -1 for no default
      * value
-     * @param valuesHeight the height of the values drop-down when it is
-     * visible
+     * @param maxValuesHeight the maximum height of the values drop-down when
+     * it is visible
      * @param updateAction action to call when a new value is selected from
      * the list or enter is pressed in the edit field
      * @return the new combobox
      */
     public final TComboBox addComboBox(final int x, final int y,
         final int width, final List<String> values, final int valuesIndex,
-        final int valuesHeight, final TAction updateAction) {
+        final int maxValuesHeight, final TAction updateAction) {
 
         return new TComboBox(this, x, y, width, values, valuesIndex,
-            valuesHeight, updateAction);
+            maxValuesHeight, updateAction);
     }
 
     /**
