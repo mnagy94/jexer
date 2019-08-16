@@ -117,7 +117,12 @@ public class SwingTerminal extends LogicalScreen
         /**
          * Use an outlined block for the cursor.
          */
-        OUTLINE
+        OUTLINE,
+
+        /**
+         * Use a vertical bar for the cursor.
+         */
+        VERTICAL_BAR,
     }
 
     // ------------------------------------------------------------------------
@@ -648,6 +653,8 @@ public class SwingTerminal extends LogicalScreen
             cursorStyle = CursorStyle.OUTLINE;
         } else if (cursorStyleString.equals("block")) {
             cursorStyle = CursorStyle.BLOCK;
+        } else if (cursorStyleString.equals("verticalbar")) {
+            cursorStyle = CursorStyle.VERTICAL_BAR;
         }
 
         // Pull the system property for triple buffering.
@@ -1301,6 +1308,9 @@ public class SwingTerminal extends LogicalScreen
                 break;
             case OUTLINE:
                 gr.drawRect(xPixel, yPixel, cursorWidth - 1, textHeight - 1);
+                break;
+            case VERTICAL_BAR:
+                gr.fillRect(xPixel, yPixel, 2, textHeight);
                 break;
             }
         }
