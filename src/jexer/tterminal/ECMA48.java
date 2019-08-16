@@ -4721,10 +4721,26 @@ public class ECMA48 implements Runnable {
         int i = getCsiParam(0, 0);
 
         if (!xtermPrivateModeFlag) {
-            if (i == 14) {
-                // Report xterm window in pixels as CSI 4 ; height ; width t
+            switch (i) {
+            case 14:
+                // Report xterm text area size in pixels as CSI 4 ; height ;
+                // width t
                 writeRemote(String.format("\033[4;%d;%dt", textHeight * height,
                         textWidth * width));
+                break;
+            case 16:
+                // Report character size in pixels as CSI 6 ; height ; width
+                // t
+                writeRemote(String.format("\033[6;%d;%dt", textHeight,
+                        textWidth));
+                break;
+            case 18:
+                // Report the text are size in characters as CSI 8 ; height ;
+                // width t
+                writeRemote(String.format("\033[8;%d;%dt", height, width));
+                break;
+            default:
+                break;
             }
         }
     }
