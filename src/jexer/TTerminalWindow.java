@@ -296,6 +296,15 @@ public class TTerminalWindow extends TScrollableWindow
 
         this.closeOnExit = closeOnExit;
 
+        if (System.getProperty("jexer.TTerminal.shell") != null) {
+            String shell = System.getProperty("jexer.TTerminal.shell");
+            if (shell.trim().startsWith("ptypipe")) {
+                ptypipe = true;
+            }
+            spawnShell(shell.split("\\s+"));
+            return;
+        }
+
         String cmdShellWindows = "cmd.exe";
 
         // You cannot run a login shell in a bare Process interactively, due
@@ -559,8 +568,11 @@ public class TTerminalWindow extends TScrollableWindow
 
             // UGLY HACK TIME!  cmd.exe needs CRLF, not just CR, so if
             // this is kBEnter then also send kbCtrlJ.
-            if (System.getProperty("os.name").startsWith("Windows")) {
-                if (keypress.equals(kbEnter)) {
+            if (keypress.equals(kbEnter)) {
+                if (System.getProperty("os.name").startsWith("Windows")
+                    && (System.getProperty("jexer.TTerminal.cmdHack",
+                            "true").equals("true"))
+                ) {
                     emulator.addUserEvent(new TKeypressEvent(kbCtrlJ));
                 }
             }
