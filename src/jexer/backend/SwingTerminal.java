@@ -665,6 +665,9 @@ public class SwingTerminal extends LogicalScreen
         } else {
             SwingComponent.tripleBuffer = false;
         }
+
+        // Set custom colors
+        setCustomSystemColors();
     }
 
     // ------------------------------------------------------------------------
@@ -714,6 +717,62 @@ public class SwingTerminal extends LogicalScreen
         MYBOLD_WHITE    = new Color(0xfc, 0xfc, 0xfc);
 
         dosColors = true;
+    }
+
+    /**
+     * Setup Swing colors to match those provided in system properties.
+     */
+    private static void setCustomSystemColors() {
+        synchronized (SwingTerminal.class) {
+            MYBLACK   = getCustomColor("jexer.Swing.color0", MYBLACK);
+            MYRED     = getCustomColor("jexer.Swing.color1", MYRED);
+            MYGREEN   = getCustomColor("jexer.Swing.color2", MYGREEN);
+            MYYELLOW  = getCustomColor("jexer.Swing.color3", MYYELLOW);
+            MYBLUE    = getCustomColor("jexer.Swing.color4", MYBLUE);
+            MYMAGENTA = getCustomColor("jexer.Swing.color5", MYMAGENTA);
+            MYCYAN    = getCustomColor("jexer.Swing.color6", MYCYAN);
+            MYWHITE   = getCustomColor("jexer.Swing.color7", MYWHITE);
+            MYBOLD_BLACK   = getCustomColor("jexer.Swing.color8", MYBOLD_BLACK);
+            MYBOLD_RED     = getCustomColor("jexer.Swing.color9", MYBOLD_RED);
+            MYBOLD_GREEN   = getCustomColor("jexer.Swing.color10", MYBOLD_GREEN);
+            MYBOLD_YELLOW  = getCustomColor("jexer.Swing.color11", MYBOLD_YELLOW);
+            MYBOLD_BLUE    = getCustomColor("jexer.Swing.color12", MYBOLD_BLUE);
+            MYBOLD_MAGENTA = getCustomColor("jexer.Swing.color13", MYBOLD_MAGENTA);
+            MYBOLD_CYAN    = getCustomColor("jexer.Swing.color14", MYBOLD_CYAN);
+            MYBOLD_WHITE   = getCustomColor("jexer.Swing.color15", MYBOLD_WHITE);
+        }
+    }
+
+    /**
+     * Setup one Swing color to match the RGB value provided in system
+     * properties.
+     *
+     * @param key the system property key
+     * @param defaultColor the default color to return if key is not set, or
+     * incorrect
+     * @return a color from the RGB string, or defaultColor
+     */
+    private static Color getCustomColor(final String key,
+        final Color defaultColor) {
+
+        String rgb = System.getProperty(key);
+        if (rgb == null) {
+            return defaultColor;
+        }
+        if (rgb.startsWith("#")) {
+            rgb = rgb.substring(1);
+        }
+        int rgbInt = 0;
+        try {
+            rgbInt = Integer.parseInt(rgb, 16);
+        } catch (NumberFormatException e) {
+            return defaultColor;
+        }
+        Color color = new Color((rgbInt & 0xFF0000) >>> 16,
+            (rgbInt & 0x00FF00) >>> 8,
+            (rgbInt & 0x0000FF));
+
+        return color;
     }
 
     /**

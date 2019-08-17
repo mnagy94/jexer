@@ -236,6 +236,24 @@ public class ECMA48Terminal extends LogicalScreen
      */
     private Object listener;
 
+    // Colors to map DOS colors to AWT colors.
+    private static java.awt.Color MYBLACK;
+    private static java.awt.Color MYRED;
+    private static java.awt.Color MYGREEN;
+    private static java.awt.Color MYYELLOW;
+    private static java.awt.Color MYBLUE;
+    private static java.awt.Color MYMAGENTA;
+    private static java.awt.Color MYCYAN;
+    private static java.awt.Color MYWHITE;
+    private static java.awt.Color MYBOLD_BLACK;
+    private static java.awt.Color MYBOLD_RED;
+    private static java.awt.Color MYBOLD_GREEN;
+    private static java.awt.Color MYBOLD_YELLOW;
+    private static java.awt.Color MYBOLD_BLUE;
+    private static java.awt.Color MYBOLD_MAGENTA;
+    private static java.awt.Color MYBOLD_CYAN;
+    private static java.awt.Color MYBOLD_WHITE;
+
     /**
      * SixelPalette is used to manage the conversion of images between 24-bit
      * RGB color and a palette of sixelPaletteSize colors.
@@ -1013,8 +1031,9 @@ public class ECMA48Terminal extends LogicalScreen
      * input comes in
      * @param input an InputStream connected to the remote user, or null for
      * System.in.  If System.in is used, then on non-Windows systems it will
-     * be put in raw mode; shutdown() will (blindly!) put System.in in cooked
-     * mode.  input is always converted to a Reader with UTF-8 encoding.
+     * be put in raw mode; closeTerminal() will (blindly!) put System.in in
+     * cooked mode.  input is always converted to a Reader with UTF-8
+     * encoding.
      * @param output an OutputStream connected to the remote user, or null
      * for System.out.  output is always converted to a Writer with UTF-8
      * encoding.
@@ -1046,8 +1065,9 @@ public class ECMA48Terminal extends LogicalScreen
      * input comes in
      * @param input an InputStream connected to the remote user, or null for
      * System.in.  If System.in is used, then on non-Windows systems it will
-     * be put in raw mode; shutdown() will (blindly!) put System.in in cooked
-     * mode.  input is always converted to a Reader with UTF-8 encoding.
+     * be put in raw mode; closeTerminal() will (blindly!) put System.in in
+     * cooked mode.  input is always converted to a Reader with UTF-8
+     * encoding.
      * @param output an OutputStream connected to the remote user, or null
      * for System.out.  output is always converted to a Writer with UTF-8
      * encoding.
@@ -1314,7 +1334,7 @@ public class ECMA48Terminal extends LogicalScreen
      */
     public void closeTerminal() {
 
-        // System.err.println("=== shutdown() ==="); System.err.flush();
+        // System.err.println("=== closeTerminal() ==="); System.err.flush();
 
         // Tell the reader thread to stop looking at input
         stopReaderThread = true;
@@ -1413,6 +1433,9 @@ public class ECMA48Terminal extends LogicalScreen
         } catch (NumberFormatException e) {
             // SQUASH
         }
+
+        // Set custom colors
+        setCustomSystemColors();
     }
 
     // ------------------------------------------------------------------------
@@ -3174,6 +3197,96 @@ public class ECMA48Terminal extends LogicalScreen
     // ------------------------------------------------------------------------
 
     /**
+     * Setup system colors to match DOS color palette.
+     */
+    private void setDOSColors() {
+        MYBLACK         = new java.awt.Color(0x00, 0x00, 0x00);
+        MYRED           = new java.awt.Color(0xa8, 0x00, 0x00);
+        MYGREEN         = new java.awt.Color(0x00, 0xa8, 0x00);
+        MYYELLOW        = new java.awt.Color(0xa8, 0x54, 0x00);
+        MYBLUE          = new java.awt.Color(0x00, 0x00, 0xa8);
+        MYMAGENTA       = new java.awt.Color(0xa8, 0x00, 0xa8);
+        MYCYAN          = new java.awt.Color(0x00, 0xa8, 0xa8);
+        MYWHITE         = new java.awt.Color(0xa8, 0xa8, 0xa8);
+        MYBOLD_BLACK    = new java.awt.Color(0x54, 0x54, 0x54);
+        MYBOLD_RED      = new java.awt.Color(0xfc, 0x54, 0x54);
+        MYBOLD_GREEN    = new java.awt.Color(0x54, 0xfc, 0x54);
+        MYBOLD_YELLOW   = new java.awt.Color(0xfc, 0xfc, 0x54);
+        MYBOLD_BLUE     = new java.awt.Color(0x54, 0x54, 0xfc);
+        MYBOLD_MAGENTA  = new java.awt.Color(0xfc, 0x54, 0xfc);
+        MYBOLD_CYAN     = new java.awt.Color(0x54, 0xfc, 0xfc);
+        MYBOLD_WHITE    = new java.awt.Color(0xfc, 0xfc, 0xfc);
+    }
+
+    /**
+     * Setup ECMA48 colors to match those provided in system properties.
+     */
+    private void setCustomSystemColors() {
+        setDOSColors();
+
+        MYBLACK   = getCustomColor("jexer.ECMA48.color0", MYBLACK);
+        MYRED     = getCustomColor("jexer.ECMA48.color1", MYRED);
+        MYGREEN   = getCustomColor("jexer.ECMA48.color2", MYGREEN);
+        MYYELLOW  = getCustomColor("jexer.ECMA48.color3", MYYELLOW);
+        MYBLUE    = getCustomColor("jexer.ECMA48.color4", MYBLUE);
+        MYMAGENTA = getCustomColor("jexer.ECMA48.color5", MYMAGENTA);
+        MYCYAN    = getCustomColor("jexer.ECMA48.color6", MYCYAN);
+        MYWHITE   = getCustomColor("jexer.ECMA48.color7", MYWHITE);
+        MYBOLD_BLACK   = getCustomColor("jexer.ECMA48.color8", MYBOLD_BLACK);
+        MYBOLD_RED     = getCustomColor("jexer.ECMA48.color9", MYBOLD_RED);
+        MYBOLD_GREEN   = getCustomColor("jexer.ECMA48.color10", MYBOLD_GREEN);
+        MYBOLD_YELLOW  = getCustomColor("jexer.ECMA48.color11", MYBOLD_YELLOW);
+        MYBOLD_BLUE    = getCustomColor("jexer.ECMA48.color12", MYBOLD_BLUE);
+        MYBOLD_MAGENTA = getCustomColor("jexer.ECMA48.color13", MYBOLD_MAGENTA);
+        MYBOLD_CYAN    = getCustomColor("jexer.ECMA48.color14", MYBOLD_CYAN);
+        MYBOLD_WHITE   = getCustomColor("jexer.ECMA48.color15", MYBOLD_WHITE);
+    }
+
+    /**
+     * Setup one system color to match the RGB value provided in system
+     * properties.
+     *
+     * @param key the system property key
+     * @param defaultColor the default color to return if key is not set, or
+     * incorrect
+     * @return a color from the RGB string, or defaultColor
+     */
+    private java.awt.Color getCustomColor(final String key,
+        final java.awt.Color defaultColor) {
+
+        String rgb = System.getProperty(key);
+        if (rgb == null) {
+            return defaultColor;
+        }
+        if (rgb.startsWith("#")) {
+            rgb = rgb.substring(1);
+        }
+        int rgbInt = 0;
+        try {
+            rgbInt = Integer.parseInt(rgb, 16);
+        } catch (NumberFormatException e) {
+            return defaultColor;
+        }
+        java.awt.Color color = new java.awt.Color((rgbInt & 0xFF0000) >>> 16,
+            (rgbInt & 0x00FF00) >>> 8,
+            (rgbInt & 0x0000FF));
+
+        return color;
+    }
+
+    /**
+     * Create a T.416 RGB parameter sequence for a custom system color.
+     *
+     * @param color one of the MYBLACK, MYBOLD_BLUE, etc. colors
+     * @return the color portion of the string to emit to an ANSI /
+     * ECMA-style terminal
+     */
+    private String systemColorRGB(final java.awt.Color color) {
+        return String.format("%d;%d;%d", color.getRed(), color.getGreen(),
+            color.getBlue());
+    }
+
+    /**
      * Create a SGR parameter sequence for a single color change.
      *
      * @param bold if true, set bold
@@ -3256,21 +3369,21 @@ public class ECMA48Terminal extends LogicalScreen
             // Bold implies foreground only
             sb.append("38;2;");
             if (color.equals(Color.BLACK)) {
-                sb.append("84;84;84");
+                sb.append(systemColorRGB(MYBOLD_BLACK));
             } else if (color.equals(Color.RED)) {
-                sb.append("252;84;84");
+                sb.append(systemColorRGB(MYBOLD_RED));
             } else if (color.equals(Color.GREEN)) {
-                sb.append("84;252;84");
+                sb.append(systemColorRGB(MYBOLD_GREEN));
             } else if (color.equals(Color.YELLOW)) {
-                sb.append("252;252;84");
+                sb.append(systemColorRGB(MYBOLD_YELLOW));
             } else if (color.equals(Color.BLUE)) {
-                sb.append("84;84;252");
+                sb.append(systemColorRGB(MYBOLD_BLUE));
             } else if (color.equals(Color.MAGENTA)) {
-                sb.append("252;84;252");
+                sb.append(systemColorRGB(MYBOLD_MAGENTA));
             } else if (color.equals(Color.CYAN)) {
-                sb.append("84;252;252");
+                sb.append(systemColorRGB(MYBOLD_CYAN));
             } else if (color.equals(Color.WHITE)) {
-                sb.append("252;252;252");
+                sb.append(systemColorRGB(MYBOLD_WHITE));
             }
         } else {
             if (foreground) {
@@ -3279,21 +3392,21 @@ public class ECMA48Terminal extends LogicalScreen
                 sb.append("48;2;");
             }
             if (color.equals(Color.BLACK)) {
-                sb.append("0;0;0");
+                sb.append(systemColorRGB(MYBLACK));
             } else if (color.equals(Color.RED)) {
-                sb.append("168;0;0");
+                sb.append(systemColorRGB(MYRED));
             } else if (color.equals(Color.GREEN)) {
-                sb.append("0;168;0");
+                sb.append(systemColorRGB(MYGREEN));
             } else if (color.equals(Color.YELLOW)) {
-                sb.append("168;84;0");
+                sb.append(systemColorRGB(MYYELLOW));
             } else if (color.equals(Color.BLUE)) {
-                sb.append("0;0;168");
+                sb.append(systemColorRGB(MYBLUE));
             } else if (color.equals(Color.MAGENTA)) {
-                sb.append("168;0;168");
+                sb.append(systemColorRGB(MYMAGENTA));
             } else if (color.equals(Color.CYAN)) {
-                sb.append("0;168;168");
+                sb.append(systemColorRGB(MYCYAN));
             } else if (color.equals(Color.WHITE)) {
-                sb.append("168;168;168");
+                sb.append(systemColorRGB(MYWHITE));
             }
         }
         sb.append("m");
