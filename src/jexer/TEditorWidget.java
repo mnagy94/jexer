@@ -207,6 +207,16 @@ public class TEditorWidget extends TWidget {
         } else if (keypress.equals(kbRight)) {
             document.right();
             alignTopLine(true);
+        } else if (keypress.equals(kbAltLeft)
+            || keypress.equals(kbCtrlLeft)
+        ) {
+            document.backwardsWord();
+            alignTopLine(false);
+        } else if (keypress.equals(kbAltRight)
+            || keypress.equals(kbCtrlRight)
+        ) {
+            document.forwardsWord();
+            alignTopLine(true);
         } else if (keypress.equals(kbUp)) {
             document.up();
             alignTopLine(false);

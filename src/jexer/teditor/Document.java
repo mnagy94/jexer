@@ -210,6 +210,15 @@ public class Document {
     }
 
     /**
+     * Get the character at the current cursor position in the text.
+     *
+     * @return the character, or -1 if the cursor is at the end of the line
+     */
+    public int getChar() {
+        return lines.get(lineNumber).getChar();
+    }
+
+    /**
      * Set the current cursor position of the editing line.  0-based.
      *
      * @param cursor the new cursor position
@@ -309,7 +318,8 @@ public class Document {
     }
 
     /**
-     * Decrement the cursor by one.  If at the first column, do nothing.
+     * Decrement the cursor by one.  If at the first column on the first
+     * line, do nothing.
      *
      * @return true if the cursor position changed
      */
@@ -326,7 +336,8 @@ public class Document {
     }
 
     /**
-     * Increment the cursor by one.  If at the last column, do nothing.
+     * Increment the cursor by one.  If at the last column on the last line,
+     * do nothing.
      *
      * @return true if the cursor position changed
      */
@@ -340,6 +351,151 @@ public class Document {
             }
         }
         return true;
+    }
+
+    /**
+     * Go back to the beginning of this word if in the middle, or the
+     * beginning of the previous word.
+     */
+    public void backwardsWord() {
+
+        // If at the beginning of a word already, push past it.
+        if ((getChar() != -1)
+            && (getRawLine().length() > 0)
+            && !Character.isSpace((char) getChar())
+        ) {
+            left();
+        }
+
+        // int line = lineNumber;
+        while ((getChar() == -1)
+            || (getRawLine().length() == 0)
+            || Character.isSpace((char) getChar())
+        ) {
+            if (left() == false) {
+                return;
+            }
+        }
+
+
+        assert (getChar() != -1);
+
+        if (!Character.isSpace((char) getChar())
+            && (getRawLine().length() > 0)
+        ) {
+            // Advance until at the beginning of the document or a whitespace
+            // is encountered.
+            while (!Character.isSpace((char) getChar())) {
+                int line = lineNumber;
+                if (left() == false) {
+                    // End of document, bail out.
+                    return;
+                }
+                if (lineNumber != line) {
+                    // We wrapped a line.  Here that counts as whitespace.
+                    right();
+                    return;
+                }
+            }
+        }
+
+        // We went one past the word, push back to the first character of
+        // that word.
+        right();
+        return;
+    }
+
+    /**
+     * Go to the beginning of the next word.
+     */
+    public void forwardsWord() {
+        int line = lineNumber;
+        while ((getChar() == -1)
+            || (getRawLine().length() == 0)
+        ) {
+            if (right() == false) {
+                return;
+            }
+            if (lineNumber != line) {
+                // We wrapped a line.  Here that counts as whitespace.
+                if (!Character.isSpace((char) getChar())) {
+                    // We found a character immediately after the line.
+                    // Done!
+                    return;
+                }
+                // Still looking...
+                line = lineNumber;
+            }
+        }
+        assert (getChar() != -1);
+
+        if (!Character.isSpace((char) getChar())
+            && (getRawLine().length() > 0)
+        ) {
+            // Advance until at the end of the document or a whitespace is
+            // encountered.
+            while (!Character.isSpace((char) getChar())) {
+                line = lineNumber;
+                if (right() == false) {
+                    // End of document, bail out.
+                    return;
+                }
+                if (lineNumber != line) {
+                    // We wrapped a line.  Here that counts as whitespace.
+                    if (!Character.isSpace((char) getChar())
+                        && (getRawLine().length() > 0)
+                    ) {
+                        // We found a character immediately after the line.
+                        // Done!
+                        return;
+                    }
+                    break;
+                }
+            }
+        }
+
+        while ((getChar() == -1)
+            || (getRawLine().length() == 0)
+        ) {
+            if (right() == false) {
+                return;
+            }
+            if (lineNumber != line) {
+                // We wrapped a line.  Here that counts as whitespace.
+                if (!Character.isSpace((char) getChar())) {
+                    // We found a character immediately after the line.
+                    // Done!
+                    return;
+                }
+                // Still looking...
+                line = lineNumber;
+            }
+        }
+        assert (getChar() != -1);
+
+        if (Character.isSpace((char) getChar())) {
+            // Advance until at the end of the document or a non-whitespace
+            // is encountered.
+            while (Character.isSpace((char) getChar())) {
+                if (right() == false) {
+                    // End of document, bail out.
+                    return;
+                }
+            }
+            return;
+        }
+
+        // We wrapped the line to get here.
+        return;
+    }
+
+    /**
+     * Get the raw string that matches this line.
+     *
+     * @return the string
+     */
+    public String getRawLine() {
+        return lines.get(lineNumber).getRawString();
     }
 
     /**

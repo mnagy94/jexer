@@ -73,6 +73,17 @@ public class TEditorWindow extends TScrollableWindow {
      */
     private String filename = "";
 
+    /**
+     * If true, hide the mouse after typing a keystroke.
+     */
+    private boolean hideMouseWhenTyping = true;
+
+    /**
+     * If true, the mouse should not be displayed because a keystroke was
+     * typed.
+     */
+    private boolean typingHidMouse = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -173,6 +184,10 @@ public class TEditorWindow extends TScrollableWindow {
         // Use TWidget's code to pass the event to the children.
         super.onMouseDown(mouse);
 
+        if (hideMouseWhenTyping) {
+            typingHidMouse = false;
+        }
+
         if (mouseOnEditor(mouse)) {
             // The editor might have changed, update the scollbars.
             setBottomValue(editField.getMaximumRowNumber());
@@ -197,6 +212,10 @@ public class TEditorWindow extends TScrollableWindow {
         // Use TWidget's code to pass the event to the children.
         super.onMouseUp(mouse);
 
+        if (hideMouseWhenTyping) {
+            typingHidMouse = false;
+        }
+
         if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
             // Clicked on vertical scrollbar
             editField.setVisibleRowNumber(getVerticalValue());
@@ -214,6 +233,10 @@ public class TEditorWindow extends TScrollableWindow {
     public void onMouseMotion(final TMouseEvent mouse) {
         // Use TWidget's code to pass the event to the children.
         super.onMouseMotion(mouse);
+
+        if (hideMouseWhenTyping) {
+            typingHidMouse = false;
+        }
 
         if (mouseOnEditor(mouse) && mouse.isMouse1()) {
             // The editor might have changed, update the scollbars.
@@ -239,6 +262,10 @@ public class TEditorWindow extends TScrollableWindow {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
+        if (hideMouseWhenTyping) {
+            typingHidMouse = true;
+        }
+
         // Use TWidget's code to pass the event to the children.
         super.onKeypress(keypress);
 
@@ -318,6 +345,18 @@ public class TEditorWindow extends TScrollableWindow {
         super.onCommand(command);
     }
 
+    /**
+     * Returns true if this window does not want the application-wide mouse
+     * cursor drawn over it.
+     *
+     * @return true if this window does not want the application-wide mouse
+     * cursor drawn over it
+     */
+    @Override
+    public boolean hasHiddenMouse() {
+        return (super.hasHiddenMouse() || typingHidMouse);
+    }
+
     // ------------------------------------------------------------------------
     // TEditorWindow ----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -344,6 +383,13 @@ public class TEditorWindow extends TScrollableWindow {
             i18n.getString("statusBarOpen"));
         statusBar.addShortcutKeypress(kbF10, cmMenu,
             i18n.getString("statusBarMenu"));
+
+        // Hide mouse when typing option
+        if (System.getProperty("jexer.TEditor.hideMouseWhenTyping",
+                "true").equals("false")) {
+
+            hideMouseWhenTyping = false;
+        }
     }
 
     /**

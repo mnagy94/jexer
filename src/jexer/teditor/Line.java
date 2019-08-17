@@ -156,6 +156,18 @@ public class Line {
     }
 
     /**
+     * Get the character at the current cursor position in the text.
+     *
+     * @return the character, or -1 if the cursor is at the end of the line
+     */
+    public int getChar() {
+        if (position == rawText.length()) {
+            return -1;
+        }
+        return rawText.codePointAt(position);
+    }
+
+    /**
      * Get the on-screen display length.
      *
      * @return the number of cells needed to display this line
