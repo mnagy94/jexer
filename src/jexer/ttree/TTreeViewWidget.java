@@ -37,6 +37,7 @@ import jexer.TWidget;
 import jexer.bits.StringUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
+import jexer.event.TResizeEvent;
 import static jexer.TKeypress.*;
 
 /**
@@ -109,6 +110,24 @@ public class TTreeViewWidget extends TScrollableWidget {
     // ------------------------------------------------------------------------
     // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Handle window/screen resize events.
+     *
+     * @param event resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent event) {
+        super.onResize(event);
+
+        if (event.getType() == TResizeEvent.Type.WIDGET) {
+            treeView.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    getWidth() - 1, getHeight() - 1));
+            return;
+        } else {
+            super.onResize(event);
+        }
+    }
 
     /**
      * Handle mouse press events.

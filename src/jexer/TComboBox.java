@@ -216,13 +216,15 @@ public class TComboBox extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * Override TWidget's width: we can only set width at construction time.
+     * Override TWidget's width: we need to set child widget widths.
      *
-     * @param width new widget width (ignored)
+     * @param width new widget width
      */
     @Override
     public void setWidth(final int width) {
-        // Do nothing
+        field.setWidth(width - 3);
+        list.setWidth(width);
+        super.setWidth(width);
     }
 
     /**
