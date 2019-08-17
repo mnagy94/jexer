@@ -39,6 +39,7 @@ import jexer.TComboBox;
 import jexer.TMessageBox;
 import jexer.TRadioGroup;
 import jexer.TWindow;
+import jexer.layout.StretchLayoutManager;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -86,6 +87,8 @@ public class DemoCheckBoxWindow extends TWindow {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
         super(parent, i18n.getString("windowTitle"), 0, 0, 60, 17, flags);
+
+        setLayoutManager(new StretchLayoutManager(getWidth(), getHeight()));
 
         int row = 1;
 

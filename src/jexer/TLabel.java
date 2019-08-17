@@ -171,6 +171,17 @@ public class TLabel extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Override TWidget's height: we can only set height at construction
+     * time.
+     *
+     * @param height new widget height (ignored)
+     */
+    @Override
+    public void setHeight(final int height) {
+        // Do nothing
+    }
+
+    /**
      * Draw a static label.
      */
     @Override

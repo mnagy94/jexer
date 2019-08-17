@@ -98,13 +98,20 @@ public class TButton extends TWidget {
 
         setX(x);
         setY(y);
-        setHeight(2);
-        setWidth(StringUtils.width(mnemonic.getRawLabel()) + 3);
+        super.setHeight(2);
+        super.setWidth(StringUtils.width(mnemonic.getRawLabel()) + 3);
 
         shadowColor = new CellAttributes();
         shadowColor.setTo(getWindow().getBackground());
         shadowColor.setForeColor(Color.BLACK);
         shadowColor.setBold(false);
+
+        // Since we set dimensions after TWidget's constructor, we need to
+        // update the layout manager.
+        if (getParent().getLayoutManager() != null) {
+            getParent().getLayoutManager().remove(this);
+            getParent().getLayoutManager().add(this);
+        }
     }
 
     /**
@@ -214,6 +221,27 @@ public class TButton extends TWidget {
     // ------------------------------------------------------------------------
     // TWidget ----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Override TWidget's width: we can only set width at construction time.
+     *
+     * @param width new widget width (ignored)
+     */
+    @Override
+    public void setWidth(final int width) {
+        // Do nothing
+    }
+
+    /**
+     * Override TWidget's height: we can only set height at construction
+     * time.
+     *
+     * @param height new widget height (ignored)
+     */
+    @Override
+    public void setHeight(final int height) {
+        // Do nothing
+    }
 
     /**
      * Draw a button with a shadow.

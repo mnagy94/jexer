@@ -114,7 +114,7 @@ public class TComboBox extends TWidget {
                     field.setText(list.getSelected());
                     list.setEnabled(false);
                     list.setVisible(false);
-                    TComboBox.this.setHeight(1);
+                    TComboBox.super.setHeight(1);
                     if (TComboBox.this.limitToListValue == false) {
                         TComboBox.this.activate(field);
                     }
@@ -130,7 +130,7 @@ public class TComboBox extends TWidget {
 
         list.setEnabled(false);
         list.setVisible(false);
-        setHeight(1);
+        super.setHeight(1);
         if (limitToListValue) {
             field.setEnabled(false);
         } else {
@@ -216,6 +216,27 @@ public class TComboBox extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Override TWidget's width: we can only set width at construction time.
+     *
+     * @param width new widget width (ignored)
+     */
+    @Override
+    public void setWidth(final int width) {
+        // Do nothing
+    }
+
+    /**
+     * Override TWidget's height: we can only set height at construction
+     * time.
+     *
+     * @param height new widget height (ignored)
+     */
+    @Override
+    public void setHeight(final int height) {
+        // Do nothing
+    }
+
+    /**
      * Draw the combobox down arrow.
      */
     @Override
@@ -253,7 +274,7 @@ public class TComboBox extends TWidget {
     public void hideList() {
         list.setEnabled(false);
         list.setVisible(false);
-        setHeight(1);
+        super.setHeight(1);
         if (limitToListValue == false) {
             activate(field);
         }
@@ -265,7 +286,7 @@ public class TComboBox extends TWidget {
     public void showList() {
         list.setEnabled(true);
         list.setVisible(true);
-        setHeight(list.getHeight() + 1);
+        super.setHeight(list.getHeight() + 1);
         activate(list);
     }
 

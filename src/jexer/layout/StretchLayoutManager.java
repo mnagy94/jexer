@@ -28,6 +28,9 @@
  */
 package jexer.layout;
 
+import java.awt.Rectangle;
+import java.util.HashMap;
+
 import jexer.TWidget;
 import jexer.event.TResizeEvent;
 
@@ -41,10 +44,45 @@ public class StretchLayoutManager implements LayoutManager {
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
+    /**
+     * Current width.
+     */
+    private int width = 0;
+
+    /**
+     * Current height.
+     */
+    private int height = 0;
+
+    /**
+     * Original width.
+     */
+    private int originalWidth = 0;
+
+    /**
+     * Original height.
+     */
+    private int originalHeight = 0;
+
+    /**
+     * Map of widget to original dimensions.
+     */
+    private HashMap<TWidget, Rectangle> children = new HashMap<TWidget, Rectangle>();
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
 
+    /**
+     * Public constructor.
+     *
+     * @param width the width of the parent widget
+     * @param height the height of the parent widget
+     */
+    public StretchLayoutManager(final int width, final int height) {
+        originalWidth = width;
+        originalHeight = height;
+    }
 
     // ------------------------------------------------------------------------
     // LayoutManager ----------------------------------------------------------
@@ -57,7 +95,11 @@ public class StretchLayoutManager implements LayoutManager {
      * @param resize resize event
      */
     public void onResize(final TResizeEvent resize) {
-        // TODO
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            width = resize.getWidth();
+            height = resize.getHeight();
+            layoutChildren();
+        }
     }
 
     /**
@@ -66,7 +108,9 @@ public class StretchLayoutManager implements LayoutManager {
      * @param child the widget to manage
      */
     public void add(final TWidget child) {
-        // TODO
+        Rectangle rect = new Rectangle(child.getX(), child.getY(),
+            child.getWidth(), child.getHeight());
+        children.put(child, rect);
     }
 
     /**
@@ -75,7 +119,33 @@ public class StretchLayoutManager implements LayoutManager {
      * @param child the widget to remove
      */
     public void remove(final TWidget child) {
-        // TODO
+        children.remove(child);
+    }
+
+    // ------------------------------------------------------------------------
+    // StretchLayoutManager ---------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Resize/reposition child widgets based on difference between current
+     * dimensions and the original dimensions.
+     */
+    public void layoutChildren() {
+        double widthRatio = (double) width / originalWidth;
+        if (!Double.isFinite(widthRatio)) {
+            widthRatio = 1;
+        }
+        double heightRatio = (double) height / originalHeight;
+        if (!Double.isFinite(heightRatio)) {
+            heightRatio = 1;
+        }
+        for (TWidget child: children.keySet()) {
+            Rectangle rect = children.get(child);
+            child.setDimensions((int) (rect.getX() * widthRatio),
+                (int) (rect.getY() * heightRatio),
+                (int) (rect.getWidth() * widthRatio),
+                (int) (rect.getHeight() * heightRatio));
+        }
     }
 
 }

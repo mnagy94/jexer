@@ -82,6 +82,27 @@ public class TRadioGroup extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Override TWidget's width: we can only set width at construction time.
+     *
+     * @param width new widget width (ignored)
+     */
+    @Override
+    public void setWidth(final int width) {
+        // Do nothing
+    }
+
+    /**
+     * Override TWidget's height: we can only set height at construction
+     * time.
+     *
+     * @param height new widget height (ignored)
+     */
+    @Override
+    public void setHeight(final int height) {
+        // Do nothing
+    }
+
+    /**
      * Draw a radio button with label.
      */
     @Override
@@ -163,9 +184,9 @@ public class TRadioGroup extends TWidget {
         int buttonX = 1;
         int buttonY = getChildren().size() + 1;
         if (StringUtils.width(label) + 4 > getWidth()) {
-            setWidth(StringUtils.width(label) + 7);
+            super.setWidth(StringUtils.width(label) + 7);
         }
-        setHeight(getChildren().size() + 3);
+        super.setHeight(getChildren().size() + 3);
         TRadioButton button = new TRadioButton(this, buttonX, buttonY, label,
             getChildren().size() + 1);
 

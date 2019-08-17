@@ -157,6 +157,27 @@ public class TRadioButton extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Override TWidget's width: we can only set width at construction time.
+     *
+     * @param width new widget width (ignored)
+     */
+    @Override
+    public void setWidth(final int width) {
+        // Do nothing
+    }
+
+    /**
+     * Override TWidget's height: we can only set height at construction
+     * time.
+     *
+     * @param height new widget height (ignored)
+     */
+    @Override
+    public void setHeight(final int height) {
+        // Do nothing
+    }
+
+    /**
      * Draw a radio button with label.
      */
     @Override

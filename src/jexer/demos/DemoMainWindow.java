@@ -44,6 +44,7 @@ import jexer.TTimer;
 import jexer.TWidget;
 import jexer.TWindow;
 import jexer.event.TCommandEvent;
+import jexer.layout.StretchLayoutManager;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -107,6 +108,8 @@ public class DemoMainWindow extends TWindow {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
         super(parent, i18n.getString("windowTitle"), 0, 0, 64, 23, flags);
+
+        setLayoutManager(new StretchLayoutManager(getWidth(), getHeight()));
 
         int row = 1;
 

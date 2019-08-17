@@ -43,6 +43,7 @@ import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
+import jexer.layout.LayoutManager;
 import jexer.menu.TMenu;
 import jexer.ttree.TTreeItem;
 import jexer.ttree.TTreeView;
@@ -136,6 +137,11 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     private int cursorY = 0;
 
+    /**
+     * Layout manager.
+     */
+    private LayoutManager layout = null;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -212,15 +218,15 @@ public abstract class TWidget implements Comparable<TWidget> {
         this.parent = parent;
         children = new ArrayList<TWidget>();
 
-        if (parent != null) {
-            this.window = parent.window;
-            parent.addChild(this);
-        }
-
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+
+        if (parent != null) {
+            this.window = parent.window;
+            parent.addChild(this);
+        }
     }
 
     /**
@@ -570,6 +576,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         if (resize.getType() == TResizeEvent.Type.WIDGET) {
             width = resize.getWidth();
             height = resize.getHeight();
+            if (layout != null) {
+                layout.onResize(resize);
+            }
         } else {
             // Let children see the screen resize
             for (TWidget widget: children) {
@@ -732,6 +741,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         children.remove(child);
         child.parent = null;
+        if (layout != null) {
+            layout.remove(this);
+        }
     }
 
     /**
@@ -854,7 +866,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @return widget width
      */
-    public final int getWidth() {
+    public int getWidth() {
         return this.width;
     }
 
@@ -863,8 +875,12 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @param width new widget width
      */
-    public final void setWidth(final int width) {
+    public void setWidth(final int width) {
         this.width = width;
+        if (layout != null) {
+            layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    width, height));
+        }
     }
 
     /**
@@ -872,7 +888,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @return widget height
      */
-    public final int getHeight() {
+    public int getHeight() {
         return this.height;
     }
 
@@ -881,8 +897,12 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @param height new widget height
      */
-    public final void setHeight(final int height) {
+    public void setHeight(final int height) {
         this.height = height;
+        if (layout != null) {
+            layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    width, height));
+        }
     }
 
     /**
@@ -900,6 +920,39 @@ public abstract class TWidget implements Comparable<TWidget> {
         setY(y);
         setWidth(width);
         setHeight(height);
+        if (layout != null) {
+            layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    width, height));
+        }
+    }
+
+    /**
+     * Get the layout manager.
+     *
+     * @return the layout manager, or null if not set
+     */
+    public LayoutManager getLayoutManager() {
+        return layout;
+    }
+
+    /**
+     * Set the layout manager.
+     *
+     * @param layout the new layout manager
+     */
+    public void setLayoutManager(LayoutManager layout) {
+        if (this.layout != null) {
+            for (TWidget w: children) {
+                this.layout.remove(w);
+            }
+            this.layout = null;
+        }
+        this.layout = layout;
+        if (this.layout != null) {
+            for (TWidget w: children) {
+                this.layout.add(w);
+            }
+        }
     }
 
     /**
@@ -1261,6 +1314,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         for (int i = 0; i < children.size(); i++) {
             children.get(i).tabOrder = i;
+        }
+        if (layout != null) {
+            layout.add(child);
         }
     }
 

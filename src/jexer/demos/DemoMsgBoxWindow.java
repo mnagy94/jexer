@@ -36,6 +36,7 @@ import jexer.TApplication;
 import jexer.TInputBox;
 import jexer.TMessageBox;
 import jexer.TWindow;
+import jexer.layout.StretchLayoutManager;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -72,6 +73,8 @@ public class DemoMsgBoxWindow extends TWindow {
         // Construct a demo window.  X and Y don't matter because it
         // will be centered on screen.
         super(parent, i18n.getString("windowTitle"), 0, 0, 64, 18, flags);
+
+        setLayoutManager(new StretchLayoutManager(getWidth(), getHeight()));
 
         int row = 1;
 
