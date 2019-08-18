@@ -225,8 +225,10 @@ public class TText extends TScrollableWidget {
             } else {
                 line = "";
             }
-            String formatString = "%-" + Integer.toString(getWidth() - 1) + "s";
-            putStringXY(0, topY, String.format(formatString, line), color);
+            if (getWidth() > 3) {
+                String formatString = "%-" + Integer.toString(getWidth() - 1) + "s";
+                putStringXY(0, topY, String.format(formatString, line), color);
+            }
             topY++;
 
             if (topY >= (getHeight() - 1)) {

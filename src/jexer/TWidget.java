@@ -611,6 +611,61 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param menu menu event
      */
     public void onMenu(final TMenuEvent menu) {
+
+        // Special case: if a split command comes in, insert a TPanel and
+        // TSplitPane in the hierarchy here.
+        TPanel panel = null;
+        TSplitPane pane = null;
+        List<TWidget> widgets = null;
+        switch (menu.getId()) {
+        case TMenu.MID_SPLIT_VERTICAL:
+            panel = new TPanel(null, x, y, width, height);
+            pane = new TSplitPane(null, x, y, width, height, true);
+            widgets = new ArrayList<TWidget>(children);
+            for (TWidget w: widgets) {
+                w.setParent(panel, false);
+            }
+            children.clear();
+            pane.setParent(this, false);
+            pane.setLeft(panel);
+            activate(pane);
+            for (TWidget w: widgets) {
+                assert (w.window != null);
+                assert (w.parent != null);
+            }
+            assert (pane.getWindow() != null);
+            assert (pane.getParent() != null);
+            assert (panel.getWindow() != null);
+            assert (panel.getParent() != null);
+            assert (pane.isActive() == true);
+            assert (panel.isActive() == true);
+            return;
+        case TMenu.MID_SPLIT_HORIZONTAL:
+            panel = new TPanel(null, x, y, width, height);
+            pane = new TSplitPane(null, x, y, width, height, false);
+            widgets = new ArrayList<TWidget>(children);
+            for (TWidget w: widgets) {
+                w.setParent(panel, false);
+            }
+            children.clear();
+            pane.setParent(this, false);
+            pane.setTop(panel);
+            activate(pane);
+            for (TWidget w: widgets) {
+                assert (w.window != null);
+                assert (w.parent != null);
+            }
+            assert (pane.getWindow() != null);
+            assert (pane.getParent() != null);
+            assert (panel.getWindow() != null);
+            assert (panel.getParent() != null);
+            assert (pane.isActive() == true);
+            assert (panel.isActive() == true);
+            return;
+        default:
+            break;
+        }
+
         // Default: do nothing, pass to children instead
         for (TWidget widget: children) {
             widget.onMenu(menu);
@@ -733,6 +788,15 @@ public abstract class TWidget implements Comparable<TWidget> {
      * Remove a child widget from this container.
      *
      * @param child the child widget to remove
+     */
+    public final void remove(final TWidget child) {
+        remove(child, true);
+    }
+
+    /**
+     * Remove a child widget from this container.
+     *
+     * @param child the child widget to remove
      * @param doClose if true, call the close() method before removing the
      * child
      */
@@ -746,6 +810,7 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         children.remove(child);
         child.parent = null;
+        child.window = null;
         if (layout != null) {
             layout.remove(this);
         }
@@ -763,29 +828,31 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         if (parent != null) {
             parent.remove(this, doClose);
+            window = null;
         }
         assert (parent == null);
-        window = newParent.window;
-        newParent.addChild(this);
+        assert (window == null);
+        parent = newParent;
+        setWindow(parent.window);
+        parent.addChild(this);
     }
 
     /**
-     * Set this widget's window to a specific window.  Parent must already be
-     * null.  Having a null parent with a specified window is only used
-     * within Jexer by TStatusBar because TApplication routes events directly
-     * to it and calls its draw() method.  Any other non-parented widgets
-     * will require similar special case functionality to receive events or
-     * be drawn to screen.
+     * Set this widget's window to a specific window.
+     *
+     * Having a null parent with a specified window is only used within Jexer
+     * by TStatusBar because TApplication routes events directly to it and
+     * calls its draw() method.  Any other non-parented widgets will require
+     * similar special case functionality to receive events or be drawn to
+     * screen.
      *
      * @param window the window to use
      */
     public final void setWindow(final TWindow window) {
-
-        if (parent != null) {
-            throw new IllegalArgumentException("Cannot have different " +
-                "windows for parent and child");
-        }
         this.window = window;
+        for (TWidget child: getChildren()) {
+            child.setWindow(window);
+        }
     }
 
     /**
@@ -2505,6 +2572,22 @@ public abstract class TWidget implements Comparable<TWidget> {
         final int height) {
 
         return new TPanel(this, x, y, width, height);
+    }
+
+    /**
+     * Convenience function to add a split pane to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @param vertical if true, split vertically
+     * @return the new split pane
+     */
+    public final TSplitPane addSplitPane(final int x, final int y,
+        final int width, final int height, final boolean vertical) {
+
+        return new TSplitPane(this, x, y, width, height, vertical);
     }
 
 }

@@ -1296,6 +1296,8 @@ public class TApplication implements Runnable {
                 }
             } else if (event instanceof TKeypressEvent) {
                 dispatchToDesktop = false;
+            } else if (event instanceof TMenuEvent) {
+                dispatchToDesktop = false;
             }
 
             if (debugEvents) {

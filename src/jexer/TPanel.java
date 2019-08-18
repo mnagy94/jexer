@@ -28,6 +28,8 @@
  */
 package jexer;
 
+import jexer.event.TResizeEvent;
+
 /**
  * TPanel is an empty container for other widgets.
  */
@@ -54,6 +56,35 @@ public class TPanel extends TWidget {
         final int width, final int height) {
 
         super(parent, x, y, width, height);
+    }
+
+    // ------------------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Method that subclasses can override to handle window/screen resize
+     * events.
+     *
+     * @param resize resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent resize) {
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            if (getChildren().size() == 1) {
+                TWidget child = getChildren().get(0);
+                if ((child instanceof TSplitPane)
+                    || (child instanceof TPanel)
+                ) {
+                    child.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                            resize.getWidth(), resize.getHeight()));
+                }
+                return;
+            }
+        }
+
+        // Pass on to TWidget.
+        super.onResize(resize);
     }
 
     // ------------------------------------------------------------------------

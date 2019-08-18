@@ -849,6 +849,31 @@ public class TWindow extends TWidget {
         super.onMenu(menu);
     }
 
+    /**
+     * Method that subclasses can override to handle window/screen resize
+     * events.
+     *
+     * @param resize resize event
+     */
+    @Override
+    public void onResize(final TResizeEvent resize) {
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            if (getChildren().size() == 1) {
+                TWidget child = getChildren().get(0);
+                if ((child instanceof TSplitPane)
+                    || (child instanceof TPanel)
+                ) {
+                    child.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                            resize.getWidth() - 2, resize.getHeight() - 2));
+                }
+                return;
+            }
+        }
+
+        // Pass on to TWidget.
+        super.onResize(resize);
+    }
+
     // ------------------------------------------------------------------------
     // TWidget ----------------------------------------------------------------
     // ------------------------------------------------------------------------

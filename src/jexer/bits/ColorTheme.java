@@ -666,6 +666,13 @@ public class ColorTheme {
         color.setBold(false);
         colors.put("ttable.border", color);
 
+        // TSplitPane
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(false);
+        colors.put("tsplitpane", color);
+
     }
 
     /**
