@@ -98,6 +98,10 @@ controls.  The demos can be run as follows:
     applications performing I/O across three screens: an Xterm screen
     and Swing screen, monitored from a third Swing screen.
 
+  * 'java -cp jexer.jar jexer.demos.Demo7' .  This demonstrates the
+    BoxLayoutManager, achieving a similar result as the
+    javax.swing.BoxLayout apidocs example.
+
 
 
 More Screenshots
