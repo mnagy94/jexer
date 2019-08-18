@@ -74,7 +74,8 @@ public class DemoMsgBoxWindow extends TWindow {
         // will be centered on screen.
         super(parent, i18n.getString("windowTitle"), 0, 0, 64, 18, flags);
 
-        setLayoutManager(new StretchLayoutManager(getWidth(), getHeight()));
+        setLayoutManager(new StretchLayoutManager(getWidth() - 2,
+                getHeight() - 2));
 
         int row = 1;
 

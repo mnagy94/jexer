@@ -222,8 +222,12 @@ public class TComboBox extends TWidget {
      */
     @Override
     public void setWidth(final int width) {
-        field.setWidth(width - 3);
-        list.setWidth(width);
+        if (field != null) {
+            field.setWidth(width - 3);
+        }
+        if (list != null) {
+            list.setWidth(width);
+        }
         super.setWidth(width);
     }
 

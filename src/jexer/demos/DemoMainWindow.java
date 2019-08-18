@@ -109,7 +109,8 @@ public class DemoMainWindow extends TWindow {
         // centered on screen.
         super(parent, i18n.getString("windowTitle"), 0, 0, 64, 23, flags);
 
-        setLayoutManager(new StretchLayoutManager(getWidth(), getHeight()));
+        setLayoutManager(new StretchLayoutManager(getWidth() - 2,
+                getHeight() - 2));
 
         int row = 1;
 

@@ -28,21 +28,25 @@
  */
 package jexer.layout;
 
-import java.awt.Rectangle;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import jexer.TWidget;
 import jexer.event.TResizeEvent;
 
 /**
- * StretchLayoutManager repositions child widgets based on their coordinates
- * when added and the current widget size.
+ * BoxLayoutManager repositions child widgets based on the order they are
+ * added to the parent widget and desired orientation.
  */
-public class StretchLayoutManager implements LayoutManager {
+public class BoxLayoutManager implements LayoutManager {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * If true, orient vertically.  If false, orient horizontally.
+     */
+    private boolean vertical = true;
 
     /**
      * Current width.
@@ -55,19 +59,9 @@ public class StretchLayoutManager implements LayoutManager {
     private int height = 0;
 
     /**
-     * Original width.
+     * Widgets being managed.
      */
-    private int originalWidth = 0;
-
-    /**
-     * Original height.
-     */
-    private int originalHeight = 0;
-
-    /**
-     * Map of widget to original dimensions.
-     */
-    private HashMap<TWidget, Rectangle> children = new HashMap<TWidget, Rectangle>();
+    private ArrayList<TWidget> children = new ArrayList<TWidget>();
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -78,12 +72,14 @@ public class StretchLayoutManager implements LayoutManager {
      *
      * @param width the width of the parent widget
      * @param height the height of the parent widget
+     * @param vertical if true, arrange widgets vertically
      */
-    public StretchLayoutManager(final int width, final int height) {
-        originalWidth = width;
-        originalHeight = height;
+    public BoxLayoutManager(final int width, final int height,
+        final boolean vertical) {
+
         this.width = width;
         this.height = height;
+        this.vertical = vertical;
     }
 
     // ------------------------------------------------------------------------
@@ -110,9 +106,7 @@ public class StretchLayoutManager implements LayoutManager {
      * @param child the widget to manage
      */
     public void add(final TWidget child) {
-        Rectangle rect = new Rectangle(child.getX(), child.getY(),
-            child.getWidth(), child.getHeight());
-        children.put(child, rect);
+        children.add(child);
         layoutChildren();
     }
 
@@ -127,28 +121,40 @@ public class StretchLayoutManager implements LayoutManager {
     }
 
     // ------------------------------------------------------------------------
-    // StretchLayoutManager ---------------------------------------------------
+    // BoxLayoutManager -------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
-     * Resize/reposition child widgets based on difference between current
-     * dimensions and the original dimensions.
+     * Resize/reposition child widgets based on horizontal/vertical
+     * arrangement.
      */
     public void layoutChildren() {
-        double widthRatio = (double) width / originalWidth;
-        if (!Double.isFinite(widthRatio)) {
-            widthRatio = 1;
+        if (children.size() == 0) {
+            return;
         }
-        double heightRatio = (double) height / originalHeight;
-        if (!Double.isFinite(heightRatio)) {
-            heightRatio = 1;
-        }
-        for (TWidget child: children.keySet()) {
-            Rectangle rect = children.get(child);
-            child.setDimensions((int) (rect.getX() * widthRatio),
-                (int) (rect.getY() * heightRatio),
-                (int) (rect.getWidth() * widthRatio),
-                (int) (rect.getHeight() * heightRatio));
+        if (vertical) {
+            int widgetHeight = Math.max(1, height / children.size());
+            int leftoverHeight = height % children.size();
+            for (int i = 0; i < children.size() - 1; i++) {
+                TWidget child = children.get(i);
+                child.setDimensions(child.getX(), i * widgetHeight,
+                    width, widgetHeight);
+            }
+            TWidget child = children.get(children.size() - 1);
+            child.setDimensions(child.getX(),
+                (children.size() - 1) * widgetHeight, width,
+                widgetHeight + leftoverHeight);
+        } else {
+            int widgetWidth = Math.max(1, width / children.size());
+            int leftoverWidth = width % children.size();
+            for (int i = 0; i < children.size() - 1; i++) {
+                TWidget child = children.get(i);
+                child.setDimensions(i * widgetWidth, child.getY(),
+                    widgetWidth, height);
+            }
+            TWidget child = children.get(children.size() - 1);
+            child.setDimensions((children.size() - 1) * widgetWidth,
+                child.getY(), widgetWidth + leftoverWidth, height);
         }
     }
 

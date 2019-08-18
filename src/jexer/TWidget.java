@@ -577,7 +577,12 @@ public abstract class TWidget implements Comparable<TWidget> {
             width = resize.getWidth();
             height = resize.getHeight();
             if (layout != null) {
-                layout.onResize(resize);
+                if (this instanceof TWindow) {
+                    layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                            width - 2, height - 2));
+                } else {
+                    layout.onResize(resize);
+                }
             }
         } else {
             // Let children see the screen resize
@@ -2485,6 +2490,21 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         return new TTableWidget(this, x, y, width, height, gridColumns,
             gridRows);
+    }
+
+    /**
+     * Convenience function to add a panel to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of text area
+     * @param height height of text area
+     * @return the new panel
+     */
+    public final TPanel addPanel(final int x, final int y, final int width,
+        final int height) {
+
+        return new TPanel(this, x, y, width, height);
     }
 
 }

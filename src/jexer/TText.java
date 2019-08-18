@@ -164,8 +164,10 @@ public class TText extends TScrollableWidget {
 
         lines = new LinkedList<String>();
 
-        vScroller = new TVScroller(this, getWidth() - 1, 0, getHeight() - 1);
-        hScroller = new THScroller(this, 0, getHeight() - 1, getWidth() - 1);
+        vScroller = new TVScroller(this, getWidth() - 1, 0,
+            Math.max(1, getHeight() - 1));
+        hScroller = new THScroller(this, 0, getHeight() - 1,
+            Math.max(1, getWidth() - 1));
         reflowData();
     }
 
@@ -181,8 +183,12 @@ public class TText extends TScrollableWidget {
     @Override
     public void setWidth(final int width) {
         super.setWidth(width);
-        hScroller.setWidth(getWidth() - 1);
-        vScroller.setX(getWidth() - 1);
+        if (hScroller != null) {
+            hScroller.setWidth(getWidth() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setX(getWidth() - 1);
+        }
     }
 
     /**
@@ -194,8 +200,12 @@ public class TText extends TScrollableWidget {
     @Override
     public void setHeight(final int height) {
         super.setHeight(height);
-        hScroller.setY(getHeight() - 1);
-        vScroller.setHeight(getHeight() - 1);
+        if (hScroller != null) {
+            hScroller.setY(getHeight() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setHeight(getHeight() - 1);
+        }
     }
 
     /**
