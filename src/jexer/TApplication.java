@@ -270,7 +270,7 @@ public class TApplication implements Runnable {
      * constant.  Someday it would be nice to have a multi-line menu or
      * toolbars.
      */
-    private static final int desktopTop = 1;
+    private int desktopTop = 1;
 
     /**
      * Y coordinate of the bottom edge of the desktop.
@@ -304,6 +304,16 @@ public class TApplication implements Runnable {
      * typed.
      */
     private boolean typingHidMouse = false;
+
+    /**
+     * If true, hide the status bar.
+     */
+    private boolean hideStatusBar = false;
+
+    /**
+     * If true, hide the menu bar.
+     */
+    private boolean hideMenuBar = false;
 
     /**
      * The list of commands to run before the next I/O check.
@@ -705,8 +715,32 @@ public class TApplication implements Runnable {
      * Finish construction once the backend is set.
      */
     private void TApplicationImpl() {
+        // Text block mouse option
+        if (System.getProperty("jexer.textMouse", "true").equals("false")) {
+            textMouse = false;
+        }
+
+        // Hide mouse when typing option
+        if (System.getProperty("jexer.hideMouseWhenTyping",
+                "false").equals("true")) {
+
+            hideMouseWhenTyping = true;
+        }
+
+        // Hide status bar option
+        if (System.getProperty("jexer.hideStatusBar",
+                "false").equals("true")) {
+            hideStatusBar = true;
+        }
+
+        // Hide menu bar option
+        if (System.getProperty("jexer.hideMenuBar", "false").equals("true")) {
+            hideMenuBar = true;
+        }
+
         theme           = new ColorTheme();
-        desktopBottom   = getScreen().getHeight() - 1;
+        desktopTop      = (hideMenuBar ? 0 : 1);
+        desktopBottom   = getScreen().getHeight() - 1 + (hideStatusBar ? 1 : 0);
         fillEventQueue  = new LinkedList<TInputEvent>();
         drainEventQueue = new LinkedList<TInputEvent>();
         windows         = new LinkedList<TWindow>();
@@ -737,18 +771,6 @@ public class TApplication implements Runnable {
                     }
                 );
             }
-        }
-
-        // Text block mouse option
-        if (System.getProperty("jexer.textMouse", "true").equals("false")) {
-            textMouse = false;
-        }
-
-        // Hide mouse when typing option
-        if (System.getProperty("jexer.hideMouseWhenTyping",
-                "false").equals("true")) {
-
-            hideMouseWhenTyping = true;
         }
 
     }
@@ -895,7 +917,7 @@ public class TApplication implements Runnable {
             return true;
         }
 
-        if (command.equals(cmMenu)) {
+        if (command.equals(cmMenu) && (hideMenuBar == false)) {
             if (!modalWindowActive() && (activeMenu == null)) {
                 if (menus.size() > 0) {
                     menus.get(0).setActive(true);
@@ -980,6 +1002,7 @@ public class TApplication implements Runnable {
             && !keypress.getKey().isCtrl()
             && (activeMenu == null)
             && !modalWindowActive()
+            && (hideMenuBar == false)
         ) {
 
             assert (subMenus.size() == 0);
@@ -1068,6 +1091,9 @@ public class TApplication implements Runnable {
                         screenResizeTime = System.currentTimeMillis();
                     }
                     desktopBottom = getScreen().getHeight() - 1;
+                    if (hideStatusBar) {
+                        desktopBottom++;
+                    }
                     mouseX = 0;
                     mouseY = 0;
                     oldMouseX = 0;
@@ -1075,7 +1101,7 @@ public class TApplication implements Runnable {
                 }
                 if (desktop != null) {
                     desktop.setDimensions(0, 0, resize.getWidth(),
-                        resize.getHeight() - 1);
+                        resize.getHeight() - (hideStatusBar ? 0 : 1));
                     desktop.onResize(resize);
                 }
 
@@ -1872,63 +1898,71 @@ public class TApplication implements Runnable {
             }
         }
 
-        // Draw the blank menubar line - reset the screen clipping first so
-        // it won't trim it out.
-        getScreen().resetClipping();
-        getScreen().hLineXY(0, 0, getScreen().getWidth(), ' ',
-            theme.getColor("tmenu"));
-        // Now draw the menus.
-        int x = 1;
-        for (TMenu menu: menus) {
-            CellAttributes menuColor;
-            CellAttributes menuMnemonicColor;
-            if (menu.isActive()) {
-                menuIsActive = true;
-                menuColor = theme.getColor("tmenu.highlighted");
-                menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
-                topLevel = menu;
-            } else {
-                menuColor = theme.getColor("tmenu");
-                menuMnemonicColor = theme.getColor("tmenu.mnemonic");
-            }
-            // Draw the menu title
-            getScreen().hLineXY(x, 0, StringUtils.width(menu.getTitle()) + 2, ' ',
-                menuColor);
-            getScreen().putStringXY(x + 1, 0, menu.getTitle(), menuColor);
-            // Draw the highlight character
-            getScreen().putCharXY(x + 1 + menu.getMnemonic().getScreenShortcutIdx(),
-                0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
+        if (hideMenuBar == false) {
 
-            if (menu.isActive()) {
-                ((TWindow) menu).drawChildren();
-                // Reset the screen clipping so we can draw the next title.
+            // Draw the blank menubar line - reset the screen clipping first
+            // so it won't trim it out.
+            getScreen().resetClipping();
+            getScreen().hLineXY(0, 0, getScreen().getWidth(), ' ',
+                theme.getColor("tmenu"));
+            // Now draw the menus.
+            int x = 1;
+            for (TMenu menu: menus) {
+                CellAttributes menuColor;
+                CellAttributes menuMnemonicColor;
+                if (menu.isActive()) {
+                    menuIsActive = true;
+                    menuColor = theme.getColor("tmenu.highlighted");
+                    menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
+                    topLevel = menu;
+                } else {
+                    menuColor = theme.getColor("tmenu");
+                    menuMnemonicColor = theme.getColor("tmenu.mnemonic");
+                }
+                // Draw the menu title
+                getScreen().hLineXY(x, 0,
+                    StringUtils.width(menu.getTitle()) + 2, ' ', menuColor);
+                getScreen().putStringXY(x + 1, 0, menu.getTitle(), menuColor);
+                // Draw the highlight character
+                getScreen().putCharXY(x + 1 +
+                    menu.getMnemonic().getScreenShortcutIdx(),
+                    0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
+
+                if (menu.isActive()) {
+                    ((TWindow) menu).drawChildren();
+                    // Reset the screen clipping so we can draw the next
+                    // title.
+                    getScreen().resetClipping();
+                }
+                x += StringUtils.width(menu.getTitle()) + 2;
+            }
+
+            for (TMenu menu: subMenus) {
+                // Reset the screen clipping so we can draw the next
+                // sub-menu.
                 getScreen().resetClipping();
+                ((TWindow) menu).drawChildren();
             }
-            x += StringUtils.width(menu.getTitle()) + 2;
-        }
-
-        for (TMenu menu: subMenus) {
-            // Reset the screen clipping so we can draw the next sub-menu.
-            getScreen().resetClipping();
-            ((TWindow) menu).drawChildren();
         }
         getScreen().resetClipping();
 
-        // Draw the status bar of the top-level window
-        TStatusBar statusBar = null;
-        if (topLevel != null) {
-            statusBar = topLevel.getStatusBar();
-        }
-        if (statusBar != null) {
-            getScreen().resetClipping();
-            statusBar.setWidth(getScreen().getWidth());
-            statusBar.setY(getScreen().getHeight() - topLevel.getY());
-            statusBar.draw();
-        } else {
-            CellAttributes barColor = new CellAttributes();
-            barColor.setTo(getTheme().getColor("tstatusbar.text"));
-            getScreen().hLineXY(0, desktopBottom, getScreen().getWidth(), ' ',
-                barColor);
+        if (hideStatusBar == false) {
+            // Draw the status bar of the top-level window
+            TStatusBar statusBar = null;
+            if (topLevel != null) {
+                statusBar = topLevel.getStatusBar();
+            }
+            if (statusBar != null) {
+                getScreen().resetClipping();
+                statusBar.setWidth(getScreen().getWidth());
+                statusBar.setY(getScreen().getHeight() - topLevel.getY());
+                statusBar.draw();
+            } else {
+                CellAttributes barColor = new CellAttributes();
+                barColor.setTo(getTheme().getColor("tstatusbar.text"));
+                getScreen().hLineXY(0, desktopBottom, getScreen().getWidth(),
+                    ' ', barColor);
+            }
         }
 
         // Draw the mouse pointer
@@ -2432,6 +2466,7 @@ public class TApplication implements Runnable {
             if (((window.flags & TWindow.CENTERED) == 0)
                 && ((window.flags & TWindow.ABSOLUTEXY) == 0)
                 && (smartWindowPlacement == true)
+                && (!(window instanceof TDesktop))
             ) {
 
                 doSmartPlacement(window);
@@ -2770,6 +2805,7 @@ public class TApplication implements Runnable {
             && (!modalWindowActive())
             && (!overrideMenuWindowActive())
             && (mouse.getAbsoluteY() == 0)
+            && (hideMenuBar == false)
         ) {
 
             for (TMenu menu: subMenus) {
@@ -2797,6 +2833,7 @@ public class TApplication implements Runnable {
             && (mouse.isMouse1())
             && (activeMenu != null)
             && (mouse.getAbsoluteY() == 0)
+            && (hideMenuBar == false)
         ) {
 
             TMenu oldMenu = activeMenu;
@@ -2965,6 +3002,7 @@ public class TApplication implements Runnable {
      */
     public final void switchMenu(final boolean forward) {
         assert (activeMenu != null);
+        assert (hideMenuBar == false);
 
         for (TMenu menu: subMenus) {
             menu.setActive(false);

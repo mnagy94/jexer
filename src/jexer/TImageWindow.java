@@ -82,7 +82,7 @@ public class TImageWindow extends TScrollableWindow {
         final File file) throws IOException {
 
         this(parent, file, 0, 0, parent.getScreen().getWidth(),
-            parent.getScreen().getHeight() - 2);
+            parent.getDesktopBottom() - parent.getDesktopTop());
     }
 
     /**

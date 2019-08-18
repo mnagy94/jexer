@@ -97,7 +97,7 @@ public class TEditorWindow extends TScrollableWindow {
     public TEditorWindow(final TApplication parent, final String title) {
 
         super(parent, title, 0, 0, parent.getScreen().getWidth(),
-            parent.getScreen().getHeight() - 2, RESIZABLE);
+            parent.getDesktopBottom() - parent.getDesktopTop(), RESIZABLE);
 
         editField = addEditor("", 0, 0, getWidth() - 2, getHeight() - 2);
         setupAfterEditor();
@@ -114,7 +114,7 @@ public class TEditorWindow extends TScrollableWindow {
         final String contents) {
 
         super(parent, title, 0, 0, parent.getScreen().getWidth(),
-            parent.getScreen().getHeight() - 2, RESIZABLE);
+            parent.getDesktopBottom() - parent.getDesktopTop(), RESIZABLE);
 
         filename = title;
         editField = addEditor(contents, 0, 0, getWidth() - 2, getHeight() - 2);
@@ -132,7 +132,7 @@ public class TEditorWindow extends TScrollableWindow {
         final File file) throws IOException {
 
         super(parent, file.getName(), 0, 0, parent.getScreen().getWidth(),
-            parent.getScreen().getHeight() - 2, RESIZABLE);
+            parent.getDesktopBottom() - parent.getDesktopTop(), RESIZABLE);
 
         filename = file.getName();
         String contents = readFileData(file);

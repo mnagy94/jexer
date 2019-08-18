@@ -61,9 +61,8 @@ public class TDesktop extends TWindow {
      * @param parent parent application
      */
     public TDesktop(final TApplication parent) {
-
         super(parent, "", 0, 0, parent.getScreen().getWidth(),
-            parent.getScreen().getHeight() - 1);
+            parent.getDesktopBottom() - parent.getDesktopTop());
 
         setActive(false);
     }

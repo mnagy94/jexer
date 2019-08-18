@@ -1124,9 +1124,9 @@ public class TWindow extends TWidget {
         restoreWindowX = getX();
         restoreWindowY = getY();
         setWidth(getScreen().getWidth());
-        setHeight(application.getDesktopBottom() - 1);
+        setHeight(application.getDesktopBottom() - application.getDesktopTop());
         setX(0);
-        setY(1);
+        setY(application.getDesktopTop());
         maximized = true;
 
         onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
