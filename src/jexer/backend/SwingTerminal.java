@@ -821,13 +821,35 @@ public class SwingTerminal extends LogicalScreen
      * @param font the new font
      */
     public void setFont(final Font font) {
-        synchronized (this) {
-            this.font = font;
-            getFontDimensions();
-            swing.setFont(font);
-            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
-            glyphCache = new HashMap<Cell, BufferedImage>();
-            resizeToScreen(true);
+        if (!SwingUtilities.isEventDispatchThread()) {
+            // Not in the Swing thread: force this inside the Swing thread.
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        synchronized (this) {
+                            SwingTerminal.this.font = font;
+                            getFontDimensions();
+                            swing.setFont(font);
+                            glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+                            glyphCache = new HashMap<Cell, BufferedImage>();
+                            resizeToScreen(true);
+                        }
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (java.lang.reflect.InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        } else {
+            synchronized (this) {
+                SwingTerminal.this.font = font;
+                getFontDimensions();
+                swing.setFont(font);
+                glyphCacheBlink = new HashMap<Cell, BufferedImage>();
+                glyphCache = new HashMap<Cell, BufferedImage>();
+                resizeToScreen(true);
+            }
         }
     }
 
@@ -2156,7 +2178,7 @@ public class SwingTerminal extends LogicalScreen
      * @param mouse mouse event received
      */
     public void mouseEntered(final MouseEvent mouse) {
-        // Ignore
+        swing.requestFocusInWindow();
     }
 
     /**

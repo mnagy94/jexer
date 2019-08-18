@@ -586,4 +586,16 @@ class SwingComponent {
         }
     }
 
+    /**
+     * Requests that this Component get the input focus, if this Component's
+     * top-level ancestor is already the focused Window.
+     */
+    public void requestFocusInWindow() {
+        if (frame != null) {
+            frame.requestFocusInWindow();
+        } else {
+            component.requestFocusInWindow();
+        }
+    }
+
 }
