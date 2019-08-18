@@ -447,6 +447,12 @@ public class TTerminalWidget extends TScrollableWidget
                     emulator.writeRemote("\033[8;" + getHeight() + ";" +
                         getWidth() + "t");
                 }
+
+                // Pass the correct text cell width/height to the emulator
+                if (getScreen() != null) {
+                    emulator.setTextWidth(getScreen().getTextWidth());
+                    emulator.setTextHeight(getScreen().getTextHeight());
+                }
             }
             return;
 
@@ -695,10 +701,6 @@ public class TTerminalWidget extends TScrollableWidget
         // Setup the scroll bars
         onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
-
-        // Pass the correct text cell width/height to the emulator
-        emulator.setTextWidth(getScreen().getTextWidth());
-        emulator.setTextHeight(getScreen().getTextHeight());
 
         // Hide mouse when typing option
         if (System.getProperty("jexer.TTerminal.hideMouseWhenTyping",

@@ -619,6 +619,9 @@ public abstract class TWidget implements Comparable<TWidget> {
         List<TWidget> widgets = null;
         switch (menu.getId()) {
         case TMenu.MID_SPLIT_VERTICAL:
+            if (children.size() == 0) {
+                break;
+            }
             panel = new TPanel(null, x, y, width, height);
             pane = new TSplitPane(null, x, y, width, height, true);
             widgets = new ArrayList<TWidget>(children);
@@ -641,6 +644,9 @@ public abstract class TWidget implements Comparable<TWidget> {
             assert (panel.isActive() == true);
             return;
         case TMenu.MID_SPLIT_HORIZONTAL:
+            if (children.size() == 0) {
+                break;
+            }
             panel = new TPanel(null, x, y, width, height);
             pane = new TSplitPane(null, x, y, width, height, false);
             widgets = new ArrayList<TWidget>(children);
@@ -1161,19 +1167,25 @@ public abstract class TWidget implements Comparable<TWidget> {
     /**
      * Get this TWidget's parent TApplication.
      *
-     * @return the parent TApplication
+     * @return the parent TApplication, or null if not assigned
      */
     public TApplication getApplication() {
-        return window.getApplication();
+        if (window != null) {
+            return window.getApplication();
+        }
+        return null;
     }
 
     /**
      * Get the Screen.
      *
-     * @return the Screen
+     * @return the Screen, or null if not assigned
      */
     public Screen getScreen() {
-        return window.getScreen();
+        if (window != null) {
+            return window.getScreen();
+        }
+        return null;
     }
 
     /**

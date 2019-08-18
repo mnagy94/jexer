@@ -33,6 +33,7 @@ import java.util.ResourceBundle;
 import jexer.TApplication;
 import jexer.TPanel;
 import jexer.TSplitPane;
+import jexer.TTerminalWidget;
 import jexer.TText;
 import jexer.TWindow;
 import jexer.layout.BoxLayoutManager;
@@ -112,8 +113,13 @@ public class Demo8 {
         TSplitPane pane = window.addSplitPane(0, 0, window.getWidth() - 2,
             window.getHeight() - 2, true);
 
-        pane.setLeft(new TText(null, TEXT, 0, 0, 10, 10));
-        pane.setRight(new TText(null, TEXT, 0, 0, 10, 10));
+        // pane.setLeft(new TText(null, TEXT, 0, 0, 10, 10));
+        // pane.setRight(new TText(null, TEXT, 0, 0, 10, 10));
+
+        // For this demo, let's require ptypipe
+        System.setProperty("jexer.TTerminal.ptypipe", "true");
+        pane.setLeft(new TTerminalWidget(null, 0, 0));
+        pane.setRight(new TTerminalWidget(null, 0, 0));
 
         app.run();
     }
