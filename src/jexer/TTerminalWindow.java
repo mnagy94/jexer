@@ -62,8 +62,7 @@ import static jexer.TKeypress.*;
 /**
  * TTerminalWindow exposes a ECMA-48 / ANSI X3.64 style terminal in a window.
  */
-public class TTerminalWindow extends TScrollableWindow
-                             implements DisplayListener {
+public class TTerminalWindow extends TScrollableWindow {
 
     /**
      * Translated strings.
@@ -75,84 +74,14 @@ public class TTerminalWindow extends TScrollableWindow
     // ------------------------------------------------------------------------
 
     /**
-     * The emulator.
+     * The terminal.
      */
-    private ECMA48 emulator;
-
-    /**
-     * The Process created by the shell spawning constructor.
-     */
-    private Process shell;
-
-    /**
-     * If true, we are using the ptypipe utility to support dynamic window
-     * resizing.  ptypipe is available at
-     * https://gitlab.com/klamonte/ptypipe .
-     */
-    private boolean ptypipe = false;
+    private TTerminalWidget terminal;
 
     /**
      * If true, close the window when the shell exits.
      */
     private boolean closeOnExit = false;
-
-    /**
-     * Double-height font.
-     */
-    private GlyphMaker doubleFont;
-
-    /**
-     * Last text width value.
-     */
-    private int lastTextWidth = -1;
-
-    /**
-     * Last text height value.
-     */
-    private int lastTextHeight = -1;
-
-    /**
-     * The blink state, used only by ECMA48 backend and when double-width
-     * chars must be drawn.
-     */
-    private boolean blinkState = true;
-
-    /**
-     * Timer flag, used only by ECMA48 backend and when double-width chars
-     * must be drawn.
-     */
-    private boolean haveTimer = false;
-
-    /**
-     * The last seen scrollback lines.
-     */
-    private List<DisplayLine> scrollback;
-
-    /**
-     * The last seen display lines.
-     */
-    private List<DisplayLine> display;
-
-    /**
-     * If true, the display has changed and needs updating.
-     */
-    private volatile boolean dirty = true;
-
-    /**
-     * Time that the display was last updated.
-     */
-    private long lastUpdateTime = 0;
-
-    /**
-     * If true, hide the mouse after typing a keystroke.
-     */
-    private boolean hideMouseWhenTyping = true;
-
-    /**
-     * If true, the mouse should not be displayed because a keystroke was
-     * typed.
-     */
-    private boolean typingHidMouse = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -225,41 +154,16 @@ public class TTerminalWindow extends TScrollableWindow
             80 + 2, 24 + 2, flags);
 
         this.closeOnExit = closeOnExit;
+        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
 
-        String [] fullCommand;
+        // Claim the keystrokes the emulator will need.
+        addShortcutKeys();
 
-        // Spawn a shell and pass its I/O to the other constructor.
-        if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
-            && (System.getProperty("jexer.TTerminal.ptypipe").
-                equals("true"))
-        ) {
-            ptypipe = true;
-            fullCommand = new String[command.length + 1];
-            fullCommand[0] = "ptypipe";
-            System.arraycopy(command, 0, fullCommand, 1, command.length);
-        } else if (System.getProperty("os.name").startsWith("Windows")) {
-            fullCommand = new String[3];
-            fullCommand[0] = "cmd";
-            fullCommand[1] = "/c";
-            fullCommand[2] = stringArrayToString(command);
-        } else if (System.getProperty("os.name").startsWith("Mac")) {
-            fullCommand = new String[6];
-            fullCommand[0] = "script";
-            fullCommand[1] = "-q";
-            fullCommand[2] = "-F";
-            fullCommand[3] = "/dev/null";
-            fullCommand[4] = "-c";
-            fullCommand[5] = stringArrayToString(command);
-        } else {
-            // Default: behave like Linux
-            fullCommand = new String[5];
-            fullCommand[0] = "script";
-            fullCommand[1] = "-fqe";
-            fullCommand[2] = "/dev/null";
-            fullCommand[3] = "-c";
-            fullCommand[4] = stringArrayToString(command);
-        }
-        spawnShell(fullCommand);
+        // Add shortcut text
+        newStatusBar(i18n.getString("statusBarRunning"));
+
+        // Spin it up
+        terminal = new TTerminalWidget(this, 0, 0);
     }
 
     /**
@@ -295,46 +199,16 @@ public class TTerminalWindow extends TScrollableWindow
             80 + 2, 24 + 2, flags);
 
         this.closeOnExit = closeOnExit;
+        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
 
-        if (System.getProperty("jexer.TTerminal.shell") != null) {
-            String shell = System.getProperty("jexer.TTerminal.shell");
-            if (shell.trim().startsWith("ptypipe")) {
-                ptypipe = true;
-            }
-            spawnShell(shell.split("\\s+"));
-            return;
-        }
+        // Claim the keystrokes the emulator will need.
+        addShortcutKeys();
 
-        String cmdShellWindows = "cmd.exe";
+        // Add shortcut text
+        newStatusBar(i18n.getString("statusBarRunning"));
 
-        // You cannot run a login shell in a bare Process interactively, due
-        // to libc's behavior of buffering when stdin/stdout aren't a tty.
-        // Use 'script' instead to run a shell in a pty.  And because BSD and
-        // GNU differ on the '-f' vs '-F' flags, we need two different
-        // commands.  Lovely.
-        String cmdShellGNU = "script -fqe /dev/null";
-        String cmdShellBSD = "script -q -F /dev/null";
-
-        // ptypipe is another solution that permits dynamic window resizing.
-        String cmdShellPtypipe = "ptypipe /bin/bash --login";
-
-        // Spawn a shell and pass its I/O to the other constructor.
-        if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
-            && (System.getProperty("jexer.TTerminal.ptypipe").
-                equals("true"))
-        ) {
-            ptypipe = true;
-            spawnShell(cmdShellPtypipe.split("\\s+"));
-        } else if (System.getProperty("os.name").startsWith("Windows")) {
-            spawnShell(cmdShellWindows.split("\\s+"));
-        } else if (System.getProperty("os.name").startsWith("Mac")) {
-            spawnShell(cmdShellBSD.split("\\s+"));
-        } else if (System.getProperty("os.name").startsWith("Linux")) {
-            spawnShell(cmdShellGNU.split("\\s+"));
-        } else {
-            // When all else fails, assume GNU.
-            spawnShell(cmdShellGNU.split("\\s+"));
-        }
+        // Spin it up
+        terminal = new TTerminalWidget(this, 0, 0);
     }
 
     // ------------------------------------------------------------------------
@@ -346,137 +220,9 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void draw() {
-        int width = getDisplayWidth();
-        boolean syncEmulator = false;
-        if ((System.currentTimeMillis() - lastUpdateTime >= 25)
-            && (dirty == true)
-        ) {
-            // Too much time has passed, draw it all.
-            syncEmulator = true;
-        } else if (emulator.isReading() && (dirty == false)) {
-            // Wait until the emulator has brought more data in.
-            syncEmulator = false;
-        } else if (!emulator.isReading() && (dirty == true)) {
-            // The emulator won't receive more data, update the display.
-            syncEmulator = true;
-        }
-
-        if ((syncEmulator == true)
-            || (scrollback == null)
-            || (display == null)
-        ) {
-            // We want to minimize the amount of time we have the emulator
-            // locked.  Grab a copy of its display.
-            synchronized (emulator) {
-                // Update the scroll bars
-                reflowData();
-
-                if ((scrollback == null) || emulator.isReading()) {
-                    scrollback = copyBuffer(emulator.getScrollbackBuffer());
-                    display = copyBuffer(emulator.getDisplayBuffer());
-                }
-                width = emulator.getWidth();
-            }
-            dirty = false;
-        }
-
-        // Draw the box using my superclass
+        setTitle(terminal.getTitle());
+        reflowData();
         super.draw();
-
-        // Put together the visible rows
-        int visibleHeight = getHeight() - 2;
-        int visibleBottom = scrollback.size() + display.size()
-                + getVerticalValue();
-        assert (visibleBottom >= 0);
-
-        List<DisplayLine> preceedingBlankLines = new ArrayList<DisplayLine>();
-        int visibleTop = visibleBottom - visibleHeight;
-        if (visibleTop < 0) {
-            for (int i = visibleTop; i < 0; i++) {
-                preceedingBlankLines.add(emulator.getBlankDisplayLine());
-            }
-            visibleTop = 0;
-        }
-        assert (visibleTop >= 0);
-
-        List<DisplayLine> displayLines = new ArrayList<DisplayLine>();
-        displayLines.addAll(scrollback);
-        displayLines.addAll(display);
-
-        List<DisplayLine> visibleLines = new ArrayList<DisplayLine>();
-        visibleLines.addAll(preceedingBlankLines);
-        visibleLines.addAll(displayLines.subList(visibleTop,
-                visibleBottom));
-
-        visibleHeight -= visibleLines.size();
-        assert (visibleHeight >= 0);
-
-        // Now draw the emulator screen
-        int row = 1;
-        for (DisplayLine line: visibleLines) {
-            int widthMax = width;
-            if (line.isDoubleWidth()) {
-                widthMax /= 2;
-            }
-            if (widthMax > getWidth() - 2) {
-                widthMax = getWidth() - 2;
-            }
-            for (int i = 0; i < widthMax; i++) {
-                Cell ch = line.charAt(i);
-
-                if (ch.isImage()) {
-                    putCharXY(i + 1, row, ch);
-                    continue;
-                }
-
-                Cell newCell = new Cell(ch);
-                boolean reverse = line.isReverseColor() ^ ch.isReverse();
-                newCell.setReverse(false);
-                if (reverse) {
-                    if (ch.getForeColorRGB() < 0) {
-                        newCell.setBackColor(ch.getForeColor());
-                        newCell.setBackColorRGB(-1);
-                    } else {
-                        newCell.setBackColorRGB(ch.getForeColorRGB());
-                    }
-                    if (ch.getBackColorRGB() < 0) {
-                        newCell.setForeColor(ch.getBackColor());
-                        newCell.setForeColorRGB(-1);
-                    } else {
-                        newCell.setForeColorRGB(ch.getBackColorRGB());
-                    }
-                }
-                if (line.isDoubleWidth()) {
-                    putDoubleWidthCharXY(line, (i * 2) + 1, row, newCell);
-                } else {
-                    putCharXY(i + 1, row, newCell);
-                }
-            }
-            row++;
-            if (row == getHeight() - 1) {
-                // Don't overwrite the box edge
-                break;
-            }
-        }
-        CellAttributes background = new CellAttributes();
-        // Fill in the blank lines on bottom
-        for (int i = 0; i < visibleHeight; i++) {
-            hLineXY(1, i + row, getWidth() - 2, ' ', background);
-        }
-
-    }
-
-    /**
-     * Handle window close.
-     */
-    @Override
-    public void onClose() {
-        emulator.close();
-        if (shell != null) {
-            terminateShellChildProcess();
-            shell.destroy();
-            shell = null;
-        }
     }
 
     /**
@@ -486,30 +232,15 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void onResize(final TResizeEvent resize) {
+        if (resize.getType() == TResizeEvent.Type.WIDGET) {
+            terminal.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    getWidth() - 2, getHeight() - 2));
 
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
-
-            if (resize.getType() == TResizeEvent.Type.WIDGET) {
-                // Resize the scroll bars
-                reflowData();
-                placeScrollbars();
-
-                // Get out of scrollback
-                setVerticalValue(0);
-
-                if (ptypipe) {
-                    emulator.setWidth(getWidth() - 2);
-                    emulator.setHeight(getHeight() - 2);
-
-                    emulator.writeRemote("\033[8;" + (getHeight() - 2) + ";" +
-                        (getWidth() - 2) + "t");
-                }
-            }
-            return;
-
-        } // synchronized (emulator)
+            // Resize the scroll bars
+            reflowData();
+            placeScrollbars();
+        }
+        return;
     }
 
     /**
@@ -517,21 +248,12 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void reflowData() {
-
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
-
-            // Pull cursor information
-            readEmulatorState();
-
-            // Vertical scrollbar
-            setTopValue(getHeight() - 2
-                - (emulator.getScrollbackBuffer().size()
-                    + emulator.getDisplayBuffer().size()));
-            setVerticalBigChange(getHeight() - 2);
-
-        } // synchronized (emulator)
+        // Vertical scrollbar
+        terminal.reflowData();
+        setTopValue(terminal.getTopValue());
+        setBottomValue(terminal.getBottomValue());
+        setVerticalBigChange(terminal.getVerticalBigChange());
+        setVerticalValue(terminal.getVerticalValue());
     }
 
     /**
@@ -541,48 +263,11 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-        if (hideMouseWhenTyping) {
-            typingHidMouse = true;
+        if (terminal.isReading()) {
+            terminal.onKeypress(keypress);
+        } else {
+            super.onKeypress(keypress);
         }
-
-        // Scrollback up/down
-        if (keypress.equals(kbShiftPgUp)
-            || keypress.equals(kbCtrlPgUp)
-            || keypress.equals(kbAltPgUp)
-        ) {
-            bigVerticalDecrement();
-            return;
-        }
-        if (keypress.equals(kbShiftPgDn)
-            || keypress.equals(kbCtrlPgDn)
-            || keypress.equals(kbAltPgDn)
-        ) {
-            bigVerticalIncrement();
-            return;
-        }
-
-        if (emulator.isReading()) {
-            // Get out of scrollback
-            setVerticalValue(0);
-            emulator.addUserEvent(keypress);
-
-            // UGLY HACK TIME!  cmd.exe needs CRLF, not just CR, so if
-            // this is kBEnter then also send kbCtrlJ.
-            if (keypress.equals(kbEnter)) {
-                if (System.getProperty("os.name").startsWith("Windows")
-                    && (System.getProperty("jexer.TTerminal.cmdHack",
-                            "true").equals("true"))
-                ) {
-                    emulator.addUserEvent(new TKeypressEvent(kbCtrlJ));
-                }
-            }
-
-            readEmulatorState();
-            return;
-        }
-
-        // Process is closed, honor "normal" TUI keystrokes
-        super.onKeypress(keypress);
     }
 
     /**
@@ -598,31 +283,6 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
-        if (hideMouseWhenTyping) {
-            typingHidMouse = false;
-        }
-
-        // If the emulator is tracking mouse buttons, it needs to see wheel
-        // events.
-        if (emulator.getMouseProtocol() == ECMA48.MouseProtocol.OFF) {
-            if (mouse.isMouseWheelUp()) {
-                verticalDecrement();
-                return;
-            }
-            if (mouse.isMouseWheelDown()) {
-                verticalIncrement();
-                return;
-            }
-        }
-        if (mouseOnEmulator(mouse)) {
-            mouse.setX(mouse.getX() - 1);
-            mouse.setY(mouse.getY() - 1);
-            emulator.addUserEvent(mouse);
-            readEmulatorState();
-            return;
-        }
-
-        // Emulator didn't consume it, pass it on
         super.onMouseDown(mouse);
     }
 
@@ -639,19 +299,6 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
-        if (hideMouseWhenTyping) {
-            typingHidMouse = false;
-        }
-
-        if (mouseOnEmulator(mouse)) {
-            mouse.setX(mouse.getX() - 1);
-            mouse.setY(mouse.getY() - 1);
-            emulator.addUserEvent(mouse);
-            readEmulatorState();
-            return;
-        }
-
-        // Emulator didn't consume it, pass it on
         super.onMouseUp(mouse);
     }
 
@@ -668,19 +315,6 @@ public class TTerminalWindow extends TScrollableWindow
             return;
         }
 
-        if (hideMouseWhenTyping) {
-            typingHidMouse = false;
-        }
-
-        if (mouseOnEmulator(mouse)) {
-            mouse.setX(mouse.getX() - 1);
-            mouse.setY(mouse.getY() - 1);
-            emulator.addUserEvent(mouse);
-            readEmulatorState();
-            return;
-        }
-
-        // Emulator didn't consume it, pass it on
         super.onMouseMotion(mouse);
     }
 
@@ -697,7 +331,7 @@ public class TTerminalWindow extends TScrollableWindow
      */
     @Override
     public boolean hasHiddenMouse() {
-        return (super.hasHiddenMouse() || typingHidMouse);
+        return terminal.hasHiddenMouse();
     }
 
     /**
@@ -771,394 +405,14 @@ public class TTerminalWindow extends TScrollableWindow
     }
 
     /**
-     * Convert a string array to a whitespace-separated string.
-     *
-     * @param array the string array
-     * @return a single string
-     */
-    private String stringArrayToString(final String [] array) {
-        StringBuilder sb = new StringBuilder(array[0].length());
-        for (int i = 0; i < array.length; i++) {
-            sb.append(array[i]);
-            if (i < array.length - 1) {
-                sb.append(' ');
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Spawn the shell.
-     *
-     * @param command the command line to execute
-     */
-    private void spawnShell(final String [] command) {
-
-        /*
-        System.err.printf("spawnShell(): '%s'\n",
-            stringArrayToString(command));
-        */
-
-        vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
-        setBottomValue(0);
-
-        // Assume XTERM
-        ECMA48.DeviceType deviceType = ECMA48.DeviceType.XTERM;
-
-        try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            Map<String, String> env = pb.environment();
-            env.put("TERM", ECMA48.deviceTypeTerm(deviceType));
-            env.put("LANG", ECMA48.deviceTypeLang(deviceType, "en"));
-            env.put("COLUMNS", "80");
-            env.put("LINES", "24");
-            pb.redirectErrorStream(true);
-            shell = pb.start();
-            emulator = new ECMA48(deviceType, shell.getInputStream(),
-                shell.getOutputStream(), this);
-        } catch (IOException e) {
-            messageBox(i18n.getString("errorLaunchingShellTitle"),
-                MessageFormat.format(i18n.getString("errorLaunchingShellText"),
-                    e.getMessage()));
-        }
-
-        // Setup the scroll bars
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
-                getHeight()));
-
-        // Claim the keystrokes the emulator will need.
-        addShortcutKeys();
-
-        // Add shortcut text
-        newStatusBar(i18n.getString("statusBarRunning"));
-
-        // Pass the correct text cell width/height to the emulator
-        emulator.setTextWidth(getScreen().getTextWidth());
-        emulator.setTextHeight(getScreen().getTextHeight());
-
-        // Hide mouse when typing option
-        if (System.getProperty("jexer.TTerminal.hideMouseWhenTyping",
-                "true").equals("false")) {
-
-            hideMouseWhenTyping = false;
-        }
-    }
-
-    /**
-     * Terminate the child of the 'script' process used on POSIX.  This may
-     * or may not work.
-     */
-    private void terminateShellChildProcess() {
-        int pid = -1;
-        if (shell.getClass().getName().equals("java.lang.UNIXProcess")) {
-            /* get the PID on unix/linux systems */
-            try {
-                Field field = shell.getClass().getDeclaredField("pid");
-                field.setAccessible(true);
-                pid = field.getInt(shell);
-            } catch (Throwable e) {
-                // SQUASH, this didn't work.  Just bail out quietly.
-                return;
-            }
-        }
-        if (pid != -1) {
-            // shell.destroy() works successfully at killing this side of
-            // 'script'.  But we need to make sure the other side (child
-            // process) is also killed.
-            String [] cmdKillIt = {
-                "pkill", "-P", Integer.toString(pid)
-            };
-            try {
-                Runtime.getRuntime().exec(cmdKillIt);
-            } catch (Throwable e) {
-                // SQUASH, this didn't work.  Just bail out quietly.
-                return;
-            }
-        }
-    }
-
-    /**
      * Hook for subclasses to be notified of the shell termination.
      */
     public void onShellExit() {
         if (closeOnExit) {
             close();
         }
+        clearShortcutKeypresses();
         getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
-    }
-
-    /**
-     * Copy out variables from the emulator that TTerminal has to expose on
-     * screen.
-     */
-    private void readEmulatorState() {
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
-            setHiddenMouse(emulator.hasHiddenMousePointer());
-
-            setCursorX(emulator.getCursorX() + 1);
-            setCursorY(emulator.getCursorY() + 1
-                + (getHeight() - 2 - emulator.getHeight())
-                - getVerticalValue());
-            setCursorVisible(emulator.isCursorVisible());
-            if (getCursorX() > getWidth() - 2) {
-                setCursorVisible(false);
-            }
-            if ((getCursorY() > getHeight() - 2) || (getCursorY() < 0)) {
-                setCursorVisible(false);
-            }
-            if (emulator.getScreenTitle().length() > 0) {
-                // Only update the title if the shell is still alive
-                if (shell != null) {
-                    setTitle(emulator.getScreenTitle());
-                }
-            }
-
-            // Check to see if the shell has died.
-            if (!emulator.isReading() && (shell != null)) {
-                try {
-                    int rc = shell.exitValue();
-                    // The emulator exited on its own, all is fine
-                    setTitle(MessageFormat.format(i18n.
-                            getString("windowTitleCompleted"), getTitle(), rc));
-                    shell = null;
-                    emulator.close();
-                    clearShortcutKeypresses();
-                    statusBar.setText(MessageFormat.format(i18n.
-                            getString("statusBarCompleted"), rc));
-                    onShellExit();
-                } catch (IllegalThreadStateException e) {
-                    // The emulator thread has exited, but the shell Process
-                    // hasn't figured that out yet.  Do nothing, we will see
-                    // this in a future tick.
-                }
-            } else if (emulator.isReading() && (shell != null)) {
-                // The shell might be dead, let's check
-                try {
-                    int rc = shell.exitValue();
-                    // If we got here, the shell died.
-                    setTitle(MessageFormat.format(i18n.
-                            getString("windowTitleCompleted"), getTitle(), rc));
-                    shell = null;
-                    emulator.close();
-                    clearShortcutKeypresses();
-                    statusBar.setText(MessageFormat.format(i18n.
-                            getString("statusBarCompleted"), rc));
-                    onShellExit();
-                } catch (IllegalThreadStateException e) {
-                    // The shell is still running, do nothing.
-                }
-            }
-
-        } // synchronized (emulator)
-    }
-
-    /**
-     * Check if a mouse press/release/motion event coordinate is over the
-     * emulator.
-     *
-     * @param mouse a mouse-based event
-     * @return whether or not the mouse is on the emulator
-     */
-    private boolean mouseOnEmulator(final TMouseEvent mouse) {
-
-        if (!emulator.isReading()) {
-            return false;
-        }
-
-        if ((mouse.getAbsoluteX() >= getAbsoluteX() + 1)
-            && (mouse.getAbsoluteX() <  getAbsoluteX() + getWidth() - 1)
-            && (mouse.getAbsoluteY() >= getAbsoluteY() + 1)
-            && (mouse.getAbsoluteY() <  getAbsoluteY() + getHeight() - 1)
-        ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Copy a display buffer.
-     *
-     * @param buffer the buffer to copy
-     * @return a deep copy of the buffer's data
-     */
-    private List<DisplayLine> copyBuffer(final List<DisplayLine> buffer) {
-        ArrayList<DisplayLine> result = new ArrayList<DisplayLine>(buffer.size());
-        for (DisplayLine line: buffer) {
-            result.add(new DisplayLine(line));
-        }
-        return result;
-    }
-
-    /**
-     * Draw glyphs for a double-width or double-height VT100 cell to two
-     * screen cells.
-     *
-     * @param line the line this VT100 cell is in
-     * @param x the X position to draw the left half to
-     * @param y the Y position to draw to
-     * @param cell the cell to draw
-     */
-    private void putDoubleWidthCharXY(final DisplayLine line, final int x,
-        final int y, final Cell cell) {
-
-        int textWidth = getScreen().getTextWidth();
-        int textHeight = getScreen().getTextHeight();
-        boolean cursorBlinkVisible = true;
-
-        if (getScreen() instanceof SwingTerminal) {
-            SwingTerminal terminal = (SwingTerminal) getScreen();
-            cursorBlinkVisible = terminal.getCursorBlinkVisible();
-        } else if (getScreen() instanceof ECMA48Terminal) {
-            ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
-
-            if (!terminal.hasSixel()) {
-                // The backend does not have sixel support, draw this as text
-                // and bail out.
-                putCharXY(x, y, cell);
-                putCharXY(x + 1, y, ' ', cell);
-                return;
-            }
-            cursorBlinkVisible = blinkState;
-        } else {
-            // We don't know how to dray glyphs to this screen, draw them as
-            // text and bail out.
-            putCharXY(x, y, cell);
-            putCharXY(x + 1, y, ' ', cell);
-            return;
-        }
-
-        if ((textWidth != lastTextWidth) || (textHeight != lastTextHeight)) {
-            // Screen size has changed, reset the font.
-            setupFont(textHeight);
-            lastTextWidth = textWidth;
-            lastTextHeight = textHeight;
-        }
-        assert (doubleFont != null);
-
-        BufferedImage image;
-        if (line.getDoubleHeight() == 1) {
-            // Double-height top half: don't draw the underline.
-            Cell newCell = new Cell(cell);
-            newCell.setUnderline(false);
-            image = doubleFont.getImage(newCell, textWidth * 2, textHeight * 2,
-                cursorBlinkVisible);
-        } else {
-            image = doubleFont.getImage(cell,  textWidth * 2, textHeight * 2,
-                cursorBlinkVisible);
-        }
-
-        // Now that we have the double-wide glyph drawn, copy the right
-        // pieces of it to the cells.
-        Cell left = new Cell(cell);
-        Cell right = new Cell(cell);
-        right.setChar(' ');
-        BufferedImage leftImage = null;
-        BufferedImage rightImage = null;
-        /*
-        System.err.println("image " + image + " textWidth " + textWidth +
-            " textHeight " + textHeight);
-         */
-
-        switch (line.getDoubleHeight()) {
-        case 1:
-            // Top half double height
-            leftImage = image.getSubimage(0, 0, textWidth, textHeight);
-            rightImage = image.getSubimage(textWidth, 0, textWidth, textHeight);
-            break;
-        case 2:
-            // Bottom half double height
-            leftImage = image.getSubimage(0, textHeight, textWidth, textHeight);
-            rightImage = image.getSubimage(textWidth, textHeight,
-                textWidth, textHeight);
-            break;
-        default:
-            // Either single height double-width, or error fallback
-            BufferedImage wideImage = new BufferedImage(textWidth * 2,
-                textHeight, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D grWide = wideImage.createGraphics();
-            grWide.drawImage(image, 0, 0, wideImage.getWidth(),
-                wideImage.getHeight(), null);
-            grWide.dispose();
-            leftImage = wideImage.getSubimage(0, 0, textWidth, textHeight);
-            rightImage = wideImage.getSubimage(textWidth, 0, textWidth,
-                textHeight);
-            break;
-        }
-        left.setImage(leftImage);
-        right.setImage(rightImage);
-        // Since we have image data, ditch the character here.  Otherwise, a
-        // drawBoxShadow() over the terminal window will show the characters
-        // which looks wrong.
-        left.setChar(' ');
-        right.setChar(' ');
-        putCharXY(x, y, left);
-        putCharXY(x + 1, y, right);
-    }
-
-    /**
-     * Set up the double-width font.
-     *
-     * @param fontSize the size of font to request for the single-width font.
-     * The double-width font will be 2x this value.
-     */
-    private void setupFont(final int fontSize) {
-        doubleFont = GlyphMaker.getInstance(fontSize * 2);
-
-        // Special case: the ECMA48 backend needs to have a timer to drive
-        // its blink state.
-        if (getScreen() instanceof jexer.backend.ECMA48Terminal) {
-            if (!haveTimer) {
-                // Blink every 500 millis.
-                long millis = 500;
-                getApplication().addTimer(millis, true,
-                    new TAction() {
-                        public void DO() {
-                            blinkState = !blinkState;
-                            getApplication().doRepaint();
-                        }
-                    }
-                );
-                haveTimer = true;
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------------
-    // DisplayListener --------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Called by emulator when fresh data has come in.
-     */
-    public void displayChanged() {
-        dirty = true;
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
-    }
-
-    /**
-     * Function to call to obtain the display width.
-     *
-     * @return the number of columns in the display
-     */
-    public int getDisplayWidth() {
-        if (ptypipe) {
-            return getWidth() - 2;
-        }
-        return 80;
-    }
-
-    /**
-     * Function to call to obtain the display height.
-     *
-     * @return the number of rows in the display
-     */
-    public int getDisplayHeight() {
-        if (ptypipe) {
-            return getHeight() - 2;
-        }
-        return 24;
     }
 
 }
