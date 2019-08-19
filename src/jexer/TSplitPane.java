@@ -81,6 +81,11 @@ public class TSplitPane extends TWidget {
      */
     private boolean inSplitMove = false;
 
+    /**
+     * The last seen mouse position.
+     */
+    private TMouseEvent mouse;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -136,6 +141,7 @@ public class TSplitPane extends TWidget {
      */
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
+        this.mouse = mouse;
 
         inSplitMove = false;
 
@@ -161,6 +167,7 @@ public class TSplitPane extends TWidget {
      */
     @Override
     public void onMouseUp(final TMouseEvent mouse) {
+        this.mouse = mouse;
 
         if (inSplitMove && mouse.isMouse1()) {
             // Stop moving split
@@ -179,6 +186,16 @@ public class TSplitPane extends TWidget {
      */
     @Override
     public void onMouseMotion(final TMouseEvent mouse) {
+        this.mouse = mouse;
+
+        if ((mouse.getAbsoluteX() - getAbsoluteX() < 0)
+            || (mouse.getAbsoluteX() - getAbsoluteX() >= getWidth())
+            || (mouse.getAbsoluteY() - getAbsoluteY() < 0)
+            || (mouse.getAbsoluteY() - getAbsoluteY() >= getHeight())
+        ) {
+            // Mouse has travelled out of my window.
+            inSplitMove = false;
+        }
 
         if (inSplitMove) {
             if (vertical) {
@@ -209,10 +226,29 @@ public class TSplitPane extends TWidget {
         if (vertical) {
             vLineXY(split, 0, getHeight(), GraphicsChars.WINDOW_SIDE, attr);
             // TODO: draw intersections of children
+
+            if ((mouse != null)
+                && (mouse.getAbsoluteX() == getAbsoluteX() + split)
+                && (mouse.getAbsoluteY() >= getAbsoluteY()) &&
+                (mouse.getAbsoluteY() < getAbsoluteY() + getHeight())
+            ) {
+                putCharXY(split, mouse.getAbsoluteY() - getAbsoluteY(),
+                    '\u2194', attr);
+            }
         } else {
             hLineXY(0, split, getWidth(), GraphicsChars.SINGLE_BAR, attr);
             // TODO: draw intersections of children
+
+            if ((mouse != null)
+                && (mouse.getAbsoluteY() == getAbsoluteY() + split)
+                && (mouse.getAbsoluteX() >= getAbsoluteX()) &&
+                (mouse.getAbsoluteX() < getAbsoluteX() + getWidth())
+            ) {
+                putCharXY(mouse.getAbsoluteX() - getAbsoluteX(), split,
+                    '\u2195', attr);
+            }
         }
+
     }
 
     // ------------------------------------------------------------------------
