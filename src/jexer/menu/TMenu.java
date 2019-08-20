@@ -435,7 +435,6 @@ public class TMenu extends TWindow {
      * @return the new menu item
      */
     public TMenuItem addItem(final int id, final String label) {
-        assert (id >= 1024);
         return addItemInternal(id, label, null);
     }
 

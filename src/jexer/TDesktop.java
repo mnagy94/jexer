@@ -33,6 +33,7 @@ import jexer.bits.GraphicsChars;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
+import jexer.event.TResizeEvent;
 
 /**
  * TDesktop is a special-class window that is drawn underneath everything
@@ -68,72 +69,30 @@ public class TDesktop extends TWindow {
     }
 
     // ------------------------------------------------------------------------
-    // TWindow ----------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
-     * The default TDesktop draws a hatch character across everything.
-     */
-    @Override
-    public void draw() {
-        CellAttributes background = getTheme().getColor("tdesktop.background");
-        putAll(GraphicsChars.HATCH, background);
-    }
-
-    /**
-     * Hide window.  This is a NOP for TDesktop.
-     */
-    @Override
-    public final void hide() {}
-
-    /**
-     * Show window.  This is a NOP for TDesktop.
-     */
-    @Override
-    public final void show() {}
-
-    /**
-     * Called by hide().  This is a NOP for TDesktop.
-     */
-    @Override
-    public final void onHide() {}
-
-    /**
-     * Called by show().  This is a NOP for TDesktop.
-     */
-    @Override
-    public final void onShow() {}
-
-    /**
-     * Returns true if the mouse is currently on the close button.
+     * Handle window/screen resize events.
      *
-     * @return true if mouse is currently on the close button
+     * @param resize resize event
      */
     @Override
-    protected final boolean mouseOnClose() {
-        return false;
-    }
-
-    /**
-     * Returns true if the mouse is currently on the maximize/restore button.
-     *
-     * @return true if the mouse is currently on the maximize/restore button
-     */
-    @Override
-    protected final boolean mouseOnMaximize() {
-        return false;
-    }
-
-    /**
-     * Returns true if the mouse is currently on the resizable lower right
-     * corner.
-     *
-     * @return true if the mouse is currently on the resizable lower right
-     * corner
-     */
-    @Override
-    protected final boolean mouseOnResize() {
-        return false;
+    public void onResize(final TResizeEvent resize) {
+        if (getChildren().size() == 1) {
+            TWidget child = getChildren().get(0);
+            if (!(child instanceof TWindow)) {
+                // Only one child, resize it to match my size.
+                child.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                        getWidth(), getHeight()));
+            }
+        }
+        if (resize.getType() == TResizeEvent.Type.SCREEN) {
+            // Let children see the screen resize
+            for (TWidget widget: getChildren()) {
+                widget.onResize(resize);
+            }
+        }
     }
 
     /**
@@ -217,6 +176,83 @@ public class TDesktop extends TWindow {
     public void onMenu(final TMenuEvent menu) {
         // Default: do nothing, pass to children instead
         super.onMenu(menu);
+    }
+
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * The default TDesktop draws a hatch character across everything.
+     */
+    @Override
+    public void draw() {
+        CellAttributes background = getTheme().getColor("tdesktop.background");
+        putAll(GraphicsChars.HATCH, background);
+
+        /*
+        // For debugging, let's see where the desktop bounds really are.
+        putCharXY(0, 0, '0', background);
+        putCharXY(getWidth() - 1, 0, '1', background);
+        putCharXY(0, getHeight() - 1, '2', background);
+        putCharXY(getWidth() - 1, getHeight() - 1, '3', background);
+         */
+    }
+
+    /**
+     * Hide window.  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void hide() {}
+
+    /**
+     * Show window.  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void show() {}
+
+    /**
+     * Called by hide().  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void onHide() {}
+
+    /**
+     * Called by show().  This is a NOP for TDesktop.
+     */
+    @Override
+    public final void onShow() {}
+
+    /**
+     * Returns true if the mouse is currently on the close button.
+     *
+     * @return true if mouse is currently on the close button
+     */
+    @Override
+    protected final boolean mouseOnClose() {
+        return false;
+    }
+
+    /**
+     * Returns true if the mouse is currently on the maximize/restore button.
+     *
+     * @return true if the mouse is currently on the maximize/restore button
+     */
+    @Override
+    protected final boolean mouseOnMaximize() {
+        return false;
+    }
+
+    /**
+     * Returns true if the mouse is currently on the resizable lower right
+     * corner.
+     *
+     * @return true if the mouse is currently on the resizable lower right
+     * corner
+     */
+    @Override
+    protected final boolean mouseOnResize() {
+        return false;
     }
 
 }

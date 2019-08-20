@@ -1100,8 +1100,8 @@ public class TApplication implements Runnable {
                     oldMouseY = 0;
                 }
                 if (desktop != null) {
-                    desktop.setDimensions(0, 0, resize.getWidth(),
-                        resize.getHeight() - (hideStatusBar ? 0 : 1));
+                    desktop.setDimensions(0, desktopTop, resize.getWidth(),
+                        (desktopBottom - desktopTop));
                     desktop.onResize(resize);
                 }
 
@@ -2001,12 +2001,29 @@ public class TApplication implements Runnable {
 
         // Place the cursor if it is visible
         if (!menuIsActive) {
+
+            int visibleWindowCount = 0;
+            for (TWindow window: sorted) {
+                if (window.isShown()) {
+                    visibleWindowCount++;
+                }
+            }
+            if (visibleWindowCount == 0) {
+                // No windows are visible, only the desktop.  Allow it to
+                // have the cursor.
+                if (desktop != null) {
+                    sorted.add(desktop);
+                }
+            }
+
             TWidget activeWidget = null;
             if (sorted.size() > 0) {
                 activeWidget = sorted.get(sorted.size() - 1).getActiveChild();
+                int cursorClipTop = desktopTop;
+                int cursorClipBottom = desktopBottom;
                 if (activeWidget.isCursorVisible()) {
-                    if ((activeWidget.getCursorAbsoluteY() < desktopBottom)
-                        && (activeWidget.getCursorAbsoluteY() > desktopTop)
+                    if ((activeWidget.getCursorAbsoluteY() <= cursorClipBottom)
+                        && (activeWidget.getCursorAbsoluteY() >= cursorClipTop)
                     ) {
                         getScreen().putCursor(true,
                             activeWidget.getCursorAbsoluteX(),

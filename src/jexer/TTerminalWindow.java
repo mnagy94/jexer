@@ -163,7 +163,11 @@ public class TTerminalWindow extends TScrollableWindow {
         newStatusBar(i18n.getString("statusBarRunning"));
 
         // Spin it up
-        terminal = new TTerminalWidget(this, 0, 0);
+        terminal = new TTerminalWidget(this, 0, 0, new TAction() {
+            public void DO() {
+                onShellExit();
+            }
+        });
     }
 
     /**
@@ -208,7 +212,11 @@ public class TTerminalWindow extends TScrollableWindow {
         newStatusBar(i18n.getString("statusBarRunning"));
 
         // Spin it up
-        terminal = new TTerminalWidget(this, 0, 0);
+        terminal = new TTerminalWidget(this, 0, 0, new TAction() {
+            public void DO() {
+                onShellExit();
+            }
+        });
     }
 
     // ------------------------------------------------------------------------

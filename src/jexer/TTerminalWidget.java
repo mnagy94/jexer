@@ -60,7 +60,7 @@ import jexer.tterminal.ECMA48;
 import static jexer.TKeypress.*;
 
 /**
- * TTerminalWindow exposes a ECMA-48 / ANSI X3.64 style terminal in a widget.
+ * TTerminalWidget exposes a ECMA-48 / ANSI X3.64 style terminal in a widget.
  */
 public class TTerminalWidget extends TScrollableWidget
                              implements DisplayListener {
@@ -159,6 +159,11 @@ public class TTerminalWidget extends TScrollableWidget
      */
     private String title = "";
 
+    /**
+     * Action to perform when the terminal exits.
+     */
+    private TAction closeAction = null;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -171,8 +176,8 @@ public class TTerminalWidget extends TScrollableWidget
      * @param y row relative to parent
      * @param commandLine the command line to execute
      */
-    public TTerminalWidget(final TWidget parent, final int x,
-        final int y, final String commandLine) {
+    public TTerminalWidget(final TWidget parent, final int x, final int y,
+        final String commandLine) {
 
         this(parent, x, y, commandLine.split("\\s+"));
     }
@@ -185,10 +190,45 @@ public class TTerminalWidget extends TScrollableWidget
      * @param y row relative to parent
      * @param command the command line to execute
      */
-    public TTerminalWidget(final TWidget parent, final int x,
-        final int y, final String [] command) {
+    public TTerminalWidget(final TWidget parent, final int x, final int y,
+        final String [] command) {
 
-        super(parent, x, y, 80, 24);
+        this(parent, x, y, command, null);
+    }
+
+    /**
+     * Public constructor spawns a custom command line.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param command the command line to execute
+     * @param closeAction action to perform when the shell sxits
+     */
+    public TTerminalWidget(final TWidget parent, final int x, final int y,
+        final String [] command, final TAction closeAction) {
+
+        this(parent, x, y, 80, 24, command, closeAction);
+    }
+
+    /**
+     * Public constructor spawns a custom command line.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     * @param command the command line to execute
+     * @param closeAction action to perform when the shell sxits
+     */
+    public TTerminalWidget(final TWidget parent, final int x, final int y,
+        final int width, final int height, final String [] command,
+        final TAction closeAction) {
+
+        super(parent, x, y, width, height);
+
+        this.closeAction = closeAction;
 
         String [] fullCommand;
 
@@ -234,8 +274,39 @@ public class TTerminalWidget extends TScrollableWidget
      * @param y row relative to parent
      */
     public TTerminalWidget(final TWidget parent, final int x, final int y) {
+        this(parent, x, y, (TAction) null);
+    }
 
-        super(parent, x, y, 80, 24);
+    /**
+     * Public constructor spawns a shell.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param closeAction action to perform when the shell sxits
+     */
+    public TTerminalWidget(final TWidget parent, final int x, final int y,
+        final TAction closeAction) {
+
+        this(parent, x, y, 80, 24, closeAction);
+    }
+
+    /**
+     * Public constructor spawns a shell.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of widget
+     * @param height height of widget
+     * @param closeAction action to perform when the shell sxits
+     */
+    public TTerminalWidget(final TWidget parent, final int x, final int y,
+        final int width, final int height, final TAction closeAction) {
+
+        super(parent, x, y, width, height);
+
+        this.closeAction = closeAction;
 
         if (System.getProperty("jexer.TTerminal.shell") != null) {
             String shell = System.getProperty("jexer.TTerminal.shell");
@@ -288,6 +359,7 @@ public class TTerminalWidget extends TScrollableWidget
     @Override
     public void draw() {
         int width = getDisplayWidth();
+
         boolean syncEmulator = false;
         if ((System.currentTimeMillis() - lastUpdateTime >= 25)
             && (dirty == true)
@@ -320,9 +392,6 @@ public class TTerminalWidget extends TScrollableWidget
             }
             dirty = false;
         }
-
-        // Draw the box using my superclass
-        super.draw();
 
         // Put together the visible rows
         int visibleHeight = getHeight();
@@ -408,7 +477,7 @@ public class TTerminalWidget extends TScrollableWidget
     }
 
     /**
-     * Handle window close.
+     * Handle widget close.
      */
     @Override
     public void close() {
@@ -427,6 +496,8 @@ public class TTerminalWidget extends TScrollableWidget
      */
     @Override
     public void onResize(final TResizeEvent resize) {
+        // Let TWidget set my size.
+        super.onResize(resize);
 
         // Synchronize against the emulator so we don't stomp on its reader
         // thread.
@@ -621,10 +692,10 @@ public class TTerminalWidget extends TScrollableWidget
     }
 
     /**
-     * Returns true if this window does not want the application-wide mouse
+     * Returns true if this widget does not want the application-wide mouse
      * cursor drawn over it.
      *
-     * @return true if this window does not want the application-wide mouse
+     * @return true if this widget does not want the application-wide mouse
      * cursor drawn over it
      */
     public boolean hasHiddenMouse() {
@@ -747,10 +818,20 @@ public class TTerminalWidget extends TScrollableWidget
      * Hook for subclasses to be notified of the shell termination.
      */
     public void onShellExit() {
-        if (getParent() instanceof TTerminalWindow) {
-            ((TTerminalWindow) getParent()).onShellExit();
+        TApplication app = getApplication();
+        if (app != null) {
+            app.invokeLater(new Runnable() {
+                public void run() {
+                    if (closeAction != null) {
+                        closeAction.DO();
+                    }
+                    if (getApplication() != null) {
+                        getApplication().postEvent(new TMenuEvent(
+                            TMenu.MID_REPAINT));
+                    }
+                }
+            });
         }
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
     }
 
     /**

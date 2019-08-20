@@ -1115,6 +1115,11 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         assert (window != null);
 
+        if (window instanceof TDesktop) {
+            // Desktop doesn't have a window border.
+            return cursorVisible;
+        }
+
         // If cursor is out of my window's bounds, it is not visible.
         if ((getCursorAbsoluteX() >= window.getAbsoluteX()
                 + window.getWidth() - 1)
@@ -1311,6 +1316,10 @@ public abstract class TWidget implements Comparable<TWidget> {
      * Called by parent to render to TWindow.  Note package private access.
      */
     final void drawChildren() {
+        if (window == null) {
+            return;
+        }
+
         // Set my clipping rectangle
         assert (window != null);
         assert (getScreen() != null);
@@ -1327,10 +1336,16 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         int absoluteRightEdge = window.getAbsoluteX() + window.getWidth();
         int absoluteBottomEdge = window.getAbsoluteY() + window.getHeight();
-        if (!(this instanceof TWindow) && !(this instanceof TVScroller)) {
+        if (!(this instanceof TWindow)
+            && !(this instanceof TVScroller)
+            && !(parent instanceof TDesktop)
+        ) {
             absoluteRightEdge -= 1;
         }
-        if (!(this instanceof TWindow) && !(this instanceof THScroller)) {
+        if (!(this instanceof TWindow)
+            && !(this instanceof THScroller)
+            && !(parent instanceof TDesktop)
+        ) {
             absoluteBottomEdge -= 1;
         }
         int myRightEdge = getAbsoluteX() + width;

@@ -863,8 +863,15 @@ public class TWindow extends TWidget {
                 if ((child instanceof TSplitPane)
                     || (child instanceof TPanel)
                 ) {
-                    child.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    if (this instanceof TDesktop) {
+                        child.onResize(new TResizeEvent(
+                            TResizeEvent.Type.WIDGET,
+                            resize.getWidth(), resize.getHeight()));
+                    } else {
+                        child.onResize(new TResizeEvent(
+                            TResizeEvent.Type.WIDGET,
                             resize.getWidth() - 2, resize.getHeight() - 2));
+                    }
                 }
                 return;
             }
