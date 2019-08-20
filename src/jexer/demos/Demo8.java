@@ -68,6 +68,16 @@ public class Demo8 {
 "This library is licensed MIT.  See the file LICENSE for the full license " +
 "for the details.\n";
 
+    /**
+     * Menu item: split vertically.
+     */
+    private static final int MENU_SPLIT_VERTICAL = 2000;
+
+    /**
+     * Menu item: split horizontally.
+     */
+    private static final int MENU_SPLIT_HORIZONTAL = 2001;
+
     // ------------------------------------------------------------------------
     // Demo8 ------------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -107,8 +117,10 @@ public class Demo8 {
             60, 22);
 
         TMenu paneMenu = app.addMenu(i18n.getString("paneMenu"));
-        paneMenu.addDefaultItem(TMenu.MID_SPLIT_VERTICAL, true);
-        paneMenu.addDefaultItem(TMenu.MID_SPLIT_HORIZONTAL, true);
+        paneMenu.addItem(MENU_SPLIT_VERTICAL,
+            i18n.getString("paneSplitVertical"));
+        paneMenu.addItem(MENU_SPLIT_HORIZONTAL,
+            i18n.getString("paneSplitHorizontal"));
 
         TSplitPane pane = window.addSplitPane(0, 0, window.getWidth() - 2,
             window.getHeight() - 2, true);

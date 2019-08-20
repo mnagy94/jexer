@@ -229,6 +229,9 @@ public class TTerminalWidget extends TScrollableWidget
         super(parent, x, y, width, height);
 
         this.closeAction = closeAction;
+        if (closeAction != null) {
+            this.closeAction.data = this;
+        }
 
         String [] fullCommand;
 
@@ -307,6 +310,9 @@ public class TTerminalWidget extends TScrollableWidget
         super(parent, x, y, width, height);
 
         this.closeAction = closeAction;
+        if (closeAction != null) {
+            this.closeAction.data = this;
+        }
 
         if (System.getProperty("jexer.TTerminal.shell") != null) {
             String shell = System.getProperty("jexer.TTerminal.shell");

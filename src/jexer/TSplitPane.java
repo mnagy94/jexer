@@ -418,4 +418,56 @@ public class TSplitPane extends TWidget {
         layoutChildren();
     }
 
+    /**
+     * Remove this split, removing the widget specified.
+     *
+     * @param widgetToRemove the widget to remove
+     * @param doClose if true, call the close() method before removing the
+     * child
+     * @return the pane that remains, or null if nothing is retained
+     */
+    public TWidget removeSplit(final TWidget widgetToRemove,
+        final boolean doClose) {
+
+        TWidget keep = null;
+        if (vertical) {
+            if ((widgetToRemove != left) && (widgetToRemove != right)) {
+                throw new IllegalArgumentException("widget to remove is not " +
+                    "either of the panes in this splitpane");
+            }
+            if (widgetToRemove == left) {
+                keep = right;
+            } else {
+                keep = left;
+            }
+
+        } else {
+            if ((widgetToRemove != top) && (widgetToRemove != bottom)) {
+                throw new IllegalArgumentException("widget to remove is not " +
+                    "either of the panes in this splitpane");
+            }
+            if (widgetToRemove == top) {
+                keep = bottom;
+            } else {
+                keep = top;
+            }
+        }
+
+        // Remove me from my parent widget.
+        TWidget newParent = getParent();
+        setParent(null, false);
+
+        if (keep == null) {
+            // Nothing is left of either pane.  Remove me and bail out.
+            return null;
+        }
+
+        keep.setParent(newParent, false);
+        keep.setDimensions(getX(), getY(), getWidth(), getHeight());
+        keep.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+                getHeight()));
+
+        return keep;
+    }
+
 }

@@ -34,9 +34,15 @@ package jexer;
  * @see TButton
  */
 public abstract class TAction {
+
+    /**
+     * An optional bit of data associated with this action.  Widgets that use
+     * this field are responsible for setting it.
+     */
+    public Object data;
+
     /**
      * Various classes will call DO() when they are clicked/selected.
      */
     public abstract void DO();
 }
-

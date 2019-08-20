@@ -133,10 +133,6 @@ public class TMenu extends TWindow {
     public static final int MID_TABLE_FILE_SAVE_CSV             = 116;
     public static final int MID_TABLE_FILE_SAVE_TEXT            = 117;
 
-    // Miscellaneous
-    public static final int MID_SPLIT_VERTICAL                  = 200;
-    public static final int MID_SPLIT_HORIZONTAL                = 201;
-
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -773,13 +769,6 @@ public class TMenu extends TWindow {
             break;
         case MID_TABLE_FILE_SAVE_TEXT:
             label = i18n.getString("menuTableFileSaveText");
-            break;
-
-        case MID_SPLIT_VERTICAL:
-            label = i18n.getString("menuSplitVertical");
-            break;
-        case MID_SPLIT_HORIZONTAL:
-            label = i18n.getString("menuSplitHorizontal");
             break;
 
         default:
