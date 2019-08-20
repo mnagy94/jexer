@@ -871,10 +871,10 @@ public class ECMA48 implements Runnable {
         case XTERM:
             // "I am a VT220" - 7 bit version
             if (!s8c1t) {
-                return "\033[?62;1;6c";
+                return "\033[?62;1;6;9;4c";
             }
             // "I am a VT220" - 8 bit version
-            return "\u009b?62;1;6c";
+            return "\u009b?62;1;6;9;4c";
         default:
             throw new IllegalArgumentException("Invalid device type: " + type);
         }
