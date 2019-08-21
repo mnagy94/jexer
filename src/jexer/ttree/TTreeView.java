@@ -233,7 +233,7 @@ public class TTreeView extends TWidget {
      */
     public void dispatch() {
         if (action != null) {
-            action.DO();
+            action.DO(this);
         }
     }
 

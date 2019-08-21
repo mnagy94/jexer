@@ -119,7 +119,7 @@ public class TComboBox extends TWidget {
                         TComboBox.this.activate(field);
                     }
                     if (updateAction != null) {
-                        updateAction.DO();
+                        updateAction.DO(TComboBox.this);
                     }
                 }
             }

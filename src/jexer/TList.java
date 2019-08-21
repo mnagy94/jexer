@@ -507,7 +507,7 @@ public class TList extends TScrollableWidget {
         assert (selectedString >= 0);
         assert (selectedString < strings.size());
         if (enterAction != null) {
-            enterAction.DO();
+            enterAction.DO(this);
         }
     }
 
@@ -518,7 +518,7 @@ public class TList extends TScrollableWidget {
         assert (selectedString >= 0);
         assert (selectedString < strings.size());
         if (moveAction != null) {
-            moveAction.DO();
+            moveAction.DO(this);
         }
     }
 
@@ -529,7 +529,7 @@ public class TList extends TScrollableWidget {
         assert (selectedString >= 0);
         assert (selectedString < strings.size());
         if (singleClickAction != null) {
-            singleClickAction.DO();
+            singleClickAction.DO(this);
         }
     }
 

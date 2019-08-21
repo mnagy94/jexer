@@ -308,7 +308,7 @@ public class TButton extends TWidget {
      */
     public void dispatch() {
         if (action != null) {
-            action.DO();
+            action.DO(this);
             inButtonPress = false;
         }
     }

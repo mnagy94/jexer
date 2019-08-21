@@ -97,9 +97,16 @@ public class JexerTilingWindowManager2 extends TApplication {
                     active.getY(), active.getWidth(), active.getHeight(),
                     new TAction() {
                         public void DO() {
-                            // TODO
+                            if (source.getParent() instanceof TSplitPane) {
+                                ((TSplitPane) source.getParent()).removeSplit(source, true);
+                            } else if (source == root) {
+                                assert (root != null);
+                                root.remove();
+                                root = null;
+                            }
                         }
                     }));
+
             if (active == root) {
                 root = split;
             }
@@ -116,7 +123,13 @@ public class JexerTilingWindowManager2 extends TApplication {
                     active.getY(), active.getWidth(), active.getHeight(),
                     new TAction() {
                         public void DO() {
-                            // TODO
+                            if (source.getParent() instanceof TSplitPane) {
+                                ((TSplitPane) source.getParent()).removeSplit(source, true);
+                            } else if (source == root) {
+                                assert (root != null);
+                                root.remove();
+                                root = null;
+                            }
                         }
                     }));
             return true;
@@ -134,10 +147,9 @@ public class JexerTilingWindowManager2 extends TApplication {
             getDesktop().getWidth(), getDesktop().getHeight(),
             new TAction() {
                 public void DO() {
-                    TWidget target = (TWidget) data;
-                    if (target.getParent() instanceof TPanel) {
-                        ((TSplitPane) target.getParent().getParent()).removeSplit(target, true);
-                    } else {
+                    if (source.getParent() instanceof TSplitPane) {
+                        ((TSplitPane) source.getParent()).removeSplit(source, true);
+                    } else if (source == root) {
                         assert (root != null);
                         root.remove();
                         root = null;

@@ -161,7 +161,7 @@ public class TCalendar extends TWidget {
     @Override
     public void onMouseDoubleClick(final TMouseEvent mouse) {
         if (updateAction != null) {
-            updateAction.DO();
+            updateAction.DO(this);
         }
     }
 
@@ -184,7 +184,7 @@ public class TCalendar extends TWidget {
             increment = 1;
         } else if (keypress.equals(kbEnter)) {
             if (updateAction != null) {
-                updateAction.DO();
+                updateAction.DO(this);
             }
             return;
         } else {

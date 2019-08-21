@@ -1277,13 +1277,13 @@ public abstract class TWidget implements Comparable<TWidget> {
         int absoluteBottomEdge = window.getAbsoluteY() + window.getHeight();
         if (!(this instanceof TWindow)
             && !(this instanceof TVScroller)
-            && !(parent instanceof TDesktop)
+            && !(window instanceof TDesktop)
         ) {
             absoluteRightEdge -= 1;
         }
         if (!(this instanceof TWindow)
             && !(this instanceof THScroller)
-            && !(parent instanceof TDesktop)
+            && !(window instanceof TDesktop)
         ) {
             absoluteBottomEdge -= 1;
         }
@@ -1548,54 +1548,50 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Split this widget into two, putting all of this widget's children into
-     * a new TPanel, and returning a new TSplitPane with that panel on the
-     * left or right pane.
+     * Insert a vertical split between this widget and parent, and optionally
+     * put another widget in the other side of the split.
      *
      * @param newWidgetOnLeft if true, the new widget (if specified) will be
-     * on the left pane, and this widget's children will be placed on the
-     * right pane
+     * on the left pane, and this widget will be placed on the right pane
      * @param newWidget the new widget to add to the other pane, or null
      * @return the new split pane widget
      */
     public TSplitPane splitVertical(final boolean newWidgetOnLeft,
         final TWidget newWidget) {
 
-        TPanel panel = new TPanel(null, x, y, width, height);
         TSplitPane splitPane = new TSplitPane(null, x, y, width, height, true);
         List<TWidget> widgets = new ArrayList<TWidget>(children);
-        for (TWidget w: widgets) {
-            w.setParent(panel, false);
-        }
-        children.clear();
-        splitPane.setParent(parent, false);
-        parent = null;
-        window = null;
+        TWidget myParent = parent;
+        remove(false);
+        splitPane.setParent(myParent, false);
         if (newWidgetOnLeft) {
             splitPane.setLeft(newWidget);
-            splitPane.setRight(panel);
+            splitPane.setRight(this);
         } else {
             splitPane.setRight(newWidget);
-            splitPane.setLeft(panel);
+            splitPane.setLeft(this);
         }
-        activate(splitPane);
+        splitPane.activate();
+        if (newWidget != null) {
+            newWidget.activate();
+        } else {
+            activate();
+        }
+        assert (parent != null);
+        assert (window != null);
         for (TWidget w: widgets) {
             assert (w.window != null);
             assert (w.parent != null);
         }
         assert (splitPane.getWindow() != null);
         assert (splitPane.getParent() != null);
-        assert (panel.getWindow() != null);
-        assert (panel.getParent() != null);
         assert (splitPane.isActive() == true);
-        assert (panel.isActive() == true);
         return splitPane;
     }
 
     /**
-     * Split this widget into two, putting all of this widget's children into
-     * a new TPanel, and returning a new TSplitPane with that panel on the
-     * top or bottom pane.
+     * Insert a horizontal split between this widget and parent, and
+     * optionally put another widget in the other side of the split.
      *
      * @param newWidgetOnTop if true, the new widget (if specified) will be
      * on the top pane, and this widget's children will be placed on the
@@ -1606,36 +1602,33 @@ public abstract class TWidget implements Comparable<TWidget> {
     public TSplitPane splitHorizontal(final boolean newWidgetOnTop,
         final TWidget newWidget) {
 
-        TPanel panel = new TPanel(null, x, y, width, height);
         TSplitPane splitPane = new TSplitPane(null, x, y, width, height, false);
         List<TWidget> widgets = new ArrayList<TWidget>(children);
-        for (TWidget w: widgets) {
-            w.setParent(panel, false);
-        }
-        children.clear();
-        splitPane.setParent(parent, false);
-        parent = null;
-        splitPane.setTop(panel);
-        parent = null;
-        window = null;
+        TWidget myParent = parent;
+        remove(false);
+        splitPane.setParent(myParent, false);
         if (newWidgetOnTop) {
             splitPane.setTop(newWidget);
-            splitPane.setBottom(panel);
+            splitPane.setBottom(this);
         } else {
             splitPane.setBottom(newWidget);
-            splitPane.setTop(panel);
+            splitPane.setTop(this);
         }
-        activate(splitPane);
+        splitPane.activate();
+        if (newWidget != null) {
+            newWidget.activate();
+        } else {
+            activate();
+        }
+        assert (parent != null);
+        assert (window != null);
         for (TWidget w: widgets) {
             assert (w.window != null);
             assert (w.parent != null);
         }
         assert (splitPane.getWindow() != null);
         assert (splitPane.getParent() != null);
-        assert (panel.getWindow() != null);
-        assert (panel.getParent() != null);
         assert (splitPane.isActive() == true);
-        assert (panel.isActive() == true);
         return splitPane;
     }
 

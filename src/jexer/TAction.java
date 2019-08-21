@@ -36,10 +36,37 @@ package jexer;
 public abstract class TAction {
 
     /**
-     * An optional bit of data associated with this action.  Widgets that use
-     * this field are responsible for setting it.
+     * The widget that called this action's DO() method.  Note that this
+     * field could be null, for example if executed as a timer action.
+     */
+    public TWidget source;
+
+    /**
+     * An optional bit of data associated with this action.
      */
     public Object data;
+
+    /**
+     * Call DO() with source widget set.
+     *
+     * @param source the source widget
+     */
+    public final void DO(final TWidget source) {
+        this.source = source;
+        DO();
+    }
+
+    /**
+     * Call DO() with source widget and data set.
+     *
+     * @param source the source widget
+     * @param data the data
+     */
+    public final void DO(final TWidget source, final Object data) {
+        this.source = source;
+        this.data = data;
+        DO();
+    }
 
     /**
      * Various classes will call DO() when they are clicked/selected.

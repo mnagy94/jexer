@@ -229,9 +229,6 @@ public class TTerminalWidget extends TScrollableWidget
         super(parent, x, y, width, height);
 
         this.closeAction = closeAction;
-        if (closeAction != null) {
-            this.closeAction.data = this;
-        }
 
         String [] fullCommand;
 
@@ -310,9 +307,6 @@ public class TTerminalWidget extends TScrollableWidget
         super(parent, x, y, width, height);
 
         this.closeAction = closeAction;
-        if (closeAction != null) {
-            this.closeAction.data = this;
-        }
 
         if (System.getProperty("jexer.TTerminal.shell") != null) {
             String shell = System.getProperty("jexer.TTerminal.shell");
@@ -829,7 +823,7 @@ public class TTerminalWidget extends TScrollableWidget
             app.invokeLater(new Runnable() {
                 public void run() {
                     if (closeAction != null) {
-                        closeAction.DO();
+                        closeAction.DO(TTerminalWidget.this);
                     }
                     if (getApplication() != null) {
                         getApplication().postEvent(new TMenuEvent(

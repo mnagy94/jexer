@@ -479,11 +479,11 @@ public class TField extends TWidget {
     protected void dispatch(final boolean enter) {
         if (enter) {
             if (enterAction != null) {
-                enterAction.DO();
+                enterAction.DO(this);
             }
         } else {
             if (updateAction != null) {
-                updateAction.DO();
+                updateAction.DO(this);
             }
         }
     }

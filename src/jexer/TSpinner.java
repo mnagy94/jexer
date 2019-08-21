@@ -175,7 +175,7 @@ public class TSpinner extends TWidget {
      */
     private void up() {
         if (upAction != null) {
-            upAction.DO();
+            upAction.DO(this);
         }
     }
 
@@ -184,7 +184,7 @@ public class TSpinner extends TWidget {
      */
     private void down() {
         if (downAction != null) {
-            downAction.DO();
+            downAction.DO(this);
         }
     }
 

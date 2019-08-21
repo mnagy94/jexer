@@ -216,7 +216,7 @@ public class TImage extends TWidget {
     @Override
     public void onMouseDown(final TMouseEvent mouse) {
         if (clickAction != null) {
-            clickAction.DO();
+            clickAction.DO(this);
             return;
         }
     }

@@ -275,7 +275,9 @@ public class TSplitPane extends TWidget {
                 "horizontal split pane");
         }
         if (left == null) {
-            remove(this.left);
+            if (this.left != null) {
+                remove(this.left);
+            }
             this.left = null;
             return;
         }
@@ -305,7 +307,9 @@ public class TSplitPane extends TWidget {
                 "horizontal split pane");
         }
         if (right == null) {
-            remove(this.right);
+            if (this.right != null) {
+                remove(this.right);
+            }
             this.right = null;
             return;
         }
@@ -335,7 +339,9 @@ public class TSplitPane extends TWidget {
                 "split pane");
         }
         if (top == null) {
-            remove(this.top);
+            if (this.top != null) {
+                remove(this.top);
+            }
             this.top = null;
             return;
         }
@@ -365,7 +371,9 @@ public class TSplitPane extends TWidget {
                 "vertical split pane");
         }
         if (bottom == null) {
-            remove(this.bottom);
+            if (this.bottom != null) {
+                remove(this.bottom);
+            }
             this.bottom = null;
             return;
         }
@@ -455,7 +463,7 @@ public class TSplitPane extends TWidget {
 
         // Remove me from my parent widget.
         TWidget newParent = getParent();
-        setParent(null, false);
+        remove(false);
 
         if (keep == null) {
             // Nothing is left of either pane.  Remove me and bail out.
