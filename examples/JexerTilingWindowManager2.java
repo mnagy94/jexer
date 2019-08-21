@@ -88,12 +88,13 @@ public class JexerTilingWindowManager2 extends TApplication {
     protected boolean onMenu(TMenuEvent event) {
         if (event.getId() == MENU_SPLIT_VERTICAL) {
             if (root == null) {
+                assert (getDesktop().getActiveChild() == null);
                 createRootTerminal();
                 return true;
             }
-            TWidget active = root.getActiveChild();
+            TWidget active = getDesktop().getActiveChild();
             TSplitPane split = active.splitVertical(false,
-                new TTerminalWidget(getDesktop(), active.getX(),
+                new TTerminalWidget(active, active.getX(),
                     active.getY(), active.getWidth(), active.getHeight(),
                     new TAction() {
                         public void DO() {
@@ -106,20 +107,22 @@ public class JexerTilingWindowManager2 extends TApplication {
                             }
                         }
                     }));
-
             if (active == root) {
                 root = split;
             }
+            System.err.println("\nAfter vertical split:");
+            System.err.println(getDesktop().toPrettyString());
             return true;
         }
         if (event.getId() == MENU_SPLIT_HORIZONTAL) {
             if (root == null) {
+                assert (getDesktop().getActiveChild() == null);
                 createRootTerminal();
                 return true;
             }
-            TWidget active = root.getActiveChild();
+            TWidget active = getDesktop().getActiveChild();
             TSplitPane split = active.splitHorizontal(false,
-                new TTerminalWidget(getDesktop(), active.getX(),
+                new TTerminalWidget(active, active.getX(),
                     active.getY(), active.getWidth(), active.getHeight(),
                     new TAction() {
                         public void DO() {
@@ -132,6 +135,11 @@ public class JexerTilingWindowManager2 extends TApplication {
                             }
                         }
                     }));
+            if (active == root) {
+                root = split;
+            }
+            System.err.println("\nAfter horizontal split:");
+            System.err.println(getDesktop().toPrettyString());
             return true;
         }
 

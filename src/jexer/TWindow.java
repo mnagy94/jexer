@@ -1431,4 +1431,16 @@ public class TWindow extends TWidget {
         this.hideMouse = hideMouse;
     }
 
+    /**
+     * Generate a human-readable string for this window.
+     *
+     * @return a human-readable string
+     */
+    @Override
+    public String toString() {
+        return String.format("%s(%8x) \'%s\' position (%d, %d) geometry %dx%d" +
+            " hidden %s modal %s", getClass().getName(), hashCode(), title,
+            getX(), getY(), getWidth(), getHeight(), hidden, isModal());
+    }
+
 }

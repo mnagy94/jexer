@@ -124,6 +124,8 @@ public class TSplitPane extends TWidget {
             // Resize me
             super.onResize(event);
 
+            // System.err.println("onResize(): " + toString());
+
             if (vertical && (split >= getWidth() - 2)) {
                 center();
             } else if (!vertical && (split >= getHeight() - 2)) {
@@ -147,9 +149,9 @@ public class TSplitPane extends TWidget {
 
         if (mouse.isMouse1()) {
             if (vertical) {
-                inSplitMove = (mouse.getX() == split);
+                inSplitMove = (mouse.getAbsoluteX() - getAbsoluteX() == split);
             } else {
-                inSplitMove = (mouse.getY() == split);
+                inSplitMove = (mouse.getAbsoluteY() - getAbsoluteY() == split);
             }
             if (inSplitMove) {
                 return;
@@ -170,6 +172,9 @@ public class TSplitPane extends TWidget {
         this.mouse = mouse;
 
         if (inSplitMove && mouse.isMouse1()) {
+            // DEBUG
+            // System.err.println(toPrettyString());
+
             // Stop moving split
             inSplitMove = false;
             return;
@@ -199,10 +204,10 @@ public class TSplitPane extends TWidget {
 
         if (inSplitMove) {
             if (vertical) {
-                split = mouse.getX();
+                split = mouse.getAbsoluteX() - getAbsoluteX();
                 split = Math.min(Math.max(1, split), getWidth() - 2);
             } else {
-                split = mouse.getY();
+                split = mouse.getAbsoluteY() - getAbsoluteY();
                 split = Math.min(Math.max(1, split), getHeight() - 2);
             }
             layoutChildren();
@@ -249,6 +254,29 @@ public class TSplitPane extends TWidget {
             }
         }
 
+    }
+
+    /**
+     * Generate a human-readable string for this widget.
+     *
+     * @return a human-readable string
+     */
+    @Override
+    public String toString() {
+        return String.format("%s(%8x) %s position (%d, %d) geometry %dx%d " +
+            "split %d left %s(%8x) right %s(%8x) top %s(%8x) bottom %s(%8x) " +
+            "active %s enabled %s visible %s", getClass().getName(),
+            hashCode(), (vertical ? "VERTICAL" : "HORIZONTAL"),
+            getX(), getY(), getWidth(), getHeight(), split,
+            (left == null ? "null" : left.getClass().getName()),
+            (left == null ? 0 : left.hashCode()),
+            (right == null ? "null" : right.getClass().getName()),
+            (right == null ? 0 : right.hashCode()),
+            (top == null ? "null" : top.getClass().getName()),
+            (top == null ? 0 : top.hashCode()),
+            (bottom == null ? "null" : bottom.getClass().getName()),
+            (bottom == null ? 0 : bottom.hashCode()),
+            isActive(), isEnabled(), isVisible());
     }
 
     // ------------------------------------------------------------------------
@@ -384,32 +412,125 @@ public class TSplitPane extends TWidget {
     }
 
     /**
+     * Remove a widget, regardless of what pane it is on.
+     *
+     * @param widget the widget to remove
+     */
+    public void removeWidget(final TWidget widget) {
+        if (widget == null) {
+            throw new IllegalArgumentException("cannot remove null widget");
+        }
+        if (left == widget) {
+            left = null;
+            assert(right != widget);
+            assert(top != widget);
+            assert(bottom != widget);
+            return;
+        }
+        if (right == widget) {
+            right = null;
+            assert(left != widget);
+            assert(top != widget);
+            assert(bottom != widget);
+            return;
+        }
+        if (top == widget) {
+            top = null;
+            assert(left != widget);
+            assert(right != widget);
+            assert(bottom != widget);
+            return;
+        }
+        if (bottom == widget) {
+            bottom = null;
+            assert(left != widget);
+            assert(right != widget);
+            assert(top != widget);
+            return;
+        }
+        throw new IllegalArgumentException("widget " + widget +
+            " not in this split");
+    }
+
+    /**
+     * Replace a widget, regardless of what pane it is on, with another
+     * widget.
+     *
+     * @param oldWidget the widget to remove
+     * @param newWidget the widget to replace it with
+     */
+    public void replaceWidget(final TWidget oldWidget,
+        final TWidget newWidget) {
+
+        if (oldWidget == null) {
+            throw new IllegalArgumentException("cannot remove null oldWidget");
+        }
+        if (left == oldWidget) {
+            setLeft(newWidget);
+            assert(right != newWidget);
+            assert(top != newWidget);
+            assert(bottom != newWidget);
+            return;
+        }
+        if (right == oldWidget) {
+            setRight(newWidget);
+            assert(left != newWidget);
+            assert(top != newWidget);
+            assert(bottom != newWidget);
+            return;
+        }
+        if (top == oldWidget) {
+            setTop(newWidget);
+            assert(left != newWidget);
+            assert(right != newWidget);
+            assert(bottom != newWidget);
+            return;
+        }
+        if (bottom == oldWidget) {
+            setBottom(newWidget);
+            assert(left != newWidget);
+            assert(right != newWidget);
+            assert(top != newWidget);
+            return;
+        }
+        throw new IllegalArgumentException("oldWidget " + oldWidget +
+            " not in this split");
+    }
+
+    /**
      * Layout the two child widgets.
      */
     private void layoutChildren() {
+
+        // System.err.println("layoutChildren(): " + toString());
+
         if (vertical) {
             if (left != null) {
                 left.setDimensions(0, 0, split, getHeight());
                 left.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         left.getWidth(), left.getHeight()));
+                // System.err.println("   move/size left: " + left.toString());
             }
             if (right != null) {
                 right.setDimensions(split + 1, 0, getWidth() - split - 1,
                     getHeight());
                 right.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         right.getWidth(), right.getHeight()));
+                // System.err.println("   move/size right: " + right.toString());
             }
         } else {
             if (top != null) {
                 top.setDimensions(0, 0, getWidth(), split);
                 top.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         top.getWidth(), top.getHeight()));
+                // System.err.println("   move/size top: " + top.toString());
             }
             if (bottom != null) {
                 bottom.setDimensions(0, split + 1, getWidth(),
                     getHeight() - split - 1);
                 bottom.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         bottom.getWidth(), bottom.getHeight()));
+                // System.err.println("   move/size bottom: " + bottom.toString());
             }
         }
     }
@@ -462,7 +583,7 @@ public class TSplitPane extends TWidget {
         }
 
         // Remove me from my parent widget.
-        TWidget newParent = getParent();
+        TWidget myParent = getParent();
         remove(false);
 
         if (keep == null) {
@@ -470,7 +591,7 @@ public class TSplitPane extends TWidget {
             return null;
         }
 
-        keep.setParent(newParent, false);
+        keep.setParent(myParent, false);
         keep.setDimensions(getX(), getY(), getWidth(), getHeight());
         keep.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));

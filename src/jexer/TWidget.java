@@ -933,10 +933,10 @@ public abstract class TWidget implements Comparable<TWidget> {
     public final void setDimensions(final int x, final int y, final int width,
         final int height) {
 
-        setX(x);
-        setY(y);
-        setWidth(width);
-        setHeight(height);
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
         if (layout != null) {
             layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                     width, height));
@@ -1560,16 +1560,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         final TWidget newWidget) {
 
         TSplitPane splitPane = new TSplitPane(null, x, y, width, height, true);
-        List<TWidget> widgets = new ArrayList<TWidget>(children);
         TWidget myParent = parent;
         remove(false);
+        if (myParent instanceof TSplitPane) {
+            // TSplitPane has a left/right/top/bottom link to me somewhere,
+            // replace it with a link to splitPane.
+            ((TSplitPane) myParent).replaceWidget(this, splitPane);
+        }
         splitPane.setParent(myParent, false);
         if (newWidgetOnLeft) {
             splitPane.setLeft(newWidget);
             splitPane.setRight(this);
         } else {
-            splitPane.setRight(newWidget);
             splitPane.setLeft(this);
+            splitPane.setRight(newWidget);
         }
         splitPane.activate();
         if (newWidget != null) {
@@ -1577,15 +1581,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         } else {
             activate();
         }
+
         assert (parent != null);
         assert (window != null);
-        for (TWidget w: widgets) {
-            assert (w.window != null);
-            assert (w.parent != null);
-        }
         assert (splitPane.getWindow() != null);
         assert (splitPane.getParent() != null);
         assert (splitPane.isActive() == true);
+        assert (parent == splitPane);
+        if (newWidget != null) {
+            assert (newWidget.parent == parent);
+            assert (newWidget.active == true);
+            assert (active == false);
+        } else {
+            assert (active == true);
+        }
         return splitPane;
     }
 
@@ -1603,16 +1612,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         final TWidget newWidget) {
 
         TSplitPane splitPane = new TSplitPane(null, x, y, width, height, false);
-        List<TWidget> widgets = new ArrayList<TWidget>(children);
         TWidget myParent = parent;
         remove(false);
+        if (myParent instanceof TSplitPane) {
+            // TSplitPane has a left/right/top/bottom link to me somewhere,
+            // replace it with a link to splitPane.
+            ((TSplitPane) myParent).replaceWidget(this, splitPane);
+        }
         splitPane.setParent(myParent, false);
         if (newWidgetOnTop) {
             splitPane.setTop(newWidget);
             splitPane.setBottom(this);
         } else {
-            splitPane.setBottom(newWidget);
             splitPane.setTop(this);
+            splitPane.setBottom(newWidget);
         }
         splitPane.activate();
         if (newWidget != null) {
@@ -1620,16 +1633,67 @@ public abstract class TWidget implements Comparable<TWidget> {
         } else {
             activate();
         }
+
         assert (parent != null);
         assert (window != null);
-        for (TWidget w: widgets) {
-            assert (w.window != null);
-            assert (w.parent != null);
-        }
         assert (splitPane.getWindow() != null);
         assert (splitPane.getParent() != null);
         assert (splitPane.isActive() == true);
+        assert (parent == splitPane);
+        if (newWidget != null) {
+            assert (newWidget.parent == parent);
+            assert (newWidget.active == true);
+            assert (active == false);
+        } else {
+            assert (active == true);
+        }
         return splitPane;
+    }
+
+    /**
+     * Generate a human-readable string for this widget.
+     *
+     * @return a human-readable string
+     */
+    @Override
+    public String toString() {
+        return String.format("%s(%8x) position (%d, %d) geometry %dx%d " +
+            "active %s enabled %s visible %s", getClass().getName(),
+            hashCode(), x, y, width, height, active, enabled, visible);
+    }
+
+    /**
+     * Generate a string for this widget's hierarchy.
+     *
+     * @param prefix a prefix to use for this widget's place in the hierarchy
+     * @return a pretty-printable string of this hierarchy
+     */
+    protected String toPrettyString(final String prefix) {
+        StringBuilder sb = new StringBuilder(prefix);
+        sb.append(toString());
+        String newPrefix = "";
+        for (int i = 0; i < prefix.length(); i++) {
+            newPrefix += " ";
+        }
+        for (int i = 0; i < children.size(); i++) {
+            TWidget child= children.get(i);
+            sb.append("\n");
+            if (i == children.size() - 1) {
+                sb.append(child.toPrettyString(newPrefix + " \u2514\u2500"));
+            } else {
+                sb.append(child.toPrettyString(newPrefix + " \u251c\u2500"));
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Generate a string for this widget's hierarchy.
+     *
+     * @return a pretty-printable string of this hierarchy
+     */
+    public String toPrettyString() {
+        return toPrettyString("");
     }
 
     // ------------------------------------------------------------------------
