@@ -1244,6 +1244,25 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * See if this widget can be drawn onto a screen.
+     *
+     * @return true if this widget is part of the hierarchy that can draw to
+     * a screen
+     */
+    public final boolean isDrawable() {
+        if ((window == null)
+            || (window.getScreen() == null)
+            || (parent == null)
+        ) {
+            return false;
+        }
+        if (parent == this) {
+            return true;
+        }
+        return (parent.isDrawable());
+    }
+
+    /**
      * Draw my specific widget.  When called, the screen rectangle I draw
      * into is already setup (offset and clipping).
      */
@@ -1255,7 +1274,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * Called by parent to render to TWindow.  Note package private access.
      */
     final void drawChildren() {
-        if (window == null) {
+        if (!isDrawable()) {
             return;
         }
 
@@ -1310,6 +1329,12 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         // Draw me
         draw();
+        if (!isDrawable()) {
+            // An action taken by a draw method unhooked me from the UI.
+            // Bail out.
+            return;
+        }
+
         assert (visible == true);
 
         // Continue down the chain.  Draw the active child last so that it
@@ -1317,6 +1342,11 @@ public abstract class TWidget implements Comparable<TWidget> {
         for (TWidget widget: children) {
             if (widget.isVisible() && (widget != activeChild)) {
                 widget.drawChildren();
+                if (!isDrawable()) {
+                    // An action taken by a draw method unhooked me from the UI.
+                    // Bail out.
+                    return;
+                }
             }
         }
         if (activeChild != null) {

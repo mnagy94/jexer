@@ -587,15 +587,29 @@ public class TSplitPane extends TWidget {
         remove(false);
 
         if (keep == null) {
+            if (myParent instanceof TSplitPane) {
+                // TSplitPane has a left/right/top/bottom link to me
+                // somewhere, remove it.
+                ((TSplitPane) myParent).removeWidget(this);
+            }
+
             // Nothing is left of either pane.  Remove me and bail out.
             return null;
         }
 
-        keep.setParent(myParent, false);
-        keep.setDimensions(getX(), getY(), getWidth(), getHeight());
-        keep.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
-                getHeight()));
+        if (myParent instanceof TSplitPane) {
+            // TSplitPane has a left/right/top/bottom link to me
+            // somewhere, replace me with keep.
+            ((TSplitPane) myParent).replaceWidget(this, keep);
+        } else {
+            keep.setParent(myParent, false);
+            keep.setDimensions(getX(), getY(), getWidth(), getHeight());
+            keep.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+                    getHeight()));
+        }
 
+        // System.err.println("\nAfter removeSplit():\n" + myParent.toPrettyString());
+        
         return keep;
     }
 

@@ -384,6 +384,14 @@ public class TTerminalWidget extends TScrollableWidget
                 // Update the scroll bars
                 reflowData();
 
+                if (!isDrawable()) {
+                    // We lost the connection, onShellExit() called an action
+                    // that ultimately removed this widget from the UI
+                    // hierarchy, so no one cares if we update the display.
+                    // Bail out.
+                    return;
+                }
+
                 if ((scrollback == null) || emulator.isReading()) {
                     scrollback = copyBuffer(emulator.getScrollbackBuffer());
                     display = copyBuffer(emulator.getDisplayBuffer());
@@ -820,17 +828,19 @@ public class TTerminalWidget extends TScrollableWidget
     public void onShellExit() {
         TApplication app = getApplication();
         if (app != null) {
-            app.invokeLater(new Runnable() {
-                public void run() {
-                    if (closeAction != null) {
+            if (closeAction != null) {
+                // We have to put this action inside invokeLater() because it
+                // could be executed during draw() when syncing with ECMA48.
+                app.invokeLater(new Runnable() {
+                    public void run() {
                         closeAction.DO(TTerminalWidget.this);
                     }
-                    if (getApplication() != null) {
-                        getApplication().postEvent(new TMenuEvent(
-                            TMenu.MID_REPAINT));
-                    }
-                }
-            });
+                });
+            }
+            if (getApplication() != null) {
+                getApplication().postEvent(new TMenuEvent(
+                    TMenu.MID_REPAINT));
+            }
         }
     }
 
