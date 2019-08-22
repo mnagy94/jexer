@@ -137,7 +137,7 @@ public class BoxLayoutManager implements LayoutManager {
      * Resize/reposition child widgets based on horizontal/vertical
      * arrangement.
      */
-    public void layoutChildren() {
+    private void layoutChildren() {
         if (children.size() == 0) {
             return;
         }

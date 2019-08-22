@@ -144,7 +144,7 @@ public class StretchLayoutManager implements LayoutManager {
      * Resize/reposition child widgets based on difference between current
      * dimensions and the original dimensions.
      */
-    public void layoutChildren() {
+    private void layoutChildren() {
         double widthRatio = (double) width / originalWidth;
         if (!Double.isFinite(widthRatio)) {
             widthRatio = 1;
