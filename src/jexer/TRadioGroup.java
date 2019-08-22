@@ -190,6 +190,10 @@ public class TRadioGroup extends TWidget {
         TRadioButton button = new TRadioButton(this, buttonX, buttonY, label,
             getChildren().size() + 1);
 
+        if (getParent().getLayoutManager() != null) {
+            getParent().getLayoutManager().resetSize(this);
+        }
+
         // Default to the first item on the list.
         activate(getChildren().get(0));
 

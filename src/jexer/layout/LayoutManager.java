@@ -59,4 +59,11 @@ public interface LayoutManager {
      */
     public void remove(final TWidget child);
 
+    /**
+     * Reset a child widget's original/preferred size.
+     *
+     * @param child the widget to manage
+     */
+    public void resetSize(final TWidget child);
+
 }

@@ -935,8 +935,9 @@ public abstract class TWidget implements Comparable<TWidget> {
 
         this.x = x;
         this.y = y;
-        this.width = width;
-        this.height = height;
+        // Call the functions so that subclasses can choose how to handle it.
+        setWidth(width);
+        setHeight(height);
         if (layout != null) {
             layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                     width, height));

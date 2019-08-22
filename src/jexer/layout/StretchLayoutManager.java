@@ -126,6 +126,16 @@ public class StretchLayoutManager implements LayoutManager {
         layoutChildren();
     }
 
+    /**
+     * Reset a child widget's original/preferred size.
+     *
+     * @param child the widget to manage
+     */
+    public void resetSize(final TWidget child) {
+        // For this layout, adding is the same as replacing.
+        add(child);
+    }
+
     // ------------------------------------------------------------------------
     // StretchLayoutManager ---------------------------------------------------
     // ------------------------------------------------------------------------
