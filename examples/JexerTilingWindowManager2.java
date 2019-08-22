@@ -59,7 +59,7 @@ public class JexerTilingWindowManager2 extends TApplication {
      * Public constructor chooses the ECMA-48 / Xterm backend.
      */
     public JexerTilingWindowManager2() throws Exception {
-        super(BackendType.SWING);
+        super(BackendType.XTERM);
 
         // The stock tool menu has items for redrawing the screen, opening
         // images, and (when using the Swing backend) setting the font.
@@ -73,15 +73,27 @@ public class JexerTilingWindowManager2 extends TApplication {
         tileMenu.addItem(MENU_SPLIT_HORIZONTAL, "&Horizontal Split");
         tileMenu.addItem(MENU_RESPAWN_ROOT, "&Respawn Root Terminal");
 
-        // Stock commands: a new shell with resizable window, previous, next,
-        // close, and exit program.
-        tileMenu.addItem(TMenu.MID_SHELL, "&Floating");
+        // Stock commands: a new shell with resizable window, and exit
+        // program.
         tileMenu.addSeparator();
-        tileMenu.addDefaultItem(TMenu.MID_WINDOW_PREVIOUS);
-        tileMenu.addDefaultItem(TMenu.MID_WINDOW_NEXT);
-        tileMenu.addDefaultItem(TMenu.MID_WINDOW_CLOSE);
+        tileMenu.addItem(TMenu.MID_SHELL, "&New Windowed Terminal");
         tileMenu.addSeparator();
         tileMenu.addDefaultItem(TMenu.MID_EXIT);
+
+        // TTerminalWidget can request the text-block mouse pointer be
+        // suppressed, but the default TDesktop will ignore it.  Let's set a
+        // new TDesktop to pass that mouse pointer visibility option to
+        // TApplication.
+        setDesktop(new TDesktop(this) {
+            @Override
+            public boolean hasHiddenMouse() {
+                TWidget active = getActiveChild();
+                if (active instanceof TTerminalWidget) {
+                    return ((TTerminalWidget) active).hasHiddenMouse();
+                }
+                return false;
+            }
+        });
 
         // Spin up the root terminal
         createRootTerminal();

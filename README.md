@@ -65,6 +65,10 @@ The examples/ folder currently contains:
     manager](/examples/JexerTilingWindowManager.java) in less than 250
     lines of code.
 
+  * A much slicker [prototype tiling window
+    manager](/examples/JexerTilingWindowManager2.java) in less than 200
+    lines of code.
+
   * A [prototype image thumbnail
     viewer](/examples/JexerImageViewer.java) in less than 350 lines of
     code.

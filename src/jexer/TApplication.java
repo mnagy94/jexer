@@ -1766,6 +1766,19 @@ public class TApplication implements Runnable {
             }
         }
 
+        // If this cell is on top of the desktop, and the desktop has
+        // requested a hidden mouse, bail out.
+        if ((desktop != null) && (activeWindow == null) && (activeMenu == null)) {
+            if ((desktop.hasHiddenMouse() == true)
+                && (x > desktop.getX())
+                && (x < desktop.getX() + desktop.getWidth() - 1)
+                && (y > desktop.getY())
+                && (y < desktop.getY() + desktop.getHeight() - 1)
+            ) {
+                return;
+            }
+        }
+
         Cell cell = getScreen().getCharXY(x, y);
         if (cell.isImage()) {
             cell.invertImage();
