@@ -345,114 +345,8 @@ public class TTerminalWidget extends TScrollableWidget
     }
 
     // ------------------------------------------------------------------------
-    // TScrollableWidget ------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Draw the display buffer.
-     */
-    @Override
-    public void draw() {
-        int width = getDisplayWidth();
-
-        boolean syncEmulator = false;
-        if ((System.currentTimeMillis() - lastUpdateTime >= 20)
-            && (dirty == true)
-        ) {
-            // Too much time has passed, draw it all.
-            syncEmulator = true;
-        } else if (emulator.isReading() && (dirty == false)) {
-            // Wait until the emulator has brought more data in.
-            syncEmulator = false;
-        } else if (!emulator.isReading() && (dirty == true)) {
-            // The emulator won't receive more data, update the display.
-            syncEmulator = true;
-        }
-
-        if ((syncEmulator == true)
-            || (display == null)
-        ) {
-            // We want to minimize the amount of time we have the emulator
-            // locked.  Grab a copy of its display.
-            synchronized (emulator) {
-                // Update the scroll bars
-                reflowData();
-
-                if (!isDrawable()) {
-                    // We lost the connection, onShellExit() called an action
-                    // that ultimately removed this widget from the UI
-                    // hierarchy, so no one cares if we update the display.
-                    // Bail out.
-                    return;
-                }
-
-                if ((display == null) || emulator.isReading()) {
-                    display = emulator.getVisibleDisplay(getHeight(),
-                        -getVerticalValue());
-                    assert (display.size() == getHeight());
-                }
-                width = emulator.getWidth();
-            }
-            dirty = false;
-        }
-
-        // Now draw the emulator screen
-        int row = 0;
-        for (DisplayLine line: display) {
-            int widthMax = width;
-            if (line.isDoubleWidth()) {
-                widthMax /= 2;
-            }
-            if (widthMax > getWidth()) {
-                widthMax = getWidth();
-            }
-            for (int i = 0; i < widthMax; i++) {
-                Cell ch = line.charAt(i);
-
-                if (ch.isImage()) {
-                    putCharXY(i, row, ch);
-                    continue;
-                }
-
-                Cell newCell = new Cell(ch);
-                boolean reverse = line.isReverseColor() ^ ch.isReverse();
-                newCell.setReverse(false);
-                if (reverse) {
-                    if (ch.getForeColorRGB() < 0) {
-                        newCell.setBackColor(ch.getForeColor());
-                        newCell.setBackColorRGB(-1);
-                    } else {
-                        newCell.setBackColorRGB(ch.getForeColorRGB());
-                    }
-                    if (ch.getBackColorRGB() < 0) {
-                        newCell.setForeColor(ch.getBackColor());
-                        newCell.setForeColorRGB(-1);
-                    } else {
-                        newCell.setForeColorRGB(ch.getBackColorRGB());
-                    }
-                }
-                if (line.isDoubleWidth()) {
-                    putDoubleWidthCharXY(line, (i * 2), row, newCell);
-                } else {
-                    putCharXY(i, row, newCell);
-                }
-            }
-            row++;
-        }
-    }
-
-    /**
-     * Handle widget close.
-     */
-    @Override
-    public void close() {
-        emulator.close();
-        if (shell != null) {
-            terminateShellChildProcess();
-            shell.destroy();
-            shell = null;
-        }
-    }
 
     /**
      * Handle window/screen resize events.
@@ -491,28 +385,6 @@ public class TTerminalWidget extends TScrollableWidget
                 }
             }
             return;
-
-        } // synchronized (emulator)
-    }
-
-    /**
-     * Resize scrollbars for a new width/height.
-     */
-    @Override
-    public void reflowData() {
-
-        // Synchronize against the emulator so we don't stomp on its reader
-        // thread.
-        synchronized (emulator) {
-
-            // Pull cursor information
-            readEmulatorState();
-
-            // Vertical scrollbar
-            setTopValue(getHeight()
-                - (emulator.getScrollbackBuffer().size()
-                    + emulator.getDisplayBuffer().size()));
-            setVerticalBigChange(getHeight());
 
         } // synchronized (emulator)
     }
@@ -645,6 +517,199 @@ public class TTerminalWidget extends TScrollableWidget
 
         // Emulator didn't consume it, pass it on
         super.onMouseMotion(mouse);
+    }
+
+    // ------------------------------------------------------------------------
+    // TScrollableWidget ------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the display buffer.
+     */
+    @Override
+    public void draw() {
+        int width = getDisplayWidth();
+
+        boolean syncEmulator = false;
+        if ((System.currentTimeMillis() - lastUpdateTime >= 20)
+            && (dirty == true)
+        ) {
+            // Too much time has passed, draw it all.
+            syncEmulator = true;
+        } else if (emulator.isReading() && (dirty == false)) {
+            // Wait until the emulator has brought more data in.
+            syncEmulator = false;
+        } else if (!emulator.isReading() && (dirty == true)) {
+            // The emulator won't receive more data, update the display.
+            syncEmulator = true;
+        }
+
+        if ((syncEmulator == true)
+            || (display == null)
+        ) {
+            // We want to minimize the amount of time we have the emulator
+            // locked.  Grab a copy of its display.
+            synchronized (emulator) {
+                // Update the scroll bars
+                reflowData();
+
+                if (!isDrawable()) {
+                    // We lost the connection, onShellExit() called an action
+                    // that ultimately removed this widget from the UI
+                    // hierarchy, so no one cares if we update the display.
+                    // Bail out.
+                    return;
+                }
+
+                if ((display == null) || emulator.isReading()) {
+                    display = emulator.getVisibleDisplay(getHeight(),
+                        -getVerticalValue());
+                    assert (display.size() == getHeight());
+                }
+                width = emulator.getWidth();
+            }
+            dirty = false;
+        }
+
+        // Now draw the emulator screen
+        int row = 0;
+        for (DisplayLine line: display) {
+            int widthMax = width;
+            if (line.isDoubleWidth()) {
+                widthMax /= 2;
+            }
+            if (widthMax > getWidth()) {
+                widthMax = getWidth();
+            }
+            for (int i = 0; i < widthMax; i++) {
+                Cell ch = line.charAt(i);
+
+                if (ch.isImage()) {
+                    putCharXY(i, row, ch);
+                    continue;
+                }
+
+                Cell newCell = new Cell(ch);
+                boolean reverse = line.isReverseColor() ^ ch.isReverse();
+                newCell.setReverse(false);
+                if (reverse) {
+                    if (ch.getForeColorRGB() < 0) {
+                        newCell.setBackColor(ch.getForeColor());
+                        newCell.setBackColorRGB(-1);
+                    } else {
+                        newCell.setBackColorRGB(ch.getForeColorRGB());
+                    }
+                    if (ch.getBackColorRGB() < 0) {
+                        newCell.setForeColor(ch.getBackColor());
+                        newCell.setForeColorRGB(-1);
+                    } else {
+                        newCell.setForeColorRGB(ch.getBackColorRGB());
+                    }
+                }
+                if (line.isDoubleWidth()) {
+                    putDoubleWidthCharXY(line, (i * 2), row, newCell);
+                } else {
+                    putCharXY(i, row, newCell);
+                }
+            }
+            row++;
+        }
+    }
+
+    /**
+     * Set current value of the vertical scroll.
+     *
+     * @param value the new scroll value
+     */
+    @Override
+    public void setVerticalValue(final int value) {
+        super.setVerticalValue(value);
+        dirty = true;
+    }
+
+    /**
+     * Perform a small step change up.
+     */
+    @Override
+    public void verticalDecrement() {
+        super.verticalDecrement();
+        dirty = true;
+    }
+
+    /**
+     * Perform a small step change down.
+     */
+    @Override
+    public void verticalIncrement() {
+        super.verticalIncrement();
+        dirty = true;
+    }
+
+    /**
+     * Perform a big step change up.
+     */
+    public void bigVerticalDecrement() {
+        super.bigVerticalDecrement();
+        dirty = true;
+    }
+
+    /**
+     * Perform a big step change down.
+     */
+    public void bigVerticalIncrement() {
+        super.bigVerticalIncrement();
+        dirty = true;
+    }
+
+    /**
+     * Go to the top edge of the vertical scroller.
+     */
+    public void toTop() {
+        super.toTop();
+        dirty = true;
+    }
+
+    /**
+     * Go to the bottom edge of the vertical scroller.
+     */
+    public void toBottom() {
+        super.toBottom();
+        dirty = true;
+    }
+
+    /**
+     * Handle widget close.
+     */
+    @Override
+    public void close() {
+        emulator.close();
+        if (shell != null) {
+            terminateShellChildProcess();
+            shell.destroy();
+            shell = null;
+        }
+    }
+
+    /**
+     * Resize scrollbars for a new width/height.
+     */
+    @Override
+    public void reflowData() {
+
+        // Synchronize against the emulator so we don't stomp on its reader
+        // thread.
+        synchronized (emulator) {
+
+            // Pull cursor information
+            readEmulatorState();
+
+            // Vertical scrollbar
+            setTopValue(getHeight()
+                - (emulator.getScrollbackBuffer().size()
+                    + emulator.getDisplayBuffer().size()));
+            setVerticalBigChange(getHeight());
+
+        } // synchronized (emulator)
     }
 
     // ------------------------------------------------------------------------

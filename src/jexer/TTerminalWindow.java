@@ -314,6 +314,11 @@ public class TTerminalWindow extends TScrollableWindow {
         }
 
         super.onMouseUp(mouse);
+
+        if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
+            // Clicked on vertical scrollbar
+            terminal.setVerticalValue(getVerticalValue());
+        }
     }
 
     /**
@@ -330,6 +335,11 @@ public class TTerminalWindow extends TScrollableWindow {
         }
 
         super.onMouseMotion(mouse);
+
+        if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
+            // Clicked/dragged on vertical scrollbar
+            terminal.setVerticalValue(getVerticalValue());
+        }
     }
 
     // ------------------------------------------------------------------------
