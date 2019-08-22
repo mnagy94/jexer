@@ -1092,7 +1092,7 @@ public class ECMA48 implements Runnable {
      *
      * @param width the new width
      */
-    public final void setWidth(final int width) {
+    public final synchronized void setWidth(final int width) {
         this.width = width;
         rightMargin = width - 1;
         if (currentState.cursorX >= width) {
@@ -1117,7 +1117,7 @@ public class ECMA48 implements Runnable {
      *
      * @param height the new height
      */
-    public final void setHeight(final int height) {
+    public final synchronized void setHeight(final int height) {
         int delta = height - this.height;
         this.height = height;
         scrollRegionBottom += delta;

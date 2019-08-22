@@ -869,6 +869,11 @@ public class TApplication implements Runnable {
         // resources.
         closeAllWindows();
 
+        // Close the desktop.
+        if (desktop != null) {
+            setDesktop(null);
+        }
+
         // Give the overarching application an opportunity to release
         // resources.
         onExit();
@@ -1611,6 +1616,8 @@ public class TApplication implements Runnable {
      */
     public final void setDesktop(final TDesktop desktop) {
         if (this.desktop != null) {
+            this.desktop.onPreClose();
+            this.desktop.onUnfocus();
             this.desktop.onClose();
         }
         this.desktop = desktop;

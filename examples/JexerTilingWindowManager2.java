@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import jexer.TAction;
 import jexer.TApplication;
 import jexer.TDesktop;
@@ -29,6 +30,10 @@ public class JexerTilingWindowManager2 extends TApplication {
      * Menu item: split the terminal horizontally.
      */
     private static final int MENU_SPLIT_HORIZONTAL = 2001;
+    /**
+     * Menu item: recreate the root terminal.
+     */
+    private static final int MENU_RESPAWN_ROOT = 2002;
 
     /**
      * Handle to the root widget.
@@ -66,6 +71,7 @@ public class JexerTilingWindowManager2 extends TApplication {
         // New commands for this example: split vertical and horizontal.
         tileMenu.addItem(MENU_SPLIT_VERTICAL, "&Vertical Split");
         tileMenu.addItem(MENU_SPLIT_HORIZONTAL, "&Horizontal Split");
+        tileMenu.addItem(MENU_RESPAWN_ROOT, "&Respawn Root Terminal");
 
         // Stock commands: a new shell with resizable window, previous, next,
         // close, and exit program.
@@ -86,64 +92,43 @@ public class JexerTilingWindowManager2 extends TApplication {
      */
     @Override
     protected boolean onMenu(TMenuEvent event) {
-        if (event.getId() == MENU_SPLIT_VERTICAL) {
+        TWidget active = getDesktop().getActiveChild();
+        TSplitPane split = null;
+
+        switch (event.getId()) {
+        case MENU_RESPAWN_ROOT:
+            assert (root == null);
+            createRootTerminal();
+            return true;
+
+        case MENU_SPLIT_VERTICAL:
             if (root == null) {
                 assert (getDesktop().getActiveChild() == null);
                 createRootTerminal();
                 return true;
             }
-            TWidget active = getDesktop().getActiveChild();
-            TSplitPane split = active.splitVertical(false,
-                new TTerminalWidget(active, active.getX(),
-                    active.getY(), active.getWidth(), active.getHeight(),
-                    new TAction() {
-                        public void DO() {
-                            if (source.getParent() instanceof TSplitPane) {
-                                ((TSplitPane) source.getParent()).removeSplit(source, true);
-                            } else if (source == root) {
-                                assert (root != null);
-                                root.remove();
-                                root = null;
-                            }
-                        }
-                    }));
+            split = active.splitVertical(false, createTerminal());
             if (active == root) {
                 root = split;
             }
-            System.err.println("\nAfter vertical split:");
-            System.err.println(getDesktop().toPrettyString());
             return true;
-        }
-        if (event.getId() == MENU_SPLIT_HORIZONTAL) {
+
+        case MENU_SPLIT_HORIZONTAL:
             if (root == null) {
                 assert (getDesktop().getActiveChild() == null);
                 createRootTerminal();
                 return true;
             }
-            TWidget active = getDesktop().getActiveChild();
-            TSplitPane split = active.splitHorizontal(false,
-                new TTerminalWidget(active, active.getX(),
-                    active.getY(), active.getWidth(), active.getHeight(),
-                    new TAction() {
-                        public void DO() {
-                            if (source.getParent() instanceof TSplitPane) {
-                                ((TSplitPane) source.getParent()).removeSplit(source, true);
-                            } else if (source == root) {
-                                assert (root != null);
-                                root.remove();
-                                root = null;
-                            }
-                        }
-                    }));
+            split = active.splitHorizontal(false, createTerminal());
             if (active == root) {
                 root = split;
             }
-            System.err.println("\nAfter horizontal split:");
-            System.err.println(getDesktop().toPrettyString());
             return true;
+
+        default:
+            return super.onMenu(event);
         }
 
-        return super.onMenu(event);
     }
 
     /**
@@ -151,15 +136,27 @@ public class JexerTilingWindowManager2 extends TApplication {
      */
     private void createRootTerminal() {
         assert (root == null);
-        root = new TTerminalWidget(getDesktop(), 0, 0,
+        disableMenuItem(MENU_RESPAWN_ROOT);
+        root = createTerminal();
+    }
+
+    /**
+     * Create a new terminal.
+     *
+     * @return the new terminal
+     */
+    private TWidget createTerminal() {
+        return new TTerminalWidget(getDesktop(), 0, 0,
             getDesktop().getWidth(), getDesktop().getHeight(),
             new TAction() {
                 public void DO() {
                     if (source.getParent() instanceof TSplitPane) {
-                        ((TSplitPane) source.getParent()).removeSplit(source, true);
-                    } else if (source == root) {
-                        assert (root != null);
-                        root.remove();
+                        ((TSplitPane) source.getParent()).removeSplit(source,
+                            true);
+                    } else {
+                        source.getApplication().enableMenuItem(
+                                MENU_RESPAWN_ROOT);
+                        source.remove();
                         root = null;
                     }
                 }

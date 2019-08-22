@@ -153,6 +153,9 @@ public class TTerminalWindow extends TScrollableWindow {
         super(application, i18n.getString("windowTitle"), x, y,
             80 + 2, 24 + 2, flags);
 
+        // Require at least one line for the display.
+        setMinimumWindowHeight(3);
+
         this.closeOnExit = closeOnExit;
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
 
@@ -201,6 +204,9 @@ public class TTerminalWindow extends TScrollableWindow {
 
         super(application, i18n.getString("windowTitle"), x, y,
             80 + 2, 24 + 2, flags);
+
+        // Require at least one line for the display.
+        setMinimumWindowHeight(3);
 
         this.closeOnExit = closeOnExit;
         vScroller = new TVScroller(this, getWidth() - 2, 0, getHeight() - 2);
