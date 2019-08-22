@@ -1476,6 +1476,19 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Make this widget, all of its parents, the active child.
+     */
+    public final void activateAll() {
+        activate();
+        if (parent == this) {
+            return;
+        }
+        if (parent != null) {
+            parent.activateAll();
+        }
+    }
+
+    /**
      * Switch the active widget with the next in the tab order.
      *
      * @param forward if true, then switch to the next enabled widget in the
@@ -1605,11 +1618,10 @@ public abstract class TWidget implements Comparable<TWidget> {
             splitPane.setLeft(this);
             splitPane.setRight(newWidget);
         }
-        splitPane.activate();
         if (newWidget != null) {
-            newWidget.activate();
+            newWidget.activateAll();
         } else {
-            activate();
+            activateAll();
         }
 
         assert (parent != null);
@@ -1657,11 +1669,10 @@ public abstract class TWidget implements Comparable<TWidget> {
             splitPane.setTop(this);
             splitPane.setBottom(newWidget);
         }
-        splitPane.activate();
         if (newWidget != null) {
-            newWidget.activate();
+            newWidget.activateAll();
         } else {
-            activate();
+            activateAll();
         }
 
         assert (parent != null);

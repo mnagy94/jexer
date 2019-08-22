@@ -119,12 +119,7 @@ public class TTerminalWidget extends TScrollableWidget
     private boolean haveTimer = false;
 
     /**
-     * The last seen scrollback lines.
-     */
-    private List<DisplayLine> scrollback;
-
-    /**
-     * The last seen display lines.
+     * The last seen visible display.
      */
     private List<DisplayLine> display;
 
@@ -361,7 +356,7 @@ public class TTerminalWidget extends TScrollableWidget
         int width = getDisplayWidth();
 
         boolean syncEmulator = false;
-        if ((System.currentTimeMillis() - lastUpdateTime >= 25)
+        if ((System.currentTimeMillis() - lastUpdateTime >= 20)
             && (dirty == true)
         ) {
             // Too much time has passed, draw it all.
@@ -375,7 +370,6 @@ public class TTerminalWidget extends TScrollableWidget
         }
 
         if ((syncEmulator == true)
-            || (scrollback == null)
             || (display == null)
         ) {
             // We want to minimize the amount of time we have the emulator
@@ -392,46 +386,19 @@ public class TTerminalWidget extends TScrollableWidget
                     return;
                 }
 
-                if ((scrollback == null) || emulator.isReading()) {
-                    scrollback = copyBuffer(emulator.getScrollbackBuffer());
-                    display = copyBuffer(emulator.getDisplayBuffer());
+                if ((display == null) || emulator.isReading()) {
+                    display = emulator.getVisibleDisplay(getHeight(),
+                        -getVerticalValue());
+                    assert (display.size() == getHeight());
                 }
                 width = emulator.getWidth();
             }
             dirty = false;
         }
 
-        // Put together the visible rows
-        int visibleHeight = getHeight();
-        int visibleBottom = scrollback.size() + display.size()
-                + getVerticalValue();
-        assert (visibleBottom >= 0);
-
-        List<DisplayLine> preceedingBlankLines = new ArrayList<DisplayLine>();
-        int visibleTop = visibleBottom - visibleHeight;
-        if (visibleTop < 0) {
-            for (int i = visibleTop; i < 0; i++) {
-                preceedingBlankLines.add(emulator.getBlankDisplayLine());
-            }
-            visibleTop = 0;
-        }
-        assert (visibleTop >= 0);
-
-        List<DisplayLine> displayLines = new ArrayList<DisplayLine>();
-        displayLines.addAll(scrollback);
-        displayLines.addAll(display);
-
-        List<DisplayLine> visibleLines = new ArrayList<DisplayLine>();
-        visibleLines.addAll(preceedingBlankLines);
-        visibleLines.addAll(displayLines.subList(visibleTop,
-                visibleBottom));
-
-        visibleHeight -= visibleLines.size();
-        assert (visibleHeight >= 0);
-
         // Now draw the emulator screen
         int row = 0;
-        for (DisplayLine line: visibleLines) {
+        for (DisplayLine line: display) {
             int widthMax = width;
             if (line.isDoubleWidth()) {
                 widthMax /= 2;
@@ -471,17 +438,7 @@ public class TTerminalWidget extends TScrollableWidget
                 }
             }
             row++;
-            if (row == getHeight()) {
-                // Don't overwrite the box edge
-                break;
-            }
         }
-        CellAttributes background = new CellAttributes();
-        // Fill in the blank lines on bottom
-        for (int i = 0; i < visibleHeight; i++) {
-            hLineXY(0, i + row, getWidth(), ' ', background);
-        }
-
     }
 
     /**
@@ -577,6 +534,7 @@ public class TTerminalWidget extends TScrollableWidget
             || keypress.equals(kbAltPgUp)
         ) {
             bigVerticalDecrement();
+            dirty = true;
             return;
         }
         if (keypress.equals(kbShiftPgDn)
@@ -584,6 +542,7 @@ public class TTerminalWidget extends TScrollableWidget
             || keypress.equals(kbAltPgDn)
         ) {
             bigVerticalIncrement();
+            dirty = true;
             return;
         }
 
@@ -627,10 +586,12 @@ public class TTerminalWidget extends TScrollableWidget
         if (emulator.getMouseProtocol() == ECMA48.MouseProtocol.OFF) {
             if (mouse.isMouseWheelUp()) {
                 verticalDecrement();
+                dirty = true;
                 return;
             }
             if (mouse.isMouseWheelDown()) {
                 verticalIncrement();
+                dirty = true;
                 return;
             }
         }
@@ -927,20 +888,6 @@ public class TTerminalWidget extends TScrollableWidget
             return true;
         }
         return false;
-    }
-
-    /**
-     * Copy a display buffer.
-     *
-     * @param buffer the buffer to copy
-     * @return a deep copy of the buffer's data
-     */
-    private List<DisplayLine> copyBuffer(final List<DisplayLine> buffer) {
-        ArrayList<DisplayLine> result = new ArrayList<DisplayLine>(buffer.size());
-        for (DisplayLine line: buffer) {
-            result.add(new DisplayLine(line));
-        }
-        return result;
     }
 
     /**

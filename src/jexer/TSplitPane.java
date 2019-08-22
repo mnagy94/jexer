@@ -124,8 +124,6 @@ public class TSplitPane extends TWidget {
             // Resize me
             super.onResize(event);
 
-            // System.err.println("onResize(): " + toString());
-
             if (vertical && (split >= getWidth() - 2)) {
                 center();
             } else if (!vertical && (split >= getHeight() - 2)) {
@@ -172,9 +170,6 @@ public class TSplitPane extends TWidget {
         this.mouse = mouse;
 
         if (inSplitMove && mouse.isMouse1()) {
-            // DEBUG
-            // System.err.println(toPrettyString());
-
             // Stop moving split
             inSplitMove = false;
             return;
@@ -501,36 +496,29 @@ public class TSplitPane extends TWidget {
      * Layout the two child widgets.
      */
     private void layoutChildren() {
-
-        // System.err.println("layoutChildren(): " + toString());
-
         if (vertical) {
             if (left != null) {
                 left.setDimensions(0, 0, split, getHeight());
                 left.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         left.getWidth(), left.getHeight()));
-                // System.err.println("   move/size left: " + left.toString());
             }
             if (right != null) {
                 right.setDimensions(split + 1, 0, getWidth() - split - 1,
                     getHeight());
                 right.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         right.getWidth(), right.getHeight()));
-                // System.err.println("   move/size right: " + right.toString());
             }
         } else {
             if (top != null) {
                 top.setDimensions(0, 0, getWidth(), split);
                 top.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         top.getWidth(), top.getHeight()));
-                // System.err.println("   move/size top: " + top.toString());
             }
             if (bottom != null) {
                 bottom.setDimensions(0, split + 1, getWidth(),
                     getHeight() - split - 1);
                 bottom.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
                         bottom.getWidth(), bottom.getHeight()));
-                // System.err.println("   move/size bottom: " + bottom.toString());
             }
         }
     }
@@ -607,8 +595,6 @@ public class TSplitPane extends TWidget {
             keep.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
                     getHeight()));
         }
-
-        // System.err.println("\nAfter removeSplit():\n" + myParent.toPrettyString());
         
         return keep;
     }

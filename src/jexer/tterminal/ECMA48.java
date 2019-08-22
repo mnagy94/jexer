@@ -1079,6 +1079,64 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Get the visible display + scrollback buffer, offset by a specified
+     * number of rows from the bottom.
+     *
+     * @param visibleHeight the total height of the display to show
+     * @param scrollBottom the number of rows from the bottom to scroll back
+     * @return a copy of the display + scrollback buffers
+     */
+    public final List<DisplayLine> getVisibleDisplay(final int visibleHeight,
+        final int scrollBottom) {
+
+        assert (visibleHeight >= 0);
+        assert (scrollBottom >= 0);
+
+        int visibleBottom = scrollback.size() + display.size() - scrollBottom;
+
+        List<DisplayLine> preceedingBlankLines = new ArrayList<DisplayLine>();
+        int visibleTop = visibleBottom - visibleHeight;
+        if (visibleTop < 0) {
+            for (int i = visibleTop; i < 0; i++) {
+                preceedingBlankLines.add(getBlankDisplayLine());
+            }
+            visibleTop = 0;
+        }
+        assert (visibleTop >= 0);
+
+        List<DisplayLine> displayLines = new ArrayList<DisplayLine>();
+        displayLines.addAll(scrollback);
+        displayLines.addAll(display);
+
+        List<DisplayLine> visibleLines = new ArrayList<DisplayLine>();
+        visibleLines.addAll(preceedingBlankLines);
+        visibleLines.addAll(displayLines.subList(visibleTop, visibleBottom));
+
+        // Fill in the blank lines on bottom
+        int bottomBlankLines = visibleHeight - visibleLines.size();
+        assert (bottomBlankLines >= 0);
+        for (int i = 0; i < bottomBlankLines; i++) {
+            visibleLines.add(getBlankDisplayLine());
+        }
+
+        return copyBuffer(visibleLines);
+    }
+
+    /**
+     * Copy a display buffer.
+     *
+     * @param buffer the buffer to copy
+     * @return a deep copy of the buffer's data
+     */
+    private List<DisplayLine> copyBuffer(final List<DisplayLine> buffer) {
+        ArrayList<DisplayLine> result = new ArrayList<DisplayLine>(buffer.size());
+        for (DisplayLine line: buffer) {
+            result.add(new DisplayLine(line));
+        }
+        return result;
+    }
+
+    /**
      * Get the display width.
      *
      * @return the width (usually 80 or 132)
