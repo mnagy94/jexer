@@ -1,12 +1,9 @@
-import java.util.ArrayList;
 import jexer.TAction;
 import jexer.TApplication;
 import jexer.TDesktop;
-import jexer.TPanel;
 import jexer.TTerminalWidget;
 import jexer.TSplitPane;
 import jexer.TWidget;
-import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.menu.TMenu;
 
