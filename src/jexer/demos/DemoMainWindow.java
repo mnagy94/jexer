@@ -66,7 +66,12 @@ public class DemoMainWindow extends TWindow {
     /**
      * Timer that increments a number.
      */
-    private TTimer timer;
+    private TTimer timer1;
+
+    /**
+     * Timer that increments a number.
+     */
+    private TTimer timer2;
 
     /**
      * Timer label is updated with timer ticks.
@@ -77,13 +82,25 @@ public class DemoMainWindow extends TWindow {
      * Timer increment used by the timer loop.  Has to be at class scope so
      * that it can be accessed by the anonymous TAction class.
      */
-    int timerI = 0;
+    int timer1I = 0;
+
+    /**
+     * Timer increment used by the timer loop.  Has to be at class scope so
+     * that it can be accessed by the anonymous TAction class.
+     */
+    int timer2I = 0;
 
     /**
      * Progress bar used by the timer loop.  Has to be at class scope so that
      * it can be accessed by the anonymous TAction class.
      */
-    TProgressBar progressBar;
+    TProgressBar progressBar1;
+
+    /**
+     * Progress bar used by the timer loop.  Has to be at class scope so that
+     * it can be accessed by the anonymous TAction class.
+     */
+    TProgressBar progressBar2;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -235,22 +252,43 @@ public class DemoMainWindow extends TWindow {
         );
 
         row = 15;
-        progressBar = addProgressBar(48, row, 12, 0);
+        progressBar1 = addProgressBar(48, row, 12, 0);
         row++;
         timerLabel = addLabel(i18n.getString("timerLabel"), 48, row);
-        timer = getApplication().addTimer(250, true,
+        timer1 = getApplication().addTimer(250, true,
             new TAction() {
 
                 public void DO() {
                     timerLabel.setLabel(String.format(i18n.
-                            getString("timerText"), timerI));
+                            getString("timerText"), timer1I));
                     timerLabel.setWidth(timerLabel.getLabel().length());
-                    if (timerI < 100) {
-                        timerI++;
+                    if (timer1I < 100) {
+                        timer1I++;
                     } else {
-                        timer.setRecurring(false);
+                        timer1.setRecurring(false);
                     }
-                    progressBar.setValue(timerI);
+                    progressBar1.setValue(timer1I);
+                }
+            }
+        );
+
+        row += 2;
+        progressBar2 = addProgressBar(48, row, 12, 0);
+        progressBar2.setLeftBorderChar('\u255e');
+        progressBar2.setRightBorderChar('\u2561');
+        progressBar2.setCompletedChar('\u2592');
+        progressBar2.setRemainingChar('\u2550');
+        row++;
+        timer2 = getApplication().addTimer(125, true,
+            new TAction() {
+
+                public void DO() {
+                    if (timer2I < 100) {
+                        timer2I++;
+                    } else {
+                        timer2.setRecurring(false);
+                    }
+                    progressBar2.setValue(timer2I);
                 }
             }
         );
@@ -293,7 +331,8 @@ public class DemoMainWindow extends TWindow {
      */
     @Override
     public void onClose() {
-        getApplication().removeTimer(timer);
+        getApplication().removeTimer(timer1);
+        getApplication().removeTimer(timer2);
     }
 
     /**

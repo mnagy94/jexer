@@ -30,6 +30,7 @@ package jexer;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
+import jexer.bits.StringUtils;
 
 /**
  * TProgressBar implements a simple progress bar.
@@ -54,6 +55,26 @@ public class TProgressBar extends TWidget {
      * Current value of the progress.
      */
     private int value = 0;
+
+    /**
+     * The left border character.
+     */
+    private int leftBorderChar = GraphicsChars.CP437[0xC3];
+
+    /**
+     * The filled-in part of the bar.
+     */
+    private int completedChar = GraphicsChars.BOX;
+
+    /**
+     * The remaining to be filled in part of the bar.
+     */
+    private int remainingChar = GraphicsChars.SINGLE_BAR;
+
+    /**
+     * The right border character.
+     */
+    private int rightBorderChar = GraphicsChars.CP437[0xB4];
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -109,24 +130,29 @@ public class TProgressBar extends TWidget {
         int progressInt = (int)(progress * 100);
         int progressUnit = 100 / (getWidth() - 2);
 
-        putCharXY(0, 0, GraphicsChars.CP437[0xC3], incompleteColor);
-        for (int i = 0; i < getWidth() - 2; i++) {
+        putCharXY(0, 0, leftBorderChar, incompleteColor);
+        for (int i = StringUtils.width(leftBorderChar); i < getWidth() - 2;) {
             float iProgress = (float)i / (getWidth() - 2);
             int iProgressInt = (int)(iProgress * 100);
             if (iProgressInt <= progressInt - progressUnit) {
-                putCharXY(i + 1, 0, GraphicsChars.BOX, completeColor);
+                putCharXY(i, 0, completedChar, completeColor);
+                i += StringUtils.width(completedChar);
             } else {
-                putCharXY(i + 1, 0, GraphicsChars.SINGLE_BAR, incompleteColor);
+                putCharXY(i, 0, remainingChar, incompleteColor);
+                i += StringUtils.width(remainingChar);
             }
         }
         if (value >= maxValue) {
-            putCharXY(getWidth() - 2, 0, GraphicsChars.BOX, completeColor);
+            putCharXY(getWidth() - StringUtils.width(leftBorderChar) -
+                StringUtils.width(rightBorderChar), 0, completedChar,
+                completeColor);
         } else {
-            putCharXY(getWidth() - 2, 0, GraphicsChars.SINGLE_BAR,
+            putCharXY(getWidth() - StringUtils.width(leftBorderChar) -
+                StringUtils.width(rightBorderChar), 0, remainingChar,
                 incompleteColor);
         }
-        putCharXY(getWidth() - 1, 0, GraphicsChars.CP437[0xB4],
-            incompleteColor);
+        putCharXY(getWidth() - StringUtils.width(rightBorderChar), 0,
+            rightBorderChar, incompleteColor);
     }
 
     // ------------------------------------------------------------------------
@@ -185,6 +211,78 @@ public class TProgressBar extends TWidget {
      */
     public void setValue(final int value) {
         this.value = value;
+    }
+
+    /**
+     * Set the left border character.
+     *
+     * @param ch the char to use
+     */
+    public void setLeftBorderChar(final int ch) {
+        leftBorderChar = ch;
+    }
+
+    /**
+     * Get the left border character.
+     *
+     * @return the char
+     */
+    public int getLeftBorderChar() {
+        return leftBorderChar;
+    }
+
+    /**
+     * Set the filled-in part of the bar.
+     *
+     * @param ch the char to use
+     */
+    public void setCompletedChar(final int ch) {
+        completedChar = ch;
+    }
+
+    /**
+     * Get the filled-in part of the bar.
+     *
+     * @return the char
+     */
+    public int getCompletedChar() {
+        return completedChar;
+    }
+
+    /**
+     * Set the remaining to be filled in part of the bar.
+     *
+     * @param ch the char to use
+     */
+    public void setRemainingChar(final int ch) {
+        remainingChar = ch;
+    }
+
+    /**
+     * Get the remaining to be filled in part of the bar.
+     *
+     * @return the char
+     */
+    public int getRemainingChar() {
+        return remainingChar;
+    }
+
+    /**
+     * Set the right border character.
+     *
+     * @param ch the char to use
+     */
+    public void setRightBorderChar(final int ch) {
+        rightBorderChar = ch;
+    }
+
+    /**
+     * Get the right border character.
+     *
+     * @return the char
+     */
+    public int getRightBorderChar() {
+        return rightBorderChar;
     }
 
 }

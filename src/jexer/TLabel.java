@@ -158,9 +158,9 @@ public class TLabel extends TWidget {
         final TAction action) {
 
         // Set parent and window
-        super(parent, false, x, y, StringUtils.width(text), 1);
+        super(parent, false, x, y, 0, 1);
 
-        mnemonic = new MnemonicString(text);
+        setLabel(text);
         this.colorKey = colorKey;
         this.useWindowBackground = useWindowBackground;
         this.action = action;
@@ -169,6 +169,16 @@ public class TLabel extends TWidget {
     // ------------------------------------------------------------------------
     // TWidget ----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Override TWidget's width: we can only set width at construction time.
+     *
+     * @param width new widget width (ignored)
+     */
+    @Override
+    public void setWidth(final int width) {
+        // Do nothing
+    }
 
     /**
      * Override TWidget's height: we can only set height at construction
@@ -232,6 +242,7 @@ public class TLabel extends TWidget {
      */
     public void setLabel(final String label) {
         mnemonic = new MnemonicString(label);
+        super.setWidth(StringUtils.width(mnemonic.getRawLabel()));
     }
 
     /**
