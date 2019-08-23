@@ -106,7 +106,7 @@ class ImageViewerDesktop extends TDesktop {
         setActive(true);
 
         // Add directory treeView
-        treeView = addTreeViewWidget(0, 0, getWidth() / 2, getHeight() - 1,
+        treeView = addTreeViewWidget(0, 0, getWidth() / 2, getHeight(),
             new TAction() {
                 public void DO() {
                     TTreeItem item = treeView.getSelected();
@@ -150,11 +150,6 @@ class ImageViewerDesktop extends TDesktop {
                 }
             },
             filters);
-
-        // This appears to be a bug.  If I pass keystrokes to the tree view,
-        // it will center correctly.
-        treeView.onKeypress(new TKeypressEvent(kbDown));
-        treeView.onKeypress(new TKeypressEvent(kbUp));
 
         if (directoryList.getList().size() > 0) {
             activate(directoryList);
