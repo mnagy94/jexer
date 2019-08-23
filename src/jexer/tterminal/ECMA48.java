@@ -2874,6 +2874,7 @@ public class ECMA48 implements Runnable {
      */
     private void setToggle(final boolean value) {
         boolean decPrivateModeFlag = false;
+
         for (int i = 0; i < collectBuffer.length(); i++) {
             if (collectBuffer.charAt(i) == '?') {
                 decPrivateModeFlag = true;
@@ -4723,6 +4724,32 @@ public class ECMA48 implements Runnable {
                         }
                     }
                 }
+
+                if (p[0].equals("10")) {
+                    if (p[1].equals("?")) {
+                        // Respond with foreground color.
+                        java.awt.Color color = jexer.backend.SwingTerminal.attrToForegroundColor(currentState.attr);
+
+                        writeRemote(String.format(
+                            "\033]10;rgb:%04x/%04x/%04x\033\\",
+                                color.getRed() << 8,
+                                color.getGreen() << 8,
+                                color.getBlue() << 8));
+                    }
+                }
+
+                if (p[0].equals("11")) {
+                    if (p[1].equals("?")) {
+                        // Respond with background color.
+                        java.awt.Color color = jexer.backend.SwingTerminal.attrToBackgroundColor(currentState.attr);
+
+                        writeRemote(String.format(
+                            "\033]11;rgb:%04x/%04x/%04x\033\\",
+                                color.getRed() << 8,
+                                color.getGreen() << 8,
+                                color.getBlue() << 8));
+                    }
+                }
             }
 
             // Go to SCAN_GROUND state
@@ -4801,6 +4828,29 @@ public class ECMA48 implements Runnable {
                 break;
             }
         }
+    }
+
+    /**
+     * Respond to xterm sixel query.
+     */
+    private void xtermSixelQuery() {
+        int item = getCsiParam(0, 0);
+        int action = getCsiParam(1, 0);
+        int value = getCsiParam(2, 0);
+
+        switch (item) {
+        case 1:
+            if (action == 1) {
+                // Report number of color registers.
+                writeRemote(String.format("\033[?%d;%d;%dS", item, 0, 1024));
+                return;
+            }
+            break;
+        default:
+            break;
+        }
+        // We will not support this option.
+        writeRemote(String.format("\033[?%d;%dS", item, action));
     }
 
     /**
@@ -5966,7 +6016,18 @@ public class ECMA48 implements Runnable {
                 case 'S':
                     // Scroll up X lines (default 1)
                     if (type == DeviceType.XTERM) {
-                        su();
+                        boolean xtermPrivateModeFlag = false;
+                        for (int i = 0; i < collectBuffer.length(); i++) {
+                            if (collectBuffer.charAt(i) == '?') {
+                                xtermPrivateModeFlag = true;
+                                break;
+                            }
+                        }
+                        if (xtermPrivateModeFlag) {
+                            xtermSixelQuery();
+                        } else {
+                            su();
+                        }
                     }
                     break;
                 case 'T':
@@ -6240,7 +6301,18 @@ public class ECMA48 implements Runnable {
                 case 'S':
                     // Scroll up X lines (default 1)
                     if (type == DeviceType.XTERM) {
-                        su();
+                        boolean xtermPrivateModeFlag = false;
+                        for (int i = 0; i < collectBuffer.length(); i++) {
+                            if (collectBuffer.charAt(i) == '?') {
+                                xtermPrivateModeFlag = true;
+                                break;
+                            }
+                        }
+                        if (xtermPrivateModeFlag) {
+                            xtermSixelQuery();
+                        } else {
+                            su();
+                        }
                     }
                     break;
                 case 'T':
