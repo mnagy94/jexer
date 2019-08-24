@@ -277,7 +277,6 @@ public class TEditorWidget extends TWidget {
             && !keypress.getKey().isCtrl()
         ) {
             // Plain old keystroke, process it
-            // TODO: fix document to use ints, not chars
             document.addChar(keypress.getKey().getChar());
             alignCursor();
         } else {
@@ -459,6 +458,29 @@ public class TEditorWidget extends TWidget {
         if ((row > 0) && (row < document.getLineCount())) {
             document.setLineNumber(row - 1);
             alignTopLine(true);
+        }
+    }
+
+    /**
+     * Set the current visible column number.  1-based.
+     *
+     * @return the visible column number.  Column 1 is the first column.
+     */
+    public int getVisibleColumnNumber() {
+        return leftColumn + 1;
+    }
+
+    /**
+     * Set the current visible column number.  1-based.
+     *
+     * @param column the new visible column number.  Column 1 is the first
+     * column.
+     */
+    public void setVisibleColumnNumber(final int column) {
+        assert (column > 0);
+        if ((column > 0) && (column < document.getLineLengthMax())) {
+            leftColumn = column - 1;
+            alignDocument(true);
         }
     }
 

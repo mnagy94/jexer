@@ -6752,17 +6752,20 @@ public class ECMA48 implements Runnable {
             }
 
             // 00-17, 19, 1C-1F, 20-7E   --> put
-            // TODO
             if (ch <= 0x17) {
+                // We ignore all DCS except sixel.
                 return;
             }
             if (ch == 0x19) {
+                // We ignore all DCS except sixel.
                 return;
             }
             if ((ch >= 0x1C) && (ch <= 0x1F)) {
+                // We ignore all DCS except sixel.
                 return;
             }
             if ((ch >= 0x20) && (ch <= 0x7E)) {
+                // We ignore all DCS except sixel.
                 return;
             }
 

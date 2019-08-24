@@ -220,8 +220,11 @@ public class TEditorWindow extends TScrollableWindow {
             // Clicked on vertical scrollbar
             editField.setVisibleRowNumber(getVerticalValue());
         }
-
-        // TODO: horizontal scrolling
+        if (mouse.isMouse1() && mouseOnHorizontalScroller(mouse)) {
+            // Clicked on horizontal scrollbar
+            editField.setVisibleColumnNumber(getHorizontalValue());
+            setHorizontalValue(editField.getVisibleColumnNumber());
+        }
     }
 
     /**
@@ -249,8 +252,11 @@ public class TEditorWindow extends TScrollableWindow {
                 // Clicked/dragged on vertical scrollbar
                 editField.setVisibleRowNumber(getVerticalValue());
             }
-
-            // TODO: horizontal scrolling
+            if (mouse.isMouse1() && mouseOnHorizontalScroller(mouse)) {
+                // Clicked/dragged on horizontal scrollbar
+                editField.setVisibleColumnNumber(getHorizontalValue());
+                setHorizontalValue(editField.getVisibleColumnNumber());
+            }
         }
 
     }

@@ -2202,9 +2202,6 @@ public class TApplication implements Runnable {
 
         assert (!window.isActive());
         if (activeWindow != null) {
-            // TODO: see if this assertion is really necessary.
-            // assert (activeWindow.getZ() == 0);
-
             activeWindow.setActive(false);
 
             // Increment every window Z that is on top of window
