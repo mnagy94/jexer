@@ -36,7 +36,7 @@ Jexer is available on Maven Central:
 <dependency>
   <groupId>com.gitlab.klamonte</groupId>
   <artifactId>jexer</artifactId>
-  <version>0.3.1</version>
+  <version>0.3.2</version>
 </dependency>
 ```
 
@@ -53,6 +53,8 @@ Documentation
 * [Java API Docs](https://jexer.sourceforge.io/apidocs/api/index.html)
 
 * [Wiki](https://gitlab.com/klamonte/jexer/wikis/home)
+
+* [Jexer web page](https://jexer.sourceforge.io/)
 
 
 
@@ -111,9 +113,17 @@ controls.  The demos can be run as follows:
 More Screenshots
 ----------------
 
+Jexer can be run inside its own terminal window, with support for all
+of its features including images and mouse, and more terminals:
+
 ![Yo Dawg...](/screenshots/jexer_sixel_in_sixel.png?raw=true "Yo Dawg, I heard you like text windowing systems, so I ran a text windowing system inside your text windowing system so you can have a terminal in your terminal.")
 
+Sixel output uses a single palette which works OK for a variety of
+real-world images:
+
 ![Sixel Pictures Of Cliffs Of Moher And Buoy](/screenshots/sixel_images.png?raw=true "Sixel Pictures Of Cliffs Of Moher And Buoy")
+
+The color wheel with that palette is shown below:
 
 ![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
 
@@ -127,13 +137,14 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | Terminal       | Environment        | Mouse Click | Mouse Cursor | Images |
 | -------------- | ------------------ | ----------- | ------------ | ------ |
 | xterm          | X11                | yes         | yes          | yes    |
-| jexer(3)       | CLI, X11, Windows  | yes         | yes          | yes    |
+| jexer          | CLI, X11, Windows  | yes         | yes          | yes    |
 | mlterm         | X11                | yes         | yes          | yes    |
-| lcxterm(3)     | CLI, Linux console | yes         | yes          | no     |
-| rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | alacritty(3)   | X11                | yes         | yes          | no     |
 | gnome-terminal | X11                | yes         | yes          | no     |
+| lcxterm(3)     | CLI, Linux console | yes         | yes          | no     |
+| rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | xfce4-terminal | X11                | yes         | yes          | no     |
+| kitty(3)       | X11                | yes         | yes          | no     |
 | aminal(3)      | X11                | yes         | no           | no     |
 | konsole        | X11                | yes         | no           | no     |
 | yakuake        | X11                | yes         | no           | no     |
