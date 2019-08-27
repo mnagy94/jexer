@@ -1806,6 +1806,9 @@ public class ECMA48 implements Runnable {
                 // Local echo for everything else
                 printCharacter(keypress.getChar());
             }
+            if (displayListener != null) {
+                displayListener.displayChanged();
+            }
         }
 
         if ((newLineMode == true) && (keypress.equals(kbEnter))) {
