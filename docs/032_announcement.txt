@@ -1,0 +1,91 @@
+Jexer 0.3.2 Release
+===================
+
+I am pleased to announce the release of Jexer 0.3.2.  This release
+completes nearly every feature I set out to make, and is the last
+major milestone before 1.0.0.
+
+Jexer is not an application itself, but rather an advanced text
+windowing system framework to help new applications take full
+advantage of the terminal.  Its major features are:
+
+  * MIT licensed.
+
+  * Direct support for xterm-like terminals: mouse, keyboard, 24-bit
+    RGB color, UTF-8, fullwidth characters (CJK and emoji), and sixel
+    images.
+
+  * A Swing-based GUI window that ships with a good-looking Terminus
+    font.
+
+  * Sixel image support, for both input in its terminal window and
+    output to the host terminal.  Jexer is (to my knowledge) the first
+    and only system capable of managing multiple terminal windows
+    displaying properly overlapping images.
+
+  * Draggable / resizable windows, menu bar, and system-modal dialogs
+    (message/input boxes and filename picker).
+
+  * A full complement of widgets: button, text field, checkbox,
+    combobox, list, radio button, scrollbars, data table, calendar
+    picker, progress bar, text display, and simple text editor.  Plus
+    layout manager support for resizable widgets and windows.
+
+  * A terminal window capable of passing "vttest" (including VT100
+    double-width / double-height), and supporting all of Jexer's
+    features.  Jexer can run inside itself, with full keyboard, mouse,
+    and image support.
+
+  * Extensively documented in the code (Javadoc), a wiki, and ships
+    with a demonstration application showing off all of its available
+    widgets.
+
+
+Find out more at the Jexer Sourceforge or GitLab project pages:
+
+  * https://jexer.sourceforge.io/
+
+  * https://gitlab.com/klamonte/jexer
+
+
+Download
+--------
+
+GitLab: git clone https://gitlab.com/klamonte/jexer.git
+
+Binary downloads: http://sourceforge.net/project/showfiles.php?group_id=2829121
+
+On Maven:
+
+    group: com.gitlab.klamonte
+    artifact: jexer
+    version: 0.3.2
+
+
+Ugh, Java Sucks!
+----------------
+
+(Thor squint) But does it though?
+
+More seriously, I initially picked D because it was sexy.  But D circa
+2013 brought too many headaches for me, so I switched to Java because
+I wanted a cross-platform standard library that would be stable over
+many years.  And Java is OK, it is a solid workhorse that gets the job
+done.
+
+Yet in porting my initial work to Java I stumbled upon an unexpected
+benefit: I found ways to accomplish all of what Jexer does _without
+calling C directly_.  No termios, no ncurses, no forkpty(), and thus
+no serious hurdles porting it to anything that can spawn programs and
+read their output.  On Linux, BSD, or OSX, all you need is 'stty' and
+'script' to make things work.  (And if you want resizable terminal
+windows, add 'ptypipe'.)
+
+So for those who want something like Jexer but in your own favorite
+language, I encourage you to check out the [Porting
+Jexer](https://gitlab.com/klamonte/jexer/wikis/porting) page on the
+wiki: it has pointers to where the key features are, and a potential
+roadmap if you wanted to take part or all of it into your own hands.
+I licensed Jexer as MIT, stuck with simple Java 1.6, and thoroughly
+documented it in the hope that fans of other languages could more
+easily create or enhance their own text user interfaces.
