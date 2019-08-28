@@ -2760,6 +2760,27 @@ public class ECMA48Terminal extends LogicalScreen
                             heightPixels = 400;
                         }
                     }
+                    if ((params.size() > 2) && (params.get(0).equals("6"))) {
+                        if (debugToStderr) {
+                            System.err.printf("windowOp text cell pixels: " +
+                                "height %s width %s\n",
+                                params.get(1), params.get(2));
+                        }
+                        try {
+                            widthPixels = width * Integer.parseInt(params.get(2));
+                            heightPixels = height * Integer.parseInt(params.get(1));
+                        } catch (NumberFormatException e) {
+                            if (debugToStderr) {
+                                e.printStackTrace();
+                            }
+                        }
+                        if (widthPixels <= 0) {
+                            widthPixels = 640;
+                        }
+                        if (heightPixels <= 0) {
+                            heightPixels = 400;
+                        }
+                    }
                     resetParser();
                     return;
                 default:
@@ -2794,7 +2815,9 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the string to emit to xterm
      */
     private String xtermReportWindowPixelDimensions() {
-        return "\033[14t";
+        // We will ask for both window and text cell dimensions, and
+        // hopefully one of them will work.
+        return "\033[14t\033[16t";
     }
 
     /**

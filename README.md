@@ -145,6 +145,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | xfce4-terminal | X11                | yes         | yes          | no     |
 | kitty(3)       | X11                | yes         | yes          | no     |
+| mintty         | Windows            | yes         | yes          | no     |
 | aminal(3)      | X11                | yes         | no           | no     |
 | konsole        | X11                | yes         | no           | no     |
 | yakuake        | X11                | yes         | no           | no     |
