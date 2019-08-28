@@ -123,6 +123,12 @@ public class TProgressBar extends TWidget {
      */
     @Override
     public void draw() {
+
+        if (getWidth() <= 2) {
+            // Bail out, we are too narrow to draw anything.
+            return;
+        }
+
         CellAttributes completeColor = getTheme().getColor("tprogressbar.complete");
         CellAttributes incompleteColor = getTheme().getColor("tprogressbar.incomplete");
 
