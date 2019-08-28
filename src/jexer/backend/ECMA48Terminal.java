@@ -1349,7 +1349,7 @@ public class ECMA48Terminal extends LogicalScreen
         // Disable mouse reporting and show cursor.  Defensive null check
         // here in case closeTerminal() is called twice.
         if (output != null) {
-            output.printf("%s%s%s", mouse(false), cursor(true), normal());
+            output.printf("%s%s%s", mouse(false), cursor(true), defaultColor());
             output.flush();
         }
 
@@ -3643,13 +3643,36 @@ public class ECMA48Terminal extends LogicalScreen
     }
 
     /**
-     * Create a SGR parameter sequence to reset to defaults.
+     * Create a SGR parameter sequence to reset to VT100 defaults.
      *
      * @return the string to emit to an ANSI / ECMA-style terminal,
      * e.g. "\033[0m"
      */
     private String normal() {
         return normal(true) + rgbColor(false, Color.WHITE, Color.BLACK);
+    }
+
+    /**
+     * Create a SGR parameter sequence to reset to ECMA-48 default
+     * foreground/background.
+     *
+     * @return the string to emit to an ANSI / ECMA-style terminal,
+     * e.g. "\033[0m"
+     */
+    private String defaultColor() {
+        /*
+         * VT100 normal.
+         * Normal (neither bold nor faint).
+         * Not italicized.
+         * Not underlined.
+         * Steady (not blinking).
+         * Positive (not inverse).
+         * Visible (not hidden).
+         * Not crossed-out.
+         * Default foreground color.
+         * Default background color.
+         */
+        return "\033[0;22;23;24;25;27;28;29;39;49m";
     }
 
     /**
