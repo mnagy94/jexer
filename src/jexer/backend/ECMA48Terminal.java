@@ -3083,6 +3083,10 @@ public class ECMA48Terminal extends LogicalScreen
         }
         image = palette.ditherImage(image);
 
+        // Collect the raster information
+        int rasterHeight = 0;
+        int rasterWidth = image.getWidth();
+
         // Emit the palette, but only for the colors actually used by these
         // cells.
         boolean [] usedColors = new boolean[sixelPaletteSize];
@@ -3159,6 +3163,9 @@ public class ECMA48Terminal extends LogicalScreen
                                 data += 32;
                                 break;
                             }
+                            if ((currentRow + j + 1) > rasterHeight) {
+                                rasterHeight = currentRow + j + 1;
+                            }
                         }
                     }
                     assert (data >= 0);
@@ -3197,6 +3204,9 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Kill the very last "-", because it is unnecessary.
         sb.deleteCharAt(sb.length() - 1);
+
+        // Add the raster information
+        sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
 
         if (saveInCache) {
             // This row is OK to save into the cache.
