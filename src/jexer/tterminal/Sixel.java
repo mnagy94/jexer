@@ -48,7 +48,7 @@ public class Sixel {
      */
     private enum ScanState {
         GROUND,
-        QUOTE,
+        RASTER,
         COLOR,
         REPEAT,
     }
@@ -113,6 +113,16 @@ public class Sixel {
     private int height = 0;
 
     /**
+     * The width of image provided in the raster attribute.
+     */
+    private int rasterWidth = 0;
+
+    /**
+     * The height of image provided in the raster attribute.
+     */
+    private int rasterHeight = 0;
+
+    /**
      * The repeat count.
      */
     private int repeatCount = -1;
@@ -144,7 +154,6 @@ public class Sixel {
     public Sixel(final String buffer) {
         this.buffer = buffer;
         palette = new HashMap<Integer, Color>();
-        image = new BufferedImage(200, 100, BufferedImage.TYPE_INT_ARGB);
         for (int i = 0; i < buffer.length(); i++) {
             consume(buffer.charAt(i));
         }
@@ -160,7 +169,16 @@ public class Sixel {
      * @return the sixel data as an image.
      */
     public BufferedImage getImage() {
-        if ((width > 0) && (height > 0)) {
+        if ((width > 0) && (height > 0) && (image != null)) {
+            /*
+            System.err.println(String.format("%d %d %d %d", width, y + 1,
+                    rasterWidth, rasterHeight));
+            */
+
+            if ((rasterWidth > width) || (rasterHeight > y + 1)) {
+                resizeImage(Math.max(width, rasterWidth),
+                    Math.max(y + 1, rasterHeight));
+            }
             return image.getSubimage(0, 0, width, y + 1);
         }
         return null;
@@ -175,6 +193,11 @@ public class Sixel {
     private void resizeImage(final int newWidth, final int newHeight) {
         BufferedImage newImage = new BufferedImage(newWidth, newHeight,
             BufferedImage.TYPE_INT_ARGB);
+
+        if (image == null) {
+            image = newImage;
+            return;
+        }
 
         if (DEBUG) {
             System.err.println("resizeImage(); old " + image.getWidth() + "x" +
@@ -206,7 +229,7 @@ public class Sixel {
      * @param defaultValue value to use if colorParams[position] doesn't exist
      * @return parameter value
      */
-    private int getColorParam(final int position, final int defaultValue) {
+    private int getParam(final int position, final int defaultValue) {
         if (position > paramsI) {
             return defaultValue;
         }
@@ -222,11 +245,11 @@ public class Sixel {
      * @param maxValue maximum value inclusive
      * @return parameter value
      */
-    private int getColorParam(final int position, final int defaultValue,
+    private int getParam(final int position, final int defaultValue,
         final int minValue, final int maxValue) {
 
         assert (minValue <= maxValue);
-        int value = getColorParam(position, defaultValue);
+        int value = getParam(position, defaultValue);
         if (value < minValue) {
             value = minValue;
         }
@@ -258,6 +281,11 @@ public class Sixel {
         }
 
         assert (n >= 0);
+
+        if (image == null) {
+            // The raster attributes was not provided.
+            resizeImage(WIDTH_INCREASE, HEIGHT_INCREASE);
+        }
 
         if (x + rep > image.getWidth()) {
             // Resize the image, give us another max(rep, WIDTH_INCREASE)
@@ -315,7 +343,7 @@ public class Sixel {
      * Process a color palette change.
      */
     private void setPalette() {
-        int idx = getColorParam(0, 0);
+        int idx = getParam(0, 0);
 
         if (paramsI == 0) {
             Color newColor = palette.get(idx);
@@ -334,10 +362,10 @@ public class Sixel {
             return;
         }
 
-        int type = getColorParam(1, 0);
-        float red   = (float) (getColorParam(2, 0, 0, 100) / 100.0);
-        float green = (float) (getColorParam(3, 0, 0, 100) / 100.0);
-        float blue  = (float) (getColorParam(4, 0, 0, 100) / 100.0);
+        int type = getParam(1, 0);
+        float red   = (float) (getParam(2, 0, 0, 100) / 100.0);
+        float green = (float) (getParam(3, 0, 0, 100) / 100.0);
+        float blue  = (float) (getParam(4, 0, 0, 100) / 100.0);
 
         if (type == 2) {
             Color newColor = new Color(red, green, blue);
@@ -350,6 +378,22 @@ public class Sixel {
                 System.err.println("UNKNOWN COLOR TYPE " + type + ": " + type +
                     " " + idx + " R " + red + " G " + green + " B " + blue);
             }
+        }
+    }
+
+    /**
+     * Parse the raster attributes.
+     */
+    private void parseRaster() {
+        int pan = getParam(0, 0);  // Aspect ratio numerator
+        int pad = getParam(1, 0);  // Aspect ratio denominator
+        int pah = getParam(2, 0);  // Horizontal width
+        int pav = getParam(3, 0);  // Vertical height
+
+        if ((pan == pad) && (pah > 0) && (pav > 0)) {
+            rasterWidth = pah;
+            rasterHeight = pav;
+            resizeImage(rasterWidth, rasterHeight);
         }
     }
 
@@ -368,6 +412,10 @@ public class Sixel {
             if (scanState == ScanState.COLOR) {
                 setPalette();
             }
+            if (scanState == ScanState.RASTER) {
+                parseRaster();
+                toGround();
+            }
             addSixel(ch);
             toGround();
             return;
@@ -377,6 +425,10 @@ public class Sixel {
             // Next color is here, parse what we had before.
             if (scanState == ScanState.COLOR) {
                 setPalette();
+                toGround();
+            }
+            if (scanState == ScanState.RASTER) {
+                parseRaster();
                 toGround();
             }
             scanState = ScanState.COLOR;
@@ -389,6 +441,10 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
+            if (scanState == ScanState.RASTER) {
+                parseRaster();
+                toGround();
+            }
             scanState = ScanState.REPEAT;
             repeatCount = 0;
             return;
@@ -397,6 +453,10 @@ public class Sixel {
         if (ch == '-') {
             if (scanState == ScanState.COLOR) {
                 setPalette();
+                toGround();
+            }
+            if (scanState == ScanState.RASTER) {
+                parseRaster();
                 toGround();
             }
 
@@ -417,6 +477,10 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
+            if (scanState == ScanState.RASTER) {
+                parseRaster();
+                toGround();
+            }
             x = 0;
             return;
         }
@@ -426,7 +490,7 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
-            scanState = ScanState.QUOTE;
+            scanState = ScanState.RASTER;
             return;
         }
 
@@ -439,8 +503,17 @@ public class Sixel {
             }
             return;
 
-        case QUOTE:
-            // Ignore everything else in the quote header.
+        case RASTER:
+            // 30-39, 3B --> param
+            if ((ch >= '0') && (ch <= '9')) {
+                params[paramsI] *= 10;
+                params[paramsI] += (ch - '0');
+            }
+            if (ch == ';') {
+                if (paramsI < params.length - 1) {
+                    paramsI++;
+                }
+            }
             return;
 
         case COLOR:
