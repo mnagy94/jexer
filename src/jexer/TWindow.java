@@ -608,6 +608,15 @@ public class TWindow extends TWidget {
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
 
+        if (inWindowMove || inWindowResize) {
+            // ESC or ENTER - Exit size/move
+            if (keypress.equals(kbEsc) || keypress.equals(kbEnter)) {
+                inWindowMove = false;
+                inWindowResize = false;
+                return;
+            }
+        }
+
         if (inKeyboardResize) {
 
             // ESC or ENTER - Exit size/move
