@@ -149,6 +149,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | aminal(3)      | X11                | yes         | no           | no     |
 | konsole        | X11                | yes         | no           | no     |
 | yakuake        | X11                | yes         | no           | no     |
+| Windows Terminal(6) | Windows       | no          | no           | no(2)  |
 | screen         | CLI                | yes(1)      | yes(1)       | no(2)  |
 | tmux           | CLI                | yes(1)      | yes(1)       | no     |
 | putty          | X11, Windows       | yes         | no           | no(2)  |
@@ -166,6 +167,9 @@ The table below lists terminals tested against Jexer's Xterm backend:
 4 - Requires TERM=xterm-1003 before starting.
 
 5 - Images can crash terminal.
+
+6 - Version 0.4.2382.0, on Windows 10.0.18362.30.  Tested against
+    WSL-1 Debian instance.
 
 
 
