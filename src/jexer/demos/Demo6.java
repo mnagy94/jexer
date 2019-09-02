@@ -118,6 +118,7 @@ public class Demo6 {
              * window menus.
              */
             TApplication monitor = new TApplication(monitorBackend);
+            monitor.addToolMenu();
             monitor.addFileMenu();
             monitor.addWindowMenu();
 
