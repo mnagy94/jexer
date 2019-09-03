@@ -30,6 +30,7 @@ package jexer.backend;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 import jexer.TImage;
 import jexer.bits.Cell;
@@ -195,7 +197,7 @@ public class ECMA48Terminal extends LogicalScreen
     /**
      * The sixel post-rendered string cache.
      */
-    private SixelCache sixelCache = null;
+    private ImageCache sixelCache = null;
 
     /**
      * Number of colors in the sixel palette.  Xterm 335 defines the max as
@@ -205,9 +207,24 @@ public class ECMA48Terminal extends LogicalScreen
     private int sixelPaletteSize = 1024;
 
     /**
+     * If true, emit image data via iTerm2 image protocol.
+     */
+    private boolean iterm2Images = false;
+
+    /**
+     * The iTerm2 post-rendered string cache.
+     */
+    private ImageCache iterm2Cache = null;
+
+    /**
+     * Base64 encoder used by iTerm2 images.
+     */
+    private java.util.Base64.Encoder base64 = null;
+
+    /**
      * If true, then we changed System.in and need to change it back.
      */
-    private boolean setRawMode;
+    private boolean setRawMode = false;
 
     /**
      * The terminal's input.  If an InputStream is not specified in the
@@ -886,10 +903,10 @@ public class ECMA48Terminal extends LogicalScreen
     }
 
     /**
-     * SixelCache is a least-recently-used cache that hangs on to the
-     * post-rendered sixel string for a particular set of cells.
+     * ImageCache is a least-recently-used cache that hangs on to the
+     * post-rendered sixel or iTerm2 string for a particular set of cells.
      */
-    private class SixelCache {
+    private class ImageCache {
 
         /**
          * Maximum size of the cache.
@@ -938,7 +955,7 @@ public class ECMA48Terminal extends LogicalScreen
          *
          * @param maxSize the maximum size of the cache
          */
-        public SixelCache(final int maxSize) {
+        public ImageCache(final int maxSize) {
             this.maxSize = maxSize;
             cache = new HashMap<String, CacheEntry>();
         }
@@ -1398,7 +1415,7 @@ public class ECMA48Terminal extends LogicalScreen
             doRgbColor = false;
         }
 
-        // Default to using sixel for full-width characters.
+        // Default to using images for full-width characters.
         if (System.getProperty("jexer.ECMA48.wideCharImages",
                 "true").equals("true")) {
             wideCharImages = true;
@@ -1432,6 +1449,14 @@ public class ECMA48Terminal extends LogicalScreen
             }
         } catch (NumberFormatException e) {
             // SQUASH
+        }
+
+        // Default to using images for full-width characters.
+        if (System.getProperty("jexer.ECMA48.iTerm2Images",
+                "false").equals("true")) {
+            iterm2Images = true;
+        } else {
+            iterm2Images = false;
         }
 
         // Set custom colors
@@ -1951,7 +1976,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         /*
-         * For sixel support, draw all of the sixel output first, and then
+         * For images support, draw all of the image output first, and then
          * draw everything else afterwards.  This works OK, but performance
          * is still a drag on larger pictures.
          */
@@ -1997,7 +2022,11 @@ public class ECMA48Terminal extends LogicalScreen
                     physical[x + i][y].setTo(lCell);
                 }
                 if (cellsToDraw.size() > 0) {
-                    sb.append(toSixel(x, y, cellsToDraw));
+                    if (iterm2Images) {
+                        sb.append(toIterm2Image(x, y, cellsToDraw));
+                    } else {
+                        sb.append(toSixel(x, y, cellsToDraw));
+                    }
                 }
 
                 x = right;
@@ -2954,7 +2983,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (sixelCache == null) {
-            sixelCache = new SixelCache(height * 10);
+            sixelCache = new ImageCache(height * 10);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3227,6 +3256,259 @@ public class ECMA48Terminal extends LogicalScreen
 
     // ------------------------------------------------------------------------
     // End sixel output support -----------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // iTerm2 image output support --------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Create an iTerm2 images string representing a row of several cells
+     * containing bitmap data.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param cells the cells containing the bitmap data
+     * @return the string to emit to an ANSI / ECMA-style terminal
+     */
+    private String toIterm2Image(final int x, final int y,
+        final ArrayList<Cell> cells) {
+
+        StringBuilder sb = new StringBuilder();
+
+        assert (cells != null);
+        assert (cells.size() > 0);
+        assert (cells.get(0).getImage() != null);
+
+        if (iterm2Images == false) {
+            sb.append(normal());
+            sb.append(gotoXY(x, y));
+            for (int i = 0; i < cells.size(); i++) {
+                sb.append(' ');
+            }
+            return sb.toString();
+        }
+
+        if (iterm2Cache == null) {
+            iterm2Cache = new ImageCache(height * 10);
+            base64 = java.util.Base64.getEncoder();
+        }
+
+        // Save and get rows to/from the cache that do NOT have inverted
+        // cells.
+        boolean saveInCache = true;
+        for (Cell cell: cells) {
+            if (cell.isInvertedImage()) {
+                saveInCache = false;
+            }
+        }
+        if (saveInCache) {
+            String cachedResult = iterm2Cache.get(cells);
+            if (cachedResult != null) {
+                // System.err.println("CACHE HIT");
+                sb.append(gotoXY(x, y));
+                sb.append(cachedResult);
+                return sb.toString();
+            }
+            // System.err.println("CACHE MISS");
+        }
+
+        int imageWidth = cells.get(0).getImage().getWidth();
+        int imageHeight = cells.get(0).getImage().getHeight();
+
+        // cells.get(x).getImage() has a dithered bitmap containing indexes
+        // into the color palette.  Piece these together into one larger
+        // image for final rendering.
+        int totalWidth = 0;
+        int fullWidth = cells.size() * getTextWidth();
+        int fullHeight = getTextHeight();
+        for (int i = 0; i < cells.size(); i++) {
+            totalWidth += cells.get(i).getImage().getWidth();
+        }
+
+        BufferedImage image = new BufferedImage(fullWidth,
+            fullHeight, BufferedImage.TYPE_INT_ARGB);
+
+        int [] rgbArray;
+        for (int i = 0; i < cells.size() - 1; i++) {
+            int tileWidth = Math.min(cells.get(i).getImage().getWidth(),
+                imageWidth);
+            int tileHeight = Math.min(cells.get(i).getImage().getHeight(),
+                imageHeight);
+            if (false && cells.get(i).isInvertedImage()) {
+                // I used to put an all-white cell over the cursor, don't do
+                // that anymore.
+                rgbArray = new int[imageWidth * imageHeight];
+                for (int j = 0; j < rgbArray.length; j++) {
+                    rgbArray[j] = 0xFFFFFF;
+                }
+            } else {
+                try {
+                    rgbArray = cells.get(i).getImage().getRGB(0, 0,
+                        tileWidth, tileHeight, null, 0, tileWidth);
+                } catch (Exception e) {
+                    throw new RuntimeException("image " + imageWidth + "x" +
+                        imageHeight +
+                        "tile " + tileWidth + "x" +
+                        tileHeight +
+                        " cells.get(i).getImage() " +
+                        cells.get(i).getImage() +
+                        " i " + i +
+                        " fullWidth " + fullWidth +
+                        " fullHeight " + fullHeight, e);
+                }
+            }
+
+            /*
+            System.err.printf("calling image.setRGB(): %d %d %d %d %d\n",
+                i * imageWidth, 0, imageWidth, imageHeight,
+                0, imageWidth);
+            System.err.printf("   fullWidth %d fullHeight %d cells.size() %d textWidth %d\n",
+                fullWidth, fullHeight, cells.size(), getTextWidth());
+             */
+
+            image.setRGB(i * imageWidth, 0, tileWidth, tileHeight,
+                rgbArray, 0, tileWidth);
+            if (tileHeight < fullHeight) {
+                int backgroundColor = cells.get(i).getBackground().getRGB();
+                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+                    for (int imageY = imageHeight; imageY < fullHeight;
+                         imageY++) {
+
+                        image.setRGB(imageX, imageY, backgroundColor);
+                    }
+                }
+            }
+        }
+        totalWidth -= ((cells.size() - 1) * imageWidth);
+        if (false && cells.get(cells.size() - 1).isInvertedImage()) {
+            // I used to put an all-white cell over the cursor, don't do that
+            // anymore.
+            rgbArray = new int[totalWidth * imageHeight];
+            for (int j = 0; j < rgbArray.length; j++) {
+                rgbArray[j] = 0xFFFFFF;
+            }
+        } else {
+            try {
+                rgbArray = cells.get(cells.size() - 1).getImage().getRGB(0, 0,
+                    totalWidth, imageHeight, null, 0, totalWidth);
+            } catch (Exception e) {
+                throw new RuntimeException("image " + imageWidth + "x" +
+                    imageHeight + " cells.get(cells.size() - 1).getImage() " +
+                    cells.get(cells.size() - 1).getImage(), e);
+            }
+        }
+        image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
+            imageHeight, rgbArray, 0, totalWidth);
+
+        if (totalWidth < getTextWidth()) {
+            int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
+
+            for (int imageX = image.getWidth() - totalWidth;
+                 imageX < image.getWidth(); imageX++) {
+
+                for (int imageY = 0; imageY < fullHeight; imageY++) {
+                    image.setRGB(imageX, imageY, backgroundColor);
+                }
+            }
+        }
+
+        /*
+         * From https://iterm2.com/documentation-images.html:
+         *
+         * Protocol
+         *
+         * iTerm2 extends the xterm protocol with a set of proprietary escape
+         * sequences. In general, the pattern is:
+         *
+         * ESC ] 1337 ; key = value ^G
+         *
+         * Whitespace is shown here for ease of reading: in practice, no
+         * spaces should be used.
+         *
+         * For file transfer and inline images, the code is:
+         *
+         * ESC ] 1337 ; File = [optional arguments] : base-64 encoded file contents ^G
+         *
+         * The optional arguments are formatted as key=value with a semicolon
+         * between each key-value pair. They are described below:
+         *
+         * Key		Description of value
+         * name         base-64 encoded filename. Defaults to "Unnamed file".
+         * size         File size in bytes. Optional; this is only used by the
+         *              progress indicator.
+         * width        Width to render. See notes below.
+         * height       Height to render. See notes below.
+         * preserveAspectRatio If set to 0, then the image's inherent aspect
+         *                     ratio will not be respected; otherwise, it
+         *                     will fill the specified width and height as
+         *                     much as possible without stretching. Defaults
+         *                     to 1.
+         * inline If set to 1, the file will be displayed inline. Otherwise,
+         *        it will be downloaded with no visual representation in the
+         *        terminal session. Defaults to 0.
+         *
+         * The width and height are given as a number followed by a unit, or
+         * the word "auto".
+         *
+         * N: N character cells.
+         * Npx: N pixels.
+         * N%: N percent of the session's width or height.
+         * auto: The image's inherent size will be used to determine an
+         *       appropriate dimension.
+         *
+         */
+
+        // File contents can be several image formats.  We will use PNG.
+        ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream(1024);
+        try {
+            if (!ImageIO.write(image.getSubimage(0, 0, image.getWidth(),
+                        Math.min(image.getHeight(), fullHeight)),
+                    "PNG", pngOutputStream)
+            ) {
+                // We failed to render image, bail out.
+                return "";
+            }
+        } catch (IOException e) {
+            // We failed to render image, bail out.
+            return "";
+        }
+
+        // iTerm2 does not advance the cursor automatically, so place it
+        // myself.
+        sb.append("\033]1337;File=");
+        /*
+        sb.append(String.format("width=$d;height=1;preserveAspectRatio=1;",
+                cells.size()));
+         */
+        /*
+        sb.append(String.format("width=$dpx;height=%dpx;preserveAspectRatio=1;",
+                image.getWidth(), Math.min(image.getHeight(),
+                    getTextHeight())));
+         */
+        sb.append("inline=1:");
+        sb.append(base64.encodeToString(pngOutputStream.toByteArray()));
+        sb.append("\007");
+
+        if (saveInCache) {
+            // This row is OK to save into the cache.
+            iterm2Cache.put(cells, sb.toString());
+        }
+
+        return (gotoXY(x, y) + sb.toString());
+    }
+
+    /**
+     * Get the iTerm2 images support flag.
+     *
+     * @return true if this terminal is emitting iTerm2 images
+     */
+    public boolean hasIterm2Images() {
+        return iterm2Images;
+    }
+
+    // ------------------------------------------------------------------------
+    // End iTerm2 image output support ----------------------------------------
     // ------------------------------------------------------------------------
 
     /**
