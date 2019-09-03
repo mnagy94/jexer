@@ -139,6 +139,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | xterm          | X11                | yes         | yes          | yes    |
 | jexer          | CLI, X11, Windows  | yes         | yes          | yes    |
 | mlterm         | X11                | yes         | yes          | yes    |
+| RLogin         | Windows            | yes         | yes          | yes    |
 | alacritty(3)   | X11                | yes         | yes          | no     |
 | gnome-terminal | X11                | yes         | yes          | no     |
 | iTerm2         | Mac                | yes         | yes          | no(5)  |
