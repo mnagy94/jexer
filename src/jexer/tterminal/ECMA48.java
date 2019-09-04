@@ -7023,19 +7023,20 @@ public class ECMA48 implements Runnable {
         int x0 = currentState.cursorX;
         for (int y = 0; y < cellRows; y++) {
             for (int x = 0; x < cellColumns; x++) {
-                printCharacter(' ');
-                cursorLeft(1, false);
-                if ((x == cellColumns - 1) || (y == cellRows - 1)) {
-                    // TODO: render text of current cell first, then image
-                    // over it.  For now, just copy the cell.
-                    DisplayLine line = display.get(currentState.cursorY);
-                    line.replace(currentState.cursorX, cells[x][y]);
-                } else {
-                    // Copy the image cell into the display.
-                    DisplayLine line = display.get(currentState.cursorY);
-                    line.replace(currentState.cursorX, cells[x][y]);
+                assert (currentState.cursorX <= rightMargin);
+
+                // TODO: Render text of current cell first, then image over
+                // it (accounting for blank pixels).  For now, just copy the
+                // cell.
+                DisplayLine line = display.get(currentState.cursorY);
+                line.replace(currentState.cursorX, cells[x][y]);
+
+                // If at the end of the visible screen, stop.
+                if (currentState.cursorX == rightMargin) {
+                    break;
                 }
-                cursorRight(1, false);
+                // Room for more image on the visible screen.
+                currentState.cursorX++;
             }
             linefeed();
             cursorPosition(currentState.cursorY, x0);
