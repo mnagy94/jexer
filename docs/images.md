@@ -55,12 +55,11 @@ The core ("must-have") design goals are:
   on the screen, then an error exists in this document that must be
   fixed.
 
-  - Every feature should be straightforward to validate via automated
+  - Every feature must be straightforward to validate via automated
     unit testing.
 
-  - Every conformant terminal should produce the same output (pixels
-    on screen) given the same input (terminal font, terminal
-    sequences).
+  - Every conformant terminal must produce the same output (pixels on
+    screen) given the same input (terminal font, terminal sequences).
 
   - Every option must have a defined default value.
 
