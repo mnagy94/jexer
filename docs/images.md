@@ -27,7 +27,7 @@ This proposal has been informed from the following prior work:
   https://iterm2.com/documentation-images.html
 
 * Kitty image protocol:
-
+  https://sw.kovidgoyal.net/kitty/graphics-protocol.html
 
 * Jexer Terminal User Interface:
   https://gitlab.com/klamonte/jexer
@@ -127,7 +127,8 @@ The core ("must-have") design goals are:
 Design Goals - Secondary
 ------------------------
 
-The secondary ("nice-to-have") design goals are:
+The secondary ("nice-to-have") design goals are listed below.  These
+might not all be possible, but will kept in mind:
 
 * Minimal redundant network traffic for on-screen data that is
   repeated: either on screen in multiple places, or in the same place
@@ -136,6 +137,11 @@ The secondary ("nice-to-have") design goals are:
 * Asynchronous notification from terminal to application that the
   screen has been changed by outside or user action.  Examples: font
   change, session detach/attach, user changed image preferences.
+
+* The ability for a multiplexer to "pass-thru" the image drawing
+  sequence to its "outer" terminal, with some support for limited
+  clipping.
+
 
 
 Out Of Scope
@@ -172,14 +178,14 @@ Multiplexer - A special case of an application that simulates one or
               obtain input/output from the user.  Multiplexers are
               thus both applications and terminals.
 
-X - The column coordinate of a cell.  This standard is 0-based: the
-    left-most column of the screen is numbered 0.
+X - The column coordinate of a cell.  This standard is 1-based (like
+    ECMA-48): the left-most column of the screen is numbered 1.
 
-Y - The row coordinate of a cell.  This standard is 0-based: the
-    top-most row of the screen is numbered 0.
+Y - The row coordinate of a cell.  This standard is 1-based (like
+    ECMA-48): the top-most row of the screen is numbered 1.
 
 Z - The layer that text or multimedia is placed on.  This proposal
-    uses a right-hand coordinate system with (X, Y, Z) = (0, 0, 0)
+    uses a right-hand coordinate system with (X, Y, Z) = (1, 1, 1)
     defined as the top-left corner on the default layer: positive Z
     projects "away" from the user and "into" or "behind" the screen.
     Rendering the Cells on the screen must produce the same result as
