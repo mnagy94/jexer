@@ -1133,12 +1133,15 @@ public class ECMA48Terminal extends LogicalScreen
                     "UTF-8"));
         }
 
-        // Request xterm report window dimensions in pixels
-        this.output.printf("%s", xtermReportWindowPixelDimensions());
+        // Request xterm report window/cell dimensions in pixels
+        this.output.printf("%s", xtermReportPixelDimensions());
 
         // Enable mouse reporting and metaSendsEscape
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
         this.output.flush();
+
+        // Request xterm use the sixel settings we want
+        this.output.printf("%s", xtermSetSixelSettings());
 
         // Query the screen size
         sessionInfo.queryWindowSize();
@@ -1219,12 +1222,15 @@ public class ECMA48Terminal extends LogicalScreen
 
         this.output = writer;
 
-        // Request xterm report window dimensions in pixels
-        this.output.printf("%s", xtermReportWindowPixelDimensions());
+        // Request xterm report window/cell dimensions in pixels
+        this.output.printf("%s", xtermReportPixelDimensions());
 
         // Enable mouse reporting and metaSendsEscape
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
         this.output.flush();
+
+        // Request xterm use the sixel settings we want
+        this.output.printf("%s", xtermSetSixelSettings());
 
         // Query the screen size
         sessionInfo.queryWindowSize();
@@ -1366,7 +1372,8 @@ public class ECMA48Terminal extends LogicalScreen
         // Disable mouse reporting and show cursor.  Defensive null check
         // here in case closeTerminal() is called twice.
         if (output != null) {
-            output.printf("%s%s%s", mouse(false), cursor(true), defaultColor());
+            output.printf("%s%s%s%s", mouse(false), cursor(true),
+                defaultColor(), xtermResetSixelSettings());
             output.flush();
         }
 
@@ -2401,7 +2408,7 @@ public class ECMA48Terminal extends LogicalScreen
                         getTextWidth() + " x " + getTextHeight());
                 }
 
-                this.output.printf("%s", xtermReportWindowPixelDimensions());
+                this.output.printf("%s", xtermReportPixelDimensions());
                 this.output.flush();
 
                 TResizeEvent event = new TResizeEvent(TResizeEvent.Type.SCREEN,
@@ -2839,11 +2846,39 @@ public class ECMA48Terminal extends LogicalScreen
     }
 
     /**
-     * Request (u)xterm to report the current window size dimensions.
+     * Request (u)xterm to use the sixel settings we need:
+     *
+     *   - enable sixel scrolling
+     *
+     *   - disable private color registers (so that we can use one common
+     *     palette)
      *
      * @return the string to emit to xterm
      */
-    private String xtermReportWindowPixelDimensions() {
+    private String xtermSetSixelSettings() {
+        return "\033[?80h\033[?1070l";
+    }
+
+    /**
+     * Restore (u)xterm its default sixel settings:
+     *
+     *   - enable sixel scrolling
+     *
+     *   - enable private color registers
+     *
+     * @return the string to emit to xterm
+     */
+    private String xtermResetSixelSettings() {
+        return "\033[?80h\033[?1070h";
+    }
+
+    /**
+     * Request (u)xterm to report the current window and cell size dimensions
+     * in pixels.
+     *
+     * @return the string to emit to xterm
+     */
+    private String xtermReportPixelDimensions() {
         // We will ask for both window and text cell dimensions, and
         // hopefully one of them will work.
         return "\033[14t\033[16t";
@@ -2938,6 +2973,8 @@ public class ECMA48Terminal extends LogicalScreen
 
         if (palette == null) {
             palette = new SixelPalette();
+            // TODO: make this an option (shared palette or not)
+            palette.emitPalette(sb, null);
         }
 
         return sb.toString();
@@ -2977,6 +3014,20 @@ public class ECMA48Terminal extends LogicalScreen
             sb.append(normal());
             sb.append(gotoXY(x, y));
             for (int i = 0; i < cells.size(); i++) {
+                sb.append(' ');
+            }
+            return sb.toString();
+        }
+
+        if (y == height - 1) {
+            // We are on the bottom row.  If scrolling mode is enabled
+            // (default), then VT320/xterm will scroll the entire screen if
+            // we draw any pixels here.
+
+            // TODO: support sixel scrolling mode disabled as an option.
+            sb.append(normal());
+            sb.append(gotoXY(x, y));
+            for (int j = 0; j < cells.size(); j++) {
                 sb.append(' ');
             }
             return sb.toString();
@@ -3028,6 +3079,7 @@ public class ECMA48Terminal extends LogicalScreen
                 imageWidth);
             int tileHeight = Math.min(cells.get(i).getImage().getHeight(),
                 imageHeight);
+
             if (false && cells.get(i).isInvertedImage()) {
                 // I used to put an all-white cell over the cursor, don't do
                 // that anymore.
@@ -3109,12 +3161,18 @@ public class ECMA48Terminal extends LogicalScreen
         // Dither the image.  It is ok to lose the original here.
         if (palette == null) {
             palette = new SixelPalette();
+            // TODO: make this an option (shared palette or not)
+            palette.emitPalette(sb, null);
         }
         image = palette.ditherImage(image);
 
         // Collect the raster information
         int rasterHeight = 0;
         int rasterWidth = image.getWidth();
+
+        /*
+
+        // TODO: make this an option (shared palette or not)
 
         // Emit the palette, but only for the colors actually used by these
         // cells.
@@ -3125,6 +3183,7 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
         palette.emitPalette(sb, usedColors);
+         */
 
         // Render the entire row of cells.
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
