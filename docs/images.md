@@ -493,9 +493,9 @@ Default parameters and ranges are listed below:
 
 The terminal must also support the following new queries:
 
-| Query           | Response              | Description                        |
-|-----------------------------------------|------------------------------------|
-| CSI ? 1 0 0 n   | CSI ? z ; y ; x n     | Report cursor Z, Y, X position     |
+| Query           | Response              | Description                    |
+|-----------------------------------------|--------------------------------|
+| CSI ? 1 0 0 n   | CSI ? z ; y ; x n     | Report cursor Z, Y, X position |
 | CSI ? 1 8 t     | CSI ? 8 ; l ; h ; w t | Report the text area cube layers, height, width |
 
 
