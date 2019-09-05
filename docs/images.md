@@ -563,10 +563,10 @@ Layers - Integration With Existing Sequences
 
 Sequences that insert characters/lines, delete characters/lines, or
 modify larger regions are changed to act upon multiple layers as
-defined below.  By default, MSL (Modify All Layers) is off/unset, and
-Z is 1, so if the application never changes MSL or Z then these
-sequences will produce the same visible output as a terminal without
-layer support.
+defined below.  By default, MSL (Manipulate Single Layer) is
+off/unset, and Z is 1, so if the application never changes MSL or Z
+then these sequences will produce the same visible output as a
+terminal without layer support.
 
 A terminal is not required to support all of these sequences; however,
 for those sequences it does support, if it supports the layers feature
