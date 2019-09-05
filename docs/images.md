@@ -448,12 +448,12 @@ The layers feature adds more variables to the state, and these
 variables are required to be stored with DECSC (ESC 7) and restored
 with DECRC (ESC 8).  The new variables are listed below:
 
-| Mnemonic | Description                 | Default value |
-|----------|-----------------------------|---------------|
-| Z        | Cursor position Z           | 1             |
-| MAL      | Manipulate all layers       | on / enabled  |
-| TFT      | Text foreground transparent | false         |
-| TBT      | Text background transparent | false         |
+| Mnemonic | Description                 | Default value  |
+|----------|-----------------------------|----------------|
+| Z        | Cursor position Z           | 1              |
+| MSL      | Manipulate single layer     | off / disabled |
+| TFT      | Text foreground transparent | false          |
+| TBT      | Text background transparent | false          |
 
 
 
@@ -475,8 +475,8 @@ sequences:
 |-------------------|-------------|----------------------------------------|
 | CSI ? z ; y ; x H | CUPZ        | Move cursor to (x, y, z)               |
 | CSI ? z ; y ; x H | SLA         | Set layer alpha                        |
-| CSI ? 3 0 0 1 h   | DECSET 3001 | Disable Manipulate All Layers (MAL)    |
-| CSI ? 3 0 0 1 l   | DECRST 3001 | Enable Manipulate All Layers (MAL)     |
+| CSI ? 3 0 0 1 h   | DECSET 3001 | Enable Manupulate Single Layer (MSL)   |
+| CSI ? 3 0 0 1 l   | DECRST 3001 | Disable Manupulate Single Layer (MSL)  |
 | CSI ? l ; h ; w t | RSZCUBE     | Resize cube to (layers, height, width) |
 
 Default parameters and ranges are listed below:
@@ -563,8 +563,8 @@ Layers - Integration With Existing Sequences
 
 Sequences that insert characters/lines, delete characters/lines, or
 modify larger regions are changed to act upon multiple layers as
-defined below.  By default, MAL (Modify All Layers) is off/unset, and
-Z is 1, so if the application never changes MAL or Z then these
+defined below.  By default, MSL (Modify All Layers) is off/unset, and
+Z is 1, so if the application never changes MSL or Z then these
 sequences will produce the same visible output as a terminal without
 layer support.
 
@@ -574,40 +574,40 @@ then the sequences must behave as shown below:
 
 | Sequence   | Command     | Additional behavior                      |
 |------------|-------------|------------------------------------------|
-| BS  (0x08) | Backspace   | Only current layer affected if MAL=off   |
-| DEL (0x7F) | Delete      | Only current layer affected if MAL=off   |
-| IND (0x84) | Index       | Only current layer affected if MAL=off   |
-| RI  (0x8D  | Reverse Index | Only current layer affected if MAL=off |
+| BS  (0x08) | Backspace   | Only current layer affected if MSL=on    |
+| DEL (0x7F) | Delete      | Only current layer affected if MSL=on    |
+| IND (0x84) | Index       | Only current layer affected if MSL=on    |
+| RI  (0x8D  | Reverse Index | Only current layer affected if MSL=on  |
 | ESC # 3    | DECDHL      | Cells on all layers always affected      |
 | ESC # 4    | DECDHL      | Cells on all layers always affected      |
 | ESC # 5    | DECSWL      | Cells on all layers always affected      |
 | ESC # 6    | DECDWL      | Cells on all layers always affected      |
-| ESC # 8    | DECALN      | All layers > 1 cleared; Z, MAL, TFT, TBT reset to default |
-| ESC 7      | DECSC       | Also store Z, MAL, TFT, TBT              |
-| ESC 8      | DECRC       | Also restore Z, MAL, TFT, TBT            |
-| ESC c      | RIS         | All layers > 1 cleared; Z, MAL, TFT, TBT reset to default |
-| CSI @      | ICH         | Only current layer affected if MAL=off   |
-| CSI J      | ED          | Only current layer affected if MAL=off   |
-| CSI K      | EL          | Only current layer affected if MAL=off   |
-| CSI ? K    | DECSEL      | Only current layer affected if MAL=off   |
-| CSI L      | IL          | Only current layer affected if MAL=off   |
-| CSI M      | DL          | Only current layer affected if MAL=off   |
-| CSI X      | ECH         | Only current layer affected if MAL=off   |
-| CSI M      | DL          | Only current layer affected if MAL=off   |
-| CSI P      | DCH         | Only current layer affected if MAL=off   |
+| ESC # 8    | DECALN      | All layers > 1 cleared; Z, MSL, TFT, TBT reset to default |
+| ESC 7      | DECSC       | Also store Z, MSL, TFT, TBT              |
+| ESC 8      | DECRC       | Also restore Z, MSL, TFT, TBT            |
+| ESC c      | RIS         | All layers > 1 cleared; Z, MSL, TFT, TBT reset to default |
+| CSI @      | ICH         | Only current layer affected if MSL=on    |
+| CSI J      | ED          | Only current layer affected if MSL=on    |
+| CSI K      | EL          | Only current layer affected if MSL=on    |
+| CSI ? K    | DECSEL      | Only current layer affected if MSL=on    |
+| CSI L      | IL          | Only current layer affected if MSL=on    |
+| CSI M      | DL          | Only current layer affected if MSL=on    |
+| CSI X      | ECH         | Only current layer affected if MSL=on    |
+| CSI M      | DL          | Only current layer affected if MSL=on    |
+| CSI P      | DCH         | Only current layer affected if MSL=on    |
 | CSI R      | DECSTBM     | Cells on all layers always affected      |
-| CSI $ t    | DECARA      | Only current layer affected if MAL=off   |
-| CSI $ v    | DECCRA      | Only current layer affected if MAL=off   |
+| CSI $ t    | DECARA      | Only current layer affected if MSL=on    |
+| CSI $ v    | DECCRA      | Only current layer affected if MSL=on    |
 | CSI x      | DECSACE     | Cells on all layers always affected      |
-| CSI $ x    | DECFRA      | Only current layer affected if MAL=off   |
-| CSI $ z    | DECERA      | Only current layer affected if MAL=off   |
+| CSI $ x    | DECFRA      | Only current layer affected if MSL=on    |
+| CSI $ z    | DECERA      | Only current layer affected if MSL=on    |
 
 The VT52 sub-mode commands:
 
 | Sequence   | Command     | Additional behavior                      |
 |------------|-------------|------------------------------------------|
-| ESC J      | ED          | Only current layer affected if MAL=off   |
-| ESC K      | EL          | Only current layer affected if MAL=off   |
+| ESC J      | ED          | Only current layer affected if MSL=on    |
+| ESC K      | EL          | Only current layer affected if MSL=on    |
 
 
 
