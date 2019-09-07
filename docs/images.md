@@ -360,11 +360,21 @@ new sequences:
 |--------------------------------------|-------------|-------------------------|
 | OSC 1 3 3 8 ; s i x e l : {data} BEL | SIXEL       | Display sixel at (x, y) |
 | OSC 1 3 3 8 ; s i x e l : {data} ST  | SIXEL       | Display sixel at (x, y) |
-| OSC 1 3 3 8 ; F i l e = {data} BEL   | DMDISPLAY   | Display media at (x, y) |
-| OSC 1 3 3 8 ; F i l e = {data} ST    | DMDISPLAY   | Display media at (x, y) |
+| OSC 1 3 3 8 ; F i l e = {args} : {data} BEL   | DMDISPLAY   | Display media at (x, y) |
+| OSC 1 3 3 8 ; F i l e = {args} : {data} ST    | DMDISPLAY   | Display media at (x, y) |
+| CSI ? 3 0 0 0 h               | DECSET 3000 | Enable SCRCHANGE notification  |
+| CSI ? 3 0 0 0 l               | DECRST 3000 | Disable SCRCHANGE notification |
+| OSC 1 3 3 9 ; Pe ; {args} ST  | DMRESP      | Terminal response to DMDISPLAY |
 | CSI ? 3 0 0 1 h               | DECSET 3001 | Enable DMDISPLAY responses     |
 | CSI ? 3 0 0 1 l               | DECRST 3001 | Disable DMDISPLAY responses    |
-| OSC 1 3 3 9 ; Pe ; {data} ST  | DMRESP      | Terminal response to DMDISPLAY |
+
+
+
+If SCRCHANGE is set/enabled, then the terminal will send the "CSI 6 ;
+cellHeight ; cellWidth t" when the font size has changed, and "CSI 8 ;
+rows ; columns t" when the number of rows/columns on the screen has
+changed.
+
 
 
 For the SIXEL command:
@@ -393,9 +403,9 @@ For the SIXEL command:
 
 For the DMDISPLAY command:
 
-* The {data} is a set of key-value pairs (each pair separated by
+* The {args} is a set of key-value pairs (each pair separated by
   semicolon (';')), followed by a colon (':'), followed by a base-64
-  encoded string.
+  encoded string ({data}).
 
 * A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
   'a' - 'z').
@@ -441,15 +451,44 @@ terminal are listed below:
 
 | Key          | Default Value | Description                                  |
 |--------------|---------------|----------------------------------------------|
+| type         | "image/rgb"   | mime-type describing data field              |
+| url          | ""            | If set, a location containing the media data |
 | width        | 1             | Number of Cells or pixels wide to display in |
 | height       | 1             | Number of Cells or pixels high to display in |
 | scale        | "none"        | Scale/zoom option, see below                 |
 | align        | "nw"          | Align image to edge option, see below        |
-| type         | "image/rgb"   | mime-type describing data field              |
-| url          | ""            | If set, a location containing the media data |
+| sourceX      | 0             | Media source X position to display           |
+| sourceY      | 0             | Media source Y position to display           |
+| sourceWidth  | "auto"        | Media width in pixels to display             |
+| sourceHeight | "auto"        | Media height in pixels to display            |
 
 A terminal may support additional keys.  If a key is specified but not
 supported by the terminal, then it is ignored without error.
+
+
+
+The "type" value is a mime-type string describing the format of the
+base64-encoded binary data.  The terminal must support at mimunum these
+mime-types:
+
+| Type String   | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| "image/rgb"   | Big-endian-encoded 24-bit red, green, blue values            |
+| "image/rgba"  | Big-endian-encoded 32-bit red, green, blue, alpha values     |
+| "image/png"   | PNG file data as described by (reference to PNG format)      |
+
+A terminal may support additional types.  An application can detect
+terminal support for a format by: enabling terminal responses (DECSET
+3001), sending a DMDISPLAY command, and examining the terminal's
+response sequence for success or error.
+
+
+
+The "url" value is a RFC-XXXX defined Universal Resource Located,
+encoded in RFC-XXXX form as a printable ASCII string not containing:
+whitespace, colon (':'), semicolon (';'), or equals ('=').
+
+A terminal is not required to support any URLs.
 
 
 
@@ -491,24 +530,22 @@ The "align" value can take the following values:
 
 
 
-The "type" value is a mime-type string describing the format of the
-base64-encoded binary data.  The terminal must support at mimunum these
-mime-types:
+"sourceX", "sourceY", "sourceWidth", and "sourceHeight" define the
+rectangle of pixels from the media that will be displayed on the
+screen.  The ranges for these values is shown below:
 
-| Type String   | Description                                                  |
-|---------------|--------------------------------------------------------------|
-| "image/rgb"   | Big-endian-encoded 24-bit red, green, blue values            |
-| "image/rgba"  | Big-endian-encoded 32-bit red, green, blue, alpha values     |
-| "image/png"   | PNG file data as described by (reference to PNG format)      |
+| Key          | Minimum Value | Maximum Value                 | Default Value |
+|--------------|---------------|-------------------------------|---------------|
+| sourceX      | 0             | Media's full width - 1        | 0             |
+| sourceY      | 0             | Media's full height - 1       | 0             |
+| sourceWidth  | 1             | Media's full width - sourceX  | "auto"        |
+| sourceHeight | 1             | Media's full height - sourceY | "auto"        |
 
-A terminal may support additional types.  An application can detect
-terminal support for a format by: enabling terminal responses (DECSET
-3001), sending a DMDISPLAY command, and examining the terminal's
-response sequence for success or error.
-
-
-
-The "url" value is a
+If any of these values are specified and outside the range, no image
+is displayed, and the cursor does not move.  "sourceWidth" and
+"sourceHeight" can be "auto", which means use the maximum available
+width/height (given sourceX/sourceY) from the media's inherent
+dimensions.
 
 
 
@@ -530,7 +567,7 @@ The format of DMRESP is:
 
 * Pe - a non-negative integer error code.
 
-* The {data} is a set of key-value pairs (each pair separated by
+* The {args} is a set of key-value pairs (each pair separated by
   semicolon (';')).
 
 * A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
@@ -540,18 +577,20 @@ The format of DMRESP is:
   colon, or semicolon ('!' - '9', '<' - '~').
 
 
+
 The Pe error codes are defined as:
 
-| Value | Meaning                            | {data} containts         |
+| Value | Meaning                            | {args} containts         |
 |-------|------------------------------------|--------------------------|
 | 0     | No error occurred, i.e. success    | nothing                  |
-| 1     | Unsupported "type"                 | "type" value that was incorrect |
+| 1     | Unsupported "type"          | "type" value that was incorrect |
 | 2     | Invalid value - no media displayed | "key" that was incorrect |
 | 3     | Unsupported key - media displayed  | "key" that unsupported   |
 | 4     | Insufficient memory                | nothing                  |
 | 5     | Other error - no media displayed   | nothing                  |
 | 6     | Other - media displayed            | nothing                  |
 | 7     | Conflicting keys - no media displayed | nothing               |
+| 8     | RESERVED FOR FUTURE USE            | RESERVED FOR FUTURE USE  |
 
 Additional Pe error codes may be returned; any Pe value except 0, 3,
 and 6 must mean that the media was not displayed, and the cursor was
@@ -608,12 +647,25 @@ The pixels of multimedia Cells can come from two sources:
 Cached Multimedia - Cache/Memory Management
 -------------------------------------------
 
+The terminal manages a cache of multimedia data on behalf of one or
+more applications.  Applications request media be stored in the cache,
+and if successful the terminal provides an identification number that
+applications must use to request display from the cache to the screen.
 
+The amount of memory and retention/eviction strategy for the cache is
+wholly managed by the terminal, with the following restrictions:
 
+* The terminal may not remove items from the cache that have any
+  portion being actively displayed on the primary or alternate
+  screens.
 
+* The terminal must respond to every CMCACHE command with a new unique
+  ID.
 
-Cached Multimedia - Scrollback
-------------------------------
+The scrollback buffer is permitted, and recommended, to contain only a
+few (or zero) multimedia images.  Terminals should consider retaining
+only the last 2-5 screens' worth of pixel data in the scrollback
+buffer.
 
 
 
@@ -638,11 +690,19 @@ sequences:
 
 | Sequence                             | Command   | Description             |
 |--------------------------------------|-----------|-------------------------|
-| OSC 1 3 4 0 ; F i l e = {data} BEL   | CMCACHE   | Display media at (x, y) |
-| OSC 1 3 4 1 ; Pi ; {data} ST         | CMDISPLAY | Display media at (x, y) |
-| OSC 1 3 4 2 ; Pi ; Pe ; {data} ST | CMCRESP | Terminal response to CMCACHE   |
-| OSC 1 3 4 3 ; Pi ; Pe ; {data} ST | CMDRESP | Terminal response to CMDISPLAY |
+| CSI ? 3 0 0 0 h             | DECSET 3000 | Enable SCRCHANGE notification  |
+| CSI ? 3 0 0 0 l             | DECRST 3000 | Disable SCRCHANGE notification |
+| OSC 1 3 4 0 ; F i l e = {args} : {data} BEL   | CMCACHE   | Display media at (x, y) |
+| OSC 1 3 4 1 ; Pi ; {args} ST         | CMDISPLAY | Display media at (x, y) |
+| OSC 1 3 4 2 ; Pi ; Pe ; {args} ST | CMCRESP | Terminal response to CMCACHE   |
+| OSC 1 3 4 3 ; Pi ; Pe ; {args} ST | CMDRESP | Terminal response to CMDISPLAY |
 
+
+
+If SCRCHANGE is set/enabled, then the terminal will send the "CSI 6 ;
+cellHeight ; cellWidth t" when the font size has changed, and "CSI 8 ;
+rows ; columns t" when the number of rows/columns on the screen
+changes.
 
 
 
@@ -651,14 +711,17 @@ Cached Multimedia - CMCACHE
 
 For the CMCACHE command:
 
-* The {data} is a set of key-value pairs (each pair separated by
-  semicolon (';')).
+* The {args} is a set of key-value pairs (each pair separated by
+  semicolon (';')), followed by a colon (':'), followed by a base-64
+  encoded string ({data}).
 
 * A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
   'a' - 'z').
 
 * A value is any printable ASCII string not containing whitespace,
   colon, or semicolon ('!' - '9', '<' - '~').
+
+
 
 The keys for the key-value pairs that must be supported by the
 terminal are listed below:
@@ -667,6 +730,7 @@ terminal are listed below:
 |--------------|---------------|----------------------------------------------|
 | type         | "image/rgb"   | mime-type describing data field              |
 | url          | ""            | If set, a location containing the media data |
+
 
 
 The "type" value is a mime-type string describing the format of the
@@ -685,6 +749,14 @@ examining the terminal's CMCRESP sequence for success or error.
 
 
 
+The "url" value is a RFC-XXXX defined Universal Resource Located,
+encoded in RFC-XXXX form as a printable ASCII string not containing:
+whitespace, colon (':'), semicolon (';'), or equals ('=').
+
+A terminal is not required to support any URLs.
+
+
+
 Cached Multimedia - CMDISPLAY
 -----------------------------
 
@@ -693,7 +765,7 @@ For the CMDISPLAY command:
 * Pi - a non-negative integer media ID that was returned by a CMCRESP
   response to a previous CMCACHE command.
 
-* The {data} is a set of key-value pairs (each pair separated by
+* The {args} is a set of key-value pairs (each pair separated by
   semicolon (';')), followed by a colon (':'), followed by a base-64
   encoded string.
 
@@ -733,6 +805,10 @@ terminal are listed below:
 | height       | 1             | number of Cells or pixels high to display in |
 | scale        | "none"        | scale/zoom option, see below                 |
 | align        | "nw"          | align image to edge option, see below        |
+| sourceX      | 0             | Media source X position to display           |
+| sourceY      | 0             | Media source Y position to display           |
+| sourceWidth  | "auto"        | Media width in pixels to display             |
+| sourceHeight | "auto"        | Media height in pixels to display            |
 
 A terminal may support additional keys.  If a key is specified but not
 supported by the terminal, then it is ignored without error.
@@ -777,6 +853,25 @@ The "align" value can take the following values:
 
 
 
+"sourceX", "sourceY", "sourceWidth", and "sourceHeight" define the
+rectangle of pixels from the media that will be displayed on the
+screen.  The ranges for these values is shown below:
+
+| Key          | Minimum Value | Maximum Value                 | Default Value |
+|--------------|---------------|-------------------------------|---------------|
+| sourceX      | 0             | Media's full width - 1        | 0             |
+| sourceY      | 0             | Media's full height - 1       | 0             |
+| sourceWidth  | 1             | Media's full width - sourceX  | "auto"        |
+| sourceHeight | 1             | Media's full height - sourceY | "auto"        |
+
+If any of these values are specified and outside the range, no image
+is displayed, and the cursor does not move.  "sourceWidth" and
+"sourceHeight" can be "auto", which means use the maximum available
+width/height (given sourceX/sourceY) from the media's inherent
+dimensions.
+
+
+
 Cached Multimedia - Error Handling
 ----------------------------------
 
@@ -802,7 +897,7 @@ The format of CMCRESP is:
 
 * Pe - a non-negative integer error code.
 
-* The {data} is a set of key-value pairs (each pair separated by
+* The {args} is a set of key-value pairs (each pair separated by
   semicolon (';')).
 
 * A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
@@ -812,18 +907,20 @@ The format of CMCRESP is:
   colon, or semicolon ('!' - '9', '<' - '~').
 
 
+
 The Pe error codes are defined as:
 
-| Value | Meaning                            | {data} containts         |
-|-------|------------------------------------|--------------------------|
-| 0     | No error occurred, i.e. success    | nothing                  |
-| 1     | Unsupported "type"                 | "type" value that was incorrect |
-| 2     | Invalid value - no media stored    | "key" that was incorrect |
-| 3     | Unsupported key - media stored     | "key" that unsupported   |
-| 4     | Insufficient memory - no media stored | nothing                |
-| 5     | Other error - no media stored      | nothing                  |
-| 6     | Other - media stored               | nothing                  |
-| 7     | Conflicting keys - no media stored | nothing                  |
+| Value | Meaning                                | {args} containts         |
+|-------|----------------------------------------|--------------------------|
+| 0     | No error occurred, i.e. success        | nothing                  |
+| 1     | Unsupported "type"              | "type" value that was incorrect |
+| 2     | Invalid value - no media stored        | "key" that was incorrect |
+| 3     | Unsupported key - media stored         | "key" that unsupported   |
+| 4     | Insufficient memory - no media stored  | nothing                  |
+| 5     | Other error - no media stored          | nothing                  |
+| 6     | Other - media stored                   | nothing                  |
+| 7     | Conflicting keys - no media stored     | nothing                  |
+| 8     | RESERVED FOR FUTURE USE                | RESERVED FOR FUTURE USE  |
 
 Additional Pe error codes may be returned; any Pe value except 0, 3,
 and 6 must mean that the media was not stored in the cache.
@@ -842,7 +939,7 @@ The format of CMDRESP is:
 
 * Pe - a non-negative integer error code.
 
-* The {data} is a set of key-value pairs (each pair separated by
+* The {args} is a set of key-value pairs (each pair separated by
   semicolon (';')).
 
 * A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
@@ -852,17 +949,20 @@ The format of CMDRESP is:
   colon, or semicolon ('!' - '9', '<' - '~').
 
 
+
 The Pe error codes are defined as:
 
-| Value | Meaning                             | {data} containts         |
-|-------|-------------------------------------|--------------------------|
-| 0     | No error occurred, i.e. success     | nothing                  |
-| 1     | RESERVED FOR FUTURE USE             | RESERVED FOR FUTURE USE  |
+| Value | Meaning                                | {args} containts         |
+|-------|----------------------------------------|--------------------------|
+| 0     | No error occurred, i.e. success        | nothing                  |
+| 1     | RESERVED FOR FUTURE USE                | RESERVED FOR FUTURE USE  |
 | 2     | Invalid value - no media displayed     | "key" that was incorrect |
 | 3     | Unsupported key - media displayed      | "key" that unsupported   |
 | 4     | Insufficient memory - no media displayed | nothing                |
 | 5     | Other error - no media displayed       | nothing                  |
 | 6     | Other - media displayed                | nothing                  |
+| 7     | RESERVED FOR FUTURE USE                | RESERVED FOR FUTURE USE  |
+| 8     | Media was evicted - no media displayed | nothing                  |
 
 Additional Pe error codes may be returned; any Pe value except 0, 3,
 and 6 must mean that the media was not displayed.
