@@ -198,6 +198,17 @@ The following items are out of scope:
   terminal reports and responses.  These are not intended to be used
   as a general-purpose capabilities model.
 
+* Terminal Cache Management.  This standard defines a means for
+  applications and terminals to communicate around cached multimedia
+  items, but terminals are free to implement whatever cache management
+  strategies they deem fit.
+
+* Reliable Transport.  This standard defines a two-way
+  command/response protocol that may get out of order on unreliable
+  channels such as 3-wire RS232.  Applictions that require reliable
+  transport on unreliable links may choose to use one of the many
+  successful standards available for this purpose.
+
 
 
 Definitions
@@ -257,7 +268,6 @@ Layer - A screen-sized grid of Cells that have the same Z coordinate.
 
 
 
-
 All Features - Detection
 ------------------------
 
@@ -295,6 +305,36 @@ supports is listed below, with these new feature responses included:
 Direct Multimedia - Summary
 ---------------------------
 
+Non-text data (multimedia) can be sent to the terminal for immediate
+display in a rectangular (single-layer) region of text Cells.
+Multimedia data is transmitted to the terminal using one of two wire
+formats described later in this document.
+
+Setting a Cell to multimedia is a destructive operation: the Cell's
+original text is lost.  Multimedia pixels will not overlap rendered
+text in the same Cell.  To achieve pixels overlaid on text, the layers
+feature can be used.
+
+Setting any part of a multi-Cell Tile to multimedia also "breaks up"
+the Tile into a range of single Cells.  In other words, multimedia can
+only be carried by a Cell, not a Tile.
+
+The pixels of a multimedia Cell are assigned to the Cell's foreground;
+multimedia Cells have no background.  If a terminal supports the
+layers feature, setting a multimedia Cell's foreground transparency to
+true/enabled causes that Cell to not be displayed at all; setting its
+background transparency to either true/enabled or false/disabled has
+no visible effect.
+
+The pixels of multimedia Cells can come from two sources:
+
+  1. The application can generate pixels and send them to the terminal
+     for display at the current cursor position.
+
+  2. The application can specify a source for the multimedia and the
+     terminal will generate the pixels for display at the current
+     cursor position.
+
 
 
 Direct Multimedia - Required Support For Existing Sequences
@@ -313,20 +353,212 @@ defined xterm sequences:
 Direct Multimedia - New Sequences
 ---------------------------------
 
+A terminal with direct multimedia feature must support the following
+new sequences:
+
+| Sequence                             | Command     | Description             |
+|--------------------------------------|-------------|-------------------------|
+| OSC 1 3 3 8 ; s i x e l : {data} BEL | SIXEL       | Display sixel at (x, y) |
+| OSC 1 3 3 8 ; s i x e l : {data} ST  | SIXEL       | Display sixel at (x, y) |
+| OSC 1 3 3 8 ; F i l e = {data} BEL   | DMDISPLAY   | Display media at (x, y) |
+| OSC 1 3 3 8 ; F i l e = {data} ST    | DMDISPLAY   | Display media at (x, y) |
+| CSI ? 3 0 0 1 h               | DECSET 3001 | Enable DMDISPLAY responses     |
+| CSI ? 3 0 0 1 l               | DECRST 3001 | Disable DMDISPLAY responses    |
+| OSC 1 3 3 9 ; Pe ; {data} ST  | DMRESP      | Terminal response to DMDISPLAY |
 
 
-Direct Multimedia - Error Handling
-----------------------------------
+For the SIXEL command:
+
+* The {data} is a sixel sequence as described in the VT330/340
+  Programmer Reference Manual, Chapter 14, available online at:
+  http://vt100.net/docs/vt3xx-gp/chapter14.html .  The {data} is the
+  "P1 ; P2 ; P3 ; q s..s" portion of the Device Control String, i.e. a
+  complete sixel sequence minus the leading DCS and trailing ST.
+
+* The sixel image is processed as shown below.  Note that this
+  behavior is equivalent to Sixel Scrolling mode enabled.
+
+  - The sixel active position starts at the upper-left corner of the
+    text cursor position.
+
+  - The screen is scrolled up if the image overflows into the bottom
+    text row.
+
+  - Pixels that would be drawn to the right of the visible region on
+    screen are discarded.
+
+  - The cursor's final position is on the same column as the starting
+    cursor position, and on the row immediately below the image.
+
+
+For the DMDISPLAY command:
+
+* The {data} is a set of key-value pairs (each pair separated by
+  semicolon (';')), followed by a colon (':'), followed by a base-64
+  encoded string.
+
+* A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
+  'a' - 'z').
+
+* A value is any printable ASCII string not containing whitespace,
+  colon, or semicolon ('!' - '9', '<' - '~').
+
+* Any alpha-numeric key may be specified.  A key that is not supported
+  by the terminal is ignored without error.
+
+* The multimedia pixels are processed as shown below.
+
+  - The pixel are drawn starting at the upper-left corner of the text
+    cursor position.
+
+  - If scrolling is specified as enabled, then:
+
+    a. The screen is scrolled up if the image overflows into the
+       bottom text row.
+
+    b. The cursor's final position is on the same column as the
+       starting cursor position, and on the row immediately below the
+       image.
+
+  - If scrolling is omitted or specified as disabled, then:
+
+    a. The screen is never scrolled.
+
+    b. Pixels that would be drawn below the visible region on screen
+       are discarded.
+
+    c. The cursor's final position is at the same column and row as
+       the starting cursor position, i.e. the cursor does not move at
+       all.
+
+  - Pixels that would be drawn to the right of the visible region on
+    screen are discarded.
 
 
 
-Direct Multimedia - Cursor Position
------------------------------------
+The keys for the key-value pairs that must be supported by the
+terminal are listed below:
+
+| Key          | Default Value | Description                                  |
+|--------------|---------------|----------------------------------------------|
+| width        | 1             | Number of Cells or pixels wide to display in |
+| height       | 1             | Number of Cells or pixels high to display in |
+| scale        | "none"        | Scale/zoom option, see below                 |
+| align        | "nw"          | Align image to edge option, see below        |
+| type         | "image/rgb"   | mime-type describing data field              |
+| url          | ""            | If set, a location containing the media data |
+
+A terminal may support additional keys.  If a key is specified but not
+supported by the terminal, then it is ignored without error.
 
 
 
-Direct Multimedia - Wire Format
--------------------------------
+The "width" and "height" values can take the following forms:
+
+| Value                         | Meaning                   |
+|-------------------------------|---------------------------|
+| N (a positive integer)        | Number of Cells           |
+| Npx (positive integer + "px") | Number of pixels          |
+| N% (positive integer + "%")   | Percent of screen width or height |
+| "auto"                        | Number of pixels as defined by the multimedia data |
+
+
+
+The "scale" value can take the following values:
+
+| Value      | Meaning                                                       |
+|------------|---------------------------------------------------------------|
+| "none"     | No scaling along either axis.                                 |
+| "scale"    | Stretch image, preserving aspect ratio, to maximum size in the target area without cropping |
+| "stretch"  | Stretch along both axes, distorting aspect ratio, to fill the target area               |
+| "crop"     | Stretch along both axes, preserving aspect ration, to completely fill the target area, cropping pixels that will not fit |
+
+
+
+The "align" value can take the following values:
+
+| Value      | Meaning                                                         |
+|------------|-----------------------------------------------------------------|
+| "nw"       | Media is placed at the top-left corner (northwest)              |
+| "n"        | Media is placed on the top and centered horizontally (north)    |
+| "ne"       | Media is placed at the top-right corner (northest)              |
+| "w"        | Media is placed on the left and centered vertically (west)      |
+| "c"        | Media is centered in the target area (center)                   |
+| "e"        | Media is placed on the right and centered vertically (east)     |
+| "sw"       | Media is placed on the bottom-left corner (southwest)           |
+| "s"        | Media is placed on the bottom and centered horizontally (south) |
+| "se"       | Media is placed on the bottom-right corner (southeast)          |
+
+
+
+The "type" value is a mime-type string describing the format of the
+base64-encoded binary data.  The terminal must support at mimunum these
+mime-types:
+
+| Type String   | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| "image/rgb"   | Big-endian-encoded 24-bit red, green, blue values            |
+| "image/rgba"  | Big-endian-encoded 32-bit red, green, blue, alpha values     |
+| "image/png"   | PNG file data as described by (reference to PNG format)      |
+
+A terminal may support additional types.  An application can detect
+terminal support for a format by: enabling terminal responses (DECSET
+3001), sending a DMDISPLAY command, and examining the terminal's
+response sequence for success or error.
+
+
+
+The "url" value is a
+
+
+
+Direct Multimedia - Terminal Responses / Error Handling
+-------------------------------------------------------
+
+If DMDISPLAY reponses are enabled, then a terminal will respond to the
+DMDISPLAY display with DMRESP.  DMRESP responses must be sent in the
+same sequential order as the DMDISPLAY commands they are responses to:
+the terminal may not re-order responses.
+
+No provision is made for reliable delivery.  On unreliable links
+(example: 3-wire RS232), the DMDISPLAY and DMRESP command/response
+sequence may get out of order.
+
+
+
+The format of DMRESP is:
+
+* Pe - a non-negative integer error code.
+
+* The {data} is a set of key-value pairs (each pair separated by
+  semicolon (';')).
+
+* A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
+  'a' - 'z').
+
+* A value is any printable ASCII string not containing whitespace,
+  colon, or semicolon ('!' - '9', '<' - '~').
+
+
+The Pe error codes are defined as:
+
+| Value | Meaning                            | {data} containts         |
+|-------|------------------------------------|--------------------------|
+| 0     | No error occurred, i.e. success    | nothing                  |
+| 1     | Unsupported "type"                 | "type" value that was incorrect |
+| 2     | Invalid value - no media displayed | "key" that was incorrect |
+| 3     | Unsupported key - media displayed  | "key" that unsupported   |
+| 4     | Insufficient memory                | nothing                  |
+| 5     | Other error - no media displayed   | nothing                  |
+| 6     | Other - media displayed            | nothing                  |
+| 7     | Conflicting keys - no media displayed | nothing               |
+
+Additional Pe error codes may be returned; any Pe value except 0, 3,
+and 6 must mean that the media was not displayed, and the cursor was
+not moved.
+
+If both "type" and "url" are set, no media is diaplyed, the cursor is
+not moved, and the DMRESP error code is 7.
 
 
 
@@ -338,13 +570,50 @@ Direct Multimedia - Examples
 Cached Multimedia - Summary
 ---------------------------
 
+Non-text data (multimedia) can be sent to the terminal for later
+display in a rectangular (single-layer) region of text Cells.
+Multimedia data is transmitted to the terminal using the CMCACHE
+command described below, and displayed on screen using the CMDISPLAY
+command.  A single CMCACHE command can support many CMDISPLAY
+commands.
+
+Upon display, setting a Cell to multimedia is a destructive operation:
+the Cell's original text is lost.  Multimedia pixels will not overlap
+rendered text in the same Cell.  To achieve pixels overlaid on text,
+the layers feature can be used.
+
+Setting any part of a multi-Cell Tile to multimedia also "breaks up"
+the Tile into a range of single Cells.  In other words, multimedia can
+only be carried by a Cell, not a Tile.
+
+The pixels of a multimedia Cell are assigned to the Cell's foreground;
+multimedia Cells have no background.  If a terminal supports the
+layers feature, setting a multimedia Cell's foreground transparency to
+true/enabled causes that Cell to not be displayed at all; setting its
+background transparency to either true/enabled or false/disabled has
+no visible effect.
+
+The pixels of multimedia Cells can come from two sources:
+
+  1. The application can generate pixels and send them to the terminal
+     for display at the current cursor position.
+
+  2. The application can specify a source for the multimedia and the
+     terminal will generate the pixels for display at the current
+     cursor position.
 
 
 
-Pixel data that has scrolled off the displayed screen and into the
-scrollback buffer is required to be persistent even if the cache entry
-containing that image data has been evicted by the terminal or removed
-by the application.
+
+Cached Multimedia - Cache/Memory Management
+-------------------------------------------
+
+
+
+
+
+Cached Multimedia - Scrollback
+------------------------------
 
 
 
@@ -364,25 +633,239 @@ defined xterm sequences:
 Cached Multimedia - New Sequences
 ---------------------------------
 
+A terminal with cached multimedia feature must support the following new
+sequences:
+
+| Sequence                             | Command   | Description             |
+|--------------------------------------|-----------|-------------------------|
+| OSC 1 3 4 0 ; F i l e = {data} BEL   | CMCACHE   | Display media at (x, y) |
+| OSC 1 3 4 1 ; Pi ; {data} ST         | CMDISPLAY | Display media at (x, y) |
+| OSC 1 3 4 2 ; Pi ; Pe ; {data} ST | CMCRESP | Terminal response to CMCACHE   |
+| OSC 1 3 4 3 ; Pi ; Pe ; {data} ST | CMDRESP | Terminal response to CMDISPLAY |
+
+
+
+
+Cached Multimedia - CMCACHE
+---------------------------
+
+For the CMCACHE command:
+
+* The {data} is a set of key-value pairs (each pair separated by
+  semicolon (';')).
+
+* A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
+  'a' - 'z').
+
+* A value is any printable ASCII string not containing whitespace,
+  colon, or semicolon ('!' - '9', '<' - '~').
+
+The keys for the key-value pairs that must be supported by the
+terminal are listed below:
+
+| Key          | Default Value | Description                                  |
+|--------------|---------------|----------------------------------------------|
+| type         | "image/rgb"   | mime-type describing data field              |
+| url          | ""            | If set, a location containing the media data |
+
+
+The "type" value is a mime-type string describing the format of the
+base64-encoded binary data.  The terminal must support at mimunum these
+mime-types:
+
+| Type String   | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| "image/rgb"   | Big-endian-encoded 24-bit red, green, blue values            |
+| "image/rgba"  | Big-endian-encoded 32-bit red, green, blue, alpha values     |
+| "image/png"   | PNG file data as described by (reference to PNG format)      |
+
+A terminal may support additional types.  An application can detect
+terminal support for a format by: sending a CMCACHE command, and
+examining the terminal's CMCRESP sequence for success or error.
+
+
+
+Cached Multimedia - CMDISPLAY
+-----------------------------
+
+For the CMDISPLAY command:
+
+* Pi - a non-negative integer media ID that was returned by a CMCRESP
+  response to a previous CMCACHE command.
+
+* The {data} is a set of key-value pairs (each pair separated by
+  semicolon (';')), followed by a colon (':'), followed by a base-64
+  encoded string.
+
+* A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
+  'a' - 'z').
+
+* A value is any printable ASCII string not containing whitespace,
+  colon, or semicolon ('!' - '9', '<' - '~').
+
+* Any alpha-numeric key may be specified.  A key that is not supported
+  by the terminal is ignored without error.
+
+* The multimedia pixels are processed as shown below.
+
+  - The pixel are drawn starting at the upper-left corner of the text
+    cursor position.
+
+  - The screen is never scrolled.
+
+  - The cursor's final position is at the same column and row as the
+    starting cursor position, i.e. the cursor does not move at all.
+
+  - Pixels that would be drawn below the visible region on screen are
+    discarded.
+
+  - Pixels that would be drawn to the right of the visible region on
+    screen are discarded.
+
+
+
+The keys for the key-value pairs that must be supported by the
+terminal are listed below:
+
+| Key          | Default Value | Description                                  |
+|--------------|---------------|----------------------------------------------|
+| width        | 1             | number of Cells or pixels wide to display in |
+| height       | 1             | number of Cells or pixels high to display in |
+| scale        | "none"        | scale/zoom option, see below                 |
+| align        | "nw"          | align image to edge option, see below        |
+
+A terminal may support additional keys.  If a key is specified but not
+supported by the terminal, then it is ignored without error.
+
+
+
+The "width" and "height" values can take the following forms:
+
+| Value                         | Meaning                   |
+|-------------------------------|---------------------------|
+| N (a positive integer)        | Number of Cells           |
+| Npx (positive integer + "px") | Number of pixels          |
+| N% (positive integer + "%")   | Percent of screen width or height |
+| "auto"                        | Number of pixels as defined by the multimedia data |
+
+
+
+The "scale" value can take the following values:
+
+| Value      | Meaning                                                       |
+|------------|---------------------------------------------------------------|
+| "none"     | No scaling along either axis.                                 |
+| "scale"    | Stretch image, preserving aspect ratio, to maximum size in the target area without cropping |
+| "stretch"  | Stretch along both axes, distorting aspect ratio, to fill the target area               |
+| "crop"     | Stretch along both axes, preserving aspect ration, to completely fill the target area, cropping pixels that will not fit |
+
+
+
+The "align" value can take the following values:
+
+| Value      | Meaning                                                         |
+|------------|-----------------------------------------------------------------|
+| "nw"       | Media is placed at the top-left corner (northwest)              |
+| "n"        | Media is placed on the top and centered horizontally (north)    |
+| "ne"       | Media is placed at the top-right corner (northest)              |
+| "w"        | Media is placed on the left and centered vertically (west)      |
+| "c"        | Media is centered in the target area (center)                   |
+| "e"        | Media is placed on the right and centered vertically (east)     |
+| "sw"       | Media is placed on the bottom-left corner (southwest)           |
+| "s"        | Media is placed on the bottom and centered horizontally (south) |
+| "se"       | Media is placed on the bottom-right corner (southeast)          |
+
 
 
 Cached Multimedia - Error Handling
 ----------------------------------
 
+A terminal will always respond to the CMCACHE command with CMCRESP,
+and to the CMDISPLAY command with CMDRESP.  Responses must be sent in
+the same sequential order as the CMCACHE/CMDISPLAY commands they are
+responses to: the terminal may not re-order responses.
+
+No provision is made for reliable delivery.  On unreliable links
+(example: 3-wire RS232), the command/response sequence may get out of
+order.
 
 
-Cached Multimedia - Cursor Position
------------------------------------
+
+Cached Multimedia - Error Handling - CMCRESP
+--------------------------------------------
+
+The format of CMCRESP is:
+
+* Pi - a non-negative integer media ID.  The terminal will generate a
+  new ID for every image successfully loaded into the cache.  The
+  application must use this ID for CMDISPLAY commands.
+
+* Pe - a non-negative integer error code.
+
+* The {data} is a set of key-value pairs (each pair separated by
+  semicolon (';')).
+
+* A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
+  'a' - 'z').
+
+* A value is any printable ASCII string not containing whitespace,
+  colon, or semicolon ('!' - '9', '<' - '~').
+
+
+The Pe error codes are defined as:
+
+| Value | Meaning                            | {data} containts         |
+|-------|------------------------------------|--------------------------|
+| 0     | No error occurred, i.e. success    | nothing                  |
+| 1     | Unsupported "type"                 | "type" value that was incorrect |
+| 2     | Invalid value - no media stored    | "key" that was incorrect |
+| 3     | Unsupported key - media stored     | "key" that unsupported   |
+| 4     | Insufficient memory - no media stored | nothing                |
+| 5     | Other error - no media stored      | nothing                  |
+| 6     | Other - media stored               | nothing                  |
+| 7     | Conflicting keys - no media stored | nothing                  |
+
+Additional Pe error codes may be returned; any Pe value except 0, 3,
+and 6 must mean that the media was not stored in the cache.
+
+If both "type" and "url" are set, no media is diaplyed, the cursor is
+not moved, and the CMCRESP error code is 7.
 
 
 
-Cached Multimedia - Scrollback
-------------------------------
+Cached Multimedia - Error Handling - CMDRESP
+--------------------------------------------
+
+The format of CMDRESP is:
+
+* Pi - a non-negative integer media ID.
+
+* Pe - a non-negative integer error code.
+
+* The {data} is a set of key-value pairs (each pair separated by
+  semicolon (';')).
+
+* A key can be any alpha-numeric ASCII string ('0' - '9', 'A' - 'Z',
+  'a' - 'z').
+
+* A value is any printable ASCII string not containing whitespace,
+  colon, or semicolon ('!' - '9', '<' - '~').
 
 
+The Pe error codes are defined as:
 
-Cached Multimedia - Wire Format
--------------------------------
+| Value | Meaning                             | {data} containts         |
+|-------|-------------------------------------|--------------------------|
+| 0     | No error occurred, i.e. success     | nothing                  |
+| 1     | RESERVED FOR FUTURE USE             | RESERVED FOR FUTURE USE  |
+| 2     | Invalid value - no media displayed     | "key" that was incorrect |
+| 3     | Unsupported key - media displayed      | "key" that unsupported   |
+| 4     | Insufficient memory - no media displayed | nothing                |
+| 5     | Other error - no media displayed       | nothing                  |
+| 6     | Other - media displayed                | nothing                  |
+
+Additional Pe error codes may be returned; any Pe value except 0, 3,
+and 6 must mean that the media was not displayed.
 
 
 
@@ -411,12 +894,13 @@ An application treats the Z coordinate exactly as it does X and Y
   * If it attempts to set Z to a value greater than the number of
     layers, then Z is set to the number of layers.
 
-New sequences are provided to set and query Z, Y, X, to set and query
-the screen cube size, and control visibility of Cells in-front-of
+New sequences are provided to set and query Z, Y, X; to set and query
+the screen cube size; and control visibility of Cells in-front-of
 other Cells.
 
-Operations that act on more than one Cell are defined such to act on
-all layers simultaneously by default.
+Operations that can act on more than one Cell are defined such to act
+on all layers simultaneously by default; most of these operations can
+also be set to act only on the current layer.
 
 
 
@@ -474,9 +958,9 @@ sequences:
 | Sequence          | Command     | Description                            |
 |-------------------|-------------|----------------------------------------|
 | CSI ? z ; y ; x H | CUPZ        | Move cursor to (x, y, z)               |
-| CSI ? z ; y ; x H | SLA         | Set layer alpha                        |
-| CSI ? 3 0 0 1 h   | DECSET 3001 | Enable Manupulate Single Layer (MSL)   |
-| CSI ? 3 0 0 1 l   | DECRST 3001 | Disable Manupulate Single Layer (MSL)  |
+| CSI 2 2 5 ; 1 ; Pa t | SLA      | Set layer alpha                        |
+| CSI ? 3 0 0 2 h   | DECSET 3002 | Enable Manupulate Single Layer (MSL)   |
+| CSI ? 3 0 0 2 l   | DECRST 3002 | Disable Manupulate Single Layer (MSL)  |
 | CSI ? l ; h ; w t | RSZCUBE     | Resize cube to (layers, height, width) |
 
 Default parameters and ranges are listed below:
@@ -488,8 +972,8 @@ Default parameters and ranges are listed below:
 | CUPZ    | 3 / x               | 1             | 1       | # columns |
 | SLA     | 1 / alpha           | 255           | 0       | 255       |
 | RSZCUBE | 1 / l               | 1             | 1       | varies    |
-| RSZCUBE | 2 / h               | 80            | 1       | varies    |
-| RSZCUBE | 3 / w               | 24            | 1       | varies    |
+| RSZCUBE | 2 / h               | 24            | 1       | varies    |
+| RSZCUBE | 3 / w               | 80            | 1       | varies    |
 
 The terminal must also support the following new queries:
 
@@ -498,17 +982,15 @@ The terminal must also support the following new queries:
 | CSI ? 1 0 0 n   | CSI ? z ; y ; x n     | Report cursor Z, Y, X position |
 | CSI ? 1 8 t     | CSI ? 8 ; l ; h ; w t | Report the text area cube layers, height, width |
 
-
 The terminal must support the following new Set Graphics Rendition
 (SGR) character attributes commands:
 
 | SGR Parameter | Description                                 |
 |---------------|---------------------------------------------|
-| 230           | Set text foreground color to transparent    |
-| 239           | Set text foreground color to solid (opaque) |
-| 240           | Set text background color to transparent    |
-| 249           | Set text background color to solid (opaque) |
-
+| 2 3 0         | Set text foreground color to transparent    |
+| 2 3 9         | Set text foreground color to solid (opaque) |
+| 2 4 0         | Set text background color to transparent    |
+| 2 4 9         | Set text background color to solid (opaque) |
 
 
 
@@ -601,6 +1083,8 @@ then the sequences must behave as shown below:
 | CSI x      | DECSACE     | Cells on all layers always affected      |
 | CSI $ x    | DECFRA      | Only current layer affected if MSL=on    |
 | CSI $ z    | DECERA      | Only current layer affected if MSL=on    |
+
+(( TODO: add many more to the above table... ))
 
 The VT52 sub-mode commands:
 
