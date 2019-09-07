@@ -421,7 +421,7 @@ For the DMDISPLAY command:
   - The pixel are drawn starting at the upper-left corner of the text
     cursor position.
 
-  - If scrolling is specified as enabled, then:
+  - If scroll is specified as 1 (enabled), then:
 
     a. The screen is scrolled up if the image overflows into the
        bottom text row.
@@ -430,7 +430,7 @@ For the DMDISPLAY command:
        starting cursor position, and on the row immediately below the
        image.
 
-  - If scrolling is omitted or specified as disabled, then:
+  - If scroll is omitted or specified as 0 (disabled), then:
 
     a. The screen is never scrolled.
 
@@ -461,6 +461,7 @@ terminal are listed below:
 | sourceY      | 0             | Media source Y position to display           |
 | sourceWidth  | "auto"        | Media width in pixels to display             |
 | sourceHeight | "auto"        | Media height in pixels to display            |
+| scroll       | 1             | If 1, scroll the display if needed           |
 
 A terminal may support additional keys.  If a key is specified but not
 supported by the terminal, then it is ignored without error.
@@ -783,13 +784,25 @@ For the CMDISPLAY command:
   - The pixel are drawn starting at the upper-left corner of the text
     cursor position.
 
-  - The screen is never scrolled.
+  - If scroll is specified as 1 (enabled), then:
 
-  - The cursor's final position is at the same column and row as the
-    starting cursor position, i.e. the cursor does not move at all.
+    a. The screen is scrolled up if the image overflows into the
+       bottom text row.
 
-  - Pixels that would be drawn below the visible region on screen are
-    discarded.
+    b. The cursor's final position is on the same column as the
+       starting cursor position, and on the row immediately below the
+       image.
+
+  - If scroll is omitted or specified as 0 (disabled), then:
+
+    a. The screen is never scrolled.
+
+    b. Pixels that would be drawn below the visible region on screen
+       are discarded.
+
+    c. The cursor's final position is at the same column and row as
+       the starting cursor position, i.e. the cursor does not move at
+       all.
 
   - Pixels that would be drawn to the right of the visible region on
     screen are discarded.
@@ -801,14 +814,15 @@ terminal are listed below:
 
 | Key          | Default Value | Description                                  |
 |--------------|---------------|----------------------------------------------|
-| width        | 1             | number of Cells or pixels wide to display in |
-| height       | 1             | number of Cells or pixels high to display in |
-| scale        | "none"        | scale/zoom option, see below                 |
-| align        | "nw"          | align image to edge option, see below        |
+| width        | 1             | Number of Cells or pixels wide to display in |
+| height       | 1             | Number of Cells or pixels high to display in |
+| scale        | "none"        | Scale/zoom option, see below                 |
+| align        | "nw"          | Align image to edge option, see below        |
 | sourceX      | 0             | Media source X position to display           |
 | sourceY      | 0             | Media source Y position to display           |
 | sourceWidth  | "auto"        | Media width in pixels to display             |
 | sourceHeight | "auto"        | Media height in pixels to display            |
+| scroll       | 1             | If 1, scroll the display if needed           |
 
 A terminal may support additional keys.  If a key is specified but not
 supported by the terminal, then it is ignored without error.
