@@ -217,17 +217,17 @@ For the OSC 1 3 3 8 sequence:
 The keys for the key-value pairs that must be supported by the
 terminal are listed below:
 
-| Key          | Default Value | Description                                  |
-|--------------|---------------|----------------------------------------------|
-| type         | "image/rgb"   | mime-type describing data field              |
-| width        | 1             | Number of Cells or pixels wide to display in |
-| height       | 1             | Number of Cells or pixels high to display in |
-| scale        | "none"        | Scale/zoom option, see below                 |
-| sourceX      | 0             | Media source X position to display           |
-| sourceY      | 0             | Media source Y position to display           |
-| sourceWidth  | "auto"        | Media width in pixels to display             |
-| sourceHeight | "auto"        | Media height in pixels to display            |
-| scroll       | 0             | If 0, scroll the display if needed           |
+| Key          | Default Value | Description                           |
+|--------------|---------------|---------------------------------------|
+| type         | "image/rgb"   | mime-type describing data field       |
+| width        | 1             | Number of Cell columns to display in  |
+| height       | 1             | Number of Cells rows to display in    |
+| scale        | "none"        | Scale/zoom option, see below          |
+| sourceX      | 0             | Media source X position to display    |
+| sourceY      | 0             | Media source Y position to display    |
+| sourceWidth  | "auto"        | Media width in pixels to display      |
+| sourceHeight | "auto"        | Media height in pixels to display     |
+| scroll       | 0             | If 0, scroll the display if needed    |
 
 A terminal may support additional keys.  If a key is specified but not
 supported by the terminal, then it is ignored without error.
@@ -349,6 +349,8 @@ sequences:
 | Sequence                             | Command   | Description             |
 |--------------------------------------|-----------|-------------------------|
 | OSC 1 3 4 0 ; F i l e = {args} : {data} BEL | CSTORE | Display media at (x, y) |
+| OSC 1 3 4 0 ; F i l e = {args} : {data} ST  | CSTORE | Display media at (x, y) |
+| OSC 1 3 4 1 ; Pi ; {args} BEL        | CDISPLAY  | Display media at (x, y) |
 | OSC 1 3 4 1 ; Pi ; {args} ST         | CDISPLAY  | Display media at (x, y) |
 
 
@@ -461,17 +463,17 @@ For the CDISPLAY command:
 The keys for the key-value pairs that must be supported by the
 terminal are listed below:
 
-| Key          | Default Value | Description                                  |
-|--------------|---------------|----------------------------------------------|
-| id           | 0             | ID to refer to the image                     |
-| width        | 1             | Number of Cells or pixels wide to display in |
-| height       | 1             | Number of Cells or pixels high to display in |
-| scale        | "none"        | Scale/zoom option, see below                 |
-| sourceX      | 0             | Media source X position to display           |
-| sourceY      | 0             | Media source Y position to display           |
-| sourceWidth  | "auto"        | Media width in pixels to display             |
-| sourceHeight | "auto"        | Media height in pixels to display            |
-| scroll       | 0             | If 1, scroll the display if needed           |
+| Key          | Default Value | Description                           |
+|--------------|---------------|---------------------------------------|
+| id           | 0             | ID to refer to the image              |
+| width        | 1             | Number of Cell columns to display in  |
+| height       | 1             | Number of Cells rows to display in    |
+| scale        | "none"        | Scale/zoom option, see below          |
+| sourceX      | 0             | Media source X position to display    |
+| sourceY      | 0             | Media source Y position to display    |
+| sourceWidth  | "auto"        | Media width in pixels to display      |
+| sourceHeight | "auto"        | Media height in pixels to display     |
+| scroll       | 0             | If 1, scroll the display if needed    |
 
 A terminal may support additional keys.  If a key is specified but not
 supported by the terminal, then it is ignored without error.
