@@ -346,12 +346,12 @@ Cached Images - New Sequences
 A terminal with cached images feature must support the following new
 sequences:
 
-| Sequence                             | Command   | Description             |
-|--------------------------------------|-----------|-------------------------|
-| OSC 1 3 4 0 ; F i l e = {args} : {data} BEL | CSTORE | Display media at (x, y) |
-| OSC 1 3 4 0 ; F i l e = {args} : {data} ST  | CSTORE | Display media at (x, y) |
-| OSC 1 3 4 1 ; Pi ; {args} BEL        | CDISPLAY  | Display media at (x, y) |
-| OSC 1 3 4 1 ; Pi ; {args} ST         | CDISPLAY  | Display media at (x, y) |
+| Sequence                             | Command   | Description              |
+|--------------------------------------|-----------|--------------------------|
+| OSC 1 3 4 0 ; F i l e = {args} : {data} BEL | CSTORE | Store image in cache |
+| OSC 1 3 4 0 ; F i l e = {args} : {data} ST  | CSTORE | Store image in cache |
+| OSC 1 3 4 1 ; Pi ; {args} BEL        | CDISPLAY  | Display image at (x, y)  |
+| OSC 1 3 4 1 ; Pi ; {args} ST         | CDISPLAY  | Display image at (x, y)  |
 
 
 
@@ -512,3 +512,13 @@ is displayed, and the cursor does not move.  "sourceWidth" and
 "sourceHeight" can be "auto", which means use the maximum available
 width/height (given sourceX/sourceY) from the media's inherent
 dimensions.
+
+
+
+Miscellaneous Items
+-------------------
+
+"image/rgb" and "image/rgba" also need width/height fields.  Propose
+to specify them as 16-bit unsigned ints, followed by 24-bit or 32-bit
+data.  If data is short, then the rest of the image is assumed to be
+current background color (like sixel raster attributes).
