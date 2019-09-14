@@ -234,7 +234,9 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     @Override
     public void draw() {
-        setTitle(terminal.getTitle());
+        if (terminal != null) {
+            setTitle(terminal.getTitle());
+        }
         reflowData();
         super.draw();
     }
@@ -247,8 +249,10 @@ public class TTerminalWindow extends TScrollableWindow {
     @Override
     public void onResize(final TResizeEvent resize) {
         if (resize.getType() == TResizeEvent.Type.WIDGET) {
-            terminal.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                    getWidth() - 2, getHeight() - 2));
+            if (terminal != null) {
+                terminal.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                        getWidth() - 2, getHeight() - 2));
+            }
 
             // Resize the scroll bars
             reflowData();
@@ -263,11 +267,13 @@ public class TTerminalWindow extends TScrollableWindow {
     @Override
     public void reflowData() {
         // Vertical scrollbar
-        terminal.reflowData();
-        setTopValue(terminal.getTopValue());
-        setBottomValue(terminal.getBottomValue());
-        setVerticalBigChange(terminal.getVerticalBigChange());
-        setVerticalValue(terminal.getVerticalValue());
+        if (terminal != null) {
+            terminal.reflowData();
+            setTopValue(terminal.getTopValue());
+            setBottomValue(terminal.getBottomValue());
+            setVerticalBigChange(terminal.getVerticalBigChange());
+            setVerticalValue(terminal.getVerticalValue());
+        }
     }
 
     /**
@@ -277,7 +283,7 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-        if (terminal.isReading()) {
+        if ((terminal != null) && (terminal.isReading())) {
             terminal.onKeypress(keypress);
         } else {
             super.onKeypress(keypress);
@@ -317,7 +323,9 @@ public class TTerminalWindow extends TScrollableWindow {
 
         if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
             // Clicked on vertical scrollbar
-            terminal.setVerticalValue(getVerticalValue());
+            if (terminal != null) {
+                terminal.setVerticalValue(getVerticalValue());
+            }
         }
     }
 
@@ -338,7 +346,9 @@ public class TTerminalWindow extends TScrollableWindow {
 
         if (mouse.isMouse1() && mouseOnVerticalScroller(mouse)) {
             // Clicked/dragged on vertical scrollbar
-            terminal.setVerticalValue(getVerticalValue());
+            if (terminal != null) {
+                terminal.setVerticalValue(getVerticalValue());
+            }
         }
     }
 
@@ -355,7 +365,10 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     @Override
     public boolean hasHiddenMouse() {
-        return terminal.hasHiddenMouse();
+        if (terminal != null) {
+            return terminal.hasHiddenMouse();
+        }
+        return false;
     }
 
     /**

@@ -358,6 +358,10 @@ public class TTerminalWidget extends TScrollableWidget
         // Let TWidget set my size.
         super.onResize(resize);
 
+        if (emulator == null) {
+            return;
+        }
+
         // Synchronize against the emulator so we don't stomp on its reader
         // thread.
         synchronized (emulator) {
@@ -418,7 +422,7 @@ public class TTerminalWidget extends TScrollableWidget
             return;
         }
 
-        if (emulator.isReading()) {
+        if ((emulator != null) && (emulator.isReading())) {
             // Get out of scrollback
             setVerticalValue(0);
             emulator.addUserEvent(keypress);
@@ -453,24 +457,26 @@ public class TTerminalWidget extends TScrollableWidget
             typingHidMouse = false;
         }
 
-        // If the emulator is tracking mouse buttons, it needs to see wheel
-        // events.
-        if (emulator.getMouseProtocol() == ECMA48.MouseProtocol.OFF) {
-            if (mouse.isMouseWheelUp()) {
-                verticalDecrement();
-                dirty = true;
+        if (emulator != null) {
+            // If the emulator is tracking mouse buttons, it needs to see
+            // wheel events.
+            if (emulator.getMouseProtocol() == ECMA48.MouseProtocol.OFF) {
+                if (mouse.isMouseWheelUp()) {
+                    verticalDecrement();
+                    dirty = true;
+                    return;
+                }
+                if (mouse.isMouseWheelDown()) {
+                    verticalIncrement();
+                    dirty = true;
+                    return;
+                }
+            }
+            if (mouseOnEmulator(mouse)) {
+                emulator.addUserEvent(mouse);
+                readEmulatorState();
                 return;
             }
-            if (mouse.isMouseWheelDown()) {
-                verticalIncrement();
-                dirty = true;
-                return;
-            }
-        }
-        if (mouseOnEmulator(mouse)) {
-            emulator.addUserEvent(mouse);
-            readEmulatorState();
-            return;
         }
 
         // Emulator didn't consume it, pass it on
@@ -488,7 +494,7 @@ public class TTerminalWidget extends TScrollableWidget
             typingHidMouse = false;
         }
 
-        if (mouseOnEmulator(mouse)) {
+        if ((emulator != null) && (mouseOnEmulator(mouse))) {
             emulator.addUserEvent(mouse);
             readEmulatorState();
             return;
@@ -509,7 +515,7 @@ public class TTerminalWidget extends TScrollableWidget
             typingHidMouse = false;
         }
 
-        if (mouseOnEmulator(mouse)) {
+        if ((emulator != null) && (mouseOnEmulator(mouse))) {
             emulator.addUserEvent(mouse);
             readEmulatorState();
             return;
@@ -528,6 +534,10 @@ public class TTerminalWidget extends TScrollableWidget
      */
     @Override
     public void draw() {
+        if (emulator == null) {
+            return;
+        }
+
         int width = getDisplayWidth();
 
         boolean syncEmulator = false;
@@ -682,7 +692,9 @@ public class TTerminalWidget extends TScrollableWidget
      */
     @Override
     public void close() {
-        emulator.close();
+        if (emulator != null) {
+            emulator.close();
+        }
         if (shell != null) {
             terminateShellChildProcess();
             shell.destroy();
@@ -695,6 +707,9 @@ public class TTerminalWidget extends TScrollableWidget
      */
     @Override
     public void reflowData() {
+        if (emulator == null) {
+            return;
+        }
 
         // Synchronize against the emulator so we don't stomp on its reader
         // thread.
@@ -733,6 +748,9 @@ public class TTerminalWidget extends TScrollableWidget
      * cursor drawn over it
      */
     public boolean hasHiddenMouse() {
+        if (emulator == null) {
+            return false;
+        }
         return (emulator.hasHiddenMousePointer() || typingHidMouse);
     }
 
@@ -743,6 +761,9 @@ public class TTerminalWidget extends TScrollableWidget
      * side
      */
     public boolean isReading() {
+        if (emulator == null) {
+            return false;
+        }
         return emulator.isReading();
     }
 
@@ -875,6 +896,10 @@ public class TTerminalWidget extends TScrollableWidget
      * screen.
      */
     private void readEmulatorState() {
+        if (emulator == null) {
+            return;
+        }
+
         // Synchronize against the emulator so we don't stomp on its reader
         // thread.
         synchronized (emulator) {
@@ -940,6 +965,9 @@ public class TTerminalWidget extends TScrollableWidget
      * @return whether or not the mouse is on the emulator
      */
     private boolean mouseOnEmulator(final TMouseEvent mouse) {
+        if (emulator == null) {
+            return false;
+        }
 
         if (!emulator.isReading()) {
             return false;
