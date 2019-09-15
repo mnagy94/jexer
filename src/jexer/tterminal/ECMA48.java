@@ -472,6 +472,11 @@ public class ECMA48 implements Runnable {
     private StringBuilder sixelParseBuffer;
 
     /**
+     * Sixel shared palette.
+     */
+    private HashMap<Integer, java.awt.Color> sixelPalette;
+
+    /**
      * The width of a character cell in pixels.
      */
     private int textWidth = 16;
@@ -872,9 +877,11 @@ public class ECMA48 implements Runnable {
             // "I am a VT220" - 7 bit version
             if (!s8c1t) {
                 return "\033[?62;1;6;9;4;22c";
+                // return "\033[?62;1;6;9;4;22;444c";
             }
             // "I am a VT220" - 8 bit version
             return "\u009b?62;1;6;9;4;22c";
+            // return "\u009b?62;1;6;9;4;22;444c";
         default:
             throw new IllegalArgumentException("Invalid device type: " + type);
         }
@@ -3144,6 +3151,21 @@ public class ECMA48 implements Runnable {
 
                 break;
 
+            case 80:
+                if (type == DeviceType.XTERM) {
+                    if (decPrivateModeFlag == true) {
+                        if (value == true) {
+                            // Enable sixel scrolling (default).
+                            // TODO
+                        } else {
+                            // Disable sixel scrolling.
+                            // TODO
+                        }
+                    }
+                }
+
+                break;
+
             case 1000:
                 if ((type == DeviceType.XTERM)
                     && (decPrivateModeFlag == true)
@@ -3205,6 +3227,22 @@ public class ECMA48 implements Runnable {
                         mouseEncoding = MouseEncoding.SGR;
                     } else {
                         mouseEncoding = MouseEncoding.X10;
+                    }
+                }
+                break;
+
+            case 1070:
+                if (type == DeviceType.XTERM) {
+                    if (decPrivateModeFlag == true) {
+                        if (value == true) {
+                            // Use private color registers for each sixel
+                            // graphic (default).
+                            sixelPalette = null;
+                        } else {
+                            // Use shared color registers for each sixel
+                            // graphic.
+                            sixelPalette = new HashMap<Integer, java.awt.Color>();
+                        }
                     }
                 }
                 break;
@@ -4753,6 +4791,12 @@ public class ECMA48 implements Runnable {
                                 color.getBlue() << 8));
                     }
                 }
+
+                if (p[0].equals("444") && (p.length == 5)) {
+                    // Jexer image
+                    parseJexerImage(p[1], p[2], p[3], p[4]);
+                }
+
             }
 
             // Go to SCAN_GROUND state
@@ -6791,11 +6835,13 @@ public class ECMA48 implements Runnable {
             if (ch == 0x9C) {
                 parseSixel();
                 toGround();
+                return;
             }
 
             // 0x1B 0x5C goes to GROUND
             if (ch == 0x1B) {
                 collect((char) ch);
+                return;
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
@@ -6803,29 +6849,20 @@ public class ECMA48 implements Runnable {
                 ) {
                     parseSixel();
                     toGround();
+                    return;
                 }
             }
 
             // 00-17, 19, 1C-1F, 20-7E   --> put
-            if (ch <= 0x17) {
+            if ((ch <= 0x17)
+                || (ch == 0x19)
+                || ((ch >= 0x1C) && (ch <= 0x1F))
+                || ((ch >= 0x20) && (ch <= 0x7E))
+            ) {
                 sixelParseBuffer.append((char) ch);
-                return;
-            }
-            if (ch == 0x19) {
-                sixelParseBuffer.append((char) ch);
-                return;
-            }
-            if ((ch >= 0x1C) && (ch <= 0x1F)) {
-                sixelParseBuffer.append((char) ch);
-                return;
-            }
-            if ((ch >= 0x20) && (ch <= 0x7E)) {
-                sixelParseBuffer.append((char) ch);
-                return;
             }
 
             // 7F                        --> ignore
-
             return;
 
         case SOSPMAPC_STRING:
@@ -6923,9 +6960,43 @@ public class ECMA48 implements Runnable {
         return mouseProtocol;
     }
 
-    // ------------------------------------------------------------------------
-    // Sixel support ----------------------------------------------------------
-    // ------------------------------------------------------------------------
+    /**
+     * Draw the left and right cells of a two-cell-wide (full-width) glyph.
+     *
+     * @param leftX the x position to draw the left half to
+     * @param leftY the y position to draw the left half to
+     * @param rightX the x position to draw the right half to
+     * @param rightY the y position to draw the right half to
+     * @param ch the character to draw
+     */
+    private void drawHalves(final int leftX, final int leftY,
+        final int rightX, final int rightY, final int ch) {
+
+        // System.err.println("drawHalves(): " + Integer.toHexString(ch));
+
+        if (lastTextHeight != textHeight) {
+            glyphMaker = GlyphMaker.getInstance(textHeight);
+            lastTextHeight = textHeight;
+        }
+
+        Cell cell = new Cell(ch, currentState.attr);
+        BufferedImage image = glyphMaker.getImage(cell, textWidth * 2,
+            textHeight);
+        BufferedImage leftImage = image.getSubimage(0, 0, textWidth,
+            textHeight);
+        BufferedImage rightImage = image.getSubimage(textWidth, 0, textWidth,
+            textHeight);
+
+        Cell left = new Cell(cell);
+        left.setImage(leftImage);
+        left.setWidth(Cell.Width.LEFT);
+        display.get(leftY).replace(leftX, left);
+
+        Cell right = new Cell(cell);
+        right.setImage(rightImage);
+        right.setWidth(Cell.Width.RIGHT);
+        display.get(rightY).replace(rightX, right);
+    }
 
     /**
      * Set the width of a character cell in pixels.
@@ -6954,9 +7025,9 @@ public class ECMA48 implements Runnable {
         /*
         System.err.println("parseSixel(): '" + sixelParseBuffer.toString()
             + "'");
-         */
+        */
 
-        Sixel sixel = new Sixel(sixelParseBuffer.toString());
+        Sixel sixel = new Sixel(sixelParseBuffer.toString(), sixelPalette);
         BufferedImage image = sixel.getImage();
 
         // System.err.println("parseSixel(): image " + image);
@@ -7045,41 +7116,146 @@ public class ECMA48 implements Runnable {
     }
 
     /**
-     * Draw the left and right cells of a two-cell-wide (full-width) glyph.
+     * Parse a "Jexer" image string into a bitmap image, and overlay that
+     * image onto the text cells.
      *
-     * @param leftX the x position to draw the left half to
-     * @param leftY the y position to draw the left half to
-     * @param rightX the x position to draw the right half to
-     * @param rightY the y position to draw the right half to
-     * @param ch the character to draw
+     * @param pw width token
+     * @param ph height token
+     * @param ps scroll token
+     * @param data pixel data
      */
-    private void drawHalves(final int leftX, final int leftY,
-        final int rightX, final int rightY, final int ch) {
+    private void parseJexerImage(final String pw, final String ph,
+        final String ps, final String data) {
 
-        // System.err.println("drawHalves(): " + Integer.toHexString(ch));
-
-        if (lastTextHeight != textHeight) {
-            glyphMaker = GlyphMaker.getInstance(textHeight);
-            lastTextHeight = textHeight;
+        int imageWidth = 0;
+        int imageHeight = 0;
+        boolean scroll = false;
+        try {
+            imageWidth = Integer.parseInt(pw);
+            imageHeight = Integer.parseInt(ph);
+        } catch (NumberFormatException e) {
+            // SQUASH
+            return;
+        }
+        if ((imageWidth < 1)
+            || (imageWidth > 10000)
+            || (imageHeight < 1)
+            || (imageHeight > 10000)
+        ) {
+            return;
+        }
+        if (ps.equals("1")) {
+            scroll = true;
+        } else if (ps.equals("0")) {
+            scroll = false;
+        } else {
+            return;
         }
 
-        Cell cell = new Cell(ch, currentState.attr);
-        BufferedImage image = glyphMaker.getImage(cell, textWidth * 2,
-            textHeight);
-        BufferedImage leftImage = image.getSubimage(0, 0, textWidth,
-            textHeight);
-        BufferedImage rightImage = image.getSubimage(textWidth, 0, textWidth,
-            textHeight);
+        java.util.Base64.Decoder base64 = java.util.Base64.getDecoder();
+        byte [] bytes = base64.decode(data);
+        if (bytes.length != (imageWidth * imageHeight * 3)) {
+            return;
+        }
 
-        Cell left = new Cell(cell);
-        left.setImage(leftImage);
-        left.setWidth(Cell.Width.LEFT);
-        display.get(leftY).replace(leftX, left);
+        BufferedImage image = new BufferedImage(imageWidth, imageHeight,
+            BufferedImage.TYPE_INT_ARGB);
 
-        Cell right = new Cell(cell);
-        right.setImage(rightImage);
-        right.setWidth(Cell.Width.RIGHT);
-        display.get(rightY).replace(rightX, right);
+        for (int x = 0; x < imageWidth; x++) {
+            for (int y = 0; y < imageHeight; y++) {
+                int red   = bytes[(y * imageWidth * 3) + (x * 3)    ];
+                if (red < 0) {
+                    red += 256;
+                }
+                int green = bytes[(y * imageWidth * 3) + (x * 3) + 1];
+                if (green < 0) {
+                    green += 256;
+                }
+                int blue  = bytes[(y * imageWidth * 3) + (x * 3) + 2];
+                if (blue < 0) {
+                    blue += 256;
+                }
+                int rgb = 0xFF000000 | (red << 16) | (green << 8) | blue;
+                image.setRGB(x, y, rgb);
+            }
+        }
+
+        /*
+         * Procedure:
+         *
+         * Break up the image into text cell sized pieces as a new array of
+         * Cells.
+         *
+         * Note original column position x0.
+         *
+         * For each cell:
+         *
+         * 1. Advance (printCharacter(' ')) for horizontal increment, or
+         *    index (linefeed() + cursorPosition(y, x0)) for vertical
+         *    increment.
+         *
+         * 2. Set (x, y) cell image data.
+         *
+         * 3. For the right and bottom edges:
+         *
+         *   a. Render the text to pixels using Terminus font.
+         *
+         *   b. Blit the image on top of the text, using alpha channel.
+         */
+        int cellColumns = image.getWidth() / textWidth;
+        if (cellColumns * textWidth < image.getWidth()) {
+            cellColumns++;
+        }
+        int cellRows = image.getHeight() / textHeight;
+        if (cellRows * textHeight < image.getHeight()) {
+            cellRows++;
+        }
+
+        // Break the image up into an array of cells.
+        Cell [][] cells = new Cell[cellColumns][cellRows];
+
+        for (int x = 0; x < cellColumns; x++) {
+            for (int y = 0; y < cellRows; y++) {
+
+                int width = textWidth;
+                if ((x + 1) * textWidth > image.getWidth()) {
+                    width = image.getWidth() - (x * textWidth);
+                }
+                int height = textHeight;
+                if ((y + 1) * textHeight > image.getHeight()) {
+                    height = image.getHeight() - (y * textHeight);
+                }
+
+                Cell cell = new Cell();
+                cell.setImage(image.getSubimage(x * textWidth,
+                        y * textHeight, width, height));
+
+                cells[x][y] = cell;
+            }
+        }
+
+        int x0 = currentState.cursorX;
+        for (int y = 0; y < cellRows; y++) {
+            for (int x = 0; x < cellColumns; x++) {
+                assert (currentState.cursorX <= rightMargin);
+                DisplayLine line = display.get(currentState.cursorY);
+                line.replace(currentState.cursorX, cells[x][y]);
+                // If at the end of the visible screen, stop.
+                if (currentState.cursorX == rightMargin) {
+                    break;
+                }
+                // Room for more image on the visible screen.
+                currentState.cursorX++;
+            }
+            if ((scroll == true)
+                || ((scroll == false)
+                    && (currentState.cursorY < scrollRegionBottom))
+            ) {
+                linefeed();
+            }
+            cursorPosition(currentState.cursorY, x0);
+        }
+
     }
 
 }

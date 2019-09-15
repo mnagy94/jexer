@@ -73,6 +73,16 @@ public class Sixel {
     private static int HEIGHT_INCREASE = 400;
 
     /**
+     * Maximum width in pixels.
+     */
+    private static int MAX_WIDTH = 1000;
+
+    /**
+     * Maximum height in pixels.
+     */
+    private static int MAX_HEIGHT = 1000;
+
+    /**
      * Current scanning state.
      */
     private ScanState scanState = ScanState.GROUND;
@@ -142,6 +152,11 @@ public class Sixel {
      */
     private Color color = Color.BLACK;
 
+    /**
+     * If set, abort processing this image.
+     */
+    private boolean abort = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -150,12 +165,14 @@ public class Sixel {
      * Public constructor.
      *
      * @param buffer the sixel data to parse
+     * @param palette palette to use, or null for a private palette
      */
-    public Sixel(final String buffer) {
+    public Sixel(final String buffer, final HashMap<Integer, Color> palette) {
         this.buffer = buffer;
-        palette = new HashMap<Integer, Color>();
-        for (int i = 0; i < buffer.length(); i++) {
-            consume(buffer.charAt(i));
+        if (palette == null) {
+            this.palette = new HashMap<Integer, Color>();
+        } else {
+            this.palette = palette;
         }
     }
 
@@ -169,6 +186,16 @@ public class Sixel {
      * @return the sixel data as an image.
      */
     public BufferedImage getImage() {
+        if (buffer != null) {
+            for (int i = 0; (i < buffer.length()) && (abort == false); i++) {
+                consume(buffer.charAt(i));
+            }
+            buffer = null;
+        }
+        if (abort == true) {
+            return null;
+        }
+
         if ((width > 0) && (height > 0) && (image != null)) {
             /*
             System.err.println(String.format("%d %d %d %d", width, y + 1,
@@ -300,6 +327,9 @@ public class Sixel {
             if (x > width) {
                 width = x;
             }
+            if (width > MAX_WIDTH) {
+                abort = true;
+            }
             return;
         }
 
@@ -336,6 +366,12 @@ public class Sixel {
         }
         if (x > width) {
             width = x;
+        }
+        if (width > MAX_WIDTH) {
+            abort = true;
+        }
+        if (y + 1 > MAX_HEIGHT) {
+            abort = true;
         }
     }
 
@@ -393,7 +429,13 @@ public class Sixel {
         if ((pan == pad) && (pah > 0) && (pav > 0)) {
             rasterWidth = pah;
             rasterHeight = pav;
-            resizeImage(rasterWidth, rasterHeight);
+            if ((rasterWidth <= MAX_WIDTH) && (rasterHeight <= MAX_HEIGHT)) {
+                resizeImage(rasterWidth, rasterHeight);
+            } else {
+                abort = true;
+            }
+        } else {
+            abort = true;
         }
     }
 
