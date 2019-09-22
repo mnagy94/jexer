@@ -30,6 +30,7 @@ package jexer.tterminal;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.CharArrayWriter;
 import java.io.InputStream;
@@ -256,7 +257,7 @@ public class ECMA48 implements Runnable {
     /**
      * The type of emulator to be.
      */
-    private DeviceType type = DeviceType.VT102;
+    private final DeviceType type;
 
     /**
      * The scrollback buffer characters + attributes.
@@ -655,7 +656,8 @@ public class ECMA48 implements Runnable {
             this.inputStream  = new TimeoutInputStream(inputStream, 2000);
         }
         if (type == DeviceType.XTERM) {
-            this.input    = new InputStreamReader(this.inputStream, "UTF-8");
+            this.input    = new InputStreamReader(new BufferedInputStream(
+                this.inputStream, 1024 * 128), "UTF-8");
             this.output   = new OutputStreamWriter(new
                 BufferedOutputStream(outputStream), "UTF-8");
             this.outputStream = null;
@@ -760,11 +762,28 @@ public class ECMA48 implements Runnable {
                                 int ch = Character.codePointAt(readBufferUTF8,
                                     i);
                                 i += Character.charCount(ch);
-                                consume(ch);
+
+                                // Special case for VT10x: 7-bit characters
+                                // only.
+                                if ((type == DeviceType.VT100)
+                                    || (type == DeviceType.VT102)
+                                ) {
+                                    consume(ch & 0x7F);
+                                } else {
+                                    consume(ch);
+                                }
                             }
                         } else {
                             for (int i = 0; i < rc; i++) {
-                                consume(readBuffer[i]);
+                                // Special case for VT10x: 7-bit characters
+                                // only.
+                                if ((type == DeviceType.VT100)
+                                    || (type == DeviceType.VT102)
+                                ) {
+                                    consume(readBuffer[i] & 0x7F);
+                                } else {
+                                    consume(readBuffer[i]);
+                                }
                             }
                         }
                     }
@@ -4905,15 +4924,10 @@ public class ECMA48 implements Runnable {
      *
      * @param ch character from the remote side
      */
-    private void consume(int ch) {
+    private void consume(final int ch) {
 
         // DEBUG
         // System.err.printf("%c STATE = %s\n", ch, scanState);
-
-        // Special case for VT10x: 7-bit characters only
-        if ((type == DeviceType.VT100) || (type == DeviceType.VT102)) {
-            ch = (ch & 0x7F);
-        }
 
         // Special "anywhere" states
 

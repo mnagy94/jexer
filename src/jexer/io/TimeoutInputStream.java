@@ -244,7 +244,7 @@ public class TimeoutInputStream extends InputStream {
 
         if (timeoutMillis == 0) {
             // Block on the read().
-            return stream.read(b);
+            return stream.read(b, off, len);
         }
 
         int remaining = len;
