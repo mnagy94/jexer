@@ -32,6 +32,7 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.CharArrayWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 import jexer.TKeypress;
 import jexer.backend.GlyphMaker;
@@ -395,7 +397,7 @@ public class ECMA48 implements Runnable {
     /**
      * Non-csi collect buffer.
      */
-    private StringBuilder collectBuffer;
+    private StringBuilder collectBuffer = new StringBuilder(128);
 
     /**
      * When true, use the G1 character set.
@@ -470,7 +472,7 @@ public class ECMA48 implements Runnable {
     /**
      * Sixel collection buffer.
      */
-    private StringBuilder sixelParseBuffer;
+    private StringBuilder sixelParseBuffer = new StringBuilder(2048);
 
     /**
      * Sixel shared palette.
@@ -893,14 +895,14 @@ public class ECMA48 implements Runnable {
 
         case VT220:
         case XTERM:
-            // "I am a VT220" - 7 bit version
+            // "I am a VT220" - 7 bit version, with sixel and Jexer image
+            // support.
             if (!s8c1t) {
-                return "\033[?62;1;6;9;4;22c";
-                // return "\033[?62;1;6;9;4;22;444c";
+                return "\033[?62;1;6;9;4;22;444c";
             }
-            // "I am a VT220" - 8 bit version
-            return "\u009b?62;1;6;9;4;22c";
-            // return "\u009b?62;1;6;9;4;22;444c";
+            // "I am a VT220" - 8 bit version, with sixel and Jexer image
+            // support.
+            return "\u009b?62;1;6;9;4;22;444c";
         default:
             throw new IllegalArgumentException("Invalid device type: " + type);
         }
@@ -1261,7 +1263,7 @@ public class ECMA48 implements Runnable {
      */
     private void toGround() {
         csiParams.clear();
-        collectBuffer = new StringBuilder(8);
+        collectBuffer.setLength(0);
         scanState = ScanState.GROUND;
     }
 
@@ -4811,11 +4813,18 @@ public class ECMA48 implements Runnable {
                     }
                 }
 
-                if (p[0].equals("444") && (p.length == 5)) {
-                    // Jexer image
-                    parseJexerImage(p[1], p[2], p[3], p[4]);
+                if (p[0].equals("444")) {
+                    if (p[1].equals("0") && (p.length == 6)) {
+                        // Jexer image - RGB
+                        parseJexerImageRGB(p[2], p[3], p[4], p[5]);
+                    } else if (p[1].equals("1") && (p.length == 4)) {
+                        // Jexer image - PNG
+                        parseJexerImageFile(1, p[2], p[3]);
+                    } else if (p[1].equals("2") && (p.length == 4)) {
+                        // Jexer image - JPG
+                        parseJexerImageFile(2, p[2], p[3]);
+                    }
                 }
-
             }
 
             // Go to SCAN_GROUND state
@@ -6701,7 +6710,7 @@ public class ECMA48 implements Runnable {
 
             // 0x71 goes to DCS_SIXEL
             if (ch == 0x71) {
-                sixelParseBuffer = new StringBuilder();
+                sixelParseBuffer.setLength(0);
                 scanState = ScanState.DCS_SIXEL;
             } else if ((ch >= 0x40) && (ch <= 0x7E)) {
                 // 0x40-7E goes to DCS_PASSTHROUGH
@@ -6786,7 +6795,7 @@ public class ECMA48 implements Runnable {
 
             // 0x71 goes to DCS_SIXEL
             if (ch == 0x71) {
-                sixelParseBuffer = new StringBuilder();
+                sixelParseBuffer.setLength(0);
                 scanState = ScanState.DCS_SIXEL;
             } else if ((ch >= 0x40) && (ch <= 0x7E)) {
                 // 0x40-7E goes to DCS_PASSTHROUGH
@@ -7050,87 +7059,19 @@ public class ECMA48 implements Runnable {
             // Sixel data was malformed in some way, bail out.
             return;
         }
-
-        /*
-         * Procedure:
-         *
-         * Break up the image into text cell sized pieces as a new array of
-         * Cells.
-         *
-         * Note original column position x0.
-         *
-         * For each cell:
-         *
-         * 1. Advance (printCharacter(' ')) for horizontal increment, or
-         *    index (linefeed() + cursorPosition(y, x0)) for vertical
-         *    increment.
-         *
-         * 2. Set (x, y) cell image data.
-         *
-         * 3. For the right and bottom edges:
-         *
-         *   a. Render the text to pixels using Terminus font.
-         *
-         *   b. Blit the image on top of the text, using alpha channel.
-         */
-        int cellColumns = image.getWidth() / textWidth;
-        if (cellColumns * textWidth < image.getWidth()) {
-            cellColumns++;
-        }
-        int cellRows = image.getHeight() / textHeight;
-        if (cellRows * textHeight < image.getHeight()) {
-            cellRows++;
+        if ((image.getWidth() < 1)
+            || (image.getWidth() > 10000)
+            || (image.getHeight() < 1)
+            || (image.getHeight() > 10000)
+        ) {
+            return;
         }
 
-        // Break the image up into an array of cells.
-        Cell [][] cells = new Cell[cellColumns][cellRows];
-
-        for (int x = 0; x < cellColumns; x++) {
-            for (int y = 0; y < cellRows; y++) {
-
-                int width = textWidth;
-                if ((x + 1) * textWidth > image.getWidth()) {
-                    width = image.getWidth() - (x * textWidth);
-                }
-                int height = textHeight;
-                if ((y + 1) * textHeight > image.getHeight()) {
-                    height = image.getHeight() - (y * textHeight);
-                }
-
-                Cell cell = new Cell();
-                cell.setImage(image.getSubimage(x * textWidth,
-                        y * textHeight, width, height));
-
-                cells[x][y] = cell;
-            }
-        }
-
-        int x0 = currentState.cursorX;
-        for (int y = 0; y < cellRows; y++) {
-            for (int x = 0; x < cellColumns; x++) {
-                assert (currentState.cursorX <= rightMargin);
-
-                // TODO: Render text of current cell first, then image over
-                // it (accounting for blank pixels).  For now, just copy the
-                // cell.
-                DisplayLine line = display.get(currentState.cursorY);
-                line.replace(currentState.cursorX, cells[x][y]);
-
-                // If at the end of the visible screen, stop.
-                if (currentState.cursorX == rightMargin) {
-                    break;
-                }
-                // Room for more image on the visible screen.
-                currentState.cursorX++;
-            }
-            linefeed();
-            cursorPosition(currentState.cursorY, x0);
-        }
-
+        imageToCells(image, true);
     }
 
     /**
-     * Parse a "Jexer" image string into a bitmap image, and overlay that
+     * Parse a "Jexer" RGB image string into a bitmap image, and overlay that
      * image onto the text cells.
      *
      * @param pw width token
@@ -7138,7 +7079,7 @@ public class ECMA48 implements Runnable {
      * @param ps scroll token
      * @param data pixel data
      */
-    private void parseJexerImage(final String pw, final String ph,
+    private void parseJexerImageRGB(final String pw, final String ph,
         final String ps, final String data) {
 
         int imageWidth = 0;
@@ -7194,6 +7135,94 @@ public class ECMA48 implements Runnable {
             }
         }
 
+        imageToCells(image, scroll);
+    }
+
+    /**
+     * Parse a "Jexer" PNG or JPG image string into a bitmap image, and
+     * overlay that image onto the text cells.
+     *
+     * @param type 1 for PNG, 2 for JPG
+     * @param ps scroll token
+     * @param data pixel data
+     */
+    private void parseJexerImageFile(final int type, final String ps,
+        final String data) {
+
+        int imageWidth = 0;
+        int imageHeight = 0;
+        boolean scroll = false;
+        BufferedImage image = null;
+        try {
+            java.util.Base64.Decoder base64 = java.util.Base64.getDecoder();
+            byte [] bytes = base64.decode(data);
+
+            switch (type) {
+            case 1:
+                if ((bytes[0] != (byte) 0x89)
+                    || (bytes[1] != 'P')
+                    || (bytes[2] != 'N')
+                    || (bytes[3] != 'G')
+                    || (bytes[4] != (byte) 0x0D)
+                    || (bytes[5] != (byte) 0x0A)
+                    || (bytes[6] != (byte) 0x1A)
+                    || (bytes[7] != (byte) 0x0A)
+                ) {
+                    // File does not have PNG header, bail out.
+                    return;
+                }
+                break;
+
+            case 2:
+                if ((bytes[0] != (byte) 0XFF)
+                    || (bytes[1] != (byte) 0xD8)
+                    || (bytes[2] != (byte) 0xFF)
+                ) {
+                    // File does not have JPG header, bail out.
+                    return;
+                }
+                break;
+
+            default:
+                // Unsupported type, bail out.
+                return;
+            }
+
+            image = ImageIO.read(new ByteArrayInputStream(bytes));
+        } catch (IOException e) {
+            // SQUASH
+            return;
+        }
+        assert (image != null);
+        imageWidth = image.getWidth();
+        imageHeight = image.getHeight();
+        if ((imageWidth < 1)
+            || (imageWidth > 10000)
+            || (imageHeight < 1)
+            || (imageHeight > 10000)
+        ) {
+            return;
+        }
+        if (ps.equals("1")) {
+            scroll = true;
+        } else if (ps.equals("0")) {
+            scroll = false;
+        } else {
+            return;
+        }
+
+        imageToCells(image, scroll);
+    }
+
+    /**
+     * Break up an image into the cells at the current cursor.
+     *
+     * @param image the image to display
+     * @param scroll if true, scroll the image and move the cursor
+     */
+    private void imageToCells(final BufferedImage image, final boolean scroll) {
+        assert (image != null);
+
         /*
          * Procedure:
          *
@@ -7249,11 +7278,17 @@ public class ECMA48 implements Runnable {
         }
 
         int x0 = currentState.cursorX;
+        int y0 = currentState.cursorY;
         for (int y = 0; y < cellRows; y++) {
             for (int x = 0; x < cellColumns; x++) {
                 assert (currentState.cursorX <= rightMargin);
+
+                // TODO: Render text of current cell first, then image over
+                // it (accounting for blank pixels).  For now, just copy the
+                // cell.
                 DisplayLine line = display.get(currentState.cursorY);
                 line.replace(currentState.cursorX, cells[x][y]);
+
                 // If at the end of the visible screen, stop.
                 if (currentState.cursorX == rightMargin) {
                     break;
@@ -7261,13 +7296,21 @@ public class ECMA48 implements Runnable {
                 // Room for more image on the visible screen.
                 currentState.cursorX++;
             }
-            if ((scroll == true)
-                || ((scroll == false)
-                    && (currentState.cursorY < scrollRegionBottom))
-            ) {
+            if (currentState.cursorY < scrollRegionBottom - 1) {
+                // Not at the bottom, down a line.
                 linefeed();
+            } else if (scroll == true) {
+                // At the bottom, scroll as needed.
+                linefeed();
+            } else {
+                // At the bottom, no more scrolling, done.
+                break;
             }
             cursorPosition(currentState.cursorY, x0);
+        }
+
+        if (scroll == false) {
+            cursorPosition(y0, x0);
         }
 
     }

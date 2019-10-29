@@ -83,6 +83,16 @@ public class ECMA48Terminal extends LogicalScreen
         MOUSE_SGR,
     }
 
+    /**
+     * Available Jexer images support.
+     */
+    private enum JexerImageOption {
+        DISABLED,
+        JPG,
+        PNG,
+        RGB,
+    }
+
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -217,9 +227,10 @@ public class ECMA48Terminal extends LogicalScreen
     private ImageCache iterm2Cache = null;
 
     /**
-     * If true, emit image data via Jexer image protocol.
+     * If not DISABLED, emit image data via Jexer image protocol if the
+     * terminal supports it.
      */
-    private boolean jexerImages = false;
+    private JexerImageOption jexerImageOption = JexerImageOption.JPG;
 
     /**
      * The Jexer post-rendered string cache.
@@ -1479,12 +1490,25 @@ public class ECMA48Terminal extends LogicalScreen
             // SQUASH
         }
 
-        // Default to using images for full-width characters.
+        // Default to not supporting iTerm2 images.
         if (System.getProperty("jexer.ECMA48.iTerm2Images",
                 "false").equals("true")) {
             iterm2Images = true;
         } else {
             iterm2Images = false;
+        }
+
+        // Default to using JPG Jexer images if terminal supports it.
+        String jexerImageStr = System.getProperty("jexer.ECMA48.jexerImages",
+            "jpg").toLowerCase();
+        if (jexerImageStr.equals("false")) {
+            jexerImageOption = JexerImageOption.DISABLED;
+        } else if (jexerImageStr.equals("jpg")) {
+            jexerImageOption = JexerImageOption.JPG;
+        } else if (jexerImageStr.equals("png")) {
+            jexerImageOption = JexerImageOption.PNG;
+        } else if (jexerImageStr.equals("rgb")) {
+            jexerImageOption = JexerImageOption.RGB;
         }
 
         // Set custom colors
@@ -2052,7 +2076,7 @@ public class ECMA48Terminal extends LogicalScreen
                 if (cellsToDraw.size() > 0) {
                     if (iterm2Images) {
                         sb.append(toIterm2Image(x, y, cellsToDraw));
-                    } else if (jexerImages) {
+                    } else if (jexerImageOption != JexerImageOption.DISABLED) {
                         sb.append(toJexerImage(x, y, cellsToDraw));
                     } else {
                         sb.append(toSixel(x, y, cellsToDraw));
@@ -2806,6 +2830,7 @@ public class ECMA48Terminal extends LogicalScreen
                     if (decPrivateModeFlag == false) {
                         break;
                     }
+                    boolean jexerImages = false;
                     for (String x: params) {
                         if (x.equals("4")) {
                             // Terminal reports sixel support
@@ -2820,6 +2845,11 @@ public class ECMA48Terminal extends LogicalScreen
                             }
                             jexerImages = true;
                         }
+                    }
+                    if (jexerImages == false) {
+                        // Terminal does not support Jexer images, disable
+                        // them.
+                        jexerImageOption = JexerImageOption.DISABLED;
                     }
                     return;
                 case 't':
@@ -3424,8 +3454,7 @@ public class ECMA48Terminal extends LogicalScreen
         int imageWidth = cells.get(0).getImage().getWidth();
         int imageHeight = cells.get(0).getImage().getHeight();
 
-        // cells.get(x).getImage() has a dithered bitmap containing indexes
-        // into the color palette.  Piece these together into one larger
+        // Piece cells.get(x).getImage() pieces together into one larger
         // image for final rendering.
         int totalWidth = 0;
         int fullWidth = cells.size() * getTextWidth();
@@ -3641,7 +3670,7 @@ public class ECMA48Terminal extends LogicalScreen
         assert (cells.size() > 0);
         assert (cells.get(0).getImage() != null);
 
-        if (jexerImages == false) {
+        if (jexerImageOption == JexerImageOption.DISABLED) {
             sb.append(normal());
             sb.append(gotoXY(x, y));
             for (int i = 0; i < cells.size(); i++) {
@@ -3677,8 +3706,7 @@ public class ECMA48Terminal extends LogicalScreen
         int imageWidth = cells.get(0).getImage().getWidth();
         int imageHeight = cells.get(0).getImage().getHeight();
 
-        // cells.get(x).getImage() has a dithered bitmap containing indexes
-        // into the color palette.  Piece these together into one larger
+        // Piece cells.get(x).getImage() pieces together into one larger
         // image for final rendering.
         int totalWidth = 0;
         int fullWidth = cells.size() * getTextWidth();
@@ -3774,21 +3802,77 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
 
-        sb.append(String.format("\033]444;%d;%d;0;", image.getWidth(),
-                Math.min(image.getHeight(), fullHeight)));
-
-        byte [] bytes = new byte[image.getWidth() * image.getHeight() * 3];
-        int stride = image.getWidth();
-        for (int px = 0; px < stride; px++) {
-            for (int py = 0; py < image.getHeight(); py++) {
-                int rgb = image.getRGB(px, py);
-                bytes[(py * stride * 3) + (px * 3)]     = (byte) ((rgb >>> 16) & 0xFF);
-                bytes[(py * stride * 3) + (px * 3) + 1] = (byte) ((rgb >>>  8) & 0xFF);
-                bytes[(py * stride * 3) + (px * 3) + 2] = (byte) ( rgb         & 0xFF);
+        if (jexerImageOption == JexerImageOption.PNG) {
+            // Encode as PNG
+            ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream(1024);
+            try {
+                if (!ImageIO.write(image.getSubimage(0, 0, image.getWidth(),
+                            Math.min(image.getHeight(), fullHeight)),
+                        "PNG", pngOutputStream)
+                ) {
+                    // We failed to render image, bail out.
+                    return "";
+                }
+            } catch (IOException e) {
+                // We failed to render image, bail out.
+                return "";
             }
+
+            sb.append("\033]444;1;0;");
+            sb.append(base64.encodeToString(pngOutputStream.toByteArray()));
+            sb.append("\007");
+
+        } else if (jexerImageOption == JexerImageOption.JPG) {
+
+            // Encode as JPG
+            ByteArrayOutputStream jpgOutputStream = new ByteArrayOutputStream(1024);
+
+            // Convert from ARGB to RGB, otherwise the JPG encode will fail.
+            BufferedImage jpgImage = new BufferedImage(image.getWidth(),
+                image.getHeight(), BufferedImage.TYPE_INT_RGB);
+            int [] pixels = new int[image.getWidth() * image.getHeight()];
+            image.getRGB(0, 0, image.getWidth(), image.getHeight(), pixels,
+                0, image.getWidth());
+            jpgImage.setRGB(0, 0, image.getWidth(), image.getHeight(), pixels,
+                0, image.getWidth());
+
+            try {
+                if (!ImageIO.write(jpgImage.getSubimage(0, 0,
+                            jpgImage.getWidth(),
+                            Math.min(jpgImage.getHeight(), fullHeight)),
+                        "JPG", jpgOutputStream)
+                ) {
+                    // We failed to render image, bail out.
+                    return "";
+                }
+            } catch (IOException e) {
+                // We failed to render image, bail out.
+                return "";
+            }
+
+            sb.append("\033]444;2;0;");
+            sb.append(base64.encodeToString(jpgOutputStream.toByteArray()));
+            sb.append("\007");
+
+        } else if (jexerImageOption == JexerImageOption.RGB) {
+
+            // RGB
+            sb.append(String.format("\033]444;0;%d;%d;0;", image.getWidth(),
+                    Math.min(image.getHeight(), fullHeight)));
+
+            byte [] bytes = new byte[image.getWidth() * image.getHeight() * 3];
+            int stride = image.getWidth();
+            for (int px = 0; px < stride; px++) {
+                for (int py = 0; py < image.getHeight(); py++) {
+                    int rgb = image.getRGB(px, py);
+                    bytes[(py * stride * 3) + (px * 3)]     = (byte) ((rgb >>> 16) & 0xFF);
+                    bytes[(py * stride * 3) + (px * 3) + 1] = (byte) ((rgb >>>  8) & 0xFF);
+                    bytes[(py * stride * 3) + (px * 3) + 2] = (byte) ( rgb         & 0xFF);
+                }
+            }
+            sb.append(base64.encodeToString(bytes));
+            sb.append("\007");
         }
-        sb.append(base64.encodeToString(bytes));
-        sb.append("\007");
 
         if (saveInCache) {
             // This row is OK to save into the cache.
@@ -3804,7 +3888,7 @@ public class ECMA48Terminal extends LogicalScreen
      * @return true if this terminal is emitting Jexer images
      */
     public boolean hasJexerImages() {
-        return jexerImages;
+        return (jexerImageOption != JexerImageOption.DISABLED);
     }
 
     // ------------------------------------------------------------------------
