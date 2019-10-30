@@ -200,6 +200,11 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean sixel = true;
 
     /**
+     * If true, use a single shared palette for sixel.
+     */
+    private boolean sixelSharedPalette = true;
+
+    /**
      * The sixel palette handler.
      */
     private SixelPalette palette = null;
@@ -1488,6 +1493,14 @@ public class ECMA48Terminal extends LogicalScreen
             }
         } catch (NumberFormatException e) {
             // SQUASH
+        }
+
+        // Shared palette
+        if (System.getProperty("jexer.ECMA48.sixelSharedPalette",
+                "true").equals("false")) {
+            sixelSharedPalette = false;
+        } else {
+            sixelSharedPalette = true;
         }
 
         // Default to not supporting iTerm2 images.
@@ -2930,12 +2943,16 @@ public class ECMA48Terminal extends LogicalScreen
      *   - enable sixel scrolling
      *
      *   - disable private color registers (so that we can use one common
-     *     palette)
+     *     palette) if sixelSharedPalette is set
      *
      * @return the string to emit to xterm
      */
     private String xtermSetSixelSettings() {
-        return "\033[?80h\033[?1070l";
+        if (sixelSharedPalette == true) {
+            return "\033[?80h\033[?1070l";
+        } else {
+            return "\033[?80h\033[?1070h";
+        }
     }
 
     /**
@@ -3052,8 +3069,9 @@ public class ECMA48Terminal extends LogicalScreen
 
         if (palette == null) {
             palette = new SixelPalette();
-            // TODO: make this an option (shared palette or not)
-            palette.emitPalette(sb, null);
+            if (sixelSharedPalette == true) {
+                palette.emitPalette(sb, null);
+            }
         }
 
         return sb.toString();
@@ -3101,9 +3119,8 @@ public class ECMA48Terminal extends LogicalScreen
         if (y == height - 1) {
             // We are on the bottom row.  If scrolling mode is enabled
             // (default), then VT320/xterm will scroll the entire screen if
-            // we draw any pixels here.
-
-            // TODO: support sixel scrolling mode disabled as an option.
+            // we draw any pixels here.  Do not draw the image, bail out
+            // instead.
             sb.append(normal());
             sb.append(gotoXY(x, y));
             for (int j = 0; j < cells.size(); j++) {
@@ -3240,8 +3257,9 @@ public class ECMA48Terminal extends LogicalScreen
         // Dither the image.  It is ok to lose the original here.
         if (palette == null) {
             palette = new SixelPalette();
-            // TODO: make this an option (shared palette or not)
-            palette.emitPalette(sb, null);
+            if (sixelSharedPalette == true) {
+                palette.emitPalette(sb, null);
+            }
         }
         image = palette.ditherImage(image);
 
@@ -3249,20 +3267,17 @@ public class ECMA48Terminal extends LogicalScreen
         int rasterHeight = 0;
         int rasterWidth = image.getWidth();
 
-        /*
-
-        // TODO: make this an option (shared palette or not)
-
-        // Emit the palette, but only for the colors actually used by these
-        // cells.
-        boolean [] usedColors = new boolean[sixelPaletteSize];
-        for (int imageX = 0; imageX < image.getWidth(); imageX++) {
-            for (int imageY = 0; imageY < image.getHeight(); imageY++) {
-                usedColors[image.getRGB(imageX, imageY)] = true;
+        if (sixelSharedPalette == false) {
+            // Emit the palette, but only for the colors actually used by
+            // these cells.
+            boolean [] usedColors = new boolean[sixelPaletteSize];
+            for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+                for (int imageY = 0; imageY < image.getHeight(); imageY++) {
+                    usedColors[image.getRGB(imageX, imageY)] = true;
+                }
             }
+            palette.emitPalette(sb, usedColors);
         }
-        palette.emitPalette(sb, usedColors);
-         */
 
         // Render the entire row of cells.
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
@@ -3611,8 +3626,6 @@ public class ECMA48Terminal extends LogicalScreen
             return "";
         }
 
-        // iTerm2 does not advance the cursor automatically, so place it
-        // myself.
         sb.append("\033]1337;File=");
         /*
         sb.append(String.format("width=$d;height=1;preserveAspectRatio=1;",
