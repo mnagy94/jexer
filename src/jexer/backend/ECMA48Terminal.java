@@ -1172,10 +1172,11 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Enable mouse reporting and metaSendsEscape
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
-        this.output.flush();
 
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
+
+        this.output.flush();
 
         // Query the screen size
         sessionInfo.queryWindowSize();
@@ -1264,10 +1265,11 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Enable mouse reporting and metaSendsEscape
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
-        this.output.flush();
 
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
+
+        this.output.flush();
 
         // Query the screen size
         sessionInfo.queryWindowSize();
@@ -2857,6 +2859,13 @@ public class ECMA48Terminal extends LogicalScreen
                                 System.err.println("Device Attributes: Jexer images");
                             }
                             jexerImages = true;
+                        }
+                        if (x.equals("1337")) {
+                            // Terminal reports iTerm2 images support
+                            if (debugToStderr) {
+                                System.err.println("Device Attributes: iTerm2 images");
+                            }
+                            iterm2Images = true;
                         }
                     }
                     if (jexerImages == false) {
