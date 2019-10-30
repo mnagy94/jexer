@@ -146,11 +146,11 @@ public class StretchLayoutManager implements LayoutManager {
      */
     private void layoutChildren() {
         double widthRatio = (double) width / originalWidth;
-        if (!Double.isFinite(widthRatio)) {
+        if (Math.abs(widthRatio) > Double.MAX_VALUE) {
             widthRatio = 1;
         }
         double heightRatio = (double) height / originalHeight;
-        if (!Double.isFinite(heightRatio)) {
+        if (Math.abs(heightRatio) > Double.MAX_VALUE) {
             heightRatio = 1;
         }
         for (TWidget child: children.keySet()) {

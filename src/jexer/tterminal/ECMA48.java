@@ -7111,8 +7111,7 @@ public class ECMA48 implements Runnable {
             return;
         }
 
-        java.util.Base64.Decoder base64 = java.util.Base64.getDecoder();
-        byte [] bytes = base64.decode(data);
+        byte [] bytes = StringUtils.fromBase64(data.getBytes());
         if (bytes.length != (imageWidth * imageHeight * 3)) {
             return;
         }
@@ -7158,8 +7157,7 @@ public class ECMA48 implements Runnable {
         boolean scroll = false;
         BufferedImage image = null;
         try {
-            java.util.Base64.Decoder base64 = java.util.Base64.getDecoder();
-            byte [] bytes = base64.decode(data);
+            byte [] bytes = StringUtils.fromBase64(data.getBytes());
 
             switch (type) {
             case 1:

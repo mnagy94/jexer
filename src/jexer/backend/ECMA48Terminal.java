@@ -51,6 +51,7 @@ import jexer.TImage;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Color;
+import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
@@ -241,11 +242,6 @@ public class ECMA48Terminal extends LogicalScreen
      * The Jexer post-rendered string cache.
      */
     private ImageCache jexerCache = null;
-
-    /**
-     * Base64 encoder used by iTerm2 and Jexer images.
-     */
-    private java.util.Base64.Encoder base64 = null;
 
     /**
      * If true, then we changed System.in and need to change it back.
@@ -3453,7 +3449,6 @@ public class ECMA48Terminal extends LogicalScreen
 
         if (iterm2Cache == null) {
             iterm2Cache = new ImageCache(height * 10);
-            base64 = java.util.Base64.getEncoder();
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3646,7 +3641,7 @@ public class ECMA48Terminal extends LogicalScreen
                     getTextHeight())));
          */
         sb.append("inline=1:");
-        sb.append(base64.encodeToString(pngOutputStream.toByteArray()));
+        sb.append(StringUtils.toBase64(pngOutputStream.toByteArray()));
         sb.append("\007");
 
         if (saveInCache) {
@@ -3703,7 +3698,6 @@ public class ECMA48Terminal extends LogicalScreen
 
         if (jexerCache == null) {
             jexerCache = new ImageCache(height * 10);
-            base64 = java.util.Base64.getEncoder();
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3841,7 +3835,7 @@ public class ECMA48Terminal extends LogicalScreen
             }
 
             sb.append("\033]444;1;0;");
-            sb.append(base64.encodeToString(pngOutputStream.toByteArray()));
+            sb.append(StringUtils.toBase64(pngOutputStream.toByteArray()));
             sb.append("\007");
 
         } else if (jexerImageOption == JexerImageOption.JPG) {
@@ -3873,7 +3867,7 @@ public class ECMA48Terminal extends LogicalScreen
             }
 
             sb.append("\033]444;2;0;");
-            sb.append(base64.encodeToString(jpgOutputStream.toByteArray()));
+            sb.append(StringUtils.toBase64(jpgOutputStream.toByteArray()));
             sb.append("\007");
 
         } else if (jexerImageOption == JexerImageOption.RGB) {
@@ -3892,7 +3886,7 @@ public class ECMA48Terminal extends LogicalScreen
                     bytes[(py * stride * 3) + (px * 3) + 2] = (byte) ( rgb         & 0xFF);
                 }
             }
-            sb.append(base64.encodeToString(bytes));
+            sb.append(StringUtils.toBase64(bytes));
             sb.append("\007");
         }
 
