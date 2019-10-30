@@ -50,9 +50,9 @@ public class TRadioButton extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
-     * RadioButton state, true means selected.
+     * RadioButton state, true means selected.  Note package private access.
      */
-    private boolean selected = false;
+    boolean selected = false;
 
     /**
      * The shortcut and radio button label.
@@ -61,16 +61,16 @@ public class TRadioButton extends TWidget {
 
     /**
      * ID for this radio button.  Buttons start counting at 1 in the
-     * RadioGroup.
+     * RadioGroup.  Note package private access.
      */
-    private int id;
+    int id;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
-     * Public constructor.
+     * Package private constructor.
      *
      * @param parent parent widget
      * @param x column relative to parent
@@ -78,7 +78,7 @@ public class TRadioButton extends TWidget {
      * @param label label to display next to (right of) the radiobutton
      * @param id ID for this radio button
      */
-    public TRadioButton(final TRadioGroup parent, final int x, final int y,
+    TRadioButton(final TRadioGroup parent, final int x, final int y,
         final String label, final int id) {
 
         // Set parent and window
@@ -89,6 +89,8 @@ public class TRadioButton extends TWidget {
 
         setCursorVisible(true);
         setCursorX(1);
+
+        parent.addRadioButton(this);
     }
 
     // ------------------------------------------------------------------------
@@ -120,8 +122,7 @@ public class TRadioButton extends TWidget {
     public void onMouseDown(final TMouseEvent mouse) {
         if ((mouseOnRadioButton(mouse)) && (mouse.isMouse1())) {
             // Switch state
-            selected = true;
-            ((TRadioGroup) getParent()).setSelected(this);
+            ((TRadioGroup) getParent()).setSelected(id);
         }
     }
 
@@ -134,8 +135,7 @@ public class TRadioButton extends TWidget {
     public void onKeypress(final TKeypressEvent keypress) {
 
         if (keypress.equals(kbSpace)) {
-            selected = true;
-            ((TRadioGroup) getParent()).setSelected(this);
+            ((TRadioGroup) getParent()).setSelected(id);
             return;
         }
 
@@ -222,14 +222,17 @@ public class TRadioButton extends TWidget {
     }
 
     /**
-     * Set RadioButton state, true means selected.  Note package private
-     * access.
+     * Set RadioButton state, true means selected.
      *
      * @param selected if true then this is the one button in the group that
      * is selected
      */
-    void setSelected(final boolean selected) {
-        this.selected = selected;
+    public void setSelected(final boolean selected) {
+        if (selected == true) {
+            ((TRadioGroup) getParent()).setSelected(id);
+        } else {
+            ((TRadioGroup) getParent()).setSelected(0);
+        }
     }
 
     /**

@@ -51,7 +51,9 @@
            debuglevel="lines,vars,source"
            target="1.6"
            source="1.6"
-           />
+           >
+      <compilerarg value="-Xlint:deprecation" />
+    </javac>
   </target>
 
   <target name="jar" depends="compile">

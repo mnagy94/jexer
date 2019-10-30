@@ -54,7 +54,7 @@ public class TRadioGroup extends TWidget {
      * If true, one of the children MUST be selected.  Note package private
      * access.
      */
-    boolean requiresSelection = true;
+    boolean requiresSelection = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -139,19 +139,6 @@ public class TRadioGroup extends TWidget {
     }
 
     /**
-     * Set the new selected radio button.  Note package private access.
-     *
-     * @param button new button that became selected
-     */
-    void setSelected(final TRadioButton button) {
-        assert (button.isSelected());
-        if ((selectedButton != null) && (selectedButton != button)) {
-            selectedButton.setSelected(false);
-        }
-        selectedButton = button;
-    }
-
-    /**
      * Set the new selected radio button.  1-based.
      *
      * @param id ID of the selected button, or 0 to unselect
@@ -161,17 +148,41 @@ public class TRadioGroup extends TWidget {
             return;
         }
 
+        for (TWidget widget: getChildren()) {
+            ((TRadioButton) widget).selected = false;
+        }
         if (id == 0) {
-            for (TWidget widget: getChildren()) {
-                ((TRadioButton) widget).setSelected(false);
-            }
             selectedButton = null;
             return;
         }
         assert ((id > 0) && (id <= getChildren().size()));
         TRadioButton button = (TRadioButton) (getChildren().get(id - 1));
-        button.setSelected(true);
+        button.selected = true;
         selectedButton = button;
+    }
+
+    /**
+     * Get the radio button that was selected.
+     *
+     * @return the selected button, or null if no button is selected
+     */
+    public TRadioButton getSelectedButton() {
+        return selectedButton;
+    }
+
+    /**
+     * Convenience function to add a radio button to this group.
+     *
+     * @param label label to display next to (right of) the radiobutton
+     * @param selected if true, this will be the selected radiobutton
+     * @return the new radio button
+     */
+    public TRadioButton addRadioButton(final String label,
+        final boolean selected) {
+
+        TRadioButton button = addRadioButton(label);
+        setSelected(button.id);
+        return button;
     }
 
     /**
@@ -181,14 +192,25 @@ public class TRadioGroup extends TWidget {
      * @return the new radio button
      */
     public TRadioButton addRadioButton(final String label) {
-        int buttonX = 1;
-        int buttonY = getChildren().size() + 1;
+        return new TRadioButton(this, 0, 0, label, 0);
+    }
+
+    /**
+     * Package private method for RadioButton to add itself to a RadioGroup
+     * container.
+     *
+     * @param button the button to add
+     */
+    void addRadioButton(final TRadioButton button) {
+        super.setHeight(getChildren().size() + 2);
+        button.setX(1);
+        button.setY(getChildren().size());
+        button.id = getChildren().size();
+        String label = button.getMnemonic().getRawLabel();
+
         if (StringUtils.width(label) + 4 > getWidth()) {
             super.setWidth(StringUtils.width(label) + 7);
         }
-        super.setHeight(getChildren().size() + 3);
-        TRadioButton button = new TRadioButton(this, buttonX, buttonY, label,
-            getChildren().size() + 1);
 
         if (getParent().getLayoutManager() != null) {
             getParent().getLayoutManager().resetSize(this);
@@ -196,8 +218,31 @@ public class TRadioGroup extends TWidget {
 
         // Default to the first item on the list.
         activate(getChildren().get(0));
+    }
 
-        return button;
+    /**
+     * Get the requires selection flag.
+     *
+     * @return true if this radiogroup requires that one of the buttons be
+     * selected
+     */
+    public boolean getRequiresSelection() {
+        return requiresSelection;
+    }
+
+    /**
+     * Set the requires selection flag.
+     *
+     * @param requiresSelection if true, then this radiogroup requires that
+     * one of the buttons be selected
+     */
+    public void setRequiresSelection(final boolean requiresSelection) {
+        this.requiresSelection = requiresSelection;
+        if (requiresSelection) {
+            if (getChildren().size() > 0) {
+                setSelected(1);
+            }
+        }
     }
 
 }

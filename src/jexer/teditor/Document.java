@@ -362,7 +362,7 @@ public class Document {
         // If at the beginning of a word already, push past it.
         if ((getChar() != -1)
             && (getRawLine().length() > 0)
-            && !Character.isSpace((char) getChar())
+            && !Character.isWhitespace((char) getChar())
         ) {
             left();
         }
@@ -370,7 +370,7 @@ public class Document {
         // int line = lineNumber;
         while ((getChar() == -1)
             || (getRawLine().length() == 0)
-            || Character.isSpace((char) getChar())
+            || Character.isWhitespace((char) getChar())
         ) {
             if (left() == false) {
                 return;
@@ -380,12 +380,12 @@ public class Document {
 
         assert (getChar() != -1);
 
-        if (!Character.isSpace((char) getChar())
+        if (!Character.isWhitespace((char) getChar())
             && (getRawLine().length() > 0)
         ) {
             // Advance until at the beginning of the document or a whitespace
             // is encountered.
-            while (!Character.isSpace((char) getChar())) {
+            while (!Character.isWhitespace((char) getChar())) {
                 int line = lineNumber;
                 if (left() == false) {
                     // End of document, bail out.
@@ -418,7 +418,7 @@ public class Document {
             }
             if (lineNumber != line) {
                 // We wrapped a line.  Here that counts as whitespace.
-                if (!Character.isSpace((char) getChar())) {
+                if (!Character.isWhitespace((char) getChar())) {
                     // We found a character immediately after the line.
                     // Done!
                     return;
@@ -429,12 +429,12 @@ public class Document {
         }
         assert (getChar() != -1);
 
-        if (!Character.isSpace((char) getChar())
+        if (!Character.isWhitespace((char) getChar())
             && (getRawLine().length() > 0)
         ) {
             // Advance until at the end of the document or a whitespace is
             // encountered.
-            while (!Character.isSpace((char) getChar())) {
+            while (!Character.isWhitespace((char) getChar())) {
                 line = lineNumber;
                 if (right() == false) {
                     // End of document, bail out.
@@ -442,7 +442,7 @@ public class Document {
                 }
                 if (lineNumber != line) {
                     // We wrapped a line.  Here that counts as whitespace.
-                    if (!Character.isSpace((char) getChar())
+                    if (!Character.isWhitespace((char) getChar())
                         && (getRawLine().length() > 0)
                     ) {
                         // We found a character immediately after the line.
@@ -462,7 +462,7 @@ public class Document {
             }
             if (lineNumber != line) {
                 // We wrapped a line.  Here that counts as whitespace.
-                if (!Character.isSpace((char) getChar())) {
+                if (!Character.isWhitespace((char) getChar())) {
                     // We found a character immediately after the line.
                     // Done!
                     return;
@@ -473,10 +473,10 @@ public class Document {
         }
         assert (getChar() != -1);
 
-        if (Character.isSpace((char) getChar())) {
+        if (Character.isWhitespace((char) getChar())) {
             // Advance until at the end of the document or a non-whitespace
             // is encountered.
-            while (Character.isSpace((char) getChar())) {
+            while (Character.isWhitespace((char) getChar())) {
                 if (right() == false) {
                     // End of document, bail out.
                     return;
