@@ -326,29 +326,29 @@ public class ECMA48 implements Runnable {
      * Physical display width.  We start at 80x24, but the user can resize us
      * bigger/smaller.
      */
-    private int width;
+    private int width = 80;
 
     /**
      * Physical display height.  We start at 80x24, but the user can resize
      * us bigger/smaller.
      */
-    private int height;
+    private int height = 24;
 
     /**
      * Top margin of the scrolling region.
      */
-    private int scrollRegionTop;
+    private int scrollRegionTop = 0;
 
     /**
      * Bottom margin of the scrolling region.
      */
-    private int scrollRegionBottom;
+    private int scrollRegionBottom = height - 1;
 
     /**
      * Right margin column number.  This can be selected by the remote side
      * to be 80/132 (rightMargin values 79/131), or it can be (width - 1).
      */
-    private int rightMargin;
+    private int rightMargin = 79;
 
     /**
      * Last character printed.
@@ -360,7 +360,7 @@ public class ECMA48 implements Runnable {
      * 132), but the line does NOT wrap until another character is written to
      * column 1 of the next line, after which the cursor moves to column 2.
      */
-    private boolean wrapLineFlag;
+    private boolean wrapLineFlag = false;
 
     /**
      * VT220 single shift flag.
@@ -673,6 +673,8 @@ public class ECMA48 implements Runnable {
         for (int i = 0; i < height; i++) {
             display.add(new DisplayLine(currentState.attr));
         }
+        assert (currentState.cursorY < height);
+        assert (currentState.cursorX < width);
 
         // Spin up the input reader
         readerThread = new Thread(this);
@@ -1207,8 +1209,8 @@ public class ECMA48 implements Runnable {
         int delta = height - this.height;
         this.height = height;
         scrollRegionBottom += delta;
-        if (scrollRegionBottom < 0) {
-            scrollRegionBottom = height;
+        if ((scrollRegionBottom < 0) || (scrollRegionTop > height - 1)) {
+            scrollRegionBottom = height - 1;
         }
         if (scrollRegionTop >= scrollRegionBottom) {
             scrollRegionTop = 0;
@@ -1378,8 +1380,13 @@ public class ECMA48 implements Runnable {
         currentState            = new SaveableState();
         savedState              = new SaveableState();
         scanState               = ScanState.GROUND;
-        width                   = 80;
-        height                  = 24;
+        if (displayListener != null) {
+            width = displayListener.getDisplayWidth();
+            height = displayListener.getDisplayHeight();
+        } else {
+            width               = 80;
+            height              = 24;
+        }
         scrollRegionTop         = 0;
         scrollRegionBottom      = height - 1;
         rightMargin             = width - 1;
@@ -1387,11 +1394,6 @@ public class ECMA48 implements Runnable {
         arrowKeyMode            = ArrowKeyMode.ANSI;
         keypadMode              = KeypadMode.Numeric;
         wrapLineFlag            = false;
-        if (displayListener != null) {
-            width = displayListener.getDisplayWidth();
-            height = displayListener.getDisplayHeight();
-            rightMargin         = width - 1;
-        }
 
         // Flags
         shiftOut                = false;
@@ -1474,7 +1476,6 @@ public class ECMA48 implements Runnable {
      * Handle a linefeed.
      */
     private void linefeed() {
-
         if (currentState.cursorY < scrollRegionBottom) {
             // Increment screen y
             currentState.cursorY++;
@@ -4400,6 +4401,9 @@ public class ECMA48 implements Runnable {
             // DECSTBM
             int top = getCsiParam(0, 1, 1, height) - 1;
             int bottom = getCsiParam(1, height, 1, height) - 1;
+            if (bottom > height - 1) {
+                bottom = height - 1;
+            }
 
             if (top > bottom) {
                 top = bottom;
@@ -7306,6 +7310,7 @@ public class ECMA48 implements Runnable {
                 // At the bottom, no more scrolling, done.
                 break;
             }
+
             cursorPosition(currentState.cursorY, x0);
         }
 
