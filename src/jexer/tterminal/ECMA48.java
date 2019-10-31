@@ -1686,35 +1686,45 @@ public class ECMA48 implements Runnable {
         if (mouseEncoding == MouseEncoding.SGR) {
             sb.append((char) 0x1B);
             sb.append("[<");
+            int buttons = 0;
 
             if (mouse.isMouse1()) {
                 if (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION) {
-                    sb.append("32;");
+                    buttons = 32;
                 } else {
-                    sb.append("0;");
+                    buttons = 0;
                 }
             } else if (mouse.isMouse2()) {
                 if (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION) {
-                    sb.append("33;");
+                    buttons = 33;
                 } else {
-                    sb.append("1;");
+                    buttons = 1;
                 }
             } else if (mouse.isMouse3()) {
                 if (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION) {
-                    sb.append("34;");
+                    buttons = 34;
                 } else {
-                    sb.append("2;");
+                    buttons = 2;
                 }
             } else if (mouse.isMouseWheelUp()) {
-                sb.append("64;");
+                buttons = 64;
             } else if (mouse.isMouseWheelDown()) {
-                sb.append("65;");
+                buttons = 65;
             } else {
                 // This is motion with no buttons down.
-                sb.append("35;");
+                buttons = 35;
+            }
+            if (mouse.isAlt()) {
+                buttons |= 0x08;
+            }
+            if (mouse.isCtrl()) {
+                buttons |= 0x10;
+            }
+            if (mouse.isShift()) {
+                buttons |= 0x04;
             }
 
-            sb.append(String.format("%d;%d", mouse.getX() + 1,
+            sb.append(String.format("%d;%d;%d", buttons, mouse.getX() + 1,
                     mouse.getY() + 1));
 
             if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
@@ -1728,35 +1738,46 @@ public class ECMA48 implements Runnable {
             sb.append((char) 0x1B);
             sb.append('[');
             sb.append('M');
+            int buttons = 0;
             if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
-                sb.append((char) (0x03 + 32));
+                buttons = 0x03 + 32;
             } else if (mouse.isMouse1()) {
                 if (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION) {
-                    sb.append((char) (0x00 + 32 + 32));
+                    buttons = 0x00 + 32 + 32;
                 } else {
-                    sb.append((char) (0x00 + 32));
+                    buttons = 0x00 + 32;
                 }
             } else if (mouse.isMouse2()) {
                 if (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION) {
-                    sb.append((char) (0x01 + 32 + 32));
+                    buttons = 0x01 + 32 + 32;
                 } else {
-                    sb.append((char) (0x01 + 32));
+                    buttons = 0x01 + 32;
                 }
             } else if (mouse.isMouse3()) {
                 if (mouse.getType() == TMouseEvent.Type.MOUSE_MOTION) {
-                    sb.append((char) (0x02 + 32 + 32));
+                    buttons = 0x02 + 32 + 32;
                 } else {
-                    sb.append((char) (0x02 + 32));
+                    buttons = 0x02 + 32;
                 }
             } else if (mouse.isMouseWheelUp()) {
-                sb.append((char) (0x04 + 64));
+                buttons = 0x04 + 64;
             } else if (mouse.isMouseWheelDown()) {
-                sb.append((char) (0x05 + 64));
+                buttons = 0x05 + 64;
             } else {
                 // This is motion with no buttons down.
-                sb.append((char) (0x03 + 32));
+                buttons = 0x03 + 32;
+            }
+            if (mouse.isAlt()) {
+                buttons |= 0x08;
+            }
+            if (mouse.isCtrl()) {
+                buttons |= 0x10;
+            }
+            if (mouse.isShift()) {
+                buttons |= 0x04;
             }
 
+            sb.append((char) (buttons & 0xFF));
             sb.append((char) (mouse.getX() + 33));
             sb.append((char) (mouse.getY() + 33));
         }
