@@ -2899,6 +2899,7 @@ public class ECMA48Terminal extends LogicalScreen
                         // them.
                         jexerImageOption = JexerImageOption.DISABLED;
                     }
+                    resetParser();
                     return;
                 case 't':
                     // windowOps
