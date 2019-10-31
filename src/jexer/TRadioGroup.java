@@ -239,7 +239,7 @@ public class TRadioGroup extends TWidget {
     public void setRequiresSelection(final boolean requiresSelection) {
         this.requiresSelection = requiresSelection;
         if (requiresSelection) {
-            if (getChildren().size() > 0) {
+            if ((getChildren().size() > 0) && (selectedButton == null)) {
                 setSelected(1);
             }
         }
