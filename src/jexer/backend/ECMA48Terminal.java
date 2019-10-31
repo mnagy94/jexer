@@ -2238,10 +2238,13 @@ public class ECMA48Terminal extends LogicalScreen
         boolean eventMouse3 = false;
         boolean eventMouseWheelUp = false;
         boolean eventMouseWheelDown = false;
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
 
         // System.err.printf("buttons: %04x\r\n", buttons);
 
-        switch (buttons) {
+        switch (buttons & 0xE3) {
         case 0:
             eventMouse1 = true;
             mouse1 = true;
@@ -2323,9 +2326,21 @@ public class ECMA48Terminal extends LogicalScreen
             eventType = TMouseEvent.Type.MOUSE_MOTION;
             break;
         }
+
+        if ((buttons & 0x04) != 0) {
+            eventShift = true;
+        }
+        if ((buttons & 0x08) != 0) {
+            eventAlt = true;
+        }
+        if ((buttons & 0x10) != 0) {
+            eventCtrl = true;
+        }
+
         return new TMouseEvent(eventType, x, y, x, y,
             eventMouse1, eventMouse2, eventMouse3,
-            eventMouseWheelUp, eventMouseWheelDown);
+            eventMouseWheelUp, eventMouseWheelDown,
+            eventAlt, eventCtrl, eventShift);
     }
 
     /**
@@ -2360,12 +2375,15 @@ public class ECMA48Terminal extends LogicalScreen
         boolean eventMouse3 = false;
         boolean eventMouseWheelUp = false;
         boolean eventMouseWheelDown = false;
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
 
         if (release) {
             eventType = TMouseEvent.Type.MOUSE_UP;
         }
 
-        switch (buttons) {
+        switch (buttons & 0xE3) {
         case 0:
             eventMouse1 = true;
             break;
@@ -2422,9 +2440,21 @@ public class ECMA48Terminal extends LogicalScreen
             // Unknown, bail out
             return null;
         }
+
+        if ((buttons & 0x04) != 0) {
+            eventShift = true;
+        }
+        if ((buttons & 0x08) != 0) {
+            eventAlt = true;
+        }
+        if ((buttons & 0x10) != 0) {
+            eventCtrl = true;
+        }
+
         return new TMouseEvent(eventType, x, y, x, y,
             eventMouse1, eventMouse2, eventMouse3,
-            eventMouseWheelUp, eventMouseWheelDown);
+            eventMouseWheelUp, eventMouseWheelDown,
+            eventAlt, eventCtrl, eventShift);
     }
 
     /**

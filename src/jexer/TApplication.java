@@ -1177,7 +1177,8 @@ public class TApplication implements Runnable {
                             mouse.getAbsoluteX(), mouse.getAbsoluteY(),
                             mouse.isMouse1(), mouse.isMouse2(),
                             mouse.isMouse3(),
-                            mouse.isMouseWheelUp(), mouse.isMouseWheelDown());
+                            mouse.isMouseWheelUp(), mouse.isMouseWheelDown(),
+                            mouse.isAlt(), mouse.isCtrl(), mouse.isShift());
 
                     } else {
                         // The first click of a potential double-click.
@@ -1366,7 +1367,8 @@ public class TApplication implements Runnable {
                             mouse.getAbsoluteX(), mouse.getAbsoluteY(),
                             mouse.isMouse1(), mouse.isMouse2(),
                             mouse.isMouse3(),
-                            mouse.isMouseWheelUp(), mouse.isMouseWheelDown());
+                            mouse.isMouseWheelUp(), mouse.isMouseWheelDown(),
+                            mouse.isAlt(), mouse.isCtrl(), mouse.isShift());
 
                     } else {
                         // The first click of a potential double-click.

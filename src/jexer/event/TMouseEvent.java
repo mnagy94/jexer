@@ -118,6 +118,21 @@ public class TMouseEvent extends TInputEvent {
      */
     private boolean mouseWheelDown;
 
+    /**
+     * Keyboard modifier ALT.
+     */
+    private boolean alt;
+
+    /**
+     * Keyboard modifier CTRL.
+     */
+    private boolean ctrl;
+
+    /**
+     * Keyboard modifier SHIFT.
+     */
+    private boolean shift;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -135,11 +150,15 @@ public class TMouseEvent extends TInputEvent {
      * @param mouse3 if true, middle button is down
      * @param mouseWheelUp if true, mouse wheel (button 4) is down
      * @param mouseWheelDown if true, mouse wheel (button 5) is down
+     * @param alt if true, ALT was pressed with this mouse event
+     * @param ctrl if true, CTRL was pressed with this mouse event
+     * @param shift if true, SHIFT was pressed with this mouse event
      */
     public TMouseEvent(final Type type, final int x, final int y,
         final int absoluteX, final int absoluteY,
         final boolean mouse1, final boolean mouse2, final boolean mouse3,
-        final boolean mouseWheelUp, final boolean mouseWheelDown) {
+        final boolean mouseWheelUp, final boolean mouseWheelDown,
+        final boolean alt, final boolean ctrl, final boolean shift) {
 
         this.type               = type;
         this.x                  = x;
@@ -151,6 +170,9 @@ public class TMouseEvent extends TInputEvent {
         this.mouse3             = mouse3;
         this.mouseWheelUp       = mouseWheelUp;
         this.mouseWheelDown     = mouseWheelDown;
+        this.alt                = alt;
+        this.ctrl               = ctrl;
+        this.shift              = shift;
     }
 
     // ------------------------------------------------------------------------
@@ -290,13 +312,42 @@ public class TMouseEvent extends TInputEvent {
     }
 
     /**
+     * Getter for ALT.
+     *
+     * @return alt value
+     */
+    public boolean isAlt() {
+        return alt;
+    }
+
+    /**
+     * Getter for CTRL.
+     *
+     * @return ctrl value
+     */
+    public boolean isCtrl() {
+        return ctrl;
+    }
+
+    /**
+     * Getter for SHIFT.
+     *
+     * @return shift value
+     */
+    public boolean isShift() {
+        return shift;
+    }
+
+    /**
      * Create a duplicate instance.
      *
      * @return duplicate intance
      */
     public TMouseEvent dup() {
         TMouseEvent mouse = new TMouseEvent(type, x, y, absoluteX, absoluteY,
-            mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown);
+            mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown,
+            alt, ctrl, shift);
+
         return mouse;
     }
 
@@ -307,7 +358,7 @@ public class TMouseEvent extends TInputEvent {
      */
     @Override
     public String toString() {
-        return String.format("Mouse: %s x %d y %d absoluteX %d absoluteY %d 1 %s 2 %s 3 %s DOWN %s UP %s",
+        return String.format("Mouse: %s x %d y %d absoluteX %d absoluteY %d 1 %s 2 %s 3 %s DOWN %s UP %s ALT %s CTRL %s SHIFT %s",
             type,
             x, y,
             absoluteX, absoluteY,
@@ -315,7 +366,8 @@ public class TMouseEvent extends TInputEvent {
             mouse2,
             mouse3,
             mouseWheelUp,
-            mouseWheelDown);
+            mouseWheelDown,
+            alt, ctrl, shift);
     }
 
 }

@@ -2101,6 +2101,10 @@ public class SwingTerminal extends LogicalScreen
         boolean eventMouse1 = false;
         boolean eventMouse2 = false;
         boolean eventMouse3 = false;
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
+
         if ((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
             eventMouse1 = true;
         }
@@ -2110,6 +2114,16 @@ public class SwingTerminal extends LogicalScreen
         if ((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) {
             eventMouse3 = true;
         }
+        if ((modifiers & MouseEvent.ALT_DOWN_MASK) != 0) {
+            eventAlt = true;
+        }
+        if ((modifiers & MouseEvent.CTRL_DOWN_MASK) != 0) {
+            eventCtrl = true;
+        }
+        if ((modifiers & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+            eventShift = true;
+        }
+
         mouse1 = eventMouse1;
         mouse2 = eventMouse2;
         mouse3 = eventMouse3;
@@ -2117,7 +2131,8 @@ public class SwingTerminal extends LogicalScreen
         int y = textRow(mouse.getY());
 
         TMouseEvent mouseEvent = new TMouseEvent(TMouseEvent.Type.MOUSE_MOTION,
-            x, y, x, y, mouse1, mouse2, mouse3, false, false);
+            x, y, x, y, mouse1, mouse2, mouse3, false, false,
+            eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
@@ -2145,8 +2160,24 @@ public class SwingTerminal extends LogicalScreen
         oldMouseX = x;
         oldMouseY = y;
 
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
+
+        int modifiers = mouse.getModifiersEx();
+        if ((modifiers & MouseEvent.ALT_DOWN_MASK) != 0) {
+            eventAlt = true;
+        }
+        if ((modifiers & MouseEvent.CTRL_DOWN_MASK) != 0) {
+            eventCtrl = true;
+        }
+        if ((modifiers & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+            eventShift = true;
+        }
+
         TMouseEvent mouseEvent = new TMouseEvent(TMouseEvent.Type.MOUSE_MOTION,
-            x, y, x, y, mouse1, mouse2, mouse3, false, false);
+            x, y, x, y, mouse1, mouse2, mouse3, false, false,
+            eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
@@ -2200,6 +2231,10 @@ public class SwingTerminal extends LogicalScreen
         boolean eventMouse1 = false;
         boolean eventMouse2 = false;
         boolean eventMouse3 = false;
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
+
         if ((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
             eventMouse1 = true;
         }
@@ -2209,6 +2244,16 @@ public class SwingTerminal extends LogicalScreen
         if ((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) {
             eventMouse3 = true;
         }
+        if ((modifiers & MouseEvent.ALT_DOWN_MASK) != 0) {
+            eventAlt = true;
+        }
+        if ((modifiers & MouseEvent.CTRL_DOWN_MASK) != 0) {
+            eventCtrl = true;
+        }
+        if ((modifiers & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+            eventShift = true;
+        }
+
         mouse1 = eventMouse1;
         mouse2 = eventMouse2;
         mouse3 = eventMouse3;
@@ -2216,7 +2261,8 @@ public class SwingTerminal extends LogicalScreen
         int y = textRow(mouse.getY());
 
         TMouseEvent mouseEvent = new TMouseEvent(TMouseEvent.Type.MOUSE_DOWN,
-            x, y, x, y, mouse1, mouse2, mouse3, false, false);
+            x, y, x, y, mouse1, mouse2, mouse3, false, false,
+            eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
@@ -2239,6 +2285,10 @@ public class SwingTerminal extends LogicalScreen
         boolean eventMouse1 = false;
         boolean eventMouse2 = false;
         boolean eventMouse3 = false;
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
+
         if ((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
             eventMouse1 = true;
         }
@@ -2248,6 +2298,16 @@ public class SwingTerminal extends LogicalScreen
         if ((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) {
             eventMouse3 = true;
         }
+        if ((modifiers & MouseEvent.ALT_DOWN_MASK) != 0) {
+            eventAlt = true;
+        }
+        if ((modifiers & MouseEvent.CTRL_DOWN_MASK) != 0) {
+            eventCtrl = true;
+        }
+        if ((modifiers & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+            eventShift = true;
+        }
+
         if (mouse1) {
             mouse1 = false;
             eventMouse1 = true;
@@ -2264,7 +2324,8 @@ public class SwingTerminal extends LogicalScreen
         int y = textRow(mouse.getY());
 
         TMouseEvent mouseEvent = new TMouseEvent(TMouseEvent.Type.MOUSE_UP,
-            x, y, x, y, eventMouse1, eventMouse2, eventMouse3, false, false);
+            x, y, x, y, eventMouse1, eventMouse2, eventMouse3, false, false,
+            eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
@@ -2293,6 +2354,10 @@ public class SwingTerminal extends LogicalScreen
         boolean eventMouse3 = false;
         boolean mouseWheelUp = false;
         boolean mouseWheelDown = false;
+        boolean eventAlt = false;
+        boolean eventCtrl = false;
+        boolean eventShift = false;
+
         if ((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) {
             eventMouse1 = true;
         }
@@ -2302,6 +2367,16 @@ public class SwingTerminal extends LogicalScreen
         if ((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) {
             eventMouse3 = true;
         }
+        if ((modifiers & MouseEvent.ALT_DOWN_MASK) != 0) {
+            eventAlt = true;
+        }
+        if ((modifiers & MouseEvent.CTRL_DOWN_MASK) != 0) {
+            eventCtrl = true;
+        }
+        if ((modifiers & MouseEvent.SHIFT_DOWN_MASK) != 0) {
+            eventShift = true;
+        }
+
         mouse1 = eventMouse1;
         mouse2 = eventMouse2;
         mouse3 = eventMouse3;
@@ -2315,7 +2390,8 @@ public class SwingTerminal extends LogicalScreen
         }
 
         TMouseEvent mouseEvent = new TMouseEvent(TMouseEvent.Type.MOUSE_DOWN,
-            x, y, x, y, mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown);
+            x, y, x, y, mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown,
+            eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
             eventQueue.add(mouseEvent);
