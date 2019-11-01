@@ -1042,4 +1042,66 @@ public class LogicalScreen implements Screen {
         putFullwidthCharXY(x, y, cell);
     }
 
+    /**
+     * Invert the cell color at a position, including both halves of a
+     * double-width cell.
+     *
+     * @param x column position
+     * @param y row position
+     */
+    public void invertCell(final int x, final int y) {
+        invertCell(x, y, false);
+    }
+
+    /**
+     * Invert the cell color at a position.
+     *
+     * @param x column position
+     * @param y row position
+     * @param onlyThisCell if true, only invert this cell, otherwise invert
+     * both halves of a double-width cell if necessary
+     */
+    public void invertCell(final int x, final int y,
+        final boolean onlyThisCell) {
+
+        Cell cell = getCharXY(x, y);
+        if (cell.isImage()) {
+            cell.invertImage();
+        }
+        if (cell.getForeColorRGB() < 0) {
+            cell.setForeColor(cell.getForeColor().invert());
+        } else {
+            cell.setForeColorRGB(cell.getForeColorRGB() ^ 0x00ffffff);
+        }
+        if (cell.getBackColorRGB() < 0) {
+            cell.setBackColor(cell.getBackColor().invert());
+        } else {
+            cell.setBackColorRGB(cell.getBackColorRGB() ^ 0x00ffffff);
+        }
+        putCharXY(x, y, cell);
+        if ((onlyThisCell == true) || (cell.getWidth() == Cell.Width.SINGLE)) {
+            return;
+        }
+
+        // This cell is one half of a fullwidth glyph.  Invert the other
+        // half.
+        if (cell.getWidth() == Cell.Width.LEFT) {
+            if (x < width - 1) {
+                Cell rightHalf = getCharXY(x + 1, y);
+                if (rightHalf.getWidth() == Cell.Width.RIGHT) {
+                    invertCell(x + 1, y, true);
+                    return;
+                }
+            }
+        }
+        if (cell.getWidth() == Cell.Width.RIGHT) {
+            if (x > 0) {
+                Cell leftHalf = getCharXY(x - 1, y);
+                if (leftHalf.getWidth() == Cell.Width.LEFT) {
+                    invertCell(x - 1, y, true);
+                }
+            }
+        }
+    }
+
 }

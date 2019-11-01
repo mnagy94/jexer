@@ -1726,27 +1726,15 @@ public class TApplication implements Runnable {
     // ------------------------------------------------------------------------
 
     /**
-     * Invert the cell color at a position.  This is used to track the mouse.
+     * Draw the text mouse at position.
      *
      * @param x column position
      * @param y row position
      */
-    private void invertCell(final int x, final int y) {
-        invertCell(x, y, false);
-    }
-
-    /**
-     * Invert the cell color at a position.  This is used to track the mouse.
-     *
-     * @param x column position
-     * @param y row position
-     * @param onlyThisCell if true, only invert this cell
-     */
-    private void invertCell(final int x, final int y,
-        final boolean onlyThisCell) {
+    private void drawTextMouse(final int x, final int y) {
 
         if (debugThreads) {
-            System.err.printf("%d %s invertCell() %d %d\n",
+            System.err.printf("%d %s drawTextMouse() %d %d\n",
                 System.currentTimeMillis(), Thread.currentThread(), x, y);
 
             if (activeWindow != null) {
@@ -1781,44 +1769,7 @@ public class TApplication implements Runnable {
             }
         }
 
-        Cell cell = getScreen().getCharXY(x, y);
-        if (cell.isImage()) {
-            cell.invertImage();
-        }
-        if (cell.getForeColorRGB() < 0) {
-            cell.setForeColor(cell.getForeColor().invert());
-        } else {
-            cell.setForeColorRGB(cell.getForeColorRGB() ^ 0x00ffffff);
-        }
-        if (cell.getBackColorRGB() < 0) {
-            cell.setBackColor(cell.getBackColor().invert());
-        } else {
-            cell.setBackColorRGB(cell.getBackColorRGB() ^ 0x00ffffff);
-        }
-        getScreen().putCharXY(x, y, cell);
-        if ((onlyThisCell == true) || (cell.getWidth() == Cell.Width.SINGLE)) {
-            return;
-        }
-
-        // This cell is one half of a fullwidth glyph.  Invert the other
-        // half.
-        if (cell.getWidth() == Cell.Width.LEFT) {
-            if (x < getScreen().getWidth() - 1) {
-                Cell rightHalf = getScreen().getCharXY(x + 1, y);
-                if (rightHalf.getWidth() == Cell.Width.RIGHT) {
-                    invertCell(x + 1, y, true);
-                    return;
-                }
-            }
-        }
-        if (cell.getWidth() == Cell.Width.RIGHT) {
-            if (x > 0) {
-                Cell leftHalf = getScreen().getCharXY(x - 1, y);
-                if (leftHalf.getWidth() == Cell.Width.LEFT) {
-                    invertCell(x - 1, y, true);
-                }
-            }
-        }
+        getScreen().invertCell(x, y);
     }
 
     /**
@@ -1880,7 +1831,7 @@ public class TApplication implements Runnable {
 
                 if ((textMouse == true) && (typingHidMouse == false)) {
                     // Draw mouse at the new position.
-                    invertCell(mouseX, mouseY);
+                    drawTextMouse(mouseX, mouseY);
                 }
 
                 oldDrawnMouseX = mouseX;
@@ -2016,7 +1967,7 @@ public class TApplication implements Runnable {
             }
         }
         if ((textMouse == true) && (typingHidMouse == false)) {
-            invertCell(mouseX, mouseY);
+            drawTextMouse(mouseX, mouseY);
         }
         oldDrawnMouseX = mouseX;
         oldDrawnMouseY = mouseY;

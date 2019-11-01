@@ -670,4 +670,33 @@ public class MultiScreen implements Screen {
         return textHeight;
     }
 
+    /**
+     * Invert the cell color at a position, including both halves of a
+     * double-width cell.
+     *
+     * @param x column position
+     * @param y row position
+     */
+    public void invertCell(final int x, final int y) {
+        for (Screen screen: screens) {
+            screen.invertCell(x, y);
+        }
+    }
+
+    /**
+     * Invert the cell color at a position.
+     *
+     * @param x column position
+     * @param y row position
+     * @param onlyThisCell if true, only invert this cell, otherwise invert
+     * both halves of a double-width cell if necessary
+     */
+    public void invertCell(final int x, final int y,
+        final boolean onlyThisCell) {
+
+        for (Screen screen: screens) {
+            screen.invertCell(x, y, onlyThisCell);
+        }
+    }
+
 }
