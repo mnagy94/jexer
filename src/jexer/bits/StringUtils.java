@@ -42,6 +42,11 @@ import java.util.Arrays;
  *
  *    - Read/write a line of RFC4180 comma-separated values strings to/from a
  *      list of strings.
+ *
+ *    - Compute number of visible text cells for a given Unicode codepoint or
+ *      string.
+ *
+ *    - Convert bytes to and from base-64 encoding.
  */
 public class StringUtils {
 

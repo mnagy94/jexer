@@ -30,6 +30,7 @@ package jexer.backend;
 
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.Clipboard;
 
 /**
  * Drawing operations API.
@@ -428,5 +429,31 @@ public interface Screen {
      */
     public void invertCell(final int x, final int y,
         final boolean onlyThisCell);
+
+    /**
+     * Set a selection area on the screen.
+     *
+     * @param x0 the starting X position of the selection
+     * @param y0 the starting Y position of the selection
+     * @param x1 the ending X position of the selection
+     * @param y1 the ending Y position of the selection
+     * @param rectangle if true, this is a rectangle select
+     */
+    public void setSelection(final int x0, final int y0,
+        final int x1, final int y1, final boolean rectangle);
+
+    /**
+     * Copy the screen selection area to the clipboard.
+     *
+     * @param clipboard the clipboard to use
+     * @param x0 the starting X position of the selection
+     * @param y0 the starting Y position of the selection
+     * @param x1 the ending X position of the selection
+     * @param y1 the ending Y position of the selection
+     * @param rectangle if true, this is a rectangle select
+     */
+    public void copySelection(final Clipboard clipboard,
+        final int x0, final int y0, final int x1, final int y1,
+        final boolean rectangle);
 
 }

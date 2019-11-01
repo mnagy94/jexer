@@ -47,6 +47,7 @@ import java.util.ResourceBundle;
 
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.Clipboard;
 import jexer.bits.ColorTheme;
 import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
@@ -147,6 +148,11 @@ public class TApplication implements Runnable {
      * Access to the physical screen, keyboard, and mouse.
      */
     private Backend backend;
+
+    /**
+     * The clipboard for copy and paste.
+     */
+    private Clipboard clipboard = new Clipboard();
 
     /**
      * Actual mouse coordinate X.
@@ -324,6 +330,36 @@ public class TApplication implements Runnable {
      * The last time the screen was resized.
      */
     private long screenResizeTime = 0;
+
+    /**
+     * If true, screen selection is a rectangle.
+     */
+    private boolean screenSelectionRectangle = false;
+
+    /**
+     * If true, the mouse is dragging a screen selection.
+     */
+    private boolean inScreenSelection = false;
+
+    /**
+     * Screen selection starting X.
+     */
+    private int screenSelectionX0;
+
+    /**
+     * Screen selection starting Y.
+     */
+    private int screenSelectionY0;
+
+    /**
+     * Screen selection ending X.
+     */
+    private int screenSelectionX1;
+
+    /**
+     * Screen selection ending Y.
+     */
+    private int screenSelectionY1;
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -1157,6 +1193,28 @@ public class TApplication implements Runnable {
             typingHidMouse = false;
 
             TMouseEvent mouse = (TMouseEvent) event;
+            if (mouse.isMouse1() && (mouse.isShift() || mouse.isCtrl())) {
+                // Screen selection.
+                if (inScreenSelection) {
+                    screenSelectionX1 = mouse.getX();
+                    screenSelectionY1 = mouse.getY();
+                } else {
+                    inScreenSelection = true;
+                    screenSelectionX0 = mouse.getX();
+                    screenSelectionY0 = mouse.getY();
+                    screenSelectionX1 = mouse.getX();
+                    screenSelectionY1 = mouse.getY();
+                    screenSelectionRectangle = mouse.isCtrl();
+                }
+            } else {
+                if (inScreenSelection) {
+                    getScreen().copySelection(clipboard, screenSelectionX0,
+                        screenSelectionY0, screenSelectionX1, screenSelectionY1,
+                        screenSelectionRectangle);
+                }
+                inScreenSelection = false;
+            }
+
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
                 oldMouseX = mouseX;
                 oldMouseY = mouseY;
@@ -1829,6 +1887,12 @@ public class TApplication implements Runnable {
                     }
                 }
 
+                if (inScreenSelection) {
+                    getScreen().setSelection(screenSelectionX0,
+                        screenSelectionY0, screenSelectionX1, screenSelectionY1,
+                        screenSelectionRectangle);
+                }
+
                 if ((textMouse == true) && (typingHidMouse == false)) {
                     // Draw mouse at the new position.
                     drawTextMouse(mouseX, mouseY);
@@ -1966,6 +2030,12 @@ public class TApplication implements Runnable {
                 getScreen().unsetImageRow(mouseY);
             }
         }
+
+        if (inScreenSelection) {
+            getScreen().setSelection(screenSelectionX0, screenSelectionY0,
+                screenSelectionX1, screenSelectionY1, screenSelectionRectangle);
+        }
+
         if ((textMouse == true) && (typingHidMouse == false)) {
             drawTextMouse(mouseX, mouseY);
         }

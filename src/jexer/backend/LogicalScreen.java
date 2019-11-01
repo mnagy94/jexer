@@ -33,6 +33,7 @@ import java.awt.image.BufferedImage;
 import jexer.backend.GlyphMaker;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.Clipboard;
 import jexer.bits.GraphicsChars;
 import jexer.bits.StringUtils;
 
@@ -1102,6 +1103,124 @@ public class LogicalScreen implements Screen {
                 }
             }
         }
+    }
+
+    /**
+     * Set a selection area on the screen.
+     *
+     * @param x0 the starting X position of the selection
+     * @param y0 the starting Y position of the selection
+     * @param x1 the ending X position of the selection
+     * @param y1 the ending Y position of the selection
+     * @param rectangle if true, this is a rectangle select
+     */
+    public void setSelection(final int x0, final int y0,
+        final int x1, final int y1, final boolean rectangle) {
+
+        int startX = x0;
+        int startY = y0;
+        int endX = x1;
+        int endY = y1;
+
+        if (((x1 < x0) && (y1 <= y0))
+            || ((x1 <= x0) && (y1 < y0))
+        ) {
+            // The user dragged from bottom-right to top-left.  Reverse the
+            // coordinates for the inverted section.
+            startX = x1;
+            startY = y1;
+            endX = x0;
+            endY = y0;
+        }
+        if (rectangle) {
+            for (int y = startY; y <= endY; y++) {
+                for (int x = startX; x <= endX; x++) {
+                    invertCell(x, y);
+                }
+            }
+        } else {
+            if (endY > startY) {
+                for (int x = startX; x < width; x++) {
+                    invertCell(x, startY);
+                }
+                for (int y = startY + 1; y < endY; y++) {
+                    for (int x = 0; x < width; x++) {
+                        invertCell(x, y);
+                    }
+                }
+                for (int x = 0; x <= endX; x++) {
+                    invertCell(x, endY);
+                }
+            } else {
+                assert (startY == endY);
+                for (int x = startX; x <= endX; x++) {
+                    invertCell(x, startY);
+                }
+            }
+        }
+    }
+
+    /**
+     * Copy the screen selection area to the clipboard.
+     *
+     * @param clipboard the clipboard to use
+     * @param x0 the starting X position of the selection
+     * @param y0 the starting Y position of the selection
+     * @param x1 the ending X position of the selection
+     * @param y1 the ending Y position of the selection
+     * @param rectangle if true, this is a rectangle select
+     */
+    public void copySelection(final Clipboard clipboard,
+        final int x0, final int y0, final int x1, final int y1,
+        final boolean rectangle) {
+
+        StringBuilder sb = new StringBuilder();
+
+        int startX = x0;
+        int startY = y0;
+        int endX = x1;
+        int endY = y1;
+
+        if (((x1 < x0) && (y1 <= y0))
+            || ((x1 <= x0) && (y1 < y0))
+        ) {
+            // The user dragged from bottom-right to top-left.  Reverse the
+            // coordinates for the inverted section.
+            startX = x1;
+            startY = y1;
+            endX = x0;
+            endY = y0;
+        }
+        if (rectangle) {
+            for (int y = startY; y <= endY; y++) {
+                for (int x = startX; x <= endX; x++) {
+                    sb.append(Character.toChars(getCharXY(x, y).getChar()));
+                }
+                sb.append("\n");
+            }
+        } else {
+            if (endY > startY) {
+                for (int x = startX; x < width; x++) {
+                    sb.append(Character.toChars(getCharXY(x, startY).getChar()));
+                }
+                sb.append("\n");
+                for (int y = startY + 1; y < endY; y++) {
+                    for (int x = 0; x < width; x++) {
+                        sb.append(Character.toChars(getCharXY(x, y).getChar()));
+                    }
+                    sb.append("\n");
+                }
+                for (int x = 0; x <= endX; x++) {
+                    sb.append(Character.toChars(getCharXY(x, endY).getChar()));
+                }
+            } else {
+                assert (startY == endY);
+                for (int x = startX; x <= endX; x++) {
+                    sb.append(Character.toChars(getCharXY(x, startY).getChar()));
+                }
+            }
+        }
+        clipboard.copyText(sb.toString());
     }
 
 }

@@ -33,6 +33,7 @@ import java.util.List;
 
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.Clipboard;
 
 /**
  * MultiScreen mirrors its I/O to several screens.
@@ -93,7 +94,10 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipRight() {
-        return screens.get(0).getClipRight();
+        if (screens.size() > 0) {
+            return screens.get(0).getClipRight();
+        }
+        return 0;
     }
 
     /**
@@ -113,7 +117,10 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipBottom() {
-        return screens.get(0).getClipBottom();
+        if (screens.size() > 0) {
+            return screens.get(0).getClipBottom();
+        }
+        return 0;
     }
 
     /**
@@ -133,7 +140,10 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipLeft() {
-        return screens.get(0).getClipLeft();
+        if (screens.size() > 0) {
+            return screens.get(0).getClipLeft();
+        }
+        return 0;
     }
 
     /**
@@ -153,7 +163,10 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipTop() {
-        return screens.get(0).getClipTop();
+        if (screens.size() > 0) {
+            return screens.get(0).getClipTop();
+        }
+        return 0;
     }
 
     /**
@@ -190,7 +203,10 @@ public class MultiScreen implements Screen {
      * @return attributes at (x, y)
      */
     public CellAttributes getAttrXY(final int x, final int y) {
-        return screens.get(0).getAttrXY(x, y);
+        if (screens.size() > 0) {
+            return screens.get(0).getAttrXY(x, y);
+        }
+        return new CellAttributes();
     }
 
     /**
@@ -201,7 +217,10 @@ public class MultiScreen implements Screen {
      * @return the character + attributes
      */
     public Cell getCharXY(final int x, final int y) {
-        return screens.get(0).getCharXY(x, y);
+        if (screens.size() > 0) {
+            return screens.get(0).getCharXY(x, y);
+        }
+        return new Cell();
     }
 
     /**
@@ -410,7 +429,10 @@ public class MultiScreen implements Screen {
      */
     public int getHeight() {
         // Return the smallest height of the screens.
-        int height = screens.get(0).getHeight();
+        int height = 25;
+        if (screens.size() > 0) {
+            height = screens.get(0).getHeight();
+        }
         for (Screen screen: screens) {
             if (screen.getHeight() < height) {
                 height = screen.getHeight();
@@ -426,7 +448,10 @@ public class MultiScreen implements Screen {
      */
     public int getWidth() {
         // Return the smallest width of the screens.
-        int width = screens.get(0).getWidth();
+        int width = 80;
+        if (screens.size() > 0) {
+            width = screens.get(0).getWidth();
+        }
         for (Screen screen: screens) {
             if (screen.getWidth() < width) {
                 width = screen.getWidth();
@@ -582,7 +607,10 @@ public class MultiScreen implements Screen {
      * @return true if the cursor is visible
      */
     public boolean isCursorVisible() {
-        return screens.get(0).isCursorVisible();
+        if (screens.size() > 0) {
+            return screens.get(0).isCursorVisible();
+        }
+        return true;
     }
 
     /**
@@ -591,7 +619,10 @@ public class MultiScreen implements Screen {
      * @return the cursor x column position
      */
     public int getCursorX() {
-        return screens.get(0).getCursorX();
+        if (screens.size() > 0) {
+            return screens.get(0).getCursorX();
+        }
+        return 0;
     }
 
     /**
@@ -600,7 +631,10 @@ public class MultiScreen implements Screen {
      * @return the cursor y row position
      */
     public int getCursorY() {
-        return screens.get(0).getCursorY();
+        if (screens.size() > 0) {
+            return screens.get(0).getCursorY();
+        }
+        return 0;
     }
 
     /**
@@ -696,6 +730,43 @@ public class MultiScreen implements Screen {
 
         for (Screen screen: screens) {
             screen.invertCell(x, y, onlyThisCell);
+        }
+    }
+
+    /**
+     * Set a selection area on the screen.
+     *
+     * @param x0 the starting X position of the selection
+     * @param y0 the starting Y position of the selection
+     * @param x1 the ending X position of the selection
+     * @param y1 the ending Y position of the selection
+     * @param rectangle if true, this is a rectangle select
+     */
+    public void setSelection(final int x0, final int y0,
+        final int x1, final int y1, final boolean rectangle) {
+
+        for (Screen screen: screens) {
+            screen.setSelection(x0, y0, x1, y1, rectangle);
+        }
+    }
+
+    /**
+     * Copy the screen selection area to the clipboard.
+     *
+     * @param clipboard the clipboard to use
+     * @param x0 the starting X position of the selection
+     * @param y0 the starting Y position of the selection
+     * @param x1 the ending X position of the selection
+     * @param y1 the ending Y position of the selection
+     * @param rectangle if true, this is a rectangle select
+     */
+    public void copySelection(final Clipboard clipboard,
+        final int x0, final int y0, final int x1, final int y1,
+        final boolean rectangle) {
+
+        // Only copy from the first screen.
+        if (screens.size() > 0) {
+            screens.get(0).copySelection(clipboard, x0, y0, x1, y1, rectangle);
         }
     }
 
