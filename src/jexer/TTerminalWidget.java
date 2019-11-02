@@ -49,6 +49,7 @@ import jexer.backend.MultiScreen;
 import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
@@ -57,13 +58,14 @@ import jexer.menu.TMenu;
 import jexer.tterminal.DisplayLine;
 import jexer.tterminal.DisplayListener;
 import jexer.tterminal.ECMA48;
+import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
  * TTerminalWidget exposes a ECMA-48 / ANSI X3.64 style terminal in a widget.
  */
 public class TTerminalWidget extends TScrollableWidget
-                             implements DisplayListener {
+                             implements DisplayListener, EditMenuUser {
 
     /**
      * Translated strings.
@@ -523,6 +525,32 @@ public class TTerminalWidget extends TScrollableWidget
 
         // Emulator didn't consume it, pass it on
         super.onMouseMotion(mouse);
+    }
+
+    /**
+     * Handle posted command events.
+     *
+     * @param command command event
+     */
+    @Override
+    public void onCommand(final TCommandEvent command) {
+        if (emulator == null) {
+            return;
+        }
+
+        if (command.equals(cmPaste)) {
+            // Paste text from clipboard.
+            String text = getClipboard().pasteText();
+            if (text != null) {
+                for (int i = 0; i < text.length(); ) {
+                    int ch = text.codePointAt(i);
+                    emulator.addUserEvent(new TKeypressEvent(false, 0, ch,
+                            false, false, false));
+                    i += Character.charCount(ch);
+                }
+            }
+            return;
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -1159,6 +1187,46 @@ public class TTerminalWidget extends TScrollableWidget
             return getHeight();
         }
         return 24;
+    }
+
+    // ------------------------------------------------------------------------
+    // EditMenuUser -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if the cut menu item should be enabled.
+     *
+     * @return true if the cut menu item should be enabled
+     */
+    public boolean isEditMenuCut() {
+        return false;
+    }
+
+    /**
+     * Check if the copy menu item should be enabled.
+     *
+     * @return true if the copy menu item should be enabled
+     */
+    public boolean isEditMenuCopy() {
+        return false;
+    }
+
+    /**
+     * Check if the paste menu item should be enabled.
+     *
+     * @return true if the paste menu item should be enabled
+     */
+    public boolean isEditMenuPaste() {
+        return true;
+    }
+
+    /**
+     * Check if the clear menu item should be enabled.
+     *
+     * @return true if the clear menu item should be enabled
+     */
+    public boolean isEditMenuClear() {
+        return false;
     }
 
 }
