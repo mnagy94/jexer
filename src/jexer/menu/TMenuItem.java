@@ -80,6 +80,11 @@ public class TMenuItem extends TWidget {
      */
     private MnemonicString mnemonic;
 
+    /**
+     * An optional 2-cell-wide picture/icon for this item.
+     */
+    private int icon = -1;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -96,6 +101,22 @@ public class TMenuItem extends TWidget {
     TMenuItem(final TMenu parent, final int id, final int x, final int y,
         final String label) {
 
+        this(parent, id, x, y, label, -1);
+    }
+
+    /**
+     * Package private constructor.
+     *
+     * @param parent parent widget
+     * @param id menu id
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param label menu item title
+     * @param icon icon picture/emoji
+     */
+    TMenuItem(final TMenu parent, final int id, final int x, final int y,
+        final String label, final int icon) {
+
         // Set parent and window
         super(parent);
 
@@ -105,8 +126,13 @@ public class TMenuItem extends TWidget {
         setY(y);
         setHeight(1);
         this.label = mnemonic.getRawLabel();
-        setWidth(StringUtils.width(label) + 4);
+        if (parent.useIcons) {
+            setWidth(StringUtils.width(label) + 6);
+        } else {
+            setWidth(StringUtils.width(label) + 4);
+        }
         this.id = id;
+        this.icon = icon;
 
         // Default state for some known menu items
         switch (id) {
@@ -220,26 +246,31 @@ public class TMenuItem extends TWidget {
             }
         }
 
+        boolean useIcons = ((TMenu) getParent()).useIcons;
+
         char cVSide = GraphicsChars.WINDOW_SIDE;
         vLineXY(0, 0, 1, cVSide, background);
         vLineXY(getWidth() - 1, 0, 1, cVSide, background);
 
         hLineXY(1, 0, getWidth() - 2, ' ', menuColor);
-        putStringXY(2, 0, mnemonic.getRawLabel(), menuColor);
+        putStringXY(2 + (useIcons ? 2 : 0), 0, mnemonic.getRawLabel(),
+            menuColor);
         if (key != null) {
             String keyLabel = key.toString();
             putStringXY((getWidth() - StringUtils.width(keyLabel) - 2), 0,
                 keyLabel, menuColor);
         }
         if (mnemonic.getScreenShortcutIdx() >= 0) {
-            putCharXY(2 + mnemonic.getScreenShortcutIdx(), 0,
-                mnemonic.getShortcut(), menuMnemonicColor);
+            putCharXY(2 + (useIcons ? 2 : 0) + mnemonic.getScreenShortcutIdx(),
+                0, mnemonic.getShortcut(), menuMnemonicColor);
         }
         if (checked) {
             assert (checkable);
             putCharXY(1, 0, GraphicsChars.CHECK, menuColor);
         }
-
+        if ((useIcons == true) && (icon != -1)) {
+            putCharXY(2, 0, icon, menuColor);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -318,10 +349,32 @@ public class TMenuItem extends TWidget {
         if (key != null) {
             int newWidth = (StringUtils.width(label) + 4 +
                 StringUtils.width(key.toString()) + 2);
+            if (((TMenu) getParent()).useIcons) {
+                newWidth += 2;
+            }
             if (newWidth > getWidth()) {
                 setWidth(newWidth);
             }
         }
+    }
+
+    /**
+     * Get a picture/emoji icon for this menu item.
+     *
+     * @return the codepoint, or -1 if no icon is specified for this menu
+     * item
+     */
+    public final int getIcon() {
+        return icon;
+    }
+
+    /**
+     * Set a picture/emoji icon for this menu item.
+     *
+     * @param icon a codepoint, or -1 to unset the icon
+     */
+    public final void setIcon(final int icon) {
+        this.icon = icon;
     }
 
     /**

@@ -152,6 +152,11 @@ public class TMenu extends TWindow {
      */
     private MnemonicString mnemonic;
 
+    /**
+     * If true, draw icons with menu items.  Note package private access.
+     */
+    boolean useIcons = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -182,6 +187,11 @@ public class TMenu extends TWindow {
         setHeight(2);
 
         setActive(false);
+
+        if (System.getProperty("jexer.menuIcons", "false").equals("true")) {
+            useIcons = true;
+        }
+
     }
 
     // ------------------------------------------------------------------------
@@ -446,7 +456,7 @@ public class TMenu extends TWindow {
         final boolean enabled) {
 
         assert (id >= 1024);
-        return addItemInternal(id, label, null, enabled);
+        return addItemInternal(id, label, null, enabled, -1);
     }
 
     /**
@@ -492,7 +502,7 @@ public class TMenu extends TWindow {
     private TMenuItem addItemInternal(final int id, final String label,
         final TKeypress key) {
 
-        return addItemInternal(id, label, key, true);
+        return addItemInternal(id, label, key, true, -1);
     }
 
     /**
@@ -502,15 +512,16 @@ public class TMenu extends TWindow {
      * @param label menu item label
      * @param key global keyboard accelerator
      * @param enabled default state for enabled
+     * @param icon icon picture/emoji
      * @return the new menu item
      */
     private TMenuItem addItemInternal(final int id, final String label,
-        final TKeypress key, final boolean enabled) {
+        final TKeypress key, final boolean enabled, final int icon) {
 
         int newY = getChildren().size() + 1;
         assert (newY < getHeight());
 
-        TMenuItem menuItem = new TMenuItem(this, id, 1, newY, label);
+        TMenuItem menuItem = new TMenuItem(this, id, 1, newY, label, icon);
         menuItem.setKey(key);
         menuItem.setEnabled(enabled);
         setHeight(getHeight() + 1);
@@ -551,6 +562,7 @@ public class TMenu extends TWindow {
 
         String label;
         TKeypress key = null;
+        int icon = -1;
         boolean checkable = false;
         boolean checked = false;
 
@@ -558,6 +570,7 @@ public class TMenu extends TWindow {
 
         case MID_REPAINT:
             label = i18n.getString("menuRepaintDesktop");
+            icon = 0x1F3A8;
             break;
 
         case MID_VIEW_IMAGE:
@@ -570,41 +583,48 @@ public class TMenu extends TWindow {
 
         case MID_NEW:
             label = i18n.getString("menuNew");
+            icon = 0x1F5CE;
             break;
 
         case MID_EXIT:
             label = i18n.getString("menuExit");
             key = kbAltX;
+            icon = 0x1F5D9;
             break;
 
         case MID_SHELL:
             label = i18n.getString("menuShell");
+            icon = 0x1F5AE;
             break;
 
         case MID_OPEN_FILE:
             label = i18n.getString("menuOpen");
             key = kbF3;
+            icon = 0x1F5C1;
             break;
 
         case MID_CUT:
             label = i18n.getString("menuCut");
             key = kbCtrlX;
+            icon = 0x1F5F6;
             break;
         case MID_COPY:
             label = i18n.getString("menuCopy");
             key = kbCtrlC;
+            icon = 0x1F5D0;
             break;
         case MID_PASTE:
             label = i18n.getString("menuPaste");
             key = kbCtrlV;
+            icon = 0x1F4CB;
             break;
         case MID_CLEAR:
             label = i18n.getString("menuClear");
-            // key = kbDel;
             break;
 
         case MID_FIND:
             label = i18n.getString("menuFind");
+            icon = 0x1F50D;
             break;
         case MID_REPLACE:
             label = i18n.getString("menuReplace");
@@ -622,6 +642,7 @@ public class TMenu extends TWindow {
             break;
         case MID_CASCADE:
             label = i18n.getString("menuWindowCascade");
+            icon = 0x1F5D7;
             break;
         case MID_CLOSE_ALL:
             label = i18n.getString("menuWindowCloseAll");
@@ -629,18 +650,22 @@ public class TMenu extends TWindow {
         case MID_WINDOW_MOVE:
             label = i18n.getString("menuWindowMove");
             key = kbCtrlF5;
+            icon = 0x263C;
             break;
         case MID_WINDOW_ZOOM:
             label = i18n.getString("menuWindowZoom");
             key = kbF5;
+            icon = 0x2195;
             break;
         case MID_WINDOW_NEXT:
             label = i18n.getString("menuWindowNext");
             key = kbF6;
+            icon = 0x2192;
             break;
         case MID_WINDOW_PREVIOUS:
             label = i18n.getString("menuWindowPrevious");
             key = kbShiftF6;
+            icon = 0x2190;
             break;
         case MID_WINDOW_CLOSE:
             label = i18n.getString("menuWindowClose");
@@ -775,7 +800,7 @@ public class TMenu extends TWindow {
             throw new IllegalArgumentException("Invalid menu ID: " + id);
         }
 
-        TMenuItem item = addItemInternal(id, label, key, enabled);
+        TMenuItem item = addItemInternal(id, label, key, enabled, icon);
         item.setCheckable(checkable);
         return item;
     }

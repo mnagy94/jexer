@@ -139,7 +139,7 @@ class GlyphMakerFont {
 
         if (filename.length() == 0) {
             // Fallback font
-            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize - 2);
             return;
         }
 
@@ -148,16 +148,16 @@ class GlyphMakerFont {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             InputStream in = loader.getResourceAsStream(filename);
             fontRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-            font = fontRoot.deriveFont(Font.PLAIN, fontSize);
+            font = fontRoot.deriveFont(Font.PLAIN, fontSize - 2);
         } catch (java.awt.FontFormatException e) {
             // Ideally we would report an error here, either via System.err
             // or TExceptionDialog.  However, I do not want GlyphMaker to
             // know about available backends, so we quietly fallback to
             // whatever is available as MONO.
-            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize - 2);
         } catch (java.io.IOException e) {
             // See comment above.
-            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize - 2);
         }
     }
 
