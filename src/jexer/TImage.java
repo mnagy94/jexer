@@ -34,15 +34,17 @@ import jexer.backend.ECMA48Terminal;
 import jexer.backend.MultiScreen;
 import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
+import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
+import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
  * TImage renders a piece of a bitmap image on screen.
  */
-public class TImage extends TWidget {
+public class TImage extends TWidget implements EditMenuUser {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -323,6 +325,20 @@ public class TImage extends TWidget {
         }
         image = null;
         resized = true;
+    }
+
+    /**
+     * Handle posted command events.
+     *
+     * @param command command event
+     */
+    @Override
+    public void onCommand(final TCommandEvent command) {
+        if (command.equals(cmCopy)) {
+            // Copy image to clipboard.
+            getClipboard().copyImage(image);
+            return;
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -760,6 +776,46 @@ public class TImage extends TWidget {
         }
 
         return newImage;
+    }
+
+    // ------------------------------------------------------------------------
+    // EditMenuUser -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if the cut menu item should be enabled.
+     *
+     * @return true if the cut menu item should be enabled
+     */
+    public boolean isEditMenuCut() {
+        return false;
+    }
+
+    /**
+     * Check if the copy menu item should be enabled.
+     *
+     * @return true if the copy menu item should be enabled
+     */
+    public boolean isEditMenuCopy() {
+        return true;
+    }
+
+    /**
+     * Check if the paste menu item should be enabled.
+     *
+     * @return true if the paste menu item should be enabled
+     */
+    public boolean isEditMenuPaste() {
+        return false;
+    }
+
+    /**
+     * Check if the clear menu item should be enabled.
+     *
+     * @return true if the clear menu item should be enabled
+     */
+    public boolean isEditMenuClear() {
+        return false;
     }
 
 }

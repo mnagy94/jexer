@@ -376,6 +376,7 @@ public class TField extends TWidget implements EditMenuUser {
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
     }
+
     /**
      * Handle posted command events.
      *
