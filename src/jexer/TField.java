@@ -31,14 +31,16 @@ package jexer;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.StringUtils;
+import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
+import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
  * TField implements an editable text field.
  */
-public class TField extends TWidget {
+public class TField extends TWidget implements EditMenuUser {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -234,12 +236,13 @@ public class TField extends TWidget {
 
         if (keypress.equals(kbRight)) {
             if (position < text.length()) {
+                int lastPosition = position;
                 screenPosition += StringUtils.width(text.codePointAt(position));
                 position += Character.charCount(text.codePointAt(position));
                 if (fixed == true) {
                     if (screenPosition == getWidth()) {
                         screenPosition--;
-                        position -= Character.charCount(text.codePointAt(position));
+                        position -= Character.charCount(text.codePointAt(lastPosition));
                     }
                 } else {
                     while ((screenPosition - windowStart +
@@ -373,6 +376,42 @@ public class TField extends TWidget {
         // Pass to parent for the things we don't care about.
         super.onKeypress(keypress);
     }
+    /**
+     * Handle posted command events.
+     *
+     * @param command command event
+     */
+    @Override
+    public void onCommand(final TCommandEvent command) {
+        if (command.equals(cmCut)) {
+            // Copy text to clipboard, and then remove it.
+            getClipboard().copyText(text);
+            setText("");
+            return;
+        }
+
+        if (command.equals(cmCopy)) {
+            // Copy text to clipboard.
+            getClipboard().copyText(text);
+            return;
+        }
+
+        if (command.equals(cmPaste)) {
+            // Paste text from clipboard.
+            String newText = getClipboard().pasteText();
+            if (newText != null) {
+                setText(newText);
+            }
+            return;
+        }
+
+        if (command.equals(cmClear)) {
+            // Remove text.
+            setText("");
+            return;
+        }
+
+    }
 
     // ------------------------------------------------------------------------
     // TWidget ----------------------------------------------------------------
@@ -467,7 +506,11 @@ public class TField extends TWidget {
         assert (text != null);
         this.text = text;
         position = 0;
+        screenPosition = 0;
         windowStart = 0;
+        if ((fixed == true) && (this.text.length() > getWidth())) {
+            this.text = this.text.substring(0, getWidth());
+        }
     }
 
     /**
@@ -666,6 +709,46 @@ public class TField extends TWidget {
      */
     public void setUpdateAction(final TAction action) {
         updateAction = action;
+    }
+
+    // ------------------------------------------------------------------------
+    // EditMenuUser -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if the cut menu item should be enabled.
+     *
+     * @return true if the cut menu item should be enabled
+     */
+    public boolean isEditMenuCut() {
+        return true;
+    }
+
+    /**
+     * Check if the copy menu item should be enabled.
+     *
+     * @return true if the copy menu item should be enabled
+     */
+    public boolean isEditMenuCopy() {
+        return true;
+    }
+
+    /**
+     * Check if the paste menu item should be enabled.
+     *
+     * @return true if the paste menu item should be enabled
+     */
+    public boolean isEditMenuPaste() {
+        return true;
+    }
+
+    /**
+     * Check if the clear menu item should be enabled.
+     *
+     * @return true if the clear menu item should be enabled
+     */
+    public boolean isEditMenuClear() {
+        return true;
     }
 
 }

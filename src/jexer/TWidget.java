@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import jexer.backend.Screen;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.Clipboard;
 import jexer.bits.ColorTheme;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
@@ -598,9 +599,8 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param command command event
      */
     public void onCommand(final TCommandEvent command) {
-        // Default: do nothing, pass to children instead
-        for (TWidget widget: children) {
-            widget.onCommand(command);
+        if (activeChild != null) {
+            activeChild.onCommand(command);
         }
     }
 
@@ -1129,6 +1129,18 @@ public abstract class TWidget implements Comparable<TWidget> {
     public Screen getScreen() {
         if (window != null) {
             return window.getScreen();
+        }
+        return null;
+    }
+
+    /**
+     * Get the Clipboard.
+     *
+     * @return the Clipboard, or null if not assigned
+     */
+    public Clipboard getClipboard() {
+        if (window != null) {
+            return window.getApplication().getClipboard();
         }
         return null;
     }

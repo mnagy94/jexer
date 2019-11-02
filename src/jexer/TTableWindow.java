@@ -112,7 +112,6 @@ public class TTableWindow extends TScrollableWindow {
      */
     public void onFocus() {
         // Enable the table menu items.
-        getApplication().enableMenuItem(TMenu.MID_CUT);
         getApplication().enableMenuItem(TMenu.MID_TABLE_RENAME_COLUMN);
         getApplication().enableMenuItem(TMenu.MID_TABLE_RENAME_ROW);
         getApplication().enableMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS);
@@ -171,7 +170,6 @@ public class TTableWindow extends TScrollableWindow {
      */
     public void onUnfocus() {
         // Disable the table menu items.
-        getApplication().disableMenuItem(TMenu.MID_CUT);
         getApplication().disableMenuItem(TMenu.MID_TABLE_RENAME_COLUMN);
         getApplication().disableMenuItem(TMenu.MID_TABLE_RENAME_ROW);
         getApplication().disableMenuItem(TMenu.MID_TABLE_VIEW_ROW_LABELS);

@@ -36,30 +36,30 @@ package jexer;
 public interface EditMenuUser {
 
     /**
-     * Check if cut to clipboard is supported.
+     * Check if the cut menu item should be enabled.
      *
-     * @return true if cut to clipboard is supported
+     * @return true if the cut menu item should be enabled
      */
     public boolean isEditMenuCut();
 
     /**
-     * Check if copy to clipboard is supported.
+     * Check if the copy menu item should be enabled.
      *
-     * @return true if copy to clipboard is supported
+     * @return true if the copy menu item should be enabled
      */
     public boolean isEditMenuCopy();
 
     /**
-     * Check if paste from clipboard is supported.
+     * Check if the paste menu item should be enabled.
      *
-     * @return true if paste from clipboard is supported
+     * @return true if the paste menu item should be enabled
      */
     public boolean isEditMenuPaste();
 
     /**
-     * Check if clear selection is supported.
+     * Check if the clear menu item should be enabled.
      *
-     * @return true if clear selection is supported
+     * @return true if the clear menu item should be enabled
      */
     public boolean isEditMenuClear();
 

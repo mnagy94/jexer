@@ -1025,6 +1025,24 @@ public class TApplication implements Runnable {
             new TFontChooserWindow(this);
             return true;
         }
+
+        if (menu.getId() == TMenu.MID_CUT) {
+            postMenuEvent(new TCommandEvent(cmCut));
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_COPY) {
+            postMenuEvent(new TCommandEvent(cmCopy));
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_PASTE) {
+            postMenuEvent(new TCommandEvent(cmPaste));
+            return true;
+        }
+        if (menu.getId() == TMenu.MID_CLEAR) {
+            postMenuEvent(new TCommandEvent(cmClear));
+            return true;
+        }
+
         return false;
     }
 
@@ -1069,6 +1087,47 @@ public class TApplication implements Runnable {
         if (debugThreads) {
             System.err.printf(System.currentTimeMillis() + " " +
                 Thread.currentThread() + " finishEventProcessing()\n");
+        }
+
+        // See if we need to enable/disable the edit menu.
+        EditMenuUser widget = null;
+        if (activeMenu == null) {
+            if (activeWindow != null) {
+                if (activeWindow.getActiveChild() instanceof EditMenuUser) {
+                    widget = (EditMenuUser) activeWindow.getActiveChild();
+                }
+            } else if (desktop != null) {
+                if (desktop.getActiveChild() instanceof EditMenuUser) {
+                    widget = (EditMenuUser) desktop.getActiveChild();
+                }
+            }
+            if (widget == null) {
+                disableMenuItem(TMenu.MID_CUT);
+                disableMenuItem(TMenu.MID_COPY);
+                disableMenuItem(TMenu.MID_PASTE);
+                disableMenuItem(TMenu.MID_CLEAR);
+            } else {
+                if (widget.isEditMenuCut()) {
+                    enableMenuItem(TMenu.MID_CUT);
+                } else {
+                    disableMenuItem(TMenu.MID_CUT);
+                }
+                if (widget.isEditMenuCopy()) {
+                    enableMenuItem(TMenu.MID_COPY);
+                } else {
+                    disableMenuItem(TMenu.MID_COPY);
+                }
+                if (widget.isEditMenuPaste()) {
+                    enableMenuItem(TMenu.MID_PASTE);
+                } else {
+                    disableMenuItem(TMenu.MID_PASTE);
+                }
+                if (widget.isEditMenuClear()) {
+                    enableMenuItem(TMenu.MID_CLEAR);
+                } else {
+                    disableMenuItem(TMenu.MID_CLEAR);
+                }
+            }
         }
 
         // Process timers and call doIdle()'s
@@ -1640,6 +1699,15 @@ public class TApplication implements Runnable {
      */
     public final ColorTheme getTheme() {
         return theme;
+    }
+
+    /**
+     * Get the clipboard.
+     *
+     * @return the clipboard
+     */
+    public final Clipboard getClipboard() {
+        return clipboard;
     }
 
     /**
@@ -3301,10 +3369,10 @@ public class TApplication implements Runnable {
      */
     public final TMenu addEditMenu() {
         TMenu editMenu = addMenu(i18n.getString("editMenuTitle"));
-        editMenu.addDefaultItem(TMenu.MID_CUT);
-        editMenu.addDefaultItem(TMenu.MID_COPY);
-        editMenu.addDefaultItem(TMenu.MID_PASTE);
-        editMenu.addDefaultItem(TMenu.MID_CLEAR);
+        editMenu.addDefaultItem(TMenu.MID_CUT, false);
+        editMenu.addDefaultItem(TMenu.MID_COPY, false);
+        editMenu.addDefaultItem(TMenu.MID_PASTE, false);
+        editMenu.addDefaultItem(TMenu.MID_CLEAR, false);
         TStatusBar statusBar = editMenu.newStatusBar(i18n.
             getString("editMenuStatus"));
         statusBar.addShortcutKeypress(kbF1, cmHelp, i18n.getString("Help"));
