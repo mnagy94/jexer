@@ -31,19 +31,21 @@ package jexer;
 import java.io.IOException;
 
 import jexer.bits.CellAttributes;
+import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.teditor.Document;
 import jexer.teditor.Line;
 import jexer.teditor.Word;
+import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
  * TEditorWidget displays an editable text document.  It is unaware of
  * scrolling behavior, but can respond to mouse and keyboard events.
  */
-public class TEditorWidget extends TWidget {
+public class TEditorWidget extends TWidget implements EditMenuUser {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -78,6 +80,36 @@ public class TEditorWidget extends TWidget {
      */
     private int leftColumn = 0;
 
+    /**
+     * If true, selection is a rectangle.
+     */
+    private boolean selectionRectangle = false;
+
+    /**
+     * If true, the mouse is dragging a selection.
+     */
+    private boolean inSelection = false;
+
+    /**
+     * Selection starting column.
+     */
+    private int selectionColumn0;
+
+    /**
+     * Selection starting line.
+     */
+    private int selectionLine0;
+
+    /**
+     * Selection ending column.
+     */
+    private int selectionColumn1;
+
+    /**
+     * Selection ending line.
+     */
+    private int selectionLine1;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -105,35 +137,8 @@ public class TEditorWidget extends TWidget {
     }
 
     // ------------------------------------------------------------------------
-    // TWidget ----------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Draw the text box.
-     */
-    @Override
-    public void draw() {
-        for (int i = 0; i < getHeight(); i++) {
-            // Background line
-            getScreen().hLineXY(0, i, getWidth(), ' ', defaultColor);
-
-            // Now draw document's line
-            if (topLine + i < document.getLineCount()) {
-                Line line = document.getLine(topLine + i);
-                int x = 0;
-                for (Word word: line.getWords()) {
-                    // For now, we are cheating: draw outside the left region
-                    // if needed and let screen do the clipping.
-                    getScreen().putStringXY(x - leftColumn, i, word.getText(),
-                        word.getColor());
-                    x += word.getDisplayLength();
-                    if (x - leftColumn > getWidth()) {
-                        break;
-                    }
-                }
-            }
-        }
-    }
 
     /**
      * Handle mouse press events.
@@ -162,6 +167,19 @@ public class TEditorWidget extends TWidget {
         }
 
         if (mouse.isMouse1()) {
+            // Selection.
+            if (inSelection) {
+                selectionColumn1 = leftColumn + mouse.getX();
+                selectionLine1 = topLine + mouse.getY();
+            } else if (mouse.isShift() || mouse.isCtrl()) {
+                inSelection = true;
+                selectionColumn0 = leftColumn + mouse.getX();
+                selectionLine0 = topLine + mouse.getY();
+                selectionColumn1 = selectionColumn0;
+                selectionLine1 = selectionLine0;
+                selectionRectangle = mouse.isAlt() | mouse.isCtrl();
+            }
+
             // Set the row and column
             int newLine = topLine + mouse.getY();
             int newX = leftColumn + mouse.getX();
@@ -175,6 +193,11 @@ public class TEditorWidget extends TWidget {
                     setCursorY(mouse.getY());
                 }
                 alignCursor();
+                if (inSelection) {
+                    selectionColumn1 = document.getCursor();
+                    selectionLine1 = document.getLineNumber();
+                    selectionRectangle = mouse.isCtrl();
+                }
                 return;
             }
 
@@ -187,8 +210,94 @@ public class TEditorWidget extends TWidget {
                 document.setCursor(newX);
                 setCursorX(mouse.getX());
             }
+            if (inSelection) {
+                selectionColumn1 = document.getCursor();
+                selectionLine1 = document.getLineNumber();
+                selectionRectangle = mouse.isCtrl();
+            }
             return;
+        } else {
+            inSelection = false;
         }
+
+        // Pass to children
+        super.onMouseDown(mouse);
+    }
+
+    /**
+     * Handle mouse motion events.
+     *
+     * @param mouse mouse motion event
+     */
+    @Override
+    public void onMouseMotion(final TMouseEvent mouse) {
+
+        if (mouse.isMouse1()) {
+            // Selection.
+            if (inSelection) {
+                selectionColumn1 = leftColumn + mouse.getX();
+                selectionLine1 = topLine + mouse.getY();
+            } else if (mouse.isShift() || mouse.isCtrl()) {
+                inSelection = true;
+                selectionColumn0 = leftColumn + mouse.getX();
+                selectionLine0 = topLine + mouse.getY();
+                selectionColumn1 = selectionColumn0;
+                selectionLine1 = selectionLine0;
+                selectionRectangle = mouse.isAlt() | mouse.isCtrl();
+            }
+
+            // Set the row and column
+            int newLine = topLine + mouse.getY();
+            int newX = leftColumn + mouse.getX();
+            if (newLine > document.getLineCount() - 1) {
+                // Go to the end
+                document.setLineNumber(document.getLineCount() - 1);
+                document.end();
+                if (newLine > document.getLineCount() - 1) {
+                    setCursorY(document.getLineCount() - 1 - topLine);
+                } else {
+                    setCursorY(mouse.getY());
+                }
+                alignCursor();
+                if (inSelection) {
+                    selectionColumn1 = document.getCursor();
+                    selectionLine1 = document.getLineNumber();
+                    selectionRectangle = mouse.isCtrl();
+                }
+                return;
+            }
+
+            document.setLineNumber(newLine);
+            setCursorY(mouse.getY());
+            if (newX >= document.getCurrentLine().getDisplayLength()) {
+                document.end();
+                alignCursor();
+            } else {
+                document.setCursor(newX);
+                setCursorX(mouse.getX());
+            }
+            if (inSelection) {
+                selectionColumn1 = document.getCursor();
+                selectionLine1 = document.getLineNumber();
+                selectionRectangle = mouse.isCtrl();
+            }
+            return;
+        } else {
+            inSelection = false;
+        }
+
+        // Pass to children
+        super.onMouseDown(mouse);
+    }
+
+    /**
+     * Handle mouse release events.
+     *
+     * @param mouse mouse button release event
+     */
+    @Override
+    public void onMouseUp(final TMouseEvent mouse) {
+        inSelection = false;
 
         // Pass to children
         super.onMouseDown(mouse);
@@ -201,10 +310,28 @@ public class TEditorWidget extends TWidget {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-        if (keypress.equals(kbLeft)) {
+        if (keypress.getKey().isShift() || keypress.getKey().isCtrl()) {
+            // Selection.
+            if (!inSelection) {
+                inSelection = true;
+                selectionColumn0 = document.getCursor();
+                selectionLine0 = document.getLineNumber();
+                selectionColumn1 = selectionColumn0;
+                selectionLine1 = selectionLine0;
+                selectionRectangle = keypress.getKey().isCtrl();
+            }
+        } else {
+            inSelection = false;
+        }
+
+        if (keypress.equals(kbLeft)
+            || keypress.equals(kbShiftLeft)
+        ) {
             document.left();
             alignTopLine(false);
-        } else if (keypress.equals(kbRight)) {
+        } else if (keypress.equals(kbRight)
+            || keypress.equals(kbShiftRight)
+        ) {
             document.right();
             alignTopLine(true);
         } else if (keypress.equals(kbAltLeft)
@@ -217,10 +344,14 @@ public class TEditorWidget extends TWidget {
         ) {
             document.forwardsWord();
             alignTopLine(true);
-        } else if (keypress.equals(kbUp)) {
+        } else if (keypress.equals(kbUp)
+            || keypress.equals(kbShiftUp)
+        ) {
             document.up();
             alignTopLine(false);
-        } else if (keypress.equals(kbDown)) {
+        } else if (keypress.equals(kbDown)
+            || keypress.equals(kbShiftDown)
+        ) {
             document.down();
             alignTopLine(true);
         } else if (keypress.equals(kbPgUp)) {
@@ -263,8 +394,7 @@ public class TEditorWidget extends TWidget {
             document.backspace();
             alignTopLine(false);
         } else if (keypress.equals(kbTab)) {
-            // TODO: tab character.  For now just add spaces until we hit
-            // modulo 8.
+            // Add spaces until we hit modulo 8.
             for (int i = document.getCursor(); (i + 1) % 8 != 0; i++) {
                 document.addChar(' ');
             }
@@ -282,6 +412,12 @@ public class TEditorWidget extends TWidget {
         } else {
             // Pass other keys (tab etc.) on to TWidget
             super.onKeypress(keypress);
+        }
+
+        if (inSelection) {
+            selectionColumn1 = document.getCursor();
+            selectionLine1 = document.getLineNumber();
+            selectionRectangle = keypress.getKey().isCtrl();
         }
     }
 
@@ -310,6 +446,87 @@ public class TEditorWidget extends TWidget {
         } else {
             // Let superclass handle it
             super.onResize(resize);
+        }
+    }
+
+    /**
+     * Handle posted command events.
+     *
+     * @param command command event
+     */
+    @Override
+    public void onCommand(final TCommandEvent command) {
+        if (command.equals(cmCut)) {
+            // Copy text to clipboard, and then remove it.
+
+            // TODO
+
+            deleteSelection();
+            return;
+        }
+
+        if (command.equals(cmCopy)) {
+            // Copy text to clipboard.
+
+            // TODO
+
+            return;
+        }
+
+        if (command.equals(cmPaste)) {
+            // Delete selected text, then paste text from clipboard.
+            deleteSelection();
+
+            String text = getClipboard().pasteText();
+            if (text != null) {
+                for (int i = 0; i < text.length(); ) {
+                    int ch = text.codePointAt(i);
+                    onKeypress(new TKeypressEvent(false, 0, ch, false, false,
+                            false));
+                    i += Character.charCount(ch);
+                }
+            }
+            return;
+        }
+
+        if (command.equals(cmClear)) {
+            // Remove text.
+            deleteSelection();
+            return;
+        }
+
+    }
+
+    // ------------------------------------------------------------------------
+    // TWidget ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the text box.
+     */
+    @Override
+    public void draw() {
+        for (int i = 0; i < getHeight(); i++) {
+            // Background line
+            getScreen().hLineXY(0, i, getWidth(), ' ', defaultColor);
+
+            // Now draw document's line
+            if (topLine + i < document.getLineCount()) {
+                Line line = document.getLine(topLine + i);
+                int x = 0;
+                for (Word word: line.getWords()) {
+                    // For now, we are cheating: draw outside the left region
+                    // if needed and let screen do the clipping.
+                    getScreen().putStringXY(x - leftColumn, i, word.getText(),
+                        word.getColor());
+                    x += word.getDisplayLength();
+                    if (x - leftColumn > getWidth()) {
+                        break;
+                    }
+                }
+            }
+
+            // TODO: highlight selected region
         }
     }
 
@@ -541,6 +758,57 @@ public class TEditorWidget extends TWidget {
      */
     public void saveToFilename(final String filename) throws IOException {
         document.saveToFilename(filename);
+    }
+
+    /**
+     * Delete text within the selection bounds.
+     */
+    private void deleteSelection() {
+        if (inSelection == false) {
+            return;
+        }
+
+        // TODO
+    }
+
+    // ------------------------------------------------------------------------
+    // EditMenuUser -----------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Check if the cut menu item should be enabled.
+     *
+     * @return true if the cut menu item should be enabled
+     */
+    public boolean isEditMenuCut() {
+        return true;
+    }
+
+    /**
+     * Check if the copy menu item should be enabled.
+     *
+     * @return true if the copy menu item should be enabled
+     */
+    public boolean isEditMenuCopy() {
+        return true;
+    }
+
+    /**
+     * Check if the paste menu item should be enabled.
+     *
+     * @return true if the paste menu item should be enabled
+     */
+    public boolean isEditMenuPaste() {
+        return true;
+    }
+
+    /**
+     * Check if the clear menu item should be enabled.
+     *
+     * @return true if the clear menu item should be enabled
+     */
+    public boolean isEditMenuClear() {
+        return true;
     }
 
 }

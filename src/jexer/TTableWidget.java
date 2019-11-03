@@ -1426,8 +1426,6 @@ public class TTableWidget extends TWidget {
                 for (int i = 0; i < list.size(); i++) {
                     rows.get(selectedRow).get(i).setText(list.get(i));
                 }
-
-                // TODO: detect header line
             }
         } finally {
             if (reader != null) {

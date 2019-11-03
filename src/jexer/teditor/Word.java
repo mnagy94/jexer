@@ -135,9 +135,6 @@ public class Word {
      * @return the number of cells needed to display this word
      */
     public int getDisplayLength() {
-        // For now, just use the text length.  In the future, this will be a
-        // grapheme count.
-
         // TODO: figure out how to handle the tab character.  Do we have a
         // global tab stops list and current word position?
         return StringUtils.width(text.toString());

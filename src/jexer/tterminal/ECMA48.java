@@ -3199,10 +3199,10 @@ public class ECMA48 implements Runnable {
                     if (decPrivateModeFlag == true) {
                         if (value == true) {
                             // Enable sixel scrolling (default).
-                            // TODO
+                            // Not supported
                         } else {
                             // Disable sixel scrolling.
-                            // TODO
+                            // Not supported
                         }
                     }
                 }
@@ -4037,7 +4037,7 @@ public class ECMA48 implements Runnable {
 
                 case 8:
                     // Invisible
-                    // TODO
+                    // Not supported
                     break;
 
                 case 90:
@@ -7306,9 +7306,10 @@ public class ECMA48 implements Runnable {
             for (int x = 0; x < cellColumns; x++) {
                 assert (currentState.cursorX <= rightMargin);
 
-                // TODO: Render text of current cell first, then image over
-                // it (accounting for blank pixels).  For now, just copy the
-                // cell.
+                // A real sixel terminal would render the text of the current
+                // cell first, then image over it (accounting for blank
+                // pixels).  We do not support that.  A cell is either text,
+                // or image, but not a mix of image-over-text.
                 DisplayLine line = display.get(currentState.cursorY);
                 line.replace(currentState.cursorX, cells[x][y]);
 
