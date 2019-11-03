@@ -89,7 +89,8 @@ public class Document {
     public Document(final String str, final CellAttributes defaultColor) {
         this.defaultColor = defaultColor;
 
-        // TODO: set different colors based on file extension
+        // Set colors to resemble the Borland IDE colors, but for Java
+        // language keywords.
         highlighter.setJavaColors();
 
         String [] rawLines = str.split("\n");
