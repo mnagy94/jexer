@@ -4778,13 +4778,22 @@ public class ECMA48 implements Runnable {
     private void oscPut(final char xtermChar) {
         // System.err.println("oscPut: " + xtermChar);
 
+        boolean oscEnd = false;
+
+        if (xtermChar == 0x07) {
+            oscEnd = true;
+        }
+        if ((xtermChar == '\\')
+            && (collectBuffer.charAt(collectBuffer.length() - 1) == '\033')
+        ) {
+            oscEnd = true;
+        }
+
         // Collect first
         collectBuffer.append(xtermChar);
 
         // Xterm cases...
-        if ((xtermChar == 0x07)
-            || (collectBuffer.toString().endsWith("\033\\"))
-        ) {
+        if (oscEnd) {
             String args = null;
             if (xtermChar == 0x07) {
                 args = collectBuffer.substring(0, collectBuffer.length() - 1);
@@ -4867,11 +4876,19 @@ public class ECMA48 implements Runnable {
     private void pmPut(final char pmChar) {
         // System.err.println("pmPut: " + pmChar);
 
+        boolean pmEnd = false;
+
+        if ((pmChar == '\\')
+            && (collectBuffer.charAt(collectBuffer.length() - 1) == '\033')
+        ) {
+            pmEnd = true;
+        }
+
         // Collect first
         collectBuffer.append(pmChar);
 
         // Xterm cases...
-        if (collectBuffer.toString().endsWith("\033\\")) {
+        if (pmEnd) {
             String arg = null;
             arg = collectBuffer.substring(0, collectBuffer.length() - 2);
 
