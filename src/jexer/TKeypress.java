@@ -612,6 +612,41 @@ public class TKeypress {
     public static final TKeypress kbAltShiftZ = new TKeypress(false,
             0, 'Z', true, false, true);
 
+    public static final TKeypress kbAltShiftHome = new TKeypress(true,
+            TKeypress.HOME, ' ', true, false, true);
+    public static final TKeypress kbAltShiftEnd = new TKeypress(true,
+            TKeypress.END, ' ', true, false, true);
+    public static final TKeypress kbAltShiftPgUp = new TKeypress(true,
+            TKeypress.PGUP, ' ', true, false, true);
+    public static final TKeypress kbAltShiftPgDn = new TKeypress(true,
+            TKeypress.PGDN, ' ', true, false, true);
+    public static final TKeypress kbAltShiftUp = new TKeypress(true,
+            TKeypress.UP, ' ', true, false, true);
+    public static final TKeypress kbAltShiftDown = new TKeypress(true,
+            TKeypress.DOWN, ' ', true, false, true);
+    public static final TKeypress kbAltShiftLeft = new TKeypress(true,
+            TKeypress.LEFT, ' ', true, false, true);
+    public static final TKeypress kbAltShiftRight = new TKeypress(true,
+            TKeypress.RIGHT, ' ', true, false, true);
+
+    public static final TKeypress kbCtrlShiftHome = new TKeypress(true,
+            TKeypress.HOME, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftEnd = new TKeypress(true,
+            TKeypress.END, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftPgUp = new TKeypress(true,
+            TKeypress.PGUP, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftPgDn = new TKeypress(true,
+            TKeypress.PGDN, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftUp = new TKeypress(true,
+            TKeypress.UP, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftDown = new TKeypress(true,
+            TKeypress.DOWN, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftLeft = new TKeypress(true,
+            TKeypress.LEFT, ' ', false, true, true);
+    public static final TKeypress kbCtrlShiftRight = new TKeypress(true,
+            TKeypress.RIGHT, ' ', false, true, true);
+
+
     /**
      * Backspace as ^H.
      */

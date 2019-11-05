@@ -633,6 +633,11 @@ public class ColorTheme {
         color.setBackColor(Color.BLUE);
         color.setBold(false);
         colors.put("teditor", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.BLACK);
+        color.setBackColor(Color.CYAN);
+        color.setBold(false);
+        colors.put("teditor.selected", color);
 
         // TTable
         color = new CellAttributes();

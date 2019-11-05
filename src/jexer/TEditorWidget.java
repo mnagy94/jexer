@@ -31,6 +31,7 @@ package jexer;
 import java.io.IOException;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
@@ -79,11 +80,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      * The leftmost column number in the visible area.  0-based.
      */
     private int leftColumn = 0;
-
-    /**
-     * If true, selection is a rectangle.
-     */
-    private boolean selectionRectangle = false;
 
     /**
      * If true, the mouse is dragging a selection.
@@ -171,13 +167,12 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             if (inSelection) {
                 selectionColumn1 = leftColumn + mouse.getX();
                 selectionLine1 = topLine + mouse.getY();
-            } else if (mouse.isShift() || mouse.isCtrl()) {
+            } else if (mouse.isShift()) {
                 inSelection = true;
                 selectionColumn0 = leftColumn + mouse.getX();
                 selectionLine0 = topLine + mouse.getY();
                 selectionColumn1 = selectionColumn0;
                 selectionLine1 = selectionLine0;
-                selectionRectangle = mouse.isAlt() | mouse.isCtrl();
             }
 
             // Set the row and column
@@ -196,7 +191,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 if (inSelection) {
                     selectionColumn1 = document.getCursor();
                     selectionLine1 = document.getLineNumber();
-                    selectionRectangle = mouse.isCtrl();
                 }
                 return;
             }
@@ -213,7 +207,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             if (inSelection) {
                 selectionColumn1 = document.getCursor();
                 selectionLine1 = document.getLineNumber();
-                selectionRectangle = mouse.isCtrl();
             }
             return;
         } else {
@@ -237,13 +230,12 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             if (inSelection) {
                 selectionColumn1 = leftColumn + mouse.getX();
                 selectionLine1 = topLine + mouse.getY();
-            } else if (mouse.isShift() || mouse.isCtrl()) {
+            } else if (mouse.isShift()) {
                 inSelection = true;
                 selectionColumn0 = leftColumn + mouse.getX();
                 selectionLine0 = topLine + mouse.getY();
                 selectionColumn1 = selectionColumn0;
                 selectionLine1 = selectionLine0;
-                selectionRectangle = mouse.isAlt() | mouse.isCtrl();
             }
 
             // Set the row and column
@@ -262,7 +254,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 if (inSelection) {
                     selectionColumn1 = document.getCursor();
                     selectionLine1 = document.getLineNumber();
-                    selectionRectangle = mouse.isCtrl();
                 }
                 return;
             }
@@ -279,7 +270,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             if (inSelection) {
                 selectionColumn1 = document.getCursor();
                 selectionLine1 = document.getLineNumber();
-                selectionRectangle = mouse.isCtrl();
             }
             return;
         } else {
@@ -310,7 +300,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-        if (keypress.getKey().isShift() || keypress.getKey().isCtrl()) {
+        if (keypress.getKey().isShift()) {
             // Selection.
             if (!inSelection) {
                 inSelection = true;
@@ -318,10 +308,20 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 selectionLine0 = document.getLineNumber();
                 selectionColumn1 = selectionColumn0;
                 selectionLine1 = selectionLine0;
-                selectionRectangle = keypress.getKey().isCtrl();
             }
         } else {
-            inSelection = false;
+            if (keypress.equals(kbLeft)
+                || keypress.equals(kbRight)
+                || keypress.equals(kbUp)
+                || keypress.equals(kbDown)
+                || keypress.equals(kbPgDn)
+                || keypress.equals(kbPgUp)
+                || keypress.equals(kbHome)
+                || keypress.equals(kbEnd)
+            ) {
+                // Non-shifted navigation keys disable selection.
+                inSelection = false;
+            }
         }
 
         if (keypress.equals(kbLeft)
@@ -336,11 +336,15 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             alignTopLine(true);
         } else if (keypress.equals(kbAltLeft)
             || keypress.equals(kbCtrlLeft)
+            || keypress.equals(kbAltShiftLeft)
+            || keypress.equals(kbCtrlShiftLeft)
         ) {
             document.backwardsWord();
             alignTopLine(false);
         } else if (keypress.equals(kbAltRight)
             || keypress.equals(kbCtrlRight)
+            || keypress.equals(kbAltShiftRight)
+            || keypress.equals(kbCtrlShiftRight)
         ) {
             document.forwardsWord();
             alignTopLine(true);
@@ -354,13 +358,19 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         ) {
             document.down();
             alignTopLine(true);
-        } else if (keypress.equals(kbPgUp)) {
+        } else if (keypress.equals(kbPgUp)
+            || keypress.equals(kbShiftPgUp)
+        ) {
             document.up(getHeight() - 1);
             alignTopLine(false);
-        } else if (keypress.equals(kbPgDn)) {
+        } else if (keypress.equals(kbPgDn)
+            || keypress.equals(kbShiftPgDn)
+        ) {
             document.down(getHeight() - 1);
             alignTopLine(true);
-        } else if (keypress.equals(kbHome)) {
+        } else if (keypress.equals(kbHome)
+            || keypress.equals(kbShiftHome)
+        ) {
             if (document.home()) {
                 leftColumn = 0;
                 if (leftColumn < 0) {
@@ -368,38 +378,54 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 }
                 setCursorX(0);
             }
-        } else if (keypress.equals(kbEnd)) {
+        } else if (keypress.equals(kbEnd)
+            || keypress.equals(kbShiftEnd)
+        ) {
             if (document.end()) {
                 alignCursor();
             }
-        } else if (keypress.equals(kbCtrlHome)) {
+        } else if (keypress.equals(kbCtrlHome)
+            || keypress.equals(kbCtrlShiftHome)
+        ) {
             document.setLineNumber(0);
             document.home();
             topLine = 0;
             leftColumn = 0;
             setCursorX(0);
             setCursorY(0);
-        } else if (keypress.equals(kbCtrlEnd)) {
+        } else if (keypress.equals(kbCtrlEnd)
+            || keypress.equals(kbCtrlShiftEnd)
+        ) {
             document.setLineNumber(document.getLineCount() - 1);
             document.end();
             alignTopLine(false);
         } else if (keypress.equals(kbIns)) {
             document.setOverwrite(!document.getOverwrite());
         } else if (keypress.equals(kbDel)) {
-            document.del();
+            if (inSelection) {
+                deleteSelection();
+            } else {
+                document.del();
+            }
             alignCursor();
         } else if (keypress.equals(kbBackspace)
             || keypress.equals(kbBackspaceDel)
         ) {
-            document.backspace();
+            if (inSelection) {
+                deleteSelection();
+            } else {
+                document.backspace();
+            }
             alignTopLine(false);
         } else if (keypress.equals(kbTab)) {
+            deleteSelection();
             // Add spaces until we hit modulo 8.
             for (int i = document.getCursor(); (i + 1) % 8 != 0; i++) {
                 document.addChar(' ');
             }
             alignCursor();
         } else if (keypress.equals(kbEnter)) {
+            deleteSelection();
             document.enter();
             alignTopLine(true);
         } else if (!keypress.getKey().isFnKey()
@@ -407,6 +433,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             && !keypress.getKey().isCtrl()
         ) {
             // Plain old keystroke, process it
+            deleteSelection();
             document.addChar(keypress.getKey().getChar());
             alignCursor();
         } else {
@@ -417,7 +444,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         if (inSelection) {
             selectionColumn1 = document.getCursor();
             selectionLine1 = document.getLineNumber();
-            selectionRectangle = keypress.getKey().isCtrl();
         }
     }
 
@@ -458,18 +484,14 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     public void onCommand(final TCommandEvent command) {
         if (command.equals(cmCut)) {
             // Copy text to clipboard, and then remove it.
-
-            // TODO
-
+            copySelection();
             deleteSelection();
             return;
         }
 
         if (command.equals(cmCopy)) {
             // Copy text to clipboard.
-
-            // TODO
-
+            copySelection();
             return;
         }
 
@@ -506,6 +528,26 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      */
     @Override
     public void draw() {
+        CellAttributes selectedColor = getTheme().getColor("teditor.selected");
+
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 <= selectionLine0))
+            || ((selectionColumn1 <= selectionColumn0)
+                && (selectionLine1 < selectionLine0))
+        ) {
+            // The user selected from bottom-right to top-left.  Reverse the
+            // coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+
         for (int i = 0; i < getHeight(); i++) {
             // Background line
             getScreen().hLineXY(0, i, getWidth(), ' ', defaultColor);
@@ -524,9 +566,35 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                         break;
                     }
                 }
-            }
 
-            // TODO: highlight selected region
+                // Highlight selected region
+                if (inSelection) {
+                    if (startRow == endRow) {
+                        if (topLine + i == startRow) {
+                            for (x = startCol; x <= endCol; x++) {
+                                putAttrXY(x - leftColumn, i, selectedColor);
+                            }
+                        }
+                    } else {
+                        if (topLine + i == startRow) {
+                            for (x = startCol; x < line.getDisplayLength(); x++) {
+                                putAttrXY(x - leftColumn, i, selectedColor);
+                            }
+                        } else if (topLine + i == endRow) {
+                            for (x = 0; x <= endCol; x++) {
+                                putAttrXY(x - leftColumn, i, selectedColor);
+                            }
+                        } else if ((topLine + i >= startRow)
+                            && (topLine + i <= endRow)
+                        ) {
+                            for (x = 0; x < getWidth(); x++) {
+                                putAttrXY(x, i, selectedColor);
+                            }
+                        }
+                    }
+                }
+
+            }
         }
     }
 
@@ -767,8 +835,120 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         if (inSelection == false) {
             return;
         }
+        inSelection = false;
 
-        // TODO
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 <= selectionLine0))
+            || ((selectionColumn1 <= selectionColumn0)
+                && (selectionLine1 < selectionLine0))
+        ) {
+            // The user selected from bottom-right to top-left.  Reverse the
+            // coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+
+        // Place the cursor on the selection end, and "press backspace" until
+        // the cursor matches the selection start.
+        document.setLineNumber(endRow);
+        document.setCursor(endCol + 1);
+        while (!((document.getLineNumber() == startRow)
+                && (document.getCursor() == startCol))
+        ) {
+            document.backspace();
+        }
+        alignTopLine(true);
+    }
+
+    /**
+     * Copy text within the selection bounds to clipboard.
+     */
+    private void copySelection() {
+        if (inSelection == false) {
+            return;
+        }
+
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 <= selectionLine0))
+            || ((selectionColumn1 <= selectionColumn0)
+                && (selectionLine1 < selectionLine0))
+        ) {
+            // The user selected from bottom-right to top-left.  Reverse the
+            // coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        if (endRow > startRow) {
+            // First line
+            String line = document.getLine(startRow).getRawString();
+            int x = 0;
+            for (int i = 0; i < line.length(); ) {
+                int ch = line.codePointAt(i);
+
+                if (x >= startCol) {
+                    sb.append(Character.toChars(ch));
+                }
+                x += StringUtils.width(ch);
+                i += Character.charCount(ch);
+            }
+            sb.append("\n");
+
+            // Middle lines
+            for (int y = startRow + 1; y < endRow; y++) {
+                sb.append(document.getLine(y).getRawString());
+                sb.append("\n");
+            }
+
+            // Final line
+            line = document.getLine(endRow).getRawString();
+            x = 0;
+            for (int i = 0; i < line.length(); ) {
+                int ch = line.codePointAt(i);
+
+                if (x > endCol) {
+                    break;
+                }
+
+                sb.append(Character.toChars(ch));
+                x += StringUtils.width(ch);
+                i += Character.charCount(ch);
+            }
+        } else {
+            assert (startRow == endRow);
+
+            // Only one line
+            String line = document.getLine(startRow).getRawString();
+            int x = 0;
+            for (int i = 0; i < line.length(); ) {
+                int ch = line.codePointAt(i);
+
+                if ((x >= startCol) && (x <= endCol)) {
+                    sb.append(Character.toChars(ch));
+                }
+
+                x += StringUtils.width(ch);
+                i += Character.charCount(ch);
+            }
+        }
+
+        getClipboard().copyText(sb.toString());
     }
 
     // ------------------------------------------------------------------------
