@@ -164,16 +164,11 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
 
         if (mouse.isMouse1()) {
             // Selection.
-            if (inSelection) {
-                selectionColumn1 = leftColumn + mouse.getX();
-                selectionLine1 = topLine + mouse.getY();
-            } else if (mouse.isShift()) {
-                inSelection = true;
-                selectionColumn0 = leftColumn + mouse.getX();
-                selectionLine0 = topLine + mouse.getY();
-                selectionColumn1 = selectionColumn0;
-                selectionLine1 = selectionLine0;
-            }
+            inSelection = true;
+            selectionColumn0 = leftColumn + mouse.getX();
+            selectionLine0 = topLine + mouse.getY();
+            selectionColumn1 = selectionColumn0;
+            selectionLine1 = selectionLine0;
 
             // Set the row and column
             int newLine = topLine + mouse.getY();
@@ -230,7 +225,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             if (inSelection) {
                 selectionColumn1 = leftColumn + mouse.getX();
                 selectionLine1 = topLine + mouse.getY();
-            } else if (mouse.isShift()) {
+            } else {
                 inSelection = true;
                 selectionColumn0 = leftColumn + mouse.getX();
                 selectionLine0 = topLine + mouse.getY();
@@ -272,22 +267,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 selectionLine1 = document.getLineNumber();
             }
             return;
-        } else {
-            inSelection = false;
         }
-
-        // Pass to children
-        super.onMouseDown(mouse);
-    }
-
-    /**
-     * Handle mouse release events.
-     *
-     * @param mouse mouse button release event
-     */
-    @Override
-    public void onMouseUp(final TMouseEvent mouse) {
-        inSelection = false;
 
         // Pass to children
         super.onMouseDown(mouse);
