@@ -47,6 +47,17 @@ The Jexer source code is hosted at: https://gitlab.com/klamonte/jexer
 
 
 
+1.0.0 Release Coming Soon
+--------------------------
+
+
+Jexer's original list of features for its 1.0.0 release are undergoing
+final testing.  If you know of a bug or key feature missing, please
+consider opening an issue
+[here.](https://gitlab.com/klamonte/jexer/issues)
+
+
+
 Documentation
 -------------
 
