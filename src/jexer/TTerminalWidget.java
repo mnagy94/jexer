@@ -200,7 +200,7 @@ public class TTerminalWidget extends TScrollableWidget
      * @param x column relative to parent
      * @param y row relative to parent
      * @param command the command line to execute
-     * @param closeAction action to perform when the shell sxits
+     * @param closeAction action to perform when the shell exits
      */
     public TTerminalWidget(final TWidget parent, final int x, final int y,
         final String [] command, final TAction closeAction) {
@@ -217,7 +217,7 @@ public class TTerminalWidget extends TScrollableWidget
      * @param width width of widget
      * @param height height of widget
      * @param command the command line to execute
-     * @param closeAction action to perform when the shell sxits
+     * @param closeAction action to perform when the shell exits
      */
     public TTerminalWidget(final TWidget parent, final int x, final int y,
         final int width, final int height, final String [] command,
@@ -280,7 +280,7 @@ public class TTerminalWidget extends TScrollableWidget
      * @param parent parent widget
      * @param x column relative to parent
      * @param y row relative to parent
-     * @param closeAction action to perform when the shell sxits
+     * @param closeAction action to perform when the shell exits
      */
     public TTerminalWidget(final TWidget parent, final int x, final int y,
         final TAction closeAction) {
@@ -296,7 +296,7 @@ public class TTerminalWidget extends TScrollableWidget
      * @param y row relative to parent
      * @param width width of widget
      * @param height height of widget
-     * @param closeAction action to perform when the shell sxits
+     * @param closeAction action to perform when the shell exits
      */
     public TTerminalWidget(final TWidget parent, final int x, final int y,
         final int width, final int height, final TAction closeAction) {
