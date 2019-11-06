@@ -3192,12 +3192,10 @@ public class ECMA48Terminal extends LogicalScreen
         int imageWidth = cells.get(0).getImage().getWidth();
         int imageHeight = cells.get(0).getImage().getHeight();
 
-        // cells.get(x).getImage() has a dithered bitmap containing indexes
-        // into the color palette.  Piece these together into one larger
-        // image for final rendering.
+        // Piece these together into one larger image for final rendering.
         int totalWidth = 0;
-        int fullWidth = cells.size() * getTextWidth();
-        int fullHeight = getTextHeight();
+        int fullWidth = cells.size() * imageWidth;
+        int fullHeight = imageHeight;
         for (int i = 0; i < cells.size(); i++) {
             totalWidth += cells.get(i).getImage().getWidth();
         }
@@ -3207,10 +3205,8 @@ public class ECMA48Terminal extends LogicalScreen
 
         int [] rgbArray;
         for (int i = 0; i < cells.size() - 1; i++) {
-            int tileWidth = Math.min(cells.get(i).getImage().getWidth(),
-                imageWidth);
-            int tileHeight = Math.min(cells.get(i).getImage().getHeight(),
-                imageHeight);
+            int tileWidth = imageWidth;
+            int tileHeight = imageHeight;
 
             if (false && cells.get(i).isInvertedImage()) {
                 // I used to put an all-white cell over the cursor, don't do
@@ -3278,7 +3274,7 @@ public class ECMA48Terminal extends LogicalScreen
         image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
             imageHeight, rgbArray, 0, totalWidth);
 
-        if (totalWidth < getTextWidth()) {
+        if (totalWidth < imageWidth) {
             int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
 
             for (int imageX = image.getWidth() - totalWidth;
@@ -3288,6 +3284,22 @@ public class ECMA48Terminal extends LogicalScreen
                     image.setRGB(imageX, imageY, backgroundColor);
                 }
             }
+        }
+
+        if ((image.getWidth() != cells.size() * getTextWidth())
+            || (image.getHeight() != getTextHeight())
+        ) {
+            // Rescale the image to fit the text cells it is going into.
+            BufferedImage newImage;
+            newImage = new BufferedImage(cells.size() * getTextWidth(),
+                getTextHeight(), BufferedImage.TYPE_INT_ARGB);
+
+            java.awt.Graphics gr = newImage.getGraphics();
+            gr.drawImage(image, 0, 0, newImage.getWidth(),
+                newImage.getHeight(), null, null);
+            gr.dispose();
+            image = newImage;
+            fullHeight = image.getHeight();
         }
 
         // Dither the image.  It is ok to lose the original here.
@@ -3507,8 +3519,8 @@ public class ECMA48Terminal extends LogicalScreen
         // Piece cells.get(x).getImage() pieces together into one larger
         // image for final rendering.
         int totalWidth = 0;
-        int fullWidth = cells.size() * getTextWidth();
-        int fullHeight = getTextHeight();
+        int fullWidth = cells.size() * imageWidth;
+        int fullHeight = imageHeight;
         for (int i = 0; i < cells.size(); i++) {
             totalWidth += cells.get(i).getImage().getWidth();
         }
@@ -3518,10 +3530,8 @@ public class ECMA48Terminal extends LogicalScreen
 
         int [] rgbArray;
         for (int i = 0; i < cells.size() - 1; i++) {
-            int tileWidth = Math.min(cells.get(i).getImage().getWidth(),
-                imageWidth);
-            int tileHeight = Math.min(cells.get(i).getImage().getHeight(),
-                imageHeight);
+            int tileWidth = imageWidth;
+            int tileHeight = imageHeight;
             if (false && cells.get(i).isInvertedImage()) {
                 // I used to put an all-white cell over the cursor, don't do
                 // that anymore.
@@ -3588,7 +3598,7 @@ public class ECMA48Terminal extends LogicalScreen
         image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
             imageHeight, rgbArray, 0, totalWidth);
 
-        if (totalWidth < getTextWidth()) {
+        if (totalWidth < imageWidth) {
             int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
 
             for (int imageX = image.getWidth() - totalWidth;
@@ -3598,6 +3608,22 @@ public class ECMA48Terminal extends LogicalScreen
                     image.setRGB(imageX, imageY, backgroundColor);
                 }
             }
+        }
+
+        if ((image.getWidth() != cells.size() * getTextWidth())
+            || (image.getHeight() != getTextHeight())
+        ) {
+            // Rescale the image to fit the text cells it is going into.
+            BufferedImage newImage;
+            newImage = new BufferedImage(cells.size() * getTextWidth(),
+                getTextHeight(), BufferedImage.TYPE_INT_ARGB);
+
+            java.awt.Graphics gr = newImage.getGraphics();
+            gr.drawImage(image, 0, 0, newImage.getWidth(),
+                newImage.getHeight(), null, null);
+            gr.dispose();
+            image = newImage;
+            fullHeight = image.getHeight();
         }
 
         /*
@@ -3756,8 +3782,8 @@ public class ECMA48Terminal extends LogicalScreen
         // Piece cells.get(x).getImage() pieces together into one larger
         // image for final rendering.
         int totalWidth = 0;
-        int fullWidth = cells.size() * getTextWidth();
-        int fullHeight = getTextHeight();
+        int fullWidth = cells.size() * imageWidth;
+        int fullHeight = imageHeight;
         for (int i = 0; i < cells.size(); i++) {
             totalWidth += cells.get(i).getImage().getWidth();
         }
@@ -3767,10 +3793,8 @@ public class ECMA48Terminal extends LogicalScreen
 
         int [] rgbArray;
         for (int i = 0; i < cells.size() - 1; i++) {
-            int tileWidth = Math.min(cells.get(i).getImage().getWidth(),
-                imageWidth);
-            int tileHeight = Math.min(cells.get(i).getImage().getHeight(),
-                imageHeight);
+            int tileWidth = imageWidth;
+            int tileHeight = imageHeight;
             if (false && cells.get(i).isInvertedImage()) {
                 // I used to put an all-white cell over the cursor, don't do
                 // that anymore.
@@ -3837,7 +3861,7 @@ public class ECMA48Terminal extends LogicalScreen
         image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
             imageHeight, rgbArray, 0, totalWidth);
 
-        if (totalWidth < getTextWidth()) {
+        if (totalWidth < imageWidth) {
             int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
 
             for (int imageX = image.getWidth() - totalWidth;
@@ -3847,6 +3871,22 @@ public class ECMA48Terminal extends LogicalScreen
                     image.setRGB(imageX, imageY, backgroundColor);
                 }
             }
+        }
+
+        if ((image.getWidth() != cells.size() * getTextWidth())
+            || (image.getHeight() != getTextHeight())
+        ) {
+            // Rescale the image to fit the text cells it is going into.
+            BufferedImage newImage;
+            newImage = new BufferedImage(cells.size() * getTextWidth(),
+                getTextHeight(), BufferedImage.TYPE_INT_ARGB);
+
+            java.awt.Graphics gr = newImage.getGraphics();
+            gr.drawImage(image, 0, 0, newImage.getWidth(),
+                newImage.getHeight(), null, null);
+            gr.dispose();
+            image = newImage;
+            fullHeight = image.getHeight();
         }
 
         if (jexerImageOption == JexerImageOption.PNG) {

@@ -1244,9 +1244,11 @@ public class SwingTerminal extends LogicalScreen
         BufferedImage image = cell.getImage();
         if (image != null) {
             if (swing.getFrame() != null) {
-                gr.drawImage(image, xPixel, yPixel, swing.getFrame());
+                gr.drawImage(image, xPixel, yPixel, getTextWidth(),
+                    getTextHeight(), swing.getFrame());
             } else {
-                gr.drawImage(image, xPixel, yPixel, swing.getComponent());
+                gr.drawImage(image, xPixel, yPixel,  getTextWidth(),
+                    getTextHeight(),swing.getComponent());
             }
             return;
         }

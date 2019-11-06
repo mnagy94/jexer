@@ -111,7 +111,7 @@ public class Demo6 {
              * Make a new Swing window for the second application.
              */
             SwingBackend monitorBackend = new SwingBackend(width + 5,
-                height + 5, 16);
+                height + 5, 20);
 
             /*
              * Setup the second application, give it the basic file and
