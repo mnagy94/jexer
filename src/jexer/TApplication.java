@@ -1599,6 +1599,7 @@ public class TApplication implements Runnable {
                 invoke.run();
             }
             invokeLaters.clear();
+            doRepaint();
         }
 
     }

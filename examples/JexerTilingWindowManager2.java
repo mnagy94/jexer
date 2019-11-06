@@ -146,6 +146,8 @@ public class JexerTilingWindowManager2 extends TApplication {
     private void createRootTerminal() {
         assert (root == null);
         disableMenuItem(MENU_RESPAWN_ROOT);
+        enableMenuItem(MENU_SPLIT_VERTICAL);
+        enableMenuItem(MENU_SPLIT_HORIZONTAL);
         root = createTerminal();
     }
 
@@ -165,6 +167,10 @@ public class JexerTilingWindowManager2 extends TApplication {
                     } else {
                         source.getApplication().enableMenuItem(
                                 MENU_RESPAWN_ROOT);
+                        source.getApplication().disableMenuItem(
+                                MENU_SPLIT_VERTICAL);
+                        source.getApplication().disableMenuItem(
+                                MENU_SPLIT_HORIZONTAL);
                         source.remove();
                         root = null;
                     }

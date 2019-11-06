@@ -1025,11 +1025,6 @@ public class ECMA48 implements Runnable {
         // the input streams.
         if (stopReaderThread == false) {
             stopReaderThread = true;
-            try {
-                readerThread.join(1000);
-            } catch (InterruptedException e) {
-                // SQUASH
-            }
         }
 
         // Now close the output stream.

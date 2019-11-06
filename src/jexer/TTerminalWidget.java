@@ -910,10 +910,7 @@ public class TTerminalWidget extends TScrollableWidget
                     }
                 });
             }
-            if (getApplication() != null) {
-                getApplication().postEvent(new TMenuEvent(
-                    TMenu.MID_REPAINT));
-            }
+            app.doRepaint();
         }
     }
 
