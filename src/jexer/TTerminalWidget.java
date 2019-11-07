@@ -253,12 +253,24 @@ public class TTerminalWidget extends TScrollableWidget
             fullCommand[5] = stringArrayToString(command);
         } else {
             // Default: behave like Linux
-            fullCommand = new String[5];
-            fullCommand[0] = "script";
-            fullCommand[1] = "-fqe";
-            fullCommand[2] = "/dev/null";
-            fullCommand[3] = "-c";
-            fullCommand[4] = stringArrayToString(command);
+            if (System.getProperty("jexer.TTerminal.setsid",
+                    "true").equals("false")
+            ) {
+                fullCommand = new String[5];
+                fullCommand[0] = "script";
+                fullCommand[1] = "-fqe";
+                fullCommand[2] = "/dev/null";
+                fullCommand[3] = "-c";
+                fullCommand[4] = stringArrayToString(command);
+            } else {
+                fullCommand = new String[6];
+                fullCommand[0] = "setsid";
+                fullCommand[1] = "script";
+                fullCommand[2] = "-fqe";
+                fullCommand[3] = "/dev/null";
+                fullCommand[4] = "-c";
+                fullCommand[5] = stringArrayToString(command);
+            }
         }
         spawnShell(fullCommand);
     }
@@ -322,6 +334,7 @@ public class TTerminalWidget extends TScrollableWidget
         // GNU differ on the '-f' vs '-F' flags, we need two different
         // commands.  Lovely.
         String cmdShellGNU = "script -fqe /dev/null";
+        String cmdShellGNUSetsid = "setsid script -fqe /dev/null";
         String cmdShellBSD = "script -q -F /dev/null";
 
         // ptypipe is another solution that permits dynamic window resizing.
@@ -339,7 +352,13 @@ public class TTerminalWidget extends TScrollableWidget
         } else if (System.getProperty("os.name").startsWith("Mac")) {
             spawnShell(cmdShellBSD.split("\\s+"));
         } else if (System.getProperty("os.name").startsWith("Linux")) {
-            spawnShell(cmdShellGNU.split("\\s+"));
+            if (System.getProperty("jexer.TTerminal.setsid",
+                    "true").equals("false")
+            ) {
+                spawnShell(cmdShellGNU.split("\\s+"));
+            } else {
+                spawnShell(cmdShellGNUSetsid.split("\\s+"));
+            }
         } else {
             // When all else fails, assume GNU.
             spawnShell(cmdShellGNU.split("\\s+"));
