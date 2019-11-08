@@ -1643,7 +1643,10 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the width in pixels of a character cell
      */
     public int getTextWidth() {
-        return (widthPixels / sessionInfo.getWindowWidth());
+        if (sessionInfo.getWindowWidth() > 0) {
+            return (widthPixels / sessionInfo.getWindowWidth());
+        }
+        return 16;
     }
 
     /**
@@ -1652,7 +1655,10 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the height in pixels of a character cell
      */
     public int getTextHeight() {
-        return (heightPixels / sessionInfo.getWindowHeight());
+        if (sessionInfo.getWindowHeight() > 0) {
+            return (heightPixels / sessionInfo.getWindowHeight());
+        }
+        return 20;
     }
 
     /**
