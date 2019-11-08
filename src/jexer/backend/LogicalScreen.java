@@ -1122,11 +1122,11 @@ public class LogicalScreen implements Screen {
         int endX = x1;
         int endY = y1;
 
-        if (((x1 < x0) && (y1 <= y0))
-            || ((x1 <= x0) && (y1 < y0))
+        if (((x1 < x0) && (y1 == y0))
+            || (y1 < y0)
         ) {
-            // The user dragged from bottom-right to top-left.  Reverse the
-            // coordinates for the inverted section.
+            // The user dragged from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
             startX = x1;
             startY = y1;
             endX = x0;
@@ -1181,11 +1181,11 @@ public class LogicalScreen implements Screen {
         int endX = x1;
         int endY = y1;
 
-        if (((x1 < x0) && (y1 <= y0))
-            || ((x1 <= x0) && (y1 < y0))
+        if (((x1 < x0) && (y1 == y0))
+            || (y1 < y0)
         ) {
-            // The user dragged from bottom-right to top-left.  Reverse the
-            // coordinates for the inverted section.
+            // The user dragged from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
             startX = x1;
             startY = y1;
             endX = x0;

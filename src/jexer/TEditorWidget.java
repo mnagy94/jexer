@@ -221,21 +221,25 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     public void onMouseMotion(final TMouseEvent mouse) {
 
         if (mouse.isMouse1()) {
+            // Set the row and column
+            int newLine = topLine + mouse.getY();
+            int newX = leftColumn + mouse.getX();
+            if ((newLine < 0) || (newX < 0)) {
+                return;
+            }
+
             // Selection.
             if (inSelection) {
-                selectionColumn1 = leftColumn + mouse.getX();
-                selectionLine1 = topLine + mouse.getY();
+                selectionColumn1 = newX;
+                selectionLine1 = newLine;
             } else {
                 inSelection = true;
-                selectionColumn0 = leftColumn + mouse.getX();
-                selectionLine0 = topLine + mouse.getY();
+                selectionColumn0 = newX;
+                selectionLine0 = newLine;
                 selectionColumn1 = selectionColumn0;
                 selectionLine1 = selectionLine0;
             }
 
-            // Set the row and column
-            int newLine = topLine + mouse.getY();
-            int newX = leftColumn + mouse.getX();
             if (newLine > document.getLineCount() - 1) {
                 // Go to the end
                 document.setLineNumber(document.getLineCount() - 1);
@@ -252,7 +256,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 }
                 return;
             }
-
             document.setLineNumber(newLine);
             setCursorY(mouse.getY());
             if (newX >= document.getCurrentLine().getDisplayLength()) {
@@ -516,12 +519,11 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         int endRow = selectionLine1;
 
         if (((selectionColumn1 < selectionColumn0)
-                && (selectionLine1 <= selectionLine0))
-            || ((selectionColumn1 <= selectionColumn0)
-                && (selectionLine1 < selectionLine0))
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
         ) {
-            // The user selected from bottom-right to top-left.  Reverse the
-            // coordinates for the inverted section.
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
             startCol = selectionColumn1;
             startRow = selectionLine1;
             endCol = selectionColumn0;
@@ -822,26 +824,74 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         int endCol = selectionColumn1;
         int endRow = selectionLine1;
 
+        /*
+        System.err.println("INITIAL: " + startRow + " " + startCol + " " +
+            endRow + " " + endCol + " " +
+            document.getLineNumber() + " " + document.getCursor());
+         */
+
         if (((selectionColumn1 < selectionColumn0)
-                && (selectionLine1 <= selectionLine0))
-            || ((selectionColumn1 <= selectionColumn0)
-                && (selectionLine1 < selectionLine0))
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
         ) {
-            // The user selected from bottom-right to top-left.  Reverse the
-            // coordinates for the inverted section.
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
             startCol = selectionColumn1;
             startRow = selectionLine1;
             endCol = selectionColumn0;
             endRow = selectionLine0;
+
+            if (endRow >= document.getLineCount()) {
+                // The selection started beyond EOF, trim it to EOF.
+                endRow = document.getLineCount() - 1;
+                endCol = document.getLine(endRow).getDisplayLength();
+            } else if (endRow == document.getLineCount() - 1) {
+                // The selection started beyond EOF, trim it to EOF.
+                if (endCol >= document.getLine(endRow).getDisplayLength()) {
+                    endCol = document.getLine(endRow).getDisplayLength() - 1;
+                }
+            }
+        }
+        /*
+        System.err.println("FLIP: " + startRow + " " + startCol + " " +
+            endRow + " " + endCol + " " +
+            document.getLineNumber() + " " + document.getCursor());
+        System.err.println(" --END: " + endRow + " " + document.getLineCount() +
+            " " + document.getLine(endRow).getDisplayLength());
+         */
+
+        assert (endRow < document.getLineCount());
+        if (endCol >= document.getLine(endRow).getDisplayLength()) {
+            endCol = document.getLine(endRow).getDisplayLength() - 1;
+        }
+        if (endCol < 0) {
+            endCol = 0;
+        }
+        if (startCol >= document.getLine(startRow).getDisplayLength()) {
+            startCol = document.getLine(startRow).getDisplayLength() - 1;
+        }
+        if (startCol < 0) {
+            startCol = 0;
         }
 
         // Place the cursor on the selection end, and "press backspace" until
         // the cursor matches the selection start.
+        /*
+        System.err.println("BEFORE: " + startRow + " " + startCol + " " +
+            endRow + " " + endCol + " " +
+            document.getLineNumber() + " " + document.getCursor());
+         */
         document.setLineNumber(endRow);
         document.setCursor(endCol + 1);
         while (!((document.getLineNumber() == startRow)
                 && (document.getCursor() == startCol))
         ) {
+            /*
+            System.err.println("DURING: " + startRow + " " + startCol + " " +
+                endRow + " " + endCol + " " +
+                document.getLineNumber() + " " + document.getCursor());
+             */
+
             document.backspace();
         }
         alignTopLine(true);
@@ -861,12 +911,11 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         int endRow = selectionLine1;
 
         if (((selectionColumn1 < selectionColumn0)
-                && (selectionLine1 <= selectionLine0))
-            || ((selectionColumn1 <= selectionColumn0)
-                && (selectionLine1 < selectionLine0))
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
         ) {
-            // The user selected from bottom-right to top-left.  Reverse the
-            // coordinates for the inverted section.
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
             startCol = selectionColumn1;
             startRow = selectionLine1;
             endCol = selectionColumn0;
