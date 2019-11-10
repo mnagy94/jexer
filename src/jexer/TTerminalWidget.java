@@ -1000,6 +1000,19 @@ public class TTerminalWidget extends TScrollableWidget
     }
 
     /**
+     * Wait for a period of time to get output from the launched process.
+     *
+     * @param millis millis to wait for, or 0 to wait forever
+     * @return true if the launched process has emitted something
+     */
+    public boolean waitForOutput(final int millis) {
+        if (emulator == null) {
+            return false;
+        }
+        return emulator.waitForOutput(millis);
+    }
+
+    /**
      * Check if a mouse press/release/motion event coordinate is over the
      * emulator.
      *

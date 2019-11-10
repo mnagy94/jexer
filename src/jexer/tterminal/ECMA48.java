@@ -507,6 +507,11 @@ public class ECMA48 implements Runnable {
     private ArrayList<TInputEvent> userQueue = new ArrayList<TInputEvent>();
 
     /**
+     * Number of bytes/characters passed to consume().
+     */
+    private long readCount = 0;
+
+    /**
      * DECSC/DECRC save/restore a subset of the total state.  This class
      * encapsulates those specific flags/modes.
      */
@@ -853,6 +858,34 @@ public class ECMA48 implements Runnable {
     // ------------------------------------------------------------------------
     // ECMA48 -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Wait for a period of time to get output from the launched process.
+     *
+     * @param millis millis to wait for, or 0 to wait forever
+     * @return true if the launched process has emitted something
+     */
+    public boolean waitForOutput(final int millis) {
+        if (millis < 0) {
+            throw new IllegalArgumentException("timeout must be >= 0");
+        }
+        int waitedMillis = millis;
+        final int pollTimeout = 5;
+        while (true) {
+            if (readCount != 0) {
+                return true;
+            }
+            if ((millis > 0) && (waitedMillis < 0)){
+                return false;
+            }
+            try {
+                Thread.sleep(pollTimeout);
+            } catch (InterruptedException e) {
+                // SQUASH
+            }
+            waitedMillis -= pollTimeout;
+        }
+    }
 
     /**
      * Process keyboard and mouse events from the user.
@@ -4971,6 +5004,7 @@ public class ECMA48 implements Runnable {
      * @param ch character from the remote side
      */
     private void consume(final int ch) {
+        readCount++;
 
         // DEBUG
         // System.err.printf("%c STATE = %s\n", ch, scanState);

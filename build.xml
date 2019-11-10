@@ -52,6 +52,8 @@
            target="1.6"
            source="1.6"
            >
+      <compilerarg value="-Xlint"/>
+      <compilerarg value="-Xdiags:verbose"/>
       <compilerarg value="-Xlint:deprecation" />
     </javac>
   </target>

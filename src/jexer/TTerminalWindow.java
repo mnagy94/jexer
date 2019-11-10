@@ -166,7 +166,7 @@ public class TTerminalWindow extends TScrollableWindow {
         newStatusBar(i18n.getString("statusBarRunning"));
 
         // Spin it up
-        terminal = new TTerminalWidget(this, 0, 0, new TAction() {
+        terminal = new TTerminalWidget(this, 0, 0, command, new TAction() {
             public void DO() {
                 onShellExit();
             }
@@ -450,6 +450,19 @@ public class TTerminalWindow extends TScrollableWindow {
         }
         clearShortcutKeypresses();
         getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+    }
+
+    /**
+     * Wait for a period of time to get output from the launched process.
+     *
+     * @param millis millis to wait for, or 0 to wait forever
+     * @return true if the launched process has emitted something
+     */
+    public boolean waitForOutput(final int millis) {
+        if (terminal == null) {
+            return false;
+        }
+        return terminal.waitForOutput(millis);
     }
 
 }

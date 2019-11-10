@@ -419,7 +419,7 @@ public final class Cell extends CellAttributes {
         int B = 23;
         int hash = A;
         hash = (B * hash) + super.hashCode();
-        hash = (B * hash) + (int)ch;
+        hash = (B * hash) + ch;
         hash = (B * hash) + width.hashCode();
         if (image != null) {
             /*

@@ -574,10 +574,10 @@ public class Sixel {
         case REPEAT:
             if ((ch >= '0') && (ch <= '9')) {
                 if (repeatCount == -1) {
-                    repeatCount = (int) (ch - '0');
+                    repeatCount = (ch - '0');
                 } else {
                     repeatCount *= 10;
-                    repeatCount += (int) (ch - '0');
+                    repeatCount += (ch - '0');
                 }
             }
             return;

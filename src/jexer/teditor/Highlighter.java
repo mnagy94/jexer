@@ -87,7 +87,7 @@ public class Highlighter {
      * @return color associated with name, e.g. bold yellow on blue
      */
     public CellAttributes getColor(final String name) {
-        CellAttributes attr = (CellAttributes) colors.get(name);
+        CellAttributes attr = colors.get(name);
         return attr;
     }
 
