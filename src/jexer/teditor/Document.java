@@ -122,6 +122,13 @@ public class Document {
     }
 
     /**
+     * Unset the dirty flag.
+     */
+    public void setNotDirty() {
+        dirty = false;
+    }
+
+    /**
      * Save contents to file.
      *
      * @param filename file to save to
@@ -636,6 +643,20 @@ public class Document {
      */
     public int getLineLength() {
         return lines.get(lineNumber).getDisplayLength();
+    }
+
+    /**
+     * Get the entire contents of the document as one string.
+     *
+     * @return the document contents
+     */
+    public String getText() {
+        StringBuilder sb = new StringBuilder();
+        for (Line line: getLines()) {
+            sb.append(line.getRawString());
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
 }
