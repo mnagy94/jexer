@@ -28,6 +28,9 @@
  */
 package jexer.backend;
 
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -3300,7 +3303,13 @@ public class ECMA48Terminal extends LogicalScreen
             newImage = new BufferedImage(cells.size() * getTextWidth(),
                 getTextHeight(), BufferedImage.TYPE_INT_ARGB);
 
-            java.awt.Graphics gr = newImage.getGraphics();
+            Graphics gr = newImage.getGraphics();
+            if (gr instanceof Graphics2D) {
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            }
             gr.drawImage(image, 0, 0, newImage.getWidth(),
                 newImage.getHeight(), null, null);
             gr.dispose();
@@ -3624,7 +3633,13 @@ public class ECMA48Terminal extends LogicalScreen
             newImage = new BufferedImage(cells.size() * getTextWidth(),
                 getTextHeight(), BufferedImage.TYPE_INT_ARGB);
 
-            java.awt.Graphics gr = newImage.getGraphics();
+            Graphics gr = newImage.getGraphics();
+            if (gr instanceof Graphics2D) {
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            }
             gr.drawImage(image, 0, 0, newImage.getWidth(),
                 newImage.getHeight(), null, null);
             gr.dispose();
@@ -3887,7 +3902,13 @@ public class ECMA48Terminal extends LogicalScreen
             newImage = new BufferedImage(cells.size() * getTextWidth(),
                 getTextHeight(), BufferedImage.TYPE_INT_ARGB);
 
-            java.awt.Graphics gr = newImage.getGraphics();
+            Graphics gr = newImage.getGraphics();
+            if (gr instanceof Graphics2D) {
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            }
             gr.drawImage(image, 0, 0, newImage.getWidth(),
                 newImage.getHeight(), null, null);
             gr.dispose();

@@ -36,6 +36,7 @@ import java.awt.Graphics2D;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
@@ -1238,6 +1239,15 @@ public class SwingTerminal extends LogicalScreen
 
         // Draw the background rectangle, then the foreground character.
         assert (cell.isImage());
+
+        // Enable anti-aliasing
+        if (gr instanceof Graphics2D) {
+            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+        }
+
         gr.setColor(cell.getBackground());
         gr.fillRect(xPixel, yPixel, textWidth, textHeight);
 
@@ -1310,9 +1320,18 @@ public class SwingTerminal extends LogicalScreen
             cellColor.setBackColor(cell.getForeColor());
         }
 
+        // Enable anti-aliasing
+        if (gr instanceof Graphics2D) {
+            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON);
+            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+        }
+
         // Draw the background rectangle, then the foreground character.
         gr2.setColor(attrToBackgroundColor(cellColor));
         gr2.fillRect(gr2x, gr2y, textWidth, textHeight);
+
 
         // Handle blink and underline
         if (!cell.isBlink()
