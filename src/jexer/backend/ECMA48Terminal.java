@@ -2880,7 +2880,8 @@ public class ECMA48Terminal extends LogicalScreen
                     if (decPrivateModeFlag == false) {
                         break;
                     }
-                    boolean jexerImages = false;
+                    boolean reportsJexerImages = false;
+                    boolean reportsIterm2Images = false;
                     for (String x: params) {
                         if (x.equals("4")) {
                             // Terminal reports sixel support
@@ -2893,20 +2894,25 @@ public class ECMA48Terminal extends LogicalScreen
                             if (debugToStderr) {
                                 System.err.println("Device Attributes: Jexer images");
                             }
-                            jexerImages = true;
+                            reportsJexerImages = true;
                         }
                         if (x.equals("1337")) {
                             // Terminal reports iTerm2 images support
                             if (debugToStderr) {
                                 System.err.println("Device Attributes: iTerm2 images");
                             }
-                            iterm2Images = true;
+                            reportsIterm2Images = true;
                         }
                     }
-                    if (jexerImages == false) {
+                    if (reportsJexerImages == false) {
                         // Terminal does not support Jexer images, disable
                         // them.
                         jexerImageOption = JexerImageOption.DISABLED;
+                    }
+                    if (reportsIterm2Images == false) {
+                        // Terminal does not support iTerm2 images, disable
+                        // them.
+                        iterm2Images = false;
                     }
                     resetParser();
                     return;
@@ -3198,124 +3204,8 @@ public class ECMA48Terminal extends LogicalScreen
             // System.err.println("CACHE MISS");
         }
 
-        int imageWidth = cells.get(0).getImage().getWidth();
-        int imageHeight = cells.get(0).getImage().getHeight();
-
-        // Piece these together into one larger image for final rendering.
-        int totalWidth = 0;
-        int fullWidth = cells.size() * imageWidth;
-        int fullHeight = imageHeight;
-        for (int i = 0; i < cells.size(); i++) {
-            totalWidth += cells.get(i).getImage().getWidth();
-        }
-
-        BufferedImage image = new BufferedImage(fullWidth,
-            fullHeight, BufferedImage.TYPE_INT_ARGB);
-
-        int [] rgbArray;
-        for (int i = 0; i < cells.size() - 1; i++) {
-            int tileWidth = imageWidth;
-            int tileHeight = imageHeight;
-
-            if (false && cells.get(i).isInvertedImage()) {
-                // I used to put an all-white cell over the cursor, don't do
-                // that anymore.
-                rgbArray = new int[imageWidth * imageHeight];
-                for (int j = 0; j < rgbArray.length; j++) {
-                    rgbArray[j] = 0xFFFFFF;
-                }
-            } else {
-                try {
-                    rgbArray = cells.get(i).getImage().getRGB(0, 0,
-                        tileWidth, tileHeight, null, 0, tileWidth);
-                } catch (Exception e) {
-                    throw new RuntimeException("image " + imageWidth + "x" +
-                        imageHeight +
-                        "tile " + tileWidth + "x" +
-                        tileHeight +
-                        " cells.get(i).getImage() " +
-                        cells.get(i).getImage() +
-                        " i " + i +
-                        " fullWidth " + fullWidth +
-                        " fullHeight " + fullHeight, e);
-                }
-            }
-
-            /*
-            System.err.printf("calling image.setRGB(): %d %d %d %d %d\n",
-                i * imageWidth, 0, imageWidth, imageHeight,
-                0, imageWidth);
-            System.err.printf("   fullWidth %d fullHeight %d cells.size() %d textWidth %d\n",
-                fullWidth, fullHeight, cells.size(), getTextWidth());
-             */
-
-            image.setRGB(i * imageWidth, 0, tileWidth, tileHeight,
-                rgbArray, 0, tileWidth);
-            if (tileHeight < fullHeight) {
-                int backgroundColor = cells.get(i).getBackground().getRGB();
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
-                    for (int imageY = imageHeight; imageY < fullHeight;
-                         imageY++) {
-
-                        image.setRGB(imageX, imageY, backgroundColor);
-                    }
-                }
-            }
-        }
-        totalWidth -= ((cells.size() - 1) * imageWidth);
-        if (false && cells.get(cells.size() - 1).isInvertedImage()) {
-            // I used to put an all-white cell over the cursor, don't do that
-            // anymore.
-            rgbArray = new int[totalWidth * imageHeight];
-            for (int j = 0; j < rgbArray.length; j++) {
-                rgbArray[j] = 0xFFFFFF;
-            }
-        } else {
-            try {
-                rgbArray = cells.get(cells.size() - 1).getImage().getRGB(0, 0,
-                    totalWidth, imageHeight, null, 0, totalWidth);
-            } catch (Exception e) {
-                throw new RuntimeException("image " + imageWidth + "x" +
-                    imageHeight + " cells.get(cells.size() - 1).getImage() " +
-                    cells.get(cells.size() - 1).getImage(), e);
-            }
-        }
-        image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
-            imageHeight, rgbArray, 0, totalWidth);
-
-        if (totalWidth < imageWidth) {
-            int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
-
-            for (int imageX = image.getWidth() - totalWidth;
-                 imageX < image.getWidth(); imageX++) {
-
-                for (int imageY = 0; imageY < fullHeight; imageY++) {
-                    image.setRGB(imageX, imageY, backgroundColor);
-                }
-            }
-        }
-
-        if ((image.getWidth() != cells.size() * getTextWidth())
-            || (image.getHeight() != getTextHeight())
-        ) {
-            // Rescale the image to fit the text cells it is going into.
-            BufferedImage newImage;
-            newImage = new BufferedImage(cells.size() * getTextWidth(),
-                getTextHeight(), BufferedImage.TYPE_INT_ARGB);
-
-            Graphics gr = newImage.getGraphics();
-            if (gr instanceof Graphics2D) {
-                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
-                    RenderingHints.VALUE_RENDER_QUALITY);
-            }
-            gr.drawImage(image, 0, 0, newImage.getWidth(),
-                newImage.getHeight(), null, null);
-            gr.dispose();
-            image = newImage;
-            fullHeight = image.getHeight();
-        }
+        BufferedImage image = cellsToImage(cells);
+        int fullHeight = image.getHeight();
 
         // Dither the image.  It is ok to lose the original here.
         if (palette == null) {
@@ -3470,64 +3360,15 @@ public class ECMA48Terminal extends LogicalScreen
         return sixel;
     }
 
-    // ------------------------------------------------------------------------
-    // End sixel output support -----------------------------------------------
-    // ------------------------------------------------------------------------
-
-    // ------------------------------------------------------------------------
-    // iTerm2 image output support --------------------------------------------
-    // ------------------------------------------------------------------------
-
     /**
-     * Create an iTerm2 images string representing a row of several cells
-     * containing bitmap data.
+     * Convert a horizontal range of cell's image data into a single
+     * contigous image, rescaled and anti-aliased to match the current text
+     * cell size.
      *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param cells the cells containing the bitmap data
-     * @return the string to emit to an ANSI / ECMA-style terminal
+     * @param cells the cells containing image data
+     * @return the image resized to the current text cell size
      */
-    private String toIterm2Image(final int x, final int y,
-        final ArrayList<Cell> cells) {
-
-        StringBuilder sb = new StringBuilder();
-
-        assert (cells != null);
-        assert (cells.size() > 0);
-        assert (cells.get(0).getImage() != null);
-
-        if (iterm2Images == false) {
-            sb.append(normal());
-            sb.append(gotoXY(x, y));
-            for (int i = 0; i < cells.size(); i++) {
-                sb.append(' ');
-            }
-            return sb.toString();
-        }
-
-        if (iterm2Cache == null) {
-            iterm2Cache = new ImageCache(height * 10);
-        }
-
-        // Save and get rows to/from the cache that do NOT have inverted
-        // cells.
-        boolean saveInCache = true;
-        for (Cell cell: cells) {
-            if (cell.isInvertedImage()) {
-                saveInCache = false;
-            }
-        }
-        if (saveInCache) {
-            String cachedResult = iterm2Cache.get(cells);
-            if (cachedResult != null) {
-                // System.err.println("CACHE HIT");
-                sb.append(gotoXY(x, y));
-                sb.append(cachedResult);
-                return sb.toString();
-            }
-            // System.err.println("CACHE MISS");
-        }
-
+    private BufferedImage cellsToImage(final List<Cell> cells) {
         int imageWidth = cells.get(0).getImage().getWidth();
         int imageHeight = cells.get(0).getImage().getHeight();
 
@@ -3547,6 +3388,7 @@ public class ECMA48Terminal extends LogicalScreen
         for (int i = 0; i < cells.size() - 1; i++) {
             int tileWidth = imageWidth;
             int tileHeight = imageHeight;
+
             if (false && cells.get(i).isInvertedImage()) {
                 // I used to put an all-white cell over the cursor, don't do
                 // that anymore.
@@ -3644,8 +3486,71 @@ public class ECMA48Terminal extends LogicalScreen
                 newImage.getHeight(), null, null);
             gr.dispose();
             image = newImage;
-            fullHeight = image.getHeight();
         }
+
+        return image;
+    }
+
+    // ------------------------------------------------------------------------
+    // End sixel output support -----------------------------------------------
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // iTerm2 image output support --------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Create an iTerm2 images string representing a row of several cells
+     * containing bitmap data.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param cells the cells containing the bitmap data
+     * @return the string to emit to an ANSI / ECMA-style terminal
+     */
+    private String toIterm2Image(final int x, final int y,
+        final ArrayList<Cell> cells) {
+
+        StringBuilder sb = new StringBuilder();
+
+        assert (cells != null);
+        assert (cells.size() > 0);
+        assert (cells.get(0).getImage() != null);
+
+        if (iterm2Images == false) {
+            sb.append(normal());
+            sb.append(gotoXY(x, y));
+            for (int i = 0; i < cells.size(); i++) {
+                sb.append(' ');
+            }
+            return sb.toString();
+        }
+
+        if (iterm2Cache == null) {
+            iterm2Cache = new ImageCache(height * 10);
+        }
+
+        // Save and get rows to/from the cache that do NOT have inverted
+        // cells.
+        boolean saveInCache = true;
+        for (Cell cell: cells) {
+            if (cell.isInvertedImage()) {
+                saveInCache = false;
+            }
+        }
+        if (saveInCache) {
+            String cachedResult = iterm2Cache.get(cells);
+            if (cachedResult != null) {
+                // System.err.println("CACHE HIT");
+                sb.append(gotoXY(x, y));
+                sb.append(cachedResult);
+                return sb.toString();
+            }
+            // System.err.println("CACHE MISS");
+        }
+
+        BufferedImage image = cellsToImage(cells);
+        int fullHeight = image.getHeight();
 
         /*
          * From https://iterm2.com/documentation-images.html:
@@ -3797,124 +3702,8 @@ public class ECMA48Terminal extends LogicalScreen
             // System.err.println("CACHE MISS");
         }
 
-        int imageWidth = cells.get(0).getImage().getWidth();
-        int imageHeight = cells.get(0).getImage().getHeight();
-
-        // Piece cells.get(x).getImage() pieces together into one larger
-        // image for final rendering.
-        int totalWidth = 0;
-        int fullWidth = cells.size() * imageWidth;
-        int fullHeight = imageHeight;
-        for (int i = 0; i < cells.size(); i++) {
-            totalWidth += cells.get(i).getImage().getWidth();
-        }
-
-        BufferedImage image = new BufferedImage(fullWidth,
-            fullHeight, BufferedImage.TYPE_INT_ARGB);
-
-        int [] rgbArray;
-        for (int i = 0; i < cells.size() - 1; i++) {
-            int tileWidth = imageWidth;
-            int tileHeight = imageHeight;
-            if (false && cells.get(i).isInvertedImage()) {
-                // I used to put an all-white cell over the cursor, don't do
-                // that anymore.
-                rgbArray = new int[imageWidth * imageHeight];
-                for (int j = 0; j < rgbArray.length; j++) {
-                    rgbArray[j] = 0xFFFFFF;
-                }
-            } else {
-                try {
-                    rgbArray = cells.get(i).getImage().getRGB(0, 0,
-                        tileWidth, tileHeight, null, 0, tileWidth);
-                } catch (Exception e) {
-                    throw new RuntimeException("image " + imageWidth + "x" +
-                        imageHeight +
-                        "tile " + tileWidth + "x" +
-                        tileHeight +
-                        " cells.get(i).getImage() " +
-                        cells.get(i).getImage() +
-                        " i " + i +
-                        " fullWidth " + fullWidth +
-                        " fullHeight " + fullHeight, e);
-                }
-            }
-
-            /*
-            System.err.printf("calling image.setRGB(): %d %d %d %d %d\n",
-                i * imageWidth, 0, imageWidth, imageHeight,
-                0, imageWidth);
-            System.err.printf("   fullWidth %d fullHeight %d cells.size() %d textWidth %d\n",
-                fullWidth, fullHeight, cells.size(), getTextWidth());
-             */
-
-            image.setRGB(i * imageWidth, 0, tileWidth, tileHeight,
-                rgbArray, 0, tileWidth);
-            if (tileHeight < fullHeight) {
-                int backgroundColor = cells.get(i).getBackground().getRGB();
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
-                    for (int imageY = imageHeight; imageY < fullHeight;
-                         imageY++) {
-
-                        image.setRGB(imageX, imageY, backgroundColor);
-                    }
-                }
-            }
-        }
-        totalWidth -= ((cells.size() - 1) * imageWidth);
-        if (false && cells.get(cells.size() - 1).isInvertedImage()) {
-            // I used to put an all-white cell over the cursor, don't do that
-            // anymore.
-            rgbArray = new int[totalWidth * imageHeight];
-            for (int j = 0; j < rgbArray.length; j++) {
-                rgbArray[j] = 0xFFFFFF;
-            }
-        } else {
-            try {
-                rgbArray = cells.get(cells.size() - 1).getImage().getRGB(0, 0,
-                    totalWidth, imageHeight, null, 0, totalWidth);
-            } catch (Exception e) {
-                throw new RuntimeException("image " + imageWidth + "x" +
-                    imageHeight + " cells.get(cells.size() - 1).getImage() " +
-                    cells.get(cells.size() - 1).getImage(), e);
-            }
-        }
-        image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
-            imageHeight, rgbArray, 0, totalWidth);
-
-        if (totalWidth < imageWidth) {
-            int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
-
-            for (int imageX = image.getWidth() - totalWidth;
-                 imageX < image.getWidth(); imageX++) {
-
-                for (int imageY = 0; imageY < fullHeight; imageY++) {
-                    image.setRGB(imageX, imageY, backgroundColor);
-                }
-            }
-        }
-
-        if ((image.getWidth() != cells.size() * getTextWidth())
-            || (image.getHeight() != getTextHeight())
-        ) {
-            // Rescale the image to fit the text cells it is going into.
-            BufferedImage newImage;
-            newImage = new BufferedImage(cells.size() * getTextWidth(),
-                getTextHeight(), BufferedImage.TYPE_INT_ARGB);
-
-            Graphics gr = newImage.getGraphics();
-            if (gr instanceof Graphics2D) {
-                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON);
-                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
-                    RenderingHints.VALUE_RENDER_QUALITY);
-            }
-            gr.drawImage(image, 0, 0, newImage.getWidth(),
-                newImage.getHeight(), null, null);
-            gr.dispose();
-            image = newImage;
-            fullHeight = image.getHeight();
-        }
+        BufferedImage image = cellsToImage(cells);
+        int fullHeight = image.getHeight();
 
         if (jexerImageOption == JexerImageOption.PNG) {
             // Encode as PNG
