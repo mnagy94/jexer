@@ -248,4 +248,29 @@ public class DisplayLine {
         chars[chars.length - 1] = new Cell(newCell);
     }
 
+    /**
+     * Determine if line contains image data.
+     *
+     * @return true if the line has image data
+     */
+    public boolean isImage() {
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i].isImage()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Clear image data from line.
+     */
+    public void clearImages() {
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i].isImage()) {
+                chars[i].reset();
+            }
+        }
+    }
+
 }

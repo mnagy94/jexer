@@ -274,7 +274,7 @@ public class ECMA48 implements Runnable {
     /**
      * The maximum number of lines in the scrollback buffer.
      */
-    private int maxScrollback = 10000;
+    private int scrollbackMax = 10000;
 
     /**
      * The terminal's input.  For type == XTERM, this is an InputStreamReader
@@ -1255,8 +1255,27 @@ public class ECMA48 implements Runnable {
             display.add(line);
         }
         while (display.size() > height) {
-            scrollback.add(display.remove(0));
+            appendScrollbackLine(display.remove(0));
         }
+    }
+
+    /**
+     * Get the maximum number of lines in the scrollback buffer.
+     *
+     * @return the maximum number of lines in the scrollback buffer
+     */
+    public int getScrollbackMax() {
+        return scrollbackMax;
+    }
+
+    /**
+     * Set the maximum number of lines for the scrollback buffer.
+     *
+     * @param scrollbackMax the maximum number of lines for the scrollback
+     * buffer
+     */
+    public final void setScrollbackMax(final int scrollbackMax) {
+        this.scrollbackMax = scrollbackMax;
     }
 
     /**
@@ -1453,13 +1472,24 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * Append a to the scrollback buffer, clearing image data for lines more
+     * than three screenfuls in.
+     */
+    private void appendScrollbackLine(DisplayLine line) {
+        scrollback.add(line);
+        if (scrollback.size() > height * 3) {
+            scrollback.get(scrollback.size() - (height * 3)).clearImages();
+        }
+    }
+
+    /**
      * Append a new line to the bottom of the display, adding lines off the
      * top to the scrollback buffer.
      */
     private void newDisplayLine() {
         // Scroll the top line off into the scrollback buffer
-        scrollback.add(display.get(0));
-        if (scrollback.size() > maxScrollback) {
+        appendScrollbackLine(display.get(0));
+        while (scrollback.size() > scrollbackMax) {
             scrollback.remove(0);
             scrollback.trimToSize();
         }
