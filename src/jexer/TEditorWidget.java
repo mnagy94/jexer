@@ -792,12 +792,30 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     }
 
     /**
+     * Get the current editing row plain text.  1-based.
+     *
+     * @param row the editing row number.  Row 1 is the first row.
+     * @return the plain text of the row
+     */
+    public String getEditingRawLine(final int row) {
+        Line line  = document.getLine(row - 1);
+        return line.getRawString();
+    }
+
+    /**
      * Get the dirty value.
      *
      * @return true if the buffer is dirty
      */
     public boolean isDirty() {
         return document.isDirty();
+    }
+
+    /**
+     * Unset the dirty flag.
+     */
+    public void setNotDirty() {
+        document.setNotDirty();
     }
 
     /**
@@ -978,6 +996,77 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         }
 
         getClipboard().copyText(sb.toString());
+    }
+
+    /**
+     * Set the selection.
+     *
+     * @param startRow the starting row number.  0-based: row 0 is the first
+     * row.
+     * @param startColumn the starting column number.  0-based: column 0 is
+     * the first column.
+     * @param endRow the ending row number.  0-based: row 0 is the first row.
+     * @param endColumn the ending column number.  0-based: column 0 is the
+     * first column.
+     */
+    public void setSelection(final int startRow, final int startColumn,
+        final int endRow, final int endColumn) {
+
+        inSelection = true;
+        selectionLine0 = startRow;
+        selectionColumn0 = startColumn;
+        selectionLine1 = endRow;
+        selectionColumn1 = endColumn;
+    }
+
+    /**
+     * Unset the selection.
+     */
+    public void unsetSelection() {
+        inSelection = false;
+    }
+
+    /**
+     * Replace whatever is being selected with new text.  If not in
+     * selection, nothing is replaced.
+     *
+     * @param text the new replacement text
+     */
+    public void replaceSelection(final String text) {
+        if (!inSelection) {
+            return;
+        }
+
+        // Delete selected text, then paste text from clipboard.
+        deleteSelection();
+
+        for (int i = 0; i < text.length(); ) {
+            int ch = text.codePointAt(i);
+            onKeypress(new TKeypressEvent(false, 0, ch, false, false,
+                    false));
+            i += Character.charCount(ch);
+        }
+    }
+
+    /**
+     * Get the entire contents of the editor as one string.
+     *
+     * @return the editor contents
+     */
+    public String getText() {
+        return document.getText();
+    }
+
+    /**
+     * Set the entire contents of the editor from one string.
+     *
+     * @param text the new contents
+     */
+    public void setText(final String text) {
+        document = new Document(text, defaultColor);
+        unsetSelection();
+        topLine = 0;
+        leftColumn = 0;
     }
 
     // ------------------------------------------------------------------------

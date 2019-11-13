@@ -62,7 +62,11 @@
     <mkdir dir="${jar.dir}"/>
     <jar destfile="${jar.dir}/${ant.project.name}.jar"
          basedir="${classes.dir}">
-      <fileset dir="${resources.dir}"/>
+
+      <fileset dir="${resources.dir}">
+        <exclude name="**/*TTF-4.39.ttf" />
+        <exclude name="**/*Italic*.ttf" />
+      </fileset>
 
       <!-- Include properties files. -->
       <fileset dir="${src.dir}" includes="**/*.properties"/>
