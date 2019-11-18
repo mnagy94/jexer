@@ -30,9 +30,6 @@ package jexer;
 
 import java.awt.image.BufferedImage;
 
-import jexer.backend.ECMA48Terminal;
-import jexer.backend.MultiScreen;
-import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;

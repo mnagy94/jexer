@@ -178,8 +178,11 @@ public class ColorTheme {
             return;
         }
 
-        while (token.equals("bold") || token.equals("blink")) {
-            if (token.equals("bold")) {
+        while (token.equals("bold")
+            || token.equals("bright")
+            || token.equals("blink")
+        ) {
+            if (token.equals("bold") || token.equals("bright")) {
                 bold = true;
                 token = tokenizer.nextToken();
             }

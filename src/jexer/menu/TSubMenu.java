@@ -213,6 +213,21 @@ public class TSubMenu extends TMenuItem {
     }
 
     /**
+     * Convenience function to add a custom menu item.
+     *
+     * @param id menu item ID.  Must be greater than 1024.
+     * @param label menu item label
+     * @param key global keyboard accelerator
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    public TMenuItem addItem(final int id, final String label,
+        final TKeypress key, final boolean enabled) {
+
+        return menu.addItem(id, label, key, enabled);
+    }
+
+    /**
      * Convenience function to add a menu item.
      *
      * @param id menu item ID.  Must be greater than 1024.
@@ -221,6 +236,20 @@ public class TSubMenu extends TMenuItem {
      */
     public TMenuItem addItem(final int id, final String label) {
         return menu.addItem(id, label);
+    }
+
+    /**
+     * Convenience function to add a menu item.
+     *
+     * @param id menu item ID.  Must be greater than 1024.
+     * @param label menu item label
+     * @param enabled default state for enabled
+     * @return the new menu item
+     */
+    public TMenuItem addItem(final int id, final String label,
+        final boolean enabled) {
+
+        return menu.addItem(id, label, enabled);
     }
 
     /**

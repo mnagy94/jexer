@@ -165,8 +165,10 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         if (mouse.isMouse1()) {
             // Selection.
             inSelection = true;
-            selectionColumn0 = leftColumn + mouse.getX();
             selectionLine0 = topLine + mouse.getY();
+            selectionColumn0 = leftColumn + mouse.getX();
+            selectionColumn0 = Math.max(0, Math.min(selectionColumn0,
+                    document.getLine(selectionLine0).getDisplayLength() - 1));
             selectionColumn1 = selectionColumn0;
             selectionLine1 = selectionLine0;
 
@@ -513,6 +515,8 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     public void draw() {
         CellAttributes selectedColor = getTheme().getColor("teditor.selected");
 
+        boolean drawSelection = true;
+
         int startCol = selectionColumn0;
         int startRow = selectionLine0;
         int endCol = selectionColumn1;
@@ -528,6 +532,9 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             startRow = selectionLine1;
             endCol = selectionColumn0;
             endRow = selectionLine0;
+        }
+        if ((startCol == endCol) && (startRow == endRow)) {
+            drawSelection = false;
         }
 
         for (int i = 0; i < getHeight(); i++) {
@@ -550,7 +557,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 }
 
                 // Highlight selected region
-                if (inSelection) {
+                if (inSelection && drawSelection) {
                     if (startRow == endRow) {
                         if (topLine + i == startRow) {
                             for (x = startCol; x <= endCol; x++) {
@@ -832,7 +839,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      * Delete text within the selection bounds.
      */
     private void deleteSelection() {
-        if (inSelection == false) {
+        if (!inSelection) {
             return;
         }
         inSelection = false;
@@ -919,8 +926,41 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      * Copy text within the selection bounds to clipboard.
      */
     private void copySelection() {
-        if (inSelection == false) {
+        if (!inSelection) {
             return;
+        }
+        getClipboard().copyText(getSelection());
+    }
+
+    /**
+     * Set the selection.
+     *
+     * @param startRow the starting row number.  0-based: row 0 is the first
+     * row.
+     * @param startColumn the starting column number.  0-based: column 0 is
+     * the first column.
+     * @param endRow the ending row number.  0-based: row 0 is the first row.
+     * @param endColumn the ending column number.  0-based: column 0 is the
+     * first column.
+     */
+    public void setSelection(final int startRow, final int startColumn,
+        final int endRow, final int endColumn) {
+
+        inSelection = true;
+        selectionLine0 = startRow;
+        selectionColumn0 = startColumn;
+        selectionLine1 = endRow;
+        selectionColumn1 = endColumn;
+    }
+
+    /**
+     * Copy text within the selection bounds to a string.
+     *
+     * @return the selection as a string, or null if there is no selection
+     */
+    public String getSelection() {
+        if (!inSelection) {
+            return null;
         }
 
         int startCol = selectionColumn0;
@@ -994,29 +1034,127 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 i += Character.charCount(ch);
             }
         }
-
-        getClipboard().copyText(sb.toString());
+        return sb.toString();
     }
 
     /**
-     * Set the selection.
+     * Get the selection starting row number.
      *
-     * @param startRow the starting row number.  0-based: row 0 is the first
-     * row.
-     * @param startColumn the starting column number.  0-based: column 0 is
-     * the first column.
-     * @param endRow the ending row number.  0-based: row 0 is the first row.
-     * @param endColumn the ending column number.  0-based: column 0 is the
-     * first column.
+     * @return the starting row number, or -1 if there is no selection.
+     * 0-based: row 0 is the first row.
      */
-    public void setSelection(final int startRow, final int startColumn,
-        final int endRow, final int endColumn) {
+    public int getSelectionStartRow() {
+        if (!inSelection) {
+            return -1;
+        }
 
-        inSelection = true;
-        selectionLine0 = startRow;
-        selectionColumn0 = startColumn;
-        selectionLine1 = endRow;
-        selectionColumn1 = endColumn;
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
+        ) {
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+        return startRow;
+    }
+
+    /**
+     * Get the selection starting column number.
+     *
+     * @return the starting column number, or -1 if there is no selection.
+     * 0-based: column 0 is the first column.
+     */
+    public int getSelectionStartColumn() {
+        if (!inSelection) {
+            return -1;
+        }
+
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
+        ) {
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+        return startCol;
+    }
+
+    /**
+     * Get the selection ending row number.
+     *
+     * @return the ending row number, or -1 if there is no selection.
+     * 0-based: row 0 is the first row.
+     */
+    public int getSelectionEndRow() {
+        if (!inSelection) {
+            return -1;
+        }
+
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
+        ) {
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+        return endRow;
+    }
+
+    /**
+     * Get the selection ending column number.
+     *
+     * @return the ending column number, or -1 if there is no selection.
+     * 0-based: column 0 is the first column.
+     */
+    public int getSelectionEndColumn() {
+        if (!inSelection) {
+            return -1;
+        }
+
+        int startCol = selectionColumn0;
+        int startRow = selectionLine0;
+        int endCol = selectionColumn1;
+        int endRow = selectionLine1;
+
+        if (((selectionColumn1 < selectionColumn0)
+                && (selectionLine1 == selectionLine0))
+            || (selectionLine1 < selectionLine0)
+        ) {
+            // The user selected from bottom-to-top and/or right-to-left.
+            // Reverse the coordinates for the inverted section.
+            startCol = selectionColumn1;
+            startRow = selectionLine1;
+            endCol = selectionColumn0;
+            endRow = selectionLine0;
+        }
+        return endCol;
     }
 
     /**
@@ -1046,6 +1184,15 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                     false));
             i += Character.charCount(ch);
         }
+    }
+
+    /**
+     * Check if selection is available.
+     *
+     * @return true if a selection has been made
+     */
+    public boolean hasSelection() {
+        return inSelection;
     }
 
     /**

@@ -29,7 +29,6 @@
 package jexer;
 
 import jexer.bits.CellAttributes;
-import jexer.bits.GraphicsChars;
 import jexer.bits.StringUtils;
 
 /**

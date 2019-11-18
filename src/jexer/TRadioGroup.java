@@ -66,6 +66,24 @@ public class TRadioGroup extends TWidget {
      * @param parent parent widget
      * @param x column relative to parent
      * @param y row relative to parent
+     * @param width width of group
+     * @param label label to display on the group box
+     */
+    public TRadioGroup(final TWidget parent, final int x, final int y,
+        final int width, final String label) {
+
+        // Set parent and window
+        super(parent, x, y, width, 2);
+
+        this.label = label;
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
      * @param label label to display on the group box
      */
     public TRadioGroup(final TWidget parent, final int x, final int y,

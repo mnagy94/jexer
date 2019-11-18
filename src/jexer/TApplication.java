@@ -165,16 +165,6 @@ public class TApplication implements Runnable {
     private int mouseY;
 
     /**
-     * Old version of mouse coordinate X.
-     */
-    private int oldMouseX;
-
-    /**
-     * Old version mouse coordinate Y.
-     */
-    private int oldMouseY;
-
-    /**
      * Old drawn version of mouse coordinate X.
      */
     private int oldDrawnMouseX;
@@ -1196,8 +1186,6 @@ public class TApplication implements Runnable {
                     }
                     mouseX = 0;
                     mouseY = 0;
-                    oldMouseX = 0;
-                    oldMouseY = 0;
                 }
                 if (desktop != null) {
                     desktop.setDimensions(0, desktopTop, resize.getWidth(),
@@ -1275,8 +1263,6 @@ public class TApplication implements Runnable {
             }
 
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
-                oldMouseX = mouseX;
-                oldMouseY = mouseY;
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
             } else {
@@ -1465,8 +1451,6 @@ public class TApplication implements Runnable {
 
             TMouseEvent mouse = (TMouseEvent) event;
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
-                oldMouseX = mouseX;
-                oldMouseY = mouseY;
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
             } else {
@@ -1593,14 +1577,17 @@ public class TApplication implements Runnable {
             desktop.onIdle();
         }
 
-        // Run any invokeLaters
+        // Run any invokeLaters.  We make a copy, and run that, because one
+        // of these Runnables might add call TApplication.invokeLater().
+        List<Runnable> invokes = new ArrayList<Runnable>();
         synchronized (invokeLaters) {
-            for (Runnable invoke: invokeLaters) {
-                invoke.run();
-            }
+            invokes.addAll(invokeLaters);
             invokeLaters.clear();
-            doRepaint();
         }
+        for (Runnable invoke: invokes) {
+            invoke.run();
+        }
+        doRepaint();
 
     }
 
@@ -2058,7 +2045,9 @@ public class TApplication implements Runnable {
             // Draw the status bar of the top-level window
             TStatusBar statusBar = null;
             if (topLevel != null) {
-                statusBar = topLevel.getStatusBar();
+                if (topLevel.isShown()) {
+                    statusBar = topLevel.getStatusBar();
+                }
             }
             if (statusBar != null) {
                 getScreen().resetClipping();

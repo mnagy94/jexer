@@ -28,27 +28,20 @@
  */
 package jexer;
 
-import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-
-import java.io.InputStream;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
 
 import jexer.backend.ECMA48Terminal;
 import jexer.backend.GlyphMaker;
-import jexer.backend.MultiScreen;
 import jexer.backend.SwingTerminal;
 import jexer.bits.Cell;
-import jexer.bits.CellAttributes;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
@@ -85,6 +78,11 @@ public class TTerminalWidget extends TScrollableWidget
      * The Process created by the shell spawning constructor.
      */
     private Process shell;
+
+    /**
+     * If true, something called 'ptypipe' is on the PATH and executable.
+     */
+    private static boolean ptypipeOnPath = false;
 
     /**
      * If true, we are using the ptypipe utility to support dynamic window
@@ -166,6 +164,13 @@ public class TTerminalWidget extends TScrollableWidget
     // ------------------------------------------------------------------------
 
     /**
+     * Static constructor.
+     */
+    static {
+        checkForPtypipe();
+    }
+
+    /**
      * Public constructor spawns a custom command line.
      *
      * @param parent parent widget
@@ -233,6 +238,14 @@ public class TTerminalWidget extends TScrollableWidget
         if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
             && (System.getProperty("jexer.TTerminal.ptypipe").
                 equals("true"))
+        ) {
+            ptypipe = true;
+            fullCommand = new String[command.length + 1];
+            fullCommand[0] = "ptypipe";
+            System.arraycopy(command, 0, fullCommand, 1, command.length);
+        } else if (System.getProperty("jexer.TTerminal.ptypipe",
+                "auto").equals("auto")
+            && (ptypipeOnPath == true)
         ) {
             ptypipe = true;
             fullCommand = new String[command.length + 1];
@@ -344,6 +357,12 @@ public class TTerminalWidget extends TScrollableWidget
         if ((System.getProperty("jexer.TTerminal.ptypipe") != null)
             && (System.getProperty("jexer.TTerminal.ptypipe").
                 equals("true"))
+        ) {
+            ptypipe = true;
+            spawnShell(cmdShellPtypipe.split("\\s+"));
+        } else if (System.getProperty("jexer.TTerminal.ptypipe",
+                "auto").equals("auto")
+            && (ptypipeOnPath == true)
         ) {
             ptypipe = true;
             spawnShell(cmdShellPtypipe.split("\\s+"));
@@ -775,6 +794,43 @@ public class TTerminalWidget extends TScrollableWidget
     // ------------------------------------------------------------------------
     // TTerminalWidget --------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Check for 'ptypipe' on the path.  If available, set ptypipeOnPath.
+     */
+    private static void checkForPtypipe() {
+        String systemPath = System.getenv("PATH");
+        if (systemPath == null) {
+            return;
+        }
+
+        String [] paths = systemPath.split(File.pathSeparator);
+        if (paths == null) {
+            return;
+        }
+        if (paths.length == 0) {
+            return;
+        }
+        for (int i = 0; i < paths.length; i++) {
+            File path = new File(paths[i]);
+            if (path.exists() && path.isDirectory()) {
+                File [] files = path.listFiles();
+                if (files == null) {
+                    continue;
+                }
+                if (files.length == 0) {
+                    continue;
+                }
+                for (int j = 0; j < files.length; j++) {
+                    File file = files[j];
+                    if (file.canExecute() && file.getName().equals("ptypipe")) {
+                        ptypipeOnPath = true;
+                        return;
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Get the desired window title.
@@ -1216,6 +1272,15 @@ public class TTerminalWidget extends TScrollableWidget
             return getHeight();
         }
         return 24;
+    }
+
+    /**
+     * Get the exit value for the emulator.
+     *
+     * @return exit value
+     */
+    public int getExitValue() {
+        return exitValue;
     }
 
     // ------------------------------------------------------------------------

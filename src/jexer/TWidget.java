@@ -2164,6 +2164,21 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Convenience function to add a radio button group to this
+     * container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width width of group
+     * @param label label to display on the group box
+     */
+    public final TRadioGroup addRadioGroup(final int x, final int y,
+        final int width, final String label) {
+
+        return new TRadioGroup(this, x, y, width, label);
+    }
+
+    /**
      * Convenience function to add a text field to this container/window.
      *
      * @param x column relative to parent

@@ -30,10 +30,8 @@ package jexer;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
-import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.menu.TMenu;
 
 /**
  * TSplitPane contains two widgets with a draggable horizontal or vertical

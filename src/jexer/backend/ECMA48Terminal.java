@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import javax.imageio.ImageIO;
 
-import jexer.TImage;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Color;

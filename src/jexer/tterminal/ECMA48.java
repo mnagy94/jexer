@@ -28,7 +28,7 @@
  */
 package jexer.tterminal;
 
-import java.awt.Graphics2D;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -7374,7 +7374,7 @@ public class ECMA48 implements Runnable {
                     newImage = new BufferedImage(textWidth, textHeight,
                         BufferedImage.TYPE_INT_ARGB);
 
-                    java.awt.Graphics gr = newImage.getGraphics();
+                    Graphics gr = newImage.getGraphics();
                     gr.drawImage(image.getSubimage(x * textWidth,
                             y * textHeight, width, height),
                         0, 0, null, null);

@@ -856,6 +856,11 @@ public class TKeypress {
             return "\u25C0\u2500\u2518";
         }
 
+        // Special case: Space is "Space"
+        if (equals(kbSpace)) {
+            return "Space";
+        }
+
         if (equals(kbShiftLeft)) {
             return "Shift+\u2190";
         }

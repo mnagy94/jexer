@@ -28,35 +28,13 @@
  */
 package jexer;
 
-import java.awt.Font;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-
-import java.io.InputStream;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 
-import jexer.backend.ECMA48Terminal;
-import jexer.backend.GlyphMaker;
-import jexer.backend.MultiScreen;
-import jexer.backend.SwingTerminal;
-import jexer.bits.Cell;
-import jexer.bits.CellAttributes;
+import jexer.menu.TMenu;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
-import jexer.menu.TMenu;
-import jexer.tterminal.DisplayLine;
-import jexer.tterminal.DisplayListener;
-import jexer.tterminal.ECMA48;
 import static jexer.TKeypress.*;
 
 /**
