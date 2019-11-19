@@ -579,7 +579,19 @@ public class SwingTerminal extends LogicalScreen
         ) {
             do {
                 do {
-                    clearPhysical();
+                    /*
+                     * TODO:
+                     *
+                     * Under Windows and Mac (I think?), there was a problem
+                     * with the screen not updating on the initial load.
+                     * Adding clearPhysical() below "fixed" it, but at a
+                     * horrible performance penalty on Linux which I am no
+                     * longer willing to accept.
+                     *
+                     * Fix this in the "right" way for Windows/OSX such that
+                     * the entire screen does not require a full redraw.
+                     */
+                    // clearPhysical();
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
 

@@ -443,4 +443,16 @@ public class TTerminalWindow extends TScrollableWindow {
         return terminal.waitForOutput(millis);
     }
 
+    /**
+     * Get the exit value for the emulator.
+     *
+     * @return exit value
+     */
+    public int getExitValue() {
+        if (terminal == null) {
+            return -1;
+        }
+        return terminal.getExitValue();
+    }
+
 }
