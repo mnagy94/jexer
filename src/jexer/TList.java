@@ -335,21 +335,28 @@ public class TList extends TScrollableWidget {
     @Override
     public void setWidth(final int width) {
         super.setWidth(width);
-        hScroller.setWidth(getWidth() - 1);
-        vScroller.setX(getWidth() - 1);
+        if (hScroller != null) {
+            hScroller.setWidth(getWidth() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setX(getWidth() - 1);
+        }
     }
 
     /**
      * Override TWidget's height: we need to set child widget heights.
-     * time.
      *
      * @param height new widget height
      */
     @Override
     public void setHeight(final int height) {
         super.setHeight(height);
-        hScroller.setY(getHeight() - 1);
-        vScroller.setHeight(getHeight() - 1);
+        if (hScroller != null) {
+            hScroller.setY(getHeight() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setHeight(getHeight() - 1);
+        }
     }
 
     /**

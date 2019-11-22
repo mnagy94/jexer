@@ -269,10 +269,54 @@ public class TTreeViewWidget extends TScrollableWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Override TWidget's width: we need to set child widget widths.
+     *
+     * @param width new widget width
+     */
+    @Override
+    public void setWidth(final int width) {
+        super.setWidth(width);
+        if (hScroller != null) {
+            hScroller.setWidth(getWidth() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setX(getWidth() - 1);
+        }
+        if (treeView != null) {
+            treeView.setWidth(getWidth() - 1);
+        }
+        reflowData();
+    }
+
+    /**
+     * Override TWidget's height: we need to set child widget heights.
+     *
+     * @param height new widget height
+     */
+    @Override
+    public void setHeight(final int height) {
+        super.setHeight(height);
+        if (hScroller != null) {
+            hScroller.setY(getHeight() - 1);
+        }
+        if (vScroller != null) {
+            vScroller.setHeight(getHeight() - 1);
+        }
+        if (treeView != null) {
+            treeView.setHeight(getHeight() - 1);
+        }
+        reflowData();
+    }
+
+    /**
      * Resize text and scrollbars for a new width/height.
      */
     @Override
     public void reflowData() {
+        if (treeView == null) {
+            return;
+        }
+
         int selectedRow = 0;
         boolean foundSelectedRow = false;
 

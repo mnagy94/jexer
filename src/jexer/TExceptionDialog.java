@@ -82,7 +82,7 @@ public class TExceptionDialog extends TWindow {
         final Throwable exception) {
 
         super(application, i18n.getString("windowTitle"),
-            1, 1, 70, 20, CENTERED | MODAL);
+            1, 1, 78, 22, CENTERED | MODAL);
 
         this.exception = exception;
 
@@ -100,14 +100,15 @@ public class TExceptionDialog extends TWindow {
             2, 6, "ttext", false);
 
         ArrayList<String> stackTraceStrings = new ArrayList<String>();
+        stackTraceStrings.add(exception.getMessage());
         StackTraceElement [] stack = exception.getStackTrace();
         for (int i = 0; i < stack.length; i++) {
             stackTraceStrings.add(stack[i].toString());
         }
-        stackTrace = addList(stackTraceStrings, 2, 7, getWidth() - 6, 8);
+        stackTrace = addList(stackTraceStrings, 2, 7, getWidth() - 6, 10);
 
         // Buttons
-        addButton(i18n.getString("saveButton"), 19, getHeight() - 4,
+        addButton(i18n.getString("saveButton"), 21, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     saveToFile();
@@ -115,7 +116,7 @@ public class TExceptionDialog extends TWindow {
             });
 
         TButton closeButton = addButton(i18n.getString("closeButton"),
-            35, getHeight() - 4,
+            37, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     // Don't do anything, just close the window.

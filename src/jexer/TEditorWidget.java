@@ -164,8 +164,15 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
 
         if (mouse.isMouse1()) {
             // Selection.
+            int newLine = topLine + mouse.getY();
+            int newX = leftColumn + mouse.getX();
+
             inSelection = true;
-            selectionLine0 = topLine + mouse.getY();
+            if (newLine > document.getLineCount() - 1) {
+                selectionLine0 = document.getLineCount() - 1;
+            } else {
+                selectionLine0 = topLine + mouse.getY();
+            }
             selectionColumn0 = leftColumn + mouse.getX();
             selectionColumn0 = Math.max(0, Math.min(selectionColumn0,
                     document.getLine(selectionLine0).getDisplayLength() - 1));
@@ -173,8 +180,6 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             selectionLine1 = selectionLine0;
 
             // Set the row and column
-            int newLine = topLine + mouse.getY();
-            int newX = leftColumn + mouse.getX();
             if (newLine > document.getLineCount() - 1) {
                 // Go to the end
                 document.setLineNumber(document.getLineCount() - 1);

@@ -1157,7 +1157,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @return difference between this.tabOrder and that.tabOrder, or
      * difference between this.z and that.z, or String.compareTo(text)
      */
-    public final int compareTo(final TWidget that) {
+    public int compareTo(final TWidget that) {
         if ((this instanceof TWindow)
             && (that instanceof TWindow)
         ) {
@@ -1434,9 +1434,9 @@ public abstract class TWidget implements Comparable<TWidget> {
                 if (activeChild != null) {
                     activeChild.active = false;
                 }
-                child.active = true;
-                activeChild = child;
             }
+            child.active = true;
+            activeChild = child;
         }
     }
 
