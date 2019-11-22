@@ -237,11 +237,6 @@ public class TApplication implements Runnable {
     private List<TWindow> windows;
 
     /**
-     * The currently acive window.
-     */
-    private TWindow activeWindow = null;
-
-    /**
      * Timers that are being ticked.
      */
     private List<TTimer> timers;
@@ -1082,6 +1077,7 @@ public class TApplication implements Runnable {
         // See if we need to enable/disable the edit menu.
         EditMenuUser widget = null;
         if (activeMenu == null) {
+            TWindow activeWindow = getActiveWindow();
             if (activeWindow != null) {
                 if (activeWindow.getActiveChild() instanceof EditMenuUser) {
                     widget = (EditMenuUser) activeWindow.getActiveChild();
@@ -1339,6 +1335,7 @@ public class TApplication implements Runnable {
             // shortcutted by the active window, and if so dispatch the menu
             // event.
             boolean windowWillShortcut = false;
+            TWindow activeWindow = getActiveWindow();
             if (activeWindow != null) {
                 assert (activeWindow.isShown());
                 if (activeWindow.isShortcutKeypress(keypress.getKey())) {
@@ -1383,7 +1380,7 @@ public class TApplication implements Runnable {
 
         // Dispatch events to the active window -------------------------------
         boolean dispatchToDesktop = true;
-        TWindow window = activeWindow;
+        TWindow window = getActiveWindow();
         if (window != null) {
             assert (window.isActive());
             assert (window.isShown());
@@ -1754,7 +1751,12 @@ public class TApplication implements Runnable {
      * @return the active window, or null if it is not set
      */
     public final TWindow getActiveWindow() {
-        return activeWindow;
+        for (TWindow window: windows) {
+            if (window.isShown() && window.isActive()) {
+                return window;
+            }
+        }
+        return null;
     }
 
     /**
@@ -1846,6 +1848,7 @@ public class TApplication implements Runnable {
      * @param y row position
      */
     private void drawTextMouse(final int x, final int y) {
+        TWindow activeWindow = getActiveWindow();
 
         if (debugThreads) {
             System.err.printf("%d %s drawTextMouse() %d %d\n",
@@ -2235,7 +2238,7 @@ public class TApplication implements Runnable {
      *
      * @param window the window to become the new active window
      */
-    public void activateWindow(final TWindow window) {
+    public final void activateWindow(final TWindow window) {
         if (hasWindow(window) == false) {
             /*
              * Someone has a handle to a window I don't have.  Ignore this
@@ -2244,68 +2247,61 @@ public class TApplication implements Runnable {
             return;
         }
 
-        // Whatever window might be moving/dragging, stop it now.
-        for (TWindow w: windows) {
-            if (w.inMovements()) {
-                w.stopMovements();
-            }
-        }
-
-        assert (windows.size() > 0);
-
-        if (window.isHidden()) {
-            // Unhiding will also activate.
-            showWindow(window);
-            return;
-        }
-        assert (window.isShown());
-
-        if (windows.size() == 1) {
-            assert (window == windows.get(0));
-            if (activeWindow == null) {
-                activeWindow = window;
-                window.setZ(0);
-                activeWindow.setActive(true);
-                activeWindow.onFocus();
-            }
-
-            assert (window.isActive());
-            assert (activeWindow == window);
+        if (modalWindowActive() && !window.isModal()) {
+            // Do not activate a non-modal on top of a modal.
             return;
         }
 
-        if (activeWindow == window) {
-            assert (window.isActive());
-
-            // Window is already active, do nothing.
-            return;
-        }
-
-        assert (!window.isActive());
-        if (activeWindow != null) {
-            activeWindow.setActive(false);
-
-            // Increment every window Z that is on top of window
+        synchronized (windows) {
+            // Whatever window might be moving/dragging, stop it now.
             for (TWindow w: windows) {
-                if (w == window) {
-                    continue;
-                }
-                if (w.getZ() < window.getZ()) {
-                    w.setZ(w.getZ() + 1);
+                if (w.inMovements()) {
+                    w.stopMovements();
                 }
             }
 
-            // Unset activeWindow now before unfocus, so that a window
-            // lifecycle change inside onUnfocus() doesn't call
-            // switchWindow() and lead to a stack overflow.
-            TWindow oldActiveWindow = activeWindow;
-            activeWindow = null;
-            oldActiveWindow.onUnfocus();
-        }
-        activeWindow = window;
-        activeWindow.setZ(0);
-        activeWindow.setActive(true);
-        activeWindow.onFocus();
+            assert (windows.size() > 0);
+
+            if (window.isHidden()) {
+                // Unhiding will also activate.
+                showWindow(window);
+                return;
+            }
+            assert (window.isShown());
+
+            if (windows.size() == 1) {
+                assert (window == windows.get(0));
+                window.setZ(0);
+                window.setActive(true);
+                window.onFocus();
+                return;
+            }
+
+            if (getActiveWindow() == window) {
+                assert (window.isActive());
+
+                // Window is already active, do nothing.
+                return;
+            }
+
+            assert (!window.isActive());
+
+            window.setZ(-1);
+            Collections.sort(windows);
+            int newZ = 0;
+            for (TWindow w: windows) {
+                w.setZ(newZ);
+                newZ++;
+                if ((w != window) && w.isActive()) {
+                    w.onUnfocus();
+                }
+                w.setActive(false);
+            }
+            window.setActive(true);
+            window.onFocus();
+
+        } // synchronized (windows)
+
         return;
     }
 
@@ -2323,28 +2319,39 @@ public class TApplication implements Runnable {
             return;
         }
 
-        // Whatever window might be moving/dragging, stop it now.
-        for (TWindow w: windows) {
-            if (w.inMovements()) {
-                w.stopMovements();
-            }
-        }
+        synchronized (windows) {
 
-        assert (windows.size() > 0);
-
-        if (!window.hidden) {
-            if (window == activeWindow) {
-                if (shownWindowCount() > 1) {
-                    switchWindow(true);
-                } else {
-                    activeWindow = null;
-                    window.setActive(false);
-                    window.onUnfocus();
+            // Whatever window might be moving/dragging, stop it now.
+            for (TWindow w: windows) {
+                if (w.inMovements()) {
+                    w.stopMovements();
                 }
             }
+
+            assert (windows.size() > 0);
+
+            if (window.hidden) {
+                return;
+            }
+
+            window.setActive(false);
             window.hidden = true;
             window.onHide();
-        }
+
+            TWindow activeWindow = null;
+            for (TWindow w: windows) {
+                if (w.isShown()) {
+                    activeWindow = w;
+                    break;
+                }
+            }
+            assert (activeWindow != window);
+            if (activeWindow != null) {
+                activateWindow(activeWindow);
+            }
+
+        } // synchronized (windows)
+
     }
 
     /**
@@ -2361,25 +2368,16 @@ public class TApplication implements Runnable {
             return;
         }
 
-        // Whatever window might be moving/dragging, stop it now.
-        for (TWindow w: windows) {
-            if (w.inMovements()) {
-                w.stopMovements();
-            }
-        }
-
-        assert (windows.size() > 0);
-
         if (window.hidden) {
             window.hidden = false;
             window.onShow();
             activateWindow(window);
         }
+
     }
 
     /**
-     * Close window.  Note that the window's destructor is NOT called by this
-     * method, instead the GC is assumed to do the cleanup.
+     * Close window.
      *
      * @param window the window to remove
      */
@@ -2397,23 +2395,16 @@ public class TApplication implements Runnable {
         window.onPreClose();
 
         synchronized (windows) {
-            // Whatever window might be moving/dragging, stop it now.
-            for (TWindow w: windows) {
-                if (w.inMovements()) {
-                    w.stopMovements();
-                }
-            }
 
-            int z = window.getZ();
-            window.setZ(-1);
+            window.stopMovements();
             window.onUnfocus();
             windows.remove(window);
             Collections.sort(windows);
-            activeWindow = null;
-            int newZ = 0;
-            boolean foundNextWindow = false;
 
+            TWindow nextWindow = null;
+            int newZ = 0;
             for (TWindow w: windows) {
+                w.stopMovements();
                 w.setZ(newZ);
                 newZ++;
 
@@ -2421,22 +2412,22 @@ public class TApplication implements Runnable {
                 if (w.isHidden()) {
                     continue;
                 }
-
-                if (foundNextWindow == false) {
-                    foundNextWindow = true;
-                    w.setActive(true);
-                    w.onFocus();
-                    assert (activeWindow == null);
-                    activeWindow = w;
-                    continue;
-                }
-
-                if (w.isActive()) {
-                    w.setActive(false);
-                    w.onUnfocus();
+                if (nextWindow == null) {
+                    nextWindow = w;
+                } else {
+                    if (w.isActive()) {
+                        w.setActive(false);
+                        w.onUnfocus();
+                    }
                 }
             }
-        }
+
+            if (nextWindow != null) {
+                nextWindow.setActive(true);
+                nextWindow.onFocus();
+            }
+
+        } // synchronized (windows)
 
         // Perform window cleanup
         window.onClose();
@@ -2454,7 +2445,8 @@ public class TApplication implements Runnable {
             synchronized (secondaryEventHandler) {
                 secondaryEventHandler.notify();
             }
-        }
+
+        } // synchronized (windows)
 
         // Permit desktop to be active if it is the only thing left.
         if (desktop != null) {
@@ -2475,53 +2467,50 @@ public class TApplication implements Runnable {
         if (shownWindowCount() < 2) {
             return;
         }
-        assert (activeWindow != null);
+
+        if (modalWindowActive()) {
+            // Do not switch if a window is modal
+            return;
+        }
 
         synchronized (windows) {
-            // Whatever window might be moving/dragging, stop it now.
-            for (TWindow w: windows) {
-                if (w.inMovements()) {
-                    w.stopMovements();
-                }
-            }
 
-            // Swap z/active between active window and the next in the list
-            int activeWindowI = -1;
-            for (int i = 0; i < windows.size(); i++) {
-                if (windows.get(i) == activeWindow) {
-                    assert (activeWindow.isActive());
-                    activeWindowI = i;
-                    break;
-                } else {
-                    assert (!windows.get(0).isActive());
-                }
-            }
-            assert (activeWindowI >= 0);
-
-            // Do not switch if a window is modal
-            if (activeWindow.isModal()) {
-                return;
-            }
-
-            int nextWindowI = activeWindowI;
-            for (;;) {
+            TWindow window = windows.get(0);
+            do {
+                assert (window != null);
                 if (forward) {
-                    nextWindowI++;
-                    nextWindowI %= windows.size();
+                    window.setZ(windows.size());
                 } else {
-                    nextWindowI--;
-                    if (nextWindowI < 0) {
-                        nextWindowI = windows.size() - 1;
-                    }
+                    TWindow lastWindow = windows.get(windows.size() - 1);
+                    lastWindow.setZ(-1);
                 }
 
-                if (windows.get(nextWindowI).isShown()) {
-                    activateWindow(windows.get(nextWindowI));
-                    break;
+                Collections.sort(windows);
+                int newZ = 0;
+                for (TWindow w: windows) {
+                    w.setZ(newZ);
+                    newZ++;
+                }
+
+                window = windows.get(0);
+            } while (!window.isShown());
+
+            // The next visible window is now on top.  Renumber the list.
+            for (TWindow w: windows) {
+                w.stopMovements();
+                if ((w != window) && w.isActive()) {
+                    assert (w.isShown());
+                    w.setActive(false);
+                    w.onUnfocus();
                 }
             }
-        } // synchronized (windows)
 
+            // Next visible window is on top.
+            assert (window.isShown());
+            window.setActive(true);
+            window.onFocus();
+
+        } // synchronized (windows)
     }
 
     /**
@@ -2571,13 +2560,13 @@ public class TApplication implements Runnable {
                     }
                     w.setZ(w.getZ() + 1);
                 }
-            }
-            windows.add(window);
-            if (window.isShown()) {
-                activeWindow = window;
-                activeWindow.setZ(0);
-                activeWindow.setActive(true);
-                activeWindow.onFocus();
+                window.setZ(0);
+                window.setActive(true);
+                window.onFocus();
+                windows.add(0, window);
+            } else {
+                window.setZ(windows.size());
+                windows.add(window);
             }
 
             if (((window.flags & TWindow.CENTERED) == 0)
@@ -2594,6 +2583,7 @@ public class TApplication implements Runnable {
         if (desktop != null) {
             desktop.setActive(false);
         }
+
     }
 
     /**
@@ -2621,6 +2611,7 @@ public class TApplication implements Runnable {
      * @return true if the active window is overriding the menu
      */
     private boolean overrideMenuWindowActive() {
+        TWindow activeWindow = getActiveWindow();
         if (activeWindow != null) {
             if (activeWindow.hasOverriddenMenu()) {
                 return true;
@@ -2991,7 +2982,6 @@ public class TApplication implements Runnable {
             || (mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
         ) {
             synchronized (windows) {
-                Collections.sort(windows);
                 if (windows.get(0).isModal()) {
                     // Modal windows don't switch
                     return;
@@ -3006,25 +2996,7 @@ public class TApplication implements Runnable {
                     }
 
                     if (window.mouseWouldHit(mouse)) {
-                        if (window == windows.get(0)) {
-                            // Clicked on the same window, nothing to do
-                            assert (window.isActive());
-                            return;
-                        }
-
-                        // We will be switching to another window
-                        assert (windows.get(0).isActive());
-                        assert (windows.get(0) == activeWindow);
-                        assert (!window.isActive());
-                        if (activeWindow != null) {
-                            activeWindow.onUnfocus();
-                            activeWindow.setActive(false);
-                            activeWindow.setZ(window.getZ());
-                        }
-                        activeWindow = window;
-                        window.setZ(0);
-                        window.setActive(true);
-                        window.onFocus();
+                        activateWindow(window);
                         return;
                     }
                 }
