@@ -234,8 +234,8 @@ public class ColorTheme {
                 // Invalid line.
                 continue;
             }
-            String key = line.substring(0, line.indexOf(':')).trim();
-            String text = line.substring(line.indexOf(':') + 1);
+            String key = line.substring(0, line.indexOf('=')).trim();
+            String text = line.substring(line.indexOf('=') + 1);
             setColorFromString(key, text);
         }
         // All done.
