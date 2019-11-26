@@ -35,6 +35,7 @@ import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
+import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
@@ -141,7 +142,11 @@ public class TTerminalWindow extends TScrollableWindow {
         addShortcutKeys();
 
         // Add shortcut text
-        newStatusBar(i18n.getString("statusBarRunning"));
+        TStatusBar statusBar = newStatusBar(i18n.getString("statusBarRunning"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF10, cmMenu,
+            i18n.getString("statusBarMenu"));
 
         // Spin it up
         terminal = new TTerminalWidget(this, 0, 0, command, new TAction() {
@@ -193,7 +198,11 @@ public class TTerminalWindow extends TScrollableWindow {
         addShortcutKeys();
 
         // Add shortcut text
-        newStatusBar(i18n.getString("statusBarRunning"));
+        TStatusBar statusBar = newStatusBar(i18n.getString("statusBarRunning"));
+        statusBar.addShortcutKeypress(kbF1, cmHelp,
+            i18n.getString("statusBarHelp"));
+        statusBar.addShortcutKeypress(kbF10, cmMenu,
+            i18n.getString("statusBarMenu"));
 
         // Spin it up
         terminal = new TTerminalWidget(this, 0, 0, new TAction() {
@@ -261,7 +270,10 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
-        if ((terminal != null) && (terminal.isReading())) {
+        if ((terminal != null)
+            && (terminal.isReading())
+            && (!inKeyboardResize)
+        ) {
             terminal.onKeypress(keypress);
         } else {
             super.onKeypress(keypress);
@@ -328,6 +340,16 @@ public class TTerminalWindow extends TScrollableWindow {
                 terminal.setVerticalValue(getVerticalValue());
             }
         }
+    }
+
+    /**
+     * Get this window's help topic to load.
+     *
+     * @return the topic name
+     */
+    @Override
+    public String getHelpTopic() {
+        return "Terminal Window";
     }
 
     // ------------------------------------------------------------------------

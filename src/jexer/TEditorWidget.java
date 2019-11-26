@@ -312,6 +312,12 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 // Non-shifted navigation keys disable selection.
                 inSelection = false;
             }
+            if ((selectionColumn0 == selectionColumn1)
+                && (selectionLine0 == selectionLine1)
+            ) {
+                // The user clicked a spot and started typing.
+                inSelection = false;
+            }
         }
 
         if (keypress.equals(kbLeft)

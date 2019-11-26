@@ -398,6 +398,9 @@ public class TList extends TScrollableWidget {
         int topY = 0;
         for (int i = begin; i < strings.size(); i++) {
             String line = strings.get(i);
+            if (line == null) {
+                line = "";
+            }
             if (getHorizontalValue() < line.length()) {
                 line = line.substring(getHorizontalValue());
             } else {

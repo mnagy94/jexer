@@ -29,7 +29,7 @@
 package jexer;
 
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
@@ -162,7 +162,7 @@ public class TText extends TScrollableWidget {
         this.text = text;
         this.colorKey = colorKey;
 
-        lines = new LinkedList<String>();
+        lines = new ArrayList<String>();
 
         vScroller = new TVScroller(this, getWidth() - 1, 0,
             Math.max(1, getHeight() - 1));
@@ -403,7 +403,7 @@ public class TText extends TScrollableWidget {
     /**
      * Set justification.
      *
-     * @param justification LEFT, CENTER, RIGHT, or FULL
+     * @param justification NONE, LEFT, CENTER, RIGHT, or FULL
      */
     public void setJustification(final Justification justification) {
         this.justification = justification;
@@ -439,6 +439,14 @@ public class TText extends TScrollableWidget {
      */
     public void fullJustify() {
         justification = Justification.FULL;
+        reflowData();
+    }
+
+    /**
+     * Un-justify the text.
+     */
+    public void unJustify() {
+        justification = Justification.NONE;
         reflowData();
     }
 

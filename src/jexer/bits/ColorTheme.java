@@ -681,6 +681,48 @@ public class ColorTheme {
         color.setBold(false);
         colors.put("tsplitpane", color);
 
+        // THelpWindow border - during window movement
+        color = new CellAttributes();
+        color.setForeColor(Color.GREEN);
+        color.setBackColor(Color.CYAN);
+        color.setBold(true);
+        colors.put("thelpwindow.windowmove", color);
+
+        // THelpWindow border
+        color = new CellAttributes();
+        color.setForeColor(Color.GREEN);
+        color.setBackColor(Color.CYAN);
+        color.setBold(true);
+        colors.put("thelpwindow.border", color);
+
+        // THelpWindow background
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.CYAN);
+        color.setBold(true);
+        colors.put("thelpwindow.background", color);
+
+        // THelpWindow text
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(false);
+        colors.put("thelpwindow.text", color);
+
+        // THelpWindow link
+        color = new CellAttributes();
+        color.setForeColor(Color.YELLOW);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        colors.put("thelpwindow.link", color);
+
+        // THelpWindow link - active
+        color = new CellAttributes();
+        color.setForeColor(Color.YELLOW);
+        color.setBackColor(Color.CYAN);
+        color.setBold(true);
+        colors.put("thelpwindow.link.active", color);
+
     }
 
     /**

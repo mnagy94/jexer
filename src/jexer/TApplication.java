@@ -29,6 +29,7 @@
 package jexer;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,6 +63,8 @@ import jexer.backend.Screen;
 import jexer.backend.SwingBackend;
 import jexer.backend.ECMA48Backend;
 import jexer.backend.TWindowBackend;
+import jexer.help.HelpFile;
+import jexer.help.Topic;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
 import jexer.menu.TSubMenu;
@@ -345,6 +348,16 @@ public class TApplication implements Runnable {
      * Screen selection ending Y.
      */
     private int screenSelectionY1;
+
+    /**
+     * The help file data.  Note package private access.
+     */
+    HelpFile helpFile;
+
+    /**
+     * The stack of help topics.  Note package private access.
+     */
+    ArrayList<Topic> helpTopics = new ArrayList<Topic>();
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -794,6 +807,14 @@ public class TApplication implements Runnable {
             }
         }
 
+        // Load the help system
+        try {
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            helpFile = new HelpFile();
+            helpFile.load(loader.getResourceAsStream("help.xml"));
+        } catch (Exception e) {
+            new TExceptionDialog(this, e);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -925,6 +946,15 @@ public class TApplication implements Runnable {
             return true;
         }
 
+        if (command.equals(cmHelp)) {
+            if (getActiveWindow() != null) {
+                new THelpWindow(this, getActiveWindow().getHelpTopic());
+            } else {
+                new THelpWindow(this);
+            }
+            return true;
+        }
+
         if (command.equals(cmShell)) {
             openTerminal(0, 0, TWindow.RESIZABLE);
             return true;
@@ -972,6 +1002,62 @@ public class TApplication implements Runnable {
                     TMessageBox.Type.YESNO).isYes()) {
 
                 exit();
+            }
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_HELP_HELP) {
+            new THelpWindow(this, THelpWindow.HELP_HELP);
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_HELP_CONTENTS) {
+            new THelpWindow(this, helpFile.getTableOfContents());
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_HELP_INDEX) {
+            new THelpWindow(this, helpFile.getIndex());
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_HELP_SEARCH) {
+            TInputBox inputBox = inputBox(i18n.
+                getString("searchHelpInputBoxTitle"),
+                i18n.getString("searchHelpInputBoxCaption"), "",
+                TInputBox.Type.OKCANCEL);
+            if (inputBox.isOk()) {
+                new THelpWindow(this,
+                    helpFile.getSearchResults(inputBox.getText()));
+            }
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_HELP_PREVIOUS) {
+            if (helpTopics.size() > 1) {
+                Topic previous = helpTopics.remove(helpTopics.size() - 2);
+                helpTopics.remove(helpTopics.size() - 1);
+                new THelpWindow(this, previous);
+            } else {
+                new THelpWindow(this, helpFile.getTableOfContents());
+            }
+            return true;
+        }
+
+        if (menu.getId() == TMenu.MID_HELP_ACTIVE_FILE) {
+            try {
+                List<String> filters = new ArrayList<String>();
+                filters.add("^.*\\.[Xx][Mm][Ll]$");
+                String filename = fileOpenBox(".", TFileOpenBox.Type.OPEN,
+                    filters);
+                if (filename != null) {
+                    helpTopics = new ArrayList<Topic>();
+                    helpFile = new HelpFile();
+                    helpFile.load(new FileInputStream(filename));
+                }
+            } catch (Exception e) {
+                // Show this exception to the user.
+                new TExceptionDialog(this, e);
             }
             return true;
         }

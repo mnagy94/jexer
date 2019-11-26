@@ -199,6 +199,11 @@ public class TWindow extends TWidget {
      */
     private boolean hideMouse = false;
 
+    /**
+     * The help topic for this window.
+     */
+    protected String helpTopic = "Help";
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1434,14 +1439,24 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Get this window's help topic to load.
+     *
+     * @return the topic name
+     */
+    public String getHelpTopic() {
+        return helpTopic;
+    }
+
+    /**
      * Generate a human-readable string for this window.
      *
      * @return a human-readable string
      */
     @Override
     public String toString() {
-        return String.format("%s(%8x) \'%s\' position (%d, %d) geometry %dx%d" +
-            " hidden %s modal %s", getClass().getName(), hashCode(), title,
+        return String.format("%s(%8x) \'%s\' Z %d position (%d, %d) " +
+            "geometry %dx%d  hidden %s modal %s",
+            getClass().getName(), hashCode(), title, getZ(),
             getX(), getY(), getWidth(), getHeight(), hidden, isModal());
     }
 

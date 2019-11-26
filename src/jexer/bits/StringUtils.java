@@ -472,6 +472,10 @@ public class StringUtils {
      * @return the number of text cell columns required to display this string
      */
     public static int width(final String str) {
+        if (str == null) {
+            return 0;
+        }
+
         int n = 0;
         for (int i = 0; i < str.length();) {
             int ch = str.codePointAt(i);
