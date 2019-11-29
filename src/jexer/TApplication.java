@@ -808,13 +808,26 @@ public class TApplication implements Runnable {
         }
 
         // Load the help system
-        try {
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-            helpFile = new HelpFile();
-            helpFile.load(loader.getResourceAsStream("help.xml"));
-        } catch (Exception e) {
-            new TExceptionDialog(this, e);
-        }
+        invokeLater(new Runnable() {
+            /*
+             * This isn't the best solution.  But basically if a TApplication
+             * subclass constructor throws and needs to use TExceptionDialog,
+             * it may end up at the bottom of the window stack with a bunch
+             * of modal windows on top of it if said constructors spawn their
+             * windows also via invokeLater().  But if they don't do that,
+             * and instead just conventionally construct their windows, then
+             * this exception dialog will end up on top where it should be.
+             */
+            public void run() {
+                try {
+                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                    helpFile = new HelpFile();
+                    helpFile.load(loader.getResourceAsStream("help.xml"));
+                } catch (Exception e) {
+                    new TExceptionDialog(TApplication.this, e);
+                }
+            }
+        });
     }
 
     // ------------------------------------------------------------------------
@@ -3417,6 +3430,9 @@ public class TApplication implements Runnable {
      */
     public final TMenu addEditMenu() {
         TMenu editMenu = addMenu(i18n.getString("editMenuTitle"));
+        editMenu.addDefaultItem(TMenu.MID_UNDO, false);
+        editMenu.addDefaultItem(TMenu.MID_REDO, false);
+        editMenu.addSeparator();
         editMenu.addDefaultItem(TMenu.MID_CUT, false);
         editMenu.addDefaultItem(TMenu.MID_COPY, false);
         editMenu.addDefaultItem(TMenu.MID_PASTE, false);

@@ -76,6 +76,23 @@ public class Document {
      */
     private Highlighter highlighter = new Highlighter();
 
+    /**
+     * The tab stop size.
+     */
+    private int tabSize = 8;
+
+    /**
+     * If true, backspace at an indent level goes back a full indent level.
+     * If false, backspace always goes back one column.
+     */
+    private boolean backspaceUnindents = false;
+
+    /**
+     * If true, save files with tab characters.  If false, convert tabs to
+     * spaces when saving files.
+     */
+    private boolean saveWithTabs = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -99,16 +116,41 @@ public class Document {
         }
     }
 
+    /**
+     * Private constructor used by dup().
+     */
+    private Document() {
+        // NOP
+    }
+
     // ------------------------------------------------------------------------
     // Document ---------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Create a duplicate instance.
+     *
+     * @return duplicate intance
+     */
+    public Document dup() {
+        Document other = new Document();
+        for (Line line: lines) {
+            other.lines.add(line.dup());
+        }
+        other.lineNumber = lineNumber;
+        other.overwrite = overwrite;
+        other.dirty = dirty;
+        other.defaultColor = defaultColor;
+        other.highlighter.setTo(highlighter);
+        return other;
+    }
 
     /**
      * Get the overwrite flag.
      *
      * @return true if addChar() overwrites data, false if it inserts
      */
-    public boolean getOverwrite() {
+    public boolean isOverwrite() {
         return overwrite;
     }
 
@@ -141,7 +183,11 @@ public class Document {
                 "UTF-8");
 
             for (Line line: lines) {
-                output.write(line.getRawString());
+                if (saveWithTabs) {
+                    output.write(convertSpacesToTabs(line.getRawString()));
+                } else {
+                    output.write(line.getRawString());
+                }
                 output.write("\n");
             }
 
@@ -551,7 +597,7 @@ public class Document {
         dirty = true;
         int cursor = lines.get(lineNumber).getCursor();
         if (cursor > 0) {
-            lines.get(lineNumber).backspace();
+            lines.get(lineNumber).backspace(tabSize, backspaceUnindents);
         } else if (lineNumber > 0) {
             // Join two lines
             lineNumber--;
@@ -601,6 +647,62 @@ public class Document {
         } else {
             lines.get(lineNumber).addChar(ch);
         }
+    }
+
+    /**
+     * Get the tab stop size.
+     *
+     * @return the tab stop size
+     */
+    public int getTabSize() {
+        return tabSize;
+    }
+
+    /**
+     * Set the tab stop size.
+     *
+     * @param tabSize the new tab stop size
+     */
+    public void setTabSize(final int tabSize) {
+        this.tabSize = tabSize;
+    }
+
+    /**
+     * Set the backspace unindent option.
+     *
+     * @param backspaceUnindents If true, backspace at an indent level goes
+     * back a full indent level.  If false, backspace always goes back one
+     * column.
+     */
+    public void setBackspaceUnindents(final boolean backspaceUnindents) {
+        this.backspaceUnindents = backspaceUnindents;
+    }
+
+    /**
+     * Set the save with tabs option.
+     *
+     * @param saveWithTabs If true, save files with tab characters.  If
+     * false, convert tabs to spaces when saving files.
+     */
+    public void setSaveWithTabs(final boolean saveWithTabs) {
+        this.saveWithTabs = saveWithTabs;
+    }
+
+    /**
+     * Handle the tab character.
+     */
+    public void tab() {
+        if (overwrite) {
+            del();
+        }
+        lines.get(lineNumber).tab(tabSize);
+    }
+
+    /**
+     * Handle the backtab (shift-tab) character.
+     */
+    public void backTab() {
+        lines.get(lineNumber).backTab(tabSize);
     }
 
     /**
@@ -656,6 +758,65 @@ public class Document {
             sb.append(line.getRawString());
             sb.append("\n");
         }
+        return sb.toString();
+    }
+
+    /**
+     * Trim trailing whitespace from lines and trailing empty
+     * lines from the document.
+     */
+    public void cleanWhitespace() {
+        for (Line line: getLines()) {
+            line.trimRight();
+        }
+        if (lines.size() == 0) {
+            return;
+        }
+        while (lines.get(lines.size() - 1).length() == 0) {
+            lines.remove(lines.size() - 1);
+        }
+        if (lineNumber > lines.size() - 1) {
+            lineNumber = lines.size() - 1;
+        }
+    }
+
+    /**
+     * Set keyword highlighting.
+     *
+     * @param enabled if true, enable keyword highlighting
+     */
+    public void setHighlighting(final boolean enabled) {
+        highlighter.setEnabled(enabled);
+        for (Line line: getLines()) {
+            line.scanLine();
+        }
+    }
+
+    /**
+     * Convert a string with leading spaces to a mix of tabs and spaces.
+     *
+     * @param string the string to convert
+     */
+    private String convertSpacesToTabs(final String string) {
+        if (string.length() == 0) {
+            return string;
+        }
+
+        int start = 0;
+        while (string.charAt(start) == ' ') {
+            start++;
+        }
+        int tabCount = start / 8;
+        if (tabCount == 0) {
+            return string;
+        }
+
+        StringBuilder sb = new StringBuilder(string.length());
+
+        for (int i = 0; i < tabCount; i++) {
+            sb.append('\t');
+        }
+        sb.append(string.substring(tabCount * 8));
         return sb.toString();
     }
 

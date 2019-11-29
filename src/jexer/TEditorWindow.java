@@ -44,8 +44,10 @@ import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
+import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
+import jexer.menu.TMenu;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -150,28 +152,27 @@ public class TEditorWindow extends TScrollableWindow {
     }
 
     // ------------------------------------------------------------------------
-    // TWindow ----------------------------------------------------------------
+    // Event handlers ---------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
-     * Draw the window.
+     * Called by application.switchWindow() when this window gets the
+     * focus, and also by application.addWindow().
      */
-    @Override
-    public void draw() {
-        // Draw as normal.
-        super.draw();
+    public void onFocus() {
+        super.onFocus();
+        getApplication().enableMenuItem(TMenu.MID_UNDO);
+        getApplication().enableMenuItem(TMenu.MID_REDO);
+    }
 
-        // Add the row:col on the bottom row
-        CellAttributes borderColor = getBorder();
-        String location = String.format(" %d:%d ",
-            editField.getEditingRowNumber(),
-            editField.getEditingColumnNumber());
-        int colon = location.indexOf(':');
-        putStringXY(10 - colon, getHeight() - 1, location, borderColor);
-
-        if (editField.isDirty()) {
-            putCharXY(2, getHeight() - 1, GraphicsChars.OCTOSTAR, borderColor);
-        }
+    /**
+     * Called by application.switchWindow() when another window gets the
+     * focus.
+     */
+    public void onUnfocus() {
+        super.onUnfocus();
+        getApplication().disableMenuItem(TMenu.MID_UNDO);
+        getApplication().disableMenuItem(TMenu.MID_REDO);
     }
 
     /**
@@ -349,6 +350,48 @@ public class TEditorWindow extends TScrollableWindow {
 
         // Didn't handle it, let children get it instead
         super.onCommand(command);
+    }
+
+    /**
+     * Handle posted menu events.
+     *
+     * @param menu menu event
+     */
+    @Override
+    public void onMenu(final TMenuEvent menu) {
+        switch (menu.getId()) {
+        case TMenu.MID_UNDO:
+            editField.undo();
+            break;
+        case TMenu.MID_REDO:
+            editField.redo();
+            break;
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // TWindow ----------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Draw the window.
+     */
+    @Override
+    public void draw() {
+        // Draw as normal.
+        super.draw();
+
+        // Add the row:col on the bottom row
+        CellAttributes borderColor = getBorder();
+        String location = String.format(" %d:%d ",
+            editField.getEditingRowNumber(),
+            editField.getEditingColumnNumber());
+        int colon = location.indexOf(':');
+        putStringXY(10 - colon, getHeight() - 1, location, borderColor);
+
+        if (editField.isDirty()) {
+            putCharXY(2, getHeight() - 1, GraphicsChars.OCTOSTAR, borderColor);
+        }
     }
 
     /**

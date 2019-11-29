@@ -72,10 +72,12 @@ public class TMenu extends TWindow {
     public static final int MID_SHELL           = 13;
 
     // Edit menu
-    public static final int MID_CUT             = 20;
-    public static final int MID_COPY            = 21;
-    public static final int MID_PASTE           = 22;
-    public static final int MID_CLEAR           = 23;
+    public static final int MID_UNDO            = 20;
+    public static final int MID_REDO            = 21;
+    public static final int MID_CUT             = 22;
+    public static final int MID_COPY            = 23;
+    public static final int MID_PASTE           = 24;
+    public static final int MID_CLEAR           = 25;
 
     // Search menu
     public static final int MID_FIND            = 30;
@@ -603,6 +605,14 @@ public class TMenu extends TWindow {
             icon = 0x1F5C1;
             break;
 
+        case MID_UNDO:
+            label = i18n.getString("menuUndo");
+            key = kbCtrlZ;
+            break;
+        case MID_REDO:
+            label = i18n.getString("menuRedo");
+            key = kbCtrlY;
+            break;
         case MID_CUT:
             label = i18n.getString("menuCut");
             key = kbCtrlX;

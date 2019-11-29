@@ -29,6 +29,8 @@
 package jexer;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import jexer.bits.CellAttributes;
 import jexer.bits.StringUtils;
@@ -64,10 +66,10 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     /**
      * The document being edited.
      */
-    private Document document;
+    protected Document document;
 
     /**
-     * The default color for the TEditor class.
+     * The default color for the editable text.
      */
     private CellAttributes defaultColor = null;
 
@@ -105,6 +107,42 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      * Selection ending line.
      */
     private int selectionLine1;
+
+    /**
+     * The list of undo/redo states.
+     */
+    private List<SavedState> undoList = new ArrayList<SavedState>();
+
+    /**
+     * The position in undoList for undo/redo.
+     */
+    private int undoListI = 0;
+
+    /**
+     * The maximum size of the undo list.
+     */
+    private int undoLevel = 50;
+
+    /**
+     * The saved state for an undo/redo operation.
+     */
+    private class SavedState {
+        /**
+         * The Document state.
+         */
+        public Document document;
+
+        /**
+         * The topmost line number in the visible area.  0-based.
+         */
+        public int topLine = 0;
+
+        /**
+         * The leftmost column number in the visible area.  0-based.
+         */
+        public int leftColumn = 0;
+
+    }
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -291,13 +329,23 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
         if (keypress.getKey().isShift()) {
-            // Selection.
-            if (!inSelection) {
-                inSelection = true;
-                selectionColumn0 = document.getCursor();
-                selectionLine0 = document.getLineNumber();
-                selectionColumn1 = selectionColumn0;
-                selectionLine1 = selectionLine0;
+            if (keypress.equals(kbShiftLeft)
+                || keypress.equals(kbShiftRight)
+                || keypress.equals(kbShiftUp)
+                || keypress.equals(kbShiftDown)
+                || keypress.equals(kbShiftPgDn)
+                || keypress.equals(kbShiftPgUp)
+                || keypress.equals(kbShiftHome)
+                || keypress.equals(kbShiftEnd)
+            ) {
+                // Shifted navigation keys enable selection
+                if (!inSelection) {
+                    inSelection = true;
+                    selectionColumn0 = document.getCursor();
+                    selectionLine0 = document.getLineNumber();
+                    selectionColumn1 = selectionColumn0;
+                    selectionLine1 = selectionLine0;
+                }
             }
         } else {
             if (keypress.equals(kbLeft)
@@ -396,32 +444,40 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             document.end();
             alignTopLine(false);
         } else if (keypress.equals(kbIns)) {
-            document.setOverwrite(!document.getOverwrite());
+            document.setOverwrite(!document.isOverwrite());
         } else if (keypress.equals(kbDel)) {
             if (inSelection) {
                 deleteSelection();
+                alignCursor();
             } else {
+                saveUndo();
                 document.del();
+                alignCursor();
             }
-            alignCursor();
         } else if (keypress.equals(kbBackspace)
             || keypress.equals(kbBackspaceDel)
         ) {
             if (inSelection) {
                 deleteSelection();
+                alignTopLine(false);
             } else {
+                saveUndo();
                 document.backspace();
+                alignTopLine(false);
             }
-            alignTopLine(false);
         } else if (keypress.equals(kbTab)) {
             deleteSelection();
-            // Add spaces until we hit modulo 8.
-            for (int i = document.getCursor(); (i + 1) % 8 != 0; i++) {
-                document.addChar(' ');
-            }
+            saveUndo();
+            document.tab();
+            alignCursor();
+        } else if (keypress.equals(kbShiftTab)) {
+            deleteSelection();
+            saveUndo();
+            document.backTab();
             alignCursor();
         } else if (keypress.equals(kbEnter)) {
             deleteSelection();
+            saveUndo();
             document.enter();
             alignTopLine(true);
         } else if (!keypress.getKey().isFnKey()
@@ -430,6 +486,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         ) {
             // Plain old keystroke, process it
             deleteSelection();
+            saveUndo();
             document.addChar(keypress.getKey().getChar());
             alignCursor();
         } else {
@@ -499,8 +556,21 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             if (text != null) {
                 for (int i = 0; i < text.length(); ) {
                     int ch = text.codePointAt(i);
-                    onKeypress(new TKeypressEvent(false, 0, ch, false, false,
-                            false));
+                    switch (ch) {
+                    case '\n':
+                        onKeypress(new TKeypressEvent(kbEnter));
+                        break;
+                    case '\t':
+                        onKeypress(new TKeypressEvent(kbTab));
+                        break;
+                    default:
+                        if ((ch >= 0x20) && (ch != 0x7F)) {
+                            onKeypress(new TKeypressEvent(false, 0, ch,
+                                    false, false, false));
+                        }
+                        break;
+                    }
+
                     i += Character.charCount(ch);
                 }
             }
@@ -601,6 +671,15 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     // ------------------------------------------------------------------------
     // TEditorWidget ----------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Set the undo level.
+     *
+     * @param undoLevel the maximum number of undo operations
+     */
+    public void setUndoLevel(final int undoLevel) {
+        this.undoLevel = undoLevel;
+    }
 
     /**
      * Align visible area with document current line.
@@ -837,6 +916,15 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     }
 
     /**
+     * Get the overwrite value.
+     *
+     * @return true if new text will overwrite old text
+     */
+    public boolean isOverwrite() {
+        return document.isOverwrite();
+    }
+
+    /**
      * Save contents to file.
      *
      * @param filename file to save to
@@ -853,6 +941,9 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         if (!inSelection) {
             return;
         }
+
+        saveUndo();
+
         inSelection = false;
 
         int startCol = selectionColumn0;
@@ -1191,8 +1282,20 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
 
         for (int i = 0; i < text.length(); ) {
             int ch = text.codePointAt(i);
-            onKeypress(new TKeypressEvent(false, 0, ch, false, false,
-                    false));
+            switch (ch) {
+            case '\n':
+                onKeypress(new TKeypressEvent(kbEnter));
+                break;
+            case '\t':
+                onKeypress(new TKeypressEvent(kbTab));
+                break;
+            default:
+                if ((ch >= 0x20) && (ch != 0x7F)) {
+                    onKeypress(new TKeypressEvent(false, 0, ch,
+                            false, false, false));
+                }
+                break;
+            }
             i += Character.charCount(ch);
         }
     }
@@ -1265,6 +1368,74 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      */
     public boolean isEditMenuClear() {
         return true;
+    }
+
+    /**
+     * Save undo state.
+     */
+    private void saveUndo() {
+        SavedState state = new SavedState();
+        state.document = document.dup();
+        state.topLine = topLine;
+        state.leftColumn = leftColumn;
+        if (undoLevel > 0) {
+            while (undoList.size() > undoLevel) {
+                undoList.remove(0);
+            }
+        }
+        undoList.add(state);
+        undoListI = undoList.size() - 1;
+    }
+
+    /**
+     * Undo an edit.
+     */
+    public void undo() {
+        inSelection = false;
+        if ((undoListI >= 0) && (undoListI < undoList.size())) {
+            SavedState state = undoList.get(undoListI);
+            document = state.document.dup();
+            topLine = state.topLine;
+            leftColumn = state.leftColumn;
+            undoListI--;
+            setCursorY(document.getLineNumber() - topLine);
+            alignCursor();
+        }
+    }
+
+    /**
+     * Redo an edit.
+     */
+    public void redo() {
+        inSelection = false;
+        if ((undoListI >= 0) && (undoListI < undoList.size())) {
+            SavedState state = undoList.get(undoListI);
+            document = state.document.dup();
+            topLine = state.topLine;
+            leftColumn = state.leftColumn;
+            undoListI++;
+            setCursorY(document.getLineNumber() - topLine);
+            alignCursor();
+        }
+    }
+
+    /**
+     * Trim trailing whitespace from lines and trailing empty
+     * lines from the document.
+     */
+    public void cleanWhitespace() {
+        document.cleanWhitespace();
+        setCursorY(document.getLineNumber() - topLine);
+        alignCursor();
+    }
+
+    /**
+     * Set keyword highlighting.
+     *
+     * @param enabled if true, enable keyword highlighting
+     */
+    public void setHighlighting(final boolean enabled) {
+        document.setHighlighting(enabled);
     }
 
 }

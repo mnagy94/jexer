@@ -579,26 +579,12 @@ public class SwingTerminal extends LogicalScreen
         ) {
             do {
                 do {
-                    /*
-                     * TODO:
-                     *
-                     * Under Windows and Mac (I think?), there was a problem
-                     * with the screen not updating on the initial load.
-                     * Adding clearPhysical() below "fixed" it, but at a
-                     * horrible performance penalty on Linux which I am no
-                     * longer willing to accept.
-                     *
-                     * Fix this in the "right" way for Windows/OSX such that
-                     * the entire screen does not require a full redraw.
-                     */
-                    // clearPhysical();
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
 
                 swing.getBufferStrategy().show();
                 Toolkit.getDefaultToolkit().sync();
             } while (swing.getBufferStrategy().contentsLost());
-
         } else {
             // Non-triple-buffered, call drawToSwing() once
             drawToSwing();
@@ -1333,7 +1319,10 @@ public class SwingTerminal extends LogicalScreen
         }
 
         // Enable anti-aliasing
-        if (gr instanceof Graphics2D) {
+        if ((gr instanceof Graphics2D) && (swing.getFrame() != null)) {
+            // Anti-aliasing on JComponent makes the hash character disappear
+            // for Terminus font, and also kills performance.  Only enable it
+            // for JFrame.
             ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
             ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
@@ -1343,7 +1332,6 @@ public class SwingTerminal extends LogicalScreen
         // Draw the background rectangle, then the foreground character.
         gr2.setColor(attrToBackgroundColor(cellColor));
         gr2.fillRect(gr2x, gr2y, textWidth, textHeight);
-
 
         // Handle blink and underline
         if (!cell.isBlink()
@@ -1773,13 +1761,16 @@ public class SwingTerminal extends LogicalScreen
         } else {
             ch = key.getKeyChar();
         }
-        alt = key.isAltDown();
+        // Both meta and alt count as alt, thanks to Mac using alt for
+        // "symbols" so meta ("command") is the only other modifier left.
+        alt = key.isAltDown() | key.isMetaDown();
         ctrl = key.isControlDown();
         shift = key.isShiftDown();
 
         /*
         System.err.printf("Swing Key: %s\n", key);
         System.err.printf("   isKey: %s\n", isKey);
+        System.err.printf("   meta: %s\n", key.isMetaDown());
         System.err.printf("   alt: %s\n", alt);
         System.err.printf("   ctrl: %s\n", ctrl);
         System.err.printf("   shift: %s\n", shift);

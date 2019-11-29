@@ -56,12 +56,35 @@ public class Highlighter {
      * Public constructor sets the theme to the default.
      */
     public Highlighter() {
-        colors = new TreeMap<String, CellAttributes>();
+        // NOP
     }
 
     // ------------------------------------------------------------------------
     // Highlighter ------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Set keyword highlighting.
+     *
+     * @param enabled if true, enable keyword highlighting
+     */
+    public void setEnabled(final boolean enabled) {
+        if (enabled) {
+            setJavaColors();
+        } else {
+            colors = null;
+        }
+    }
+
+    /**
+     * Set my field values to that's field.
+     *
+     * @param rhs an instance of Highlighter
+     */
+    public void setTo(final Highlighter rhs) {
+        colors = new TreeMap<String, CellAttributes>();
+        colors.putAll(rhs.colors);
+    }
 
     /**
      * See if this is a character that should split a word.
@@ -87,6 +110,9 @@ public class Highlighter {
      * @return color associated with name, e.g. bold yellow on blue
      */
     public CellAttributes getColor(final String name) {
+        if (colors == null) {
+            return null;
+        }
         CellAttributes attr = colors.get(name);
         return attr;
     }
@@ -95,19 +121,41 @@ public class Highlighter {
      * Sets to defaults that resemble the Borland IDE colors.
      */
     public void setJavaColors() {
+        colors = new TreeMap<String, CellAttributes>();
+
         CellAttributes color;
 
-        String [] keywords = {
+        String [] types = {
             "boolean", "byte", "short", "int", "long", "char", "float",
-            "double", "void", "new",
-            "static", "final", "volatile", "synchronized", "abstract",
-            "public", "private", "protected",
-            "class", "interface", "extends", "implements",
+            "double", "void",
+        };
+        color = new CellAttributes();
+        color.setForeColor(Color.GREEN);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        for (String str: types) {
+            colors.put(str, color);
+        }
+
+        String [] modifiers = {
+            "abstract", "final", "native", "private", "protected", "public",
+            "static", "strictfp", "synchronized", "transient", "volatile",
+        };
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.BLUE);
+        color.setBold(true);
+        for (String str: modifiers) {
+            colors.put(str, color);
+        }
+
+        String [] keywords = {
+            "new", "class", "interface", "extends", "implements",
             "if", "else", "do", "while", "for", "break", "continue",
             "switch", "case", "default",
         };
         color = new CellAttributes();
-        color.setForeColor(Color.WHITE);
+        color.setForeColor(Color.YELLOW);
         color.setBackColor(Color.BLUE);
         color.setBold(true);
         for (String str: keywords) {

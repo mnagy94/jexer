@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jexer.bits.CellAttributes;
+import jexer.bits.GraphicsChars;
 import jexer.bits.StringUtils;
 
 /**
@@ -92,7 +93,31 @@ public class Line {
 
         this.defaultColor = defaultColor;
         this.highlighter = highlighter;
-        this.rawText = new StringBuilder(str);
+
+        this.rawText = new StringBuilder();
+        int col = 0;
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            if (ch == '\t') {
+                // Expand tabs
+                int j = col % 8;
+                do {
+                    rawText.append(' ');
+                    j++;
+                    col++;
+                } while ((j % 8) != 0);
+                continue;
+            }
+            if ((ch <= 0x20) || (ch == 0x7F)) {
+                // Replace all other C0 bytes with CP437 glyphs.
+                rawText.append(GraphicsChars.CP437[(int) ch]);
+                col++;
+                continue;
+            }
+
+            rawText.append(ch);
+            col++;
+        }
 
         scanLine();
     }
@@ -107,9 +132,32 @@ public class Line {
         this(str, defaultColor, null);
     }
 
+    /**
+     * Private constructor used by dup().
+     */
+    private Line() {
+        // NOP
+    }
+
     // ------------------------------------------------------------------------
     // Line -------------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Create a duplicate instance.
+     *
+     * @return duplicate intance
+     */
+    public Line dup() {
+        Line other = new Line();
+        other.defaultColor = defaultColor;
+        other.highlighter = highlighter;
+        other.position = position;
+        other.screenPosition = screenPosition;
+        other.rawText = new StringBuilder(rawText);
+        other.scanLine();
+        return other;
+    }
 
     /**
      * Get a (shallow) copy of the words in this line.
@@ -193,9 +241,19 @@ public class Line {
     }
 
     /**
-     * Scan rawText and make words out of it.
+     * Get the raw length of this line.
+     *
+     * @return the length of this line in characters, which may be different
+     * from the number of cells needed to display it
      */
-    private void scanLine() {
+    public int length() {
+        return rawText.length();
+    }
+
+    /**
+     * Scan rawText and make words out of it.  Note package private access.
+     */
+    void scanLine() {
         words.clear();
         Word word = new Word(this.defaultColor, this.highlighter);
         words.add(word);
@@ -236,7 +294,7 @@ public class Line {
         if (getDisplayLength() == 0) {
             return false;
         }
-        if (position == getDisplayLength() - 1) {
+        if (screenPosition == getDisplayLength() - 1) {
             return false;
         }
         if (position < rawText.length()) {
@@ -267,7 +325,7 @@ public class Line {
      * @return true if the cursor position changed
      */
     public boolean end() {
-        if (position != getDisplayLength() - 1) {
+        if (screenPosition != getDisplayLength() - 1) {
             position = rawText.length();
             screenPosition = StringUtils.width(rawText.toString());
             return true;
@@ -281,7 +339,7 @@ public class Line {
     public void del() {
         assert (words.size() > 0);
 
-        if (position < getDisplayLength()) {
+        if (screenPosition < getDisplayLength()) {
             int n = Character.charCount(rawText.codePointAt(position));
             for (int i = 0; i < n; i++) {
                 rawText.deleteCharAt(position);
@@ -294,8 +352,32 @@ public class Line {
 
     /**
      * Delete the character immediately preceeding the cursor.
+     *
+     * @param tabSize the tab stop size
+     * @param backspaceUnindents If true, backspace at an indent level goes
+     * back a full indent level.  If false, backspace always goes back one
+     * column.
      */
-    public void backspace() {
+    public void backspace(final int tabSize, final boolean backspaceUnindents) {
+        if ((backspaceUnindents == true)
+            && (tabSize > 0)
+            && (screenPosition > 0)
+            && (rawText.charAt(position - 1) == ' ')
+            && ((screenPosition % tabSize) == 0)
+        ) {
+            boolean doBackTab = true;
+            for (int i = 0; i < position; i++) {
+                if (rawText.charAt(i) != ' ') {
+                    doBackTab = false;
+                    break;
+                }
+            }
+            if (doBackTab) {
+                backTab(tabSize);
+                return;
+            }
+        }
+
         if (left()) {
             del();
         }
@@ -307,7 +389,7 @@ public class Line {
      * @param ch the character to insert
      */
     public void addChar(final int ch) {
-        if (position < getDisplayLength() - 1) {
+        if (screenPosition < getDisplayLength() - 1) {
             rawText.insert(position, Character.toChars(ch));
         } else {
             rawText.append(Character.toChars(ch));
@@ -323,7 +405,7 @@ public class Line {
      * @param ch the character to replace
      */
     public void replaceChar(final int ch) {
-        if (position < getDisplayLength() - 1) {
+        if (screenPosition < getDisplayLength() - 1) {
             // Replace character
             String oldText = rawText.toString();
             rawText = new StringBuilder(oldText.substring(0, position));
@@ -345,7 +427,7 @@ public class Line {
      * @param screenPosition the position on screen
      * @return the equivalent position in text
      */
-    protected int screenToTextPosition(final int screenPosition) {
+    private int screenToTextPosition(final int screenPosition) {
         if (screenPosition == 0) {
             return 0;
         }
@@ -360,6 +442,57 @@ public class Line {
         // screenPosition exceeds the available text length.
         throw new IndexOutOfBoundsException("screenPosition " + screenPosition +
             " exceeds available text length " + rawText.length());
+    }
+
+    /**
+     * Trim trailing whitespace from line, repositioning cursor if needed.
+     */
+    public void trimRight() {
+        if (rawText.length() == 0) {
+            return;
+        }
+        if (!Character.isWhitespace(rawText.charAt(rawText.length() - 1))) {
+            return;
+        }
+        while ((rawText.length() > 0)
+            && Character.isWhitespace(rawText.charAt(rawText.length() - 1))
+        ) {
+            rawText.deleteCharAt(rawText.length() - 1);
+        }
+        if (position >= rawText.length()) {
+            end();
+        }
+        scanLine();
+    }
+
+    /**
+     * Handle the tab character.
+     *
+     * @param tabSize the tab stop size
+     */
+    public void tab(final int tabSize) {
+        if (tabSize > 0) {
+            do {
+                addChar(' ');
+            } while ((screenPosition % tabSize) != 0);
+        }
+    }
+
+    /**
+     * Handle the backtab (shift-tab) character.
+     *
+     * @param tabSize the tab stop size
+     */
+    public void backTab(final int tabSize) {
+        if ((tabSize > 0) && (screenPosition > 0)
+            && (rawText.charAt(position - 1) == ' ')
+        ) {
+            do {
+                backspace(tabSize, false);
+            } while (((screenPosition % tabSize) != 0)
+                && (screenPosition > 0)
+                && (rawText.charAt(position - 1) == ' '));
+        }
     }
 
 }

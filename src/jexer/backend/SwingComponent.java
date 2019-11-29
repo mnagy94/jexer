@@ -83,7 +83,7 @@ class SwingComponent {
      * Adjustable Insets for this component.  This has the effect of adding a
      * black border around the drawing area.
      */
-    Insets adjustInsets = new Insets(BORDER + 5, BORDER, BORDER, BORDER);
+    Insets adjustInsets = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -96,6 +96,16 @@ class SwingComponent {
      */
     public SwingComponent(final JFrame frame) {
         this.frame = frame;
+        if (System.getProperty("os.name").startsWith("Linux")) {
+            // On my Linux dev system, a Swing frame draws its contents just
+            // a little off.  No idea why, but I've seen it on both Debian
+            // and Fedora with KDE.  These adjustments to the adjustments
+            // seem to center it OK in the frame.
+            adjustInsets = new Insets(BORDER + 5, BORDER,
+                BORDER - 3, BORDER + 2);
+        } else {
+            adjustInsets = new Insets(BORDER, BORDER, BORDER, BORDER);
+        }
         setupFrame();
     }
 
@@ -106,6 +116,7 @@ class SwingComponent {
      */
     public SwingComponent(final JComponent component) {
         this.component = component;
+        adjustInsets = new Insets(BORDER, BORDER, BORDER, BORDER);
         setupComponent();
     }
 

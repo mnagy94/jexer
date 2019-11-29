@@ -181,7 +181,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 
 5 - Sixel images can crash terminal.
 
-6 - Version 0.4.2382.0, on Windows 10.0.18362.30.  Tested against
+6 - Version 0.7.3291.0, on Windows 10.0.18362.30.  Tested against
     WSL-1 Debian instance.
 
 
