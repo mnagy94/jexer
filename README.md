@@ -67,6 +67,8 @@ Documentation
 
 * [Jexer web page](https://jexer.sourceforge.io/)
 
+* [Development Standards](https://gitlab.com/klamonte/jexer/wikis/dev-standards)
+
 
 
 Programming Examples
