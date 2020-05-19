@@ -1174,6 +1174,9 @@ public class ECMA48Terminal extends LogicalScreen
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
 
+        // Request modifyOtherKeys
+        this.output.printf("\033[>4;2m");
+
         this.output.flush();
 
         // Query the screen size
@@ -1266,6 +1269,9 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
+
+        // Request modifyOtherKeys
+        this.output.printf("\033[>4;2m");
 
         this.output.flush();
 
@@ -1411,6 +1417,7 @@ public class ECMA48Terminal extends LogicalScreen
         if (output != null) {
             output.printf("%s%s%s%s", mouse(false), cursor(true),
                 defaultColor(), xtermResetSixelSettings());
+            output.printf("\033[>4m");
             output.flush();
         }
 
@@ -2179,10 +2186,15 @@ public class ECMA48Terminal extends LogicalScreen
         boolean alt = false;
         boolean ctrl = false;
         boolean shift = false;
+
+        int otherKey = 0;
         if (params.size() > 1) {
             shift = csiIsShift(params.get(1));
             alt = csiIsAlt(params.get(1));
             ctrl = csiIsCtrl(params.get(1));
+        }
+        if (params.size() > 2) {
+            otherKey = Integer.parseInt(params.get(2));
         }
 
         switch (key) {
@@ -2214,6 +2226,33 @@ public class ECMA48Terminal extends LogicalScreen
             return new TKeypressEvent(kbF11, alt, ctrl, shift);
         case 24:
             return new TKeypressEvent(kbF12, alt, ctrl, shift);
+
+        case 27:
+            // modifyOtherKeys sequence
+            switch (otherKey) {
+            case 8:
+                return new TKeypressEvent(kbBackspace, alt, ctrl, shift);
+            case 9:
+                return new TKeypressEvent(kbTab, alt, ctrl, shift);
+            case 13:
+                return new TKeypressEvent(kbEnter, alt, ctrl, shift);
+            case 27:
+                return new TKeypressEvent(kbEsc, alt, ctrl, shift);
+            default:
+                if (otherKey < 32) {
+                    break;
+                }
+                if ((otherKey >= 'a') && (otherKey <= 'z') && ctrl) {
+                    // Turn Ctrl-lowercase into Ctrl-uppercase
+                    return new TKeypressEvent(false, 0, (otherKey - 32),
+                        alt, ctrl, shift);
+                }
+                return new TKeypressEvent(false, 0, otherKey, alt, ctrl, shift);
+            }
+
+            // Unsupported other key
+            return null;
+
         default:
             // Unknown
             return null;

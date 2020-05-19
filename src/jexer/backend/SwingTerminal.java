@@ -1901,7 +1901,13 @@ public class SwingTerminal extends LogicalScreen
                     alt, ctrl, shift);
                 break;
             case KeyEvent.VK_BACK_SPACE:
-                keypress = kbBackspace;
+                if (ctrl) {
+                    keypress = kbCtrlBackspace;
+                } else if (alt) {
+                    keypress = kbAltBackspace;
+                } else {
+                    keypress = kbBackspace;
+                }
                 break;
             default:
                 // Unsupported, ignore
@@ -1915,21 +1921,49 @@ public class SwingTerminal extends LogicalScreen
                 // Disambiguate ^H from Backspace.
                 if (KeyEvent.getKeyText(key.getKeyCode()).equals("H")) {
                     // This is ^H.
-                    keypress = kbBackspace;
+                    if (ctrl) {
+                        keypress = kbCtrlBackspace;
+                    } else if (alt) {
+                        keypress = kbAltBackspace;
+                    } else {
+                        keypress = kbBackspace;
+                    }
                 } else {
-                    // We are emulating Xterm here, where the backspace key
-                    // on the keyboard returns ^?.
-                    keypress = kbBackspaceDel;
+                    if (ctrl) {
+                        keypress = kbCtrlBackspace;
+                    } else if (alt) {
+                        keypress = kbAltBackspace;
+                    } else {
+                        // We are emulating Xterm here, where the backspace
+                        // key on the keyboard returns ^?.
+                        keypress = kbBackspaceDel;
+                    }
                 }
                 break;
             case 0x0A:
-                keypress = kbEnter;
+                if (ctrl) {
+                    keypress = kbCtrlEnter;
+                } else if (alt) {
+                    keypress = kbAltEnter;
+                } else if (shift) {
+                    keypress = kbShiftEnter;
+                } else {
+                    keypress = kbEnter;
+                }
                 break;
             case 0x1B:
                 keypress = kbEsc;
                 break;
             case 0x0D:
-                keypress = kbEnter;
+                if (ctrl) {
+                    keypress = kbCtrlEnter;
+                } else if (alt) {
+                    keypress = kbAltEnter;
+                } else if (shift) {
+                    keypress = kbShiftEnter;
+                } else {
+                    keypress = kbEnter;
+                }
                 break;
             case 0x09:
                 if (shift) {
@@ -1938,8 +1972,19 @@ public class SwingTerminal extends LogicalScreen
                     keypress = kbTab;
                 }
                 break;
+            case 0x20:
+                keypress = new TKeypress(false, 0, ch, alt, ctrl, shift);
+                break;
             case 0x7F:
-                keypress = kbDel;
+                if (ctrl) {
+                    keypress = kbCtrlDel;
+                } else if (alt) {
+                    keypress = kbAltDel;
+                } else if (shift) {
+                    keypress = kbShiftDel;
+                } else {
+                    keypress = kbDel;
+                }
                 break;
             default:
                 if (!alt && ctrl && !shift) {
@@ -1948,6 +1993,7 @@ public class SwingTerminal extends LogicalScreen
                 }
                 // Not a special key, put it together
                 keypress = new TKeypress(false, 0, ch, alt, ctrl, shift);
+                break;
             }
         }
 

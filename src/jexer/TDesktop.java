@@ -104,6 +104,13 @@ public class TDesktop extends TWindow {
     public void onMouseDown(final TMouseEvent mouse) {
         this.mouse = mouse;
 
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            if (statusBar.statusBarMouseDown(mouse)) {
+                return;
+            }
+        }
+
         // Pass to children
         for (TWidget widget: getChildren()) {
             if (widget.mouseWouldHit(mouse)) {
@@ -128,6 +135,13 @@ public class TDesktop extends TWindow {
     public void onMouseUp(final TMouseEvent mouse) {
         this.mouse = mouse;
 
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            if (statusBar.statusBarMouseUp(mouse)) {
+                return;
+            }
+        }
+
         // Pass to children
         for (TWidget widget: getChildren()) {
             if (widget.mouseWouldHit(mouse)) {
@@ -151,6 +165,11 @@ public class TDesktop extends TWindow {
     @Override
     public void onMouseMotion(final TMouseEvent mouse) {
         this.mouse = mouse;
+
+        // Give the shortcut bar a shot at this.
+        if (statusBar != null) {
+            statusBar.statusBarMouseMotion(mouse);
+        }
 
         // Default: do nothing, pass to children instead
         super.onMouseMotion(mouse);

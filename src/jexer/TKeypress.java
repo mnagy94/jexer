@@ -174,6 +174,11 @@ public class TKeypress {
      */
     public static final int ESC         = 43;
 
+    /**
+     * Backspace, used for control-backspace.
+     */
+    public static final int BACKSPACE   = 44;
+
     // Special "no-key" keypress, used to ignore undefined keystrokes
     public static final TKeypress kbNoKey = new TKeypress(true,
             TKeypress.NONE, ' ', false, false, false);
@@ -654,6 +659,18 @@ public class TKeypress {
             0, 'H', false, true, false);
 
     /**
+     * Control-Backspace as function key.
+     */
+    public static final TKeypress kbCtrlBackspace = new TKeypress(true,
+            TKeypress.BACKSPACE, ' ', false, true, false);
+
+    /**
+     * Alt-Backspace as function key.
+     */
+    public static final TKeypress kbAltBackspace = new TKeypress(true,
+            TKeypress.BACKSPACE, ' ', true, false, false);
+
+    /**
      * Backspace as ^?.
      */
     public static final TKeypress kbBackspaceDel = new TKeypress(false,
@@ -861,6 +878,16 @@ public class TKeypress {
             return "Space";
         }
 
+        // Special case: Backspace is "<arrow>"
+        if (equals(kbBackspace)) {
+            return "\u2190";
+        }
+
+        // Special case: BackspaceDel is "<house>"
+        if (equals(kbBackspaceDel)) {
+            return "\u2302";
+        }
+
         if (equals(kbShiftLeft)) {
             return "Shift+\u2190";
         }
@@ -997,6 +1024,11 @@ public class TKeypress {
                                         shift ? "Shift+" : "");
             case ESC:
                 return String.format("%s%s%sESC",
+                        ctrl ? "Ctrl+" : "",
+                                alt ? "Alt+" : "",
+                                        shift ? "Shift+" : "");
+            case BACKSPACE:
+                return String.format("%s%s%sBACKSPACE",
                         ctrl ? "Ctrl+" : "",
                                 alt ? "Alt+" : "",
                                         shift ? "Shift+" : "");

@@ -28,6 +28,8 @@
  */
 package jexer.tterminal;
 
+import java.util.ArrayList;
+
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 
@@ -40,11 +42,6 @@ public class DisplayLine {
     // Constants --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    /**
-     * Maximum line length.
-     */
-    private static final int MAX_LINE_LENGTH = 256;
-
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -52,7 +49,7 @@ public class DisplayLine {
     /**
      * The characters/attributes of the line.
      */
-    private Cell [] chars;
+    private ArrayList<Cell> chars = new ArrayList<Cell>();
 
     /**
      * Double-width line flag.
@@ -76,6 +73,11 @@ public class DisplayLine {
      */
     private boolean reverseColor = false;
 
+    /**
+     * The initial attributes for this line.
+     */
+    private CellAttributes attr;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -86,10 +88,10 @@ public class DisplayLine {
      * @param line the line to duplicate
      */
     public DisplayLine(final DisplayLine line) {
-        chars = new Cell[MAX_LINE_LENGTH];
-        for (int i = 0; i < chars.length; i++) {
-            chars[i] = new Cell(line.chars[i]);
+        for (Cell cell: line.chars) {
+            chars.add(new Cell(cell));
         }
+        attr = line.attr;
         doubleWidth = line.doubleWidth;
         doubleHeight = line.doubleHeight;
         reverseColor = line.reverseColor;
@@ -101,10 +103,7 @@ public class DisplayLine {
      * @param attr current drawing attributes
      */
     public DisplayLine(final CellAttributes attr) {
-        chars = new Cell[MAX_LINE_LENGTH];
-        for (int i = 0; i < chars.length; i++) {
-            chars[i] = new Cell(attr);
-        }
+        this.attr = attr;
     }
 
     // ------------------------------------------------------------------------
@@ -118,7 +117,10 @@ public class DisplayLine {
      * @return the Cell
      */
     public Cell charAt(final int idx) {
-        return chars[idx];
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        return new Cell(chars.get(idx));
     }
 
     /**
@@ -127,7 +129,7 @@ public class DisplayLine {
      * @return line length
      */
     public int length() {
-        return chars.length;
+        return chars.size();
     }
 
     /**
@@ -191,8 +193,10 @@ public class DisplayLine {
      * @param newCell the new Cell
      */
     public void insert(final int idx, final Cell newCell) {
-        System.arraycopy(chars, idx, chars, idx + 1, chars.length - idx - 1);
-        chars[idx] = new Cell(newCell);
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        chars.add(idx, new Cell(newCell));
     }
 
     /**
@@ -202,7 +206,10 @@ public class DisplayLine {
      * @param newCell the new Cell
      */
     public void replace(final int idx, final Cell newCell) {
-        chars[idx].setTo(newCell);
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        chars.get(idx).setTo(newCell);
     }
 
     /**
@@ -211,7 +218,10 @@ public class DisplayLine {
      * @param idx the character index
      */
     public void setBlank(final int idx) {
-        chars[idx].reset();
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        chars.get(idx).reset();
     }
 
     /**
@@ -222,7 +232,10 @@ public class DisplayLine {
      * @param ch the new char
      */
     public void setChar(final int idx, final int ch) {
-        chars[idx].setChar(ch);
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        chars.get(idx).setChar(ch);
     }
 
     /**
@@ -233,7 +246,10 @@ public class DisplayLine {
      * @param attr the new attributes
      */
     public void setAttr(final int idx, final CellAttributes attr) {
-        chars[idx].setAttr(attr);
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        chars.get(idx).setAttr(attr);
     }
 
     /**
@@ -244,8 +260,10 @@ public class DisplayLine {
      * @param newCell the new Cell
      */
     public void delete(final int idx, final Cell newCell) {
-        System.arraycopy(chars, idx + 1, chars, idx, chars.length - idx - 1);
-        chars[chars.length - 1] = new Cell(newCell);
+        while (idx >= chars.size()) {
+            chars.add(new Cell(attr));
+        }
+        chars.remove(idx);
     }
 
     /**
@@ -254,8 +272,8 @@ public class DisplayLine {
      * @return true if the line has image data
      */
     public boolean isImage() {
-        for (int i = 0; i < chars.length; i++) {
-            if (chars[i].isImage()) {
+        for (Cell cell: chars) {
+            if (cell.isImage()) {
                 return true;
             }
         }
@@ -266,9 +284,9 @@ public class DisplayLine {
      * Clear image data from line.
      */
     public void clearImages() {
-        for (int i = 0; i < chars.length; i++) {
-            if (chars[i].isImage()) {
-                chars[i].reset();
+        for (Cell cell: chars) {
+            if (cell.isImage()) {
+                cell.reset();
             }
         }
     }

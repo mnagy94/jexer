@@ -175,7 +175,7 @@ public class TFileOpenBox extends TWindow {
                     }
                 }
             }, null);
-        entryField.onKeypress(new TKeypressEvent(kbEnd));
+        entryField.end();
 
         // Add directory treeView
         treeView = addTreeViewWidget(1, 3, 30, getHeight() - 6,
@@ -209,7 +209,7 @@ public class TFileOpenBox extends TWindow {
                     try {
                         File newPath = directoryList.getPath();
                         entryField.setText(newPath.getCanonicalPath());
-                        entryField.onKeypress(new TKeypressEvent(kbEnd));
+                        entryField.end();
                         openButton.setEnabled(true);
                         activate(entryField);
                         checkFilename(entryField.getText());
@@ -227,7 +227,7 @@ public class TFileOpenBox extends TWindow {
                     try {
                         File newPath = directoryList.getPath();
                         entryField.setText(newPath.getCanonicalPath());
-                        entryField.onKeypress(new TKeypressEvent(kbEnd));
+                        entryField.end();
                         openButton.setEnabled(true);
                         activate(entryField);
                     } catch (IOException e) {
@@ -289,8 +289,20 @@ public class TFileOpenBox extends TWindow {
             }
         );
 
-        // Default to the directory list
-        activate(directoryList);
+
+        switch (type) {
+        case SAVE:
+            // Save dialog: activate the filename field.
+            entryField.setText(entryField.getText() + File.separator);
+            entryField.end();
+            activate(entryField);
+            break;
+
+        default:
+            // Default: activate the directory list.
+            activate(directoryList);
+            break;
+        }
 
         // Set the secondaryFiber to run me
         getApplication().enableSecondaryEventReceiver(this);

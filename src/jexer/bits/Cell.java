@@ -34,7 +34,7 @@ import java.awt.image.BufferedImage;
 /**
  * This class represents a single text cell or bit of image on the screen.
  */
-public final class Cell extends CellAttributes {
+public class Cell extends CellAttributes {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

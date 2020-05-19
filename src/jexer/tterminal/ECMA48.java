@@ -2171,7 +2171,7 @@ public class ECMA48 implements Runnable {
         if ((keypress.isCtrl()) && (!keypress.isFnKey())) {
             StringBuilder sb = new StringBuilder();
             int ch = keypress.getChar();
-            ch -= 0x40;
+            ch &= 0x1F;
             sb.append(Character.toChars(ch));
             return sb.toString();
         }

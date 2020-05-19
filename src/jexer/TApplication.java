@@ -2150,11 +2150,18 @@ public class TApplication implements Runnable {
                 if (topLevel.isShown()) {
                     statusBar = topLevel.getStatusBar();
                 }
+            } else {
+                statusBar = desktop.getStatusBar();
             }
+
             if (statusBar != null) {
                 getScreen().resetClipping();
                 statusBar.setWidth(getScreen().getWidth());
-                statusBar.setY(getScreen().getHeight() - topLevel.getY());
+                if (topLevel != null) {
+                    statusBar.setY(getScreen().getHeight() - topLevel.getY());
+                } else {
+                    statusBar.setY(desktopBottom);
+                }
                 statusBar.draw();
             } else {
                 CellAttributes barColor = new CellAttributes();
@@ -3899,6 +3906,17 @@ public class TApplication implements Runnable {
 
         TFileOpenBox box = new TFileOpenBox(this, path, type, filters);
         return box.getFilename();
+    }
+
+    /**
+     * Convenience function to spawn a file save box.
+     *
+     * @param path path of selected file
+     * @return the result of the new file open box
+     * @throws IOException if a java.io operation throws
+     */
+    public final String fileSaveBox(final String path) throws IOException {
+        return fileOpenBox(path, TFileOpenBox.Type.SAVE);
     }
 
     /**
