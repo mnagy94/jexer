@@ -190,11 +190,11 @@ The table below lists terminals tested against Jexer's Xterm backend:
 See Also
 --------
 
-* [Tranquil Java IDE](https://tjide.sourceforge.io) is a TUI-based
-  integrated development environment for the Java language that was
-  built using a very lightly modified GPL version of Jexer.  TJ
-  provided a real-world use case to shake out numerous bugs and
-  limitations of Jexer.
+* [Xterm Window Manager](https://gitlab.com/klamonte/xtermwm) is a
+  text-based window manager.  It has virtual desktops, tiled terminals
+  with draggable resizing, cascading terminal windows, and a plugin
+  system for adding functionality.  Add LCXterm and one can have a
+  mouse-supporting X11-like text-based "GUI" on the raw Linux console.
 
 * [LCXterm](https://lcxterm.sourceforge.io) is a curses-based terminal
   emulator that allows one to use Jexer with full support on the raw
@@ -203,6 +203,10 @@ See Also
 * [ptypipe](https://gitlab.com/klamonte/ptypipe) is a small C utility
   that permits a Jexer TTerminalWindow to resize the running shell
   when its window is resized.
+
+* [Tranquil Java IDE](https://tjide.sourceforge.io) is a TUI-based
+  integrated development environment for the Java language that was
+  built using a very lightly modified GPL version of Jexer.
 
 
 
