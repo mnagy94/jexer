@@ -53,7 +53,7 @@ import javax.swing.SwingUtilities;
  * Wrapper for integrating with Swing, because JFrame and JComponent have
  * separate hierarchies.
  */
-class SwingComponent {
+public class SwingComponent {
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

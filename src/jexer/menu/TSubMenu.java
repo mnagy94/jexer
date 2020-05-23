@@ -293,4 +293,47 @@ public class TSubMenu extends TMenuItem {
         return menu.addSubMenu(title);
     }
 
+    /**
+     * Sort the entries in this menu.
+     */
+    public void sort() {
+        sort(Integer.MIN_VALUE);
+    }
+
+    /**
+     * Sort the entries in this menu by label.
+     *
+     * @param cutoff any menu ID's less than this value will be placed first
+     * in the list, and stay in the previous order to each other
+     */
+    public void sort(final int cutoff) {
+        int n = menu.getChildren().size();
+        for (int i = 0; i < n; i++) {
+            for (int j = i; j < n; j++) {
+                TMenuItem a = (TMenuItem) menu.getChildren().get(i);
+                TMenuItem b = (TMenuItem) menu.getChildren().get(j);
+                if ((a.getId() < cutoff) && (b.getId() < cutoff)) {
+                    continue;
+                }
+                if ((a.getId() >= cutoff) && (b.getId() < cutoff)) {
+                    menu.getChildren().set(i, b);
+                    menu.getChildren().set(j, a);
+                    continue;
+                }
+                if ((a.getId() >= cutoff) && (b.getId() >= cutoff)) {
+                    String aLabel = a.getMnemonic().getRawLabel();
+                    String bLabel = b.getMnemonic().getRawLabel();
+                    if (aLabel.compareTo(bLabel) > 0) {
+                        menu.getChildren().set(i, b);
+                        menu.getChildren().set(j, a);
+                    }
+                    continue;
+                }
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            menu.getChildren().get(i).setY(i + 1);
+        }
+        menu.resetTabOrder();
+    }
 }

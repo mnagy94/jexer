@@ -269,4 +269,48 @@ public final class Color {
         }
     }
 
+    /**
+     * Convert this color to an RGB string.
+     *
+     * @return the RGB string
+     */
+    public String toRgbString() {
+        return toRgbString(false);
+    }
+
+    /**
+     * Convert this color to an RGB string.
+     *
+     * @param bright if true, return the bright/bold color
+     * @return the RGB string
+     */
+    public String toRgbString(final boolean bright) {
+        String [] normalColors = {
+            "#000000",              // COLOR_BLACK
+            "#AB0000",              // COLOR_RED
+            "#00AB00",              // COLOR_GREEN
+            "#996600",              // COLOR_YELLOW
+            "#0000AB",              // COLOR_BLUE
+            "#990099",              // COLOR_MAGENTA
+            "#009999",              // COLOR_CYAN
+            "#ABABAB",              // COLOR_WHITE
+        };
+
+        String [] brightColors = {
+            "#545454",              // COLOR_BLACK
+            "#FF6666",              // COLOR_RED
+            "#66FF66",              // COLOR_GREEN
+            "#FFFF66",              // COLOR_YELLOW
+            "#6666FF",              // COLOR_BLUE
+            "#FF66FF",              // COLOR_MAGENTA
+            "#66FFFF",              // COLOR_CYAN
+            "#FFFFFF",              // COLOR_WHITE
+        };
+
+        if (bright) {
+            return brightColors[value];
+        }
+        return normalColors[value];
+    }
+
 }

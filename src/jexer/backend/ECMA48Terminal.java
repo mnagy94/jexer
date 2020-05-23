@@ -251,6 +251,11 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean setRawMode = false;
 
     /**
+     * If true, then we will set modifyOtherKeys.
+     */
+    private boolean modifyOtherKeys = false;
+
+    /**
      * If true, '?' was seen in terminal response.
      */
     private boolean decPrivateModeFlag = false;
@@ -1174,9 +1179,6 @@ public class ECMA48Terminal extends LogicalScreen
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
 
-        // Request modifyOtherKeys
-        this.output.printf("\033[>4;2m");
-
         this.output.flush();
 
         // Query the screen size
@@ -1189,6 +1191,11 @@ public class ECMA48Terminal extends LogicalScreen
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
         reloadOptions();
+
+        if (modifyOtherKeys) {
+            // Request modifyOtherKeys
+            this.output.printf("\033[>4;2m");
+        }
 
         // Spin up the input reader
         eventQueue = new ArrayList<TInputEvent>();
@@ -1270,9 +1277,6 @@ public class ECMA48Terminal extends LogicalScreen
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
 
-        // Request modifyOtherKeys
-        this.output.printf("\033[>4;2m");
-
         this.output.flush();
 
         // Query the screen size
@@ -1285,6 +1289,11 @@ public class ECMA48Terminal extends LogicalScreen
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
         reloadOptions();
+
+        if (modifyOtherKeys) {
+            // Request modifyOtherKeys
+            this.output.printf("\033[>4;2m");
+        }
 
         // Spin up the input reader
         eventQueue = new ArrayList<TInputEvent>();
@@ -1457,6 +1466,15 @@ public class ECMA48Terminal extends LogicalScreen
      * Reload options from System properties.
      */
     public void reloadOptions() {
+        // Permit RGB colors only if externally requested.
+        if (System.getProperty("jexer.ECMA48.modifyOtherKeys",
+                "false").equals("true")
+        ) {
+            modifyOtherKeys = true;
+        } else {
+            modifyOtherKeys = false;
+        }
+
         // Permit RGB colors only if externally requested.
         if (System.getProperty("jexer.ECMA48.rgbColor",
                 "false").equals("true")

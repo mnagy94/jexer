@@ -49,8 +49,8 @@ public class THelpWindow extends TWindow {
     // Constants --------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-    // Default help topic keys.  Note package private access.
-    static String HELP_HELP                     = "Help On Help";
+    // Default help topic keys.
+    public static String HELP_HELP                      = "Help On Help";
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------

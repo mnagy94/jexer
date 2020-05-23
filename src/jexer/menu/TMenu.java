@@ -457,7 +457,6 @@ public class TMenu extends TWindow {
     public TMenuItem addItem(final int id, final String label,
         final boolean enabled) {
 
-        assert (id >= 1024);
         return addItemInternal(id, label, null, enabled, -1);
     }
 
@@ -472,7 +471,6 @@ public class TMenu extends TWindow {
     public TMenuItem addItem(final int id, final String label,
         final TKeypress key) {
 
-        assert (id >= 1024);
         return addItemInternal(id, label, key);
     }
 
@@ -852,6 +850,14 @@ public class TMenu extends TWindow {
         subMenu.menu.setX(getX() + getWidth() - 2);
 
         return subMenu;
+    }
+
+    /**
+     * Reset the tab order of children to match their position in the list.
+     * Available so that subclasses can re-order their widgets if needed.
+     */
+    protected void resetTabOrder() {
+        super.resetTabOrder();
     }
 
 }

@@ -482,4 +482,29 @@ public class Cell extends CellAttributes {
         return String.format("fore: %s back: %s bold: %s blink: %s ch %c",
             getForeColor(), getBackColor(), isBold(), isBlink(), ch);
     }
+
+    /**
+     * Convert this cell into an HTML entity inside a &lt;font&gt; tag.
+     *
+     * @return the HTML string
+     */
+    public String toHtml() {
+        StringBuilder sb = new StringBuilder("<font ");
+        sb.append(super.toHtml());
+        sb.append('>');
+        if (ch == ' ') {
+            sb.append("&nbsp;");
+        } else if (ch == '<') {
+            sb.append("&lt;");
+        } else if (ch == '>') {
+            sb.append("&gt;");
+        } else if (ch < 0x7F) {
+            sb.append((char) ch);
+        } else {
+            sb.append(String.format("&#%d;", ch));
+        }
+        sb.append("</font>");
+        return sb.toString();
+    }
+
 }

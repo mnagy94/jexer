@@ -130,7 +130,7 @@ public class TMessageBox extends TWindow {
     /**
      * Which button was clicked: OK, CANCEL, YES, or NO.
      */
-    private Result result = Result.OK;
+    protected Result result = Result.OK;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------

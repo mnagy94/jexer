@@ -552,12 +552,14 @@ public class TFontChooserWindow extends TWindow {
                 public void DO() {
                     // Restore old values, then close the window.
                     if (terminal != null) {
-                        terminal.setFont(oldFont);
-                        terminal.setFontSize(oldFontSize);
-                        terminal.setTextAdjustX(oldTextAdjustX);
-                        terminal.setTextAdjustY(oldTextAdjustY);
-                        terminal.setTextAdjustHeight(oldTextAdjustHeight);
-                        terminal.setTextAdjustWidth(oldTextAdjustWidth);
+                        synchronized (terminal) {
+                            terminal.setFont(oldFont);
+                            terminal.setFontSize(oldFontSize);
+                            terminal.setTextAdjustX(oldTextAdjustX);
+                            terminal.setTextAdjustY(oldTextAdjustY);
+                            terminal.setTextAdjustHeight(oldTextAdjustHeight);
+                            terminal.setTextAdjustWidth(oldTextAdjustWidth);
+                        }
                     }
                     if (ecmaTerminal != null) {
                         ecmaTerminal.setSixelPaletteSize(oldSixelPaletteSize);

@@ -310,6 +310,11 @@ public class TApplication implements Runnable {
     private boolean hideMenuBar = false;
 
     /**
+     * Optional text to display at the top right of the menu.
+     */
+    protected String menuTrayText = "";
+
+    /**
      * The list of commands to run before the next I/O check.
      */
     private List<Runnable> invokeLaters = new LinkedList<Runnable>();
@@ -350,14 +355,14 @@ public class TApplication implements Runnable {
     private int screenSelectionY1;
 
     /**
-     * The help file data.  Note package private access.
+     * The help file data.
      */
-    HelpFile helpFile;
+    protected HelpFile helpFile;
 
     /**
-     * The stack of help topics.  Note package private access.
+     * The stack of help topics.
      */
-    ArrayList<Topic> helpTopics = new ArrayList<Topic>();
+    protected ArrayList<Topic> helpTopics = new ArrayList<Topic>();
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -1218,6 +1223,9 @@ public class TApplication implements Runnable {
         // Process timers and call doIdle()'s
         doIdle();
 
+        // Give subclass TApplications a chance to update something
+        onPreDraw();
+
         // Update the screen
         synchronized (getScreen()) {
             drawAll();
@@ -1442,6 +1450,12 @@ public class TApplication implements Runnable {
                     // window instead.
                     windowWillShortcut = true;
                 }
+            } else if (desktop != null) {
+                if (desktop.isShortcutKeypress(keypress.getKey())) {
+                    // We do not process this key, it will be passed to the
+                    // desktop instead.
+                    windowWillShortcut = true;
+                }
             }
 
             if (!windowWillShortcut && !modalWindowActive()) {
@@ -1483,8 +1497,10 @@ public class TApplication implements Runnable {
         if (window != null) {
             assert (window.isActive());
             assert (window.isShown());
+
+            TMouseEvent mouse = null;
             if (event instanceof TMouseEvent) {
-                TMouseEvent mouse = (TMouseEvent) event;
+                mouse = (TMouseEvent) event;
                 // Convert the mouse relative x/y to window coordinates
                 assert (mouse.getX() == mouse.getAbsoluteX());
                 assert (mouse.getY() == mouse.getAbsoluteY());
@@ -1512,6 +1528,14 @@ public class TApplication implements Runnable {
             window.handleEvent(event);
             if (doubleClick != null) {
                 window.handleEvent(doubleClick);
+            }
+            if (mouse != null) {
+                if (window.mouseWouldHit(mouse)) {
+                    // If we are dragging the window, the new coordinates
+                    // might fully capture the mouse again.  If so, do not
+                    // let the desktop see it.
+                    dispatchToDesktop = false;
+                }
             }
         }
         if (dispatchToDesktop) {
@@ -1827,12 +1851,37 @@ public class TApplication implements Runnable {
      * set
      */
     public final void setDesktop(final TDesktop desktop) {
+        setDesktop(desktop, true);
+    }
+
+    /**
+     * Set the TDesktop instance.
+     *
+     * @param desktop a TDesktop instance, or null to remove the one that is
+     * set
+     * @param close if true, close the previous desktop
+     */
+    public final void setDesktop(final TDesktop desktop, final boolean close) {
         if (this.desktop != null) {
-            this.desktop.onPreClose();
-            this.desktop.onUnfocus();
-            this.desktop.onClose();
+            if (close) {
+                this.desktop.onPreClose();
+                this.desktop.onUnfocus();
+                this.desktop.onClose();
+            }
         }
         this.desktop = desktop;
+
+        if (desktop != null) {
+            desktopTop = (hideMenuBar ? 0 : 1);
+            desktopBottom = getScreen().getHeight() - 1 + (hideStatusBar ?
+                1 : 0);
+            desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
+                (desktopBottom - desktopTop));
+            TResizeEvent resize = new TResizeEvent(TResizeEvent.Type.WIDGET,
+                getScreen().getWidth(), desktop.getHeight());
+            desktop.onResize(resize);
+        }
+
     }
 
     /**
@@ -1890,6 +1939,43 @@ public class TApplication implements Runnable {
     }
 
     /**
+     * Set hideMenuBar flag.
+     *
+     * @param hideMenuBar if true, the menu bar will not be visible, and the
+     * desktop will cover the top line
+     */
+    public void setHideMenuBar(final boolean hideMenuBar) {
+        this.hideMenuBar = hideMenuBar;
+        if (desktop != null) {
+            desktopTop = (hideMenuBar ? 0 : 1);
+            desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
+                (desktopBottom - desktopTop));
+            TResizeEvent resize = new TResizeEvent(TResizeEvent.Type.WIDGET,
+                getScreen().getWidth(), desktop.getHeight());
+            desktop.onResize(resize);
+        }
+    }
+
+    /**
+     * Set hideStatusBar flag.
+     *
+     * @param hideStatusBar if true, the status bar will not be visible, and
+     * the desktop will cover the bottom line
+     */
+    public void setHideStatusBar(final boolean hideStatusBar) {
+        this.hideStatusBar = hideStatusBar;
+        if (desktop != null) {
+            desktopBottom = getScreen().getHeight() - 1 + (hideStatusBar ?
+                1 : 0);
+            desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
+                (desktopBottom - desktopTop));
+            TResizeEvent resize = new TResizeEvent(TResizeEvent.Type.WIDGET,
+                getScreen().getWidth(), desktop.getHeight());
+            desktop.onResize(resize);
+        }
+    }
+
+    /**
      * Display the about dialog.
      */
     protected void showAboutDialog() {
@@ -1939,6 +2025,15 @@ public class TApplication implements Runnable {
     // ------------------------------------------------------------------------
     // Screen refresh loop ----------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Function called immediately before the screen is drawn.  This can be
+     * used by subclasses of TApplication to update things, for example to
+     * set menuTrayText.
+     */
+    protected void onPreDraw() {
+        // Default does nothing
+    }
 
     /**
      * Draw the text mouse at position.
@@ -2140,6 +2235,14 @@ public class TApplication implements Runnable {
                 getScreen().resetClipping();
                 ((TWindow) menu).drawChildren();
             }
+
+            if ((menuTrayText != null) && (menuTrayText.length() > 0)) {
+                getScreen().resetClipping();
+                getScreen().putStringXY(getScreen().getWidth() -
+                    StringUtils.width(menuTrayText), 0, menuTrayText,
+                    theme.getColor("tmenu"));
+            }
+
         }
         getScreen().resetClipping();
 
@@ -2750,59 +2853,8 @@ public class TApplication implements Runnable {
             if (activeMenu != null) {
                 return;
             }
-            int z = windows.size();
-            if (z == 0) {
-                return;
-            }
-            int a = 0;
-            int b = 0;
-            a = (int)(Math.sqrt(z));
-            int c = 0;
-            while (c < a) {
-                b = (z - c) / a;
-                if (((a * b) + c) == z) {
-                    break;
-                }
-                c++;
-            }
-            assert (a > 0);
-            assert (b > 0);
-            assert (c < a);
-            int newWidth = (getScreen().getWidth() / a);
-            int newHeight1 = ((getScreen().getHeight() - 1) / b);
-            int newHeight2 = ((getScreen().getHeight() - 1) / (b + c));
-
-            List<TWindow> sorted = new ArrayList<TWindow>(windows);
-            Collections.sort(sorted);
-            Collections.reverse(sorted);
-            for (int i = 0; i < sorted.size(); i++) {
-                int logicalX = i / b;
-                int logicalY = i % b;
-                if (i >= ((a - 1) * b)) {
-                    logicalX = a - 1;
-                    logicalY = i - ((a - 1) * b);
-                }
-
-                TWindow w = sorted.get(i);
-                int oldWidth = w.getWidth();
-                int oldHeight = w.getHeight();
-
-                w.setX(logicalX * newWidth);
-                w.setWidth(newWidth);
-                if (i >= ((a - 1) * b)) {
-                    w.setY((logicalY * newHeight2) + 1);
-                    w.setHeight(newHeight2);
-                } else {
-                    w.setY((logicalY * newHeight1) + 1);
-                    w.setHeight(newHeight1);
-                }
-                if ((w.getWidth() != oldWidth)
-                    || (w.getHeight() != oldHeight)
-                ) {
-                    w.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                            w.getWidth(), w.getHeight()));
-                }
-            }
+            jexer.bits.WidgetUtils.tileWidgets(windows, getScreen().getWidth(),
+                desktopBottom - desktopTop, desktopTop);
         }
     }
 

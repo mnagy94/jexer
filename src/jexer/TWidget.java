@@ -109,9 +109,10 @@ public abstract class TWidget implements Comparable<TWidget> {
     private int height = 0;
 
     /**
-     * My tab order inside a window or containing widget.
+     * My tab order inside a window or containing widget.  Note package
+     * private access.
      */
-    private int tabOrder = 0;
+    int tabOrder = 0;
 
     /**
      * If true, this widget can be tabbed to or receive events.
@@ -137,6 +138,11 @@ public abstract class TWidget implements Comparable<TWidget> {
      * Cursor row position in relative coordinates.
      */
     private int cursorY = 0;
+
+    /**
+     * If true, this widget will echo keystrokes to all of its children.
+     */
+    private boolean echoKeystrokes = false;
 
     /**
      * Layout manager.
@@ -267,8 +273,12 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     protected void close() {
         // Default: call close() on children.
-        for (TWidget w: getChildren()) {
+        while (getChildren().size() > 0) {
+            TWidget w = getChildren().get(0);
             w.close();
+            if (getChildren().contains(w)) {
+                getChildren().remove(w);
+            }
         }
     }
 
@@ -441,11 +451,20 @@ public abstract class TWidget implements Comparable<TWidget> {
             }
         }
 
-        // Dispatch the keypress to an active widget
-        for (TWidget widget: children) {
-            if (widget.active) {
+        if (echoKeystrokes) {
+            // Dispatch the keypress to every widget, even if not the active
+            // widget
+            for (TWidget widget: children) {
                 widget.onKeypress(keypress);
-                return;
+            }
+            return;
+        } else {
+            // Dispatch the keypress to an active widget
+            for (TWidget widget: children) {
+                if (widget.active) {
+                    widget.onKeypress(keypress);
+                    return;
+                }
             }
         }
     }
@@ -612,8 +631,8 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     public void onMenu(final TMenuEvent menu) {
         // Default: do nothing, pass to children instead
-        for (TWidget widget: children) {
-            widget.onMenu(menu);
+        if (activeChild != null) {
+            activeChild.onMenu(menu);
         }
     }
 
@@ -759,6 +778,10 @@ public abstract class TWidget implements Comparable<TWidget> {
         if (layout != null) {
             layout.remove(this);
         }
+        if (children.size() == 0) {
+            activeChild = null;
+        }
+        resetTabOrder();
     }
 
     /**
@@ -1110,6 +1133,44 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Set echo keystrokes flag.
+     *
+     * @param echoKeystrokes if true, this widget will echo keystrokes to all
+     * of its children
+     */
+    public void setEchoKeystrokes(final boolean echoKeystrokes) {
+        this.echoKeystrokes = echoKeystrokes;
+    }
+
+    /**
+     * Set echo keystrokes flag.
+     *
+     * @param echoKeystrokes if true, this widget will echo keystrokes to all
+     * of its children
+     * @param recursive if true, set the echo keystrokes flag of all child
+     * widgets recursively
+     */
+    public void setEchoKeystrokes(final boolean echoKeystrokes,
+        final boolean recursive) {
+
+        this.echoKeystrokes = echoKeystrokes;
+        if (recursive) {
+            for (TWidget w: children) {
+                w.setEchoKeystrokes(echoKeystrokes, true);
+            }
+        }
+    }
+
+    /**
+     * Get echo keystrokes flag.
+     *
+     * @return true if this widget echoes keystrokes to all of its children
+     */
+    public boolean isEchoKeystrokes() {
+        return echoKeystrokes;
+    }
+
+    /**
      * Get this TWidget's parent TApplication.
      *
      * @return the parent TApplication, or null if not assigned
@@ -1173,12 +1234,18 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * See if this widget should render with the active color.
+     * See if this widget is the active window within its hierarchy.
      *
      * @return true if this widget is active and all of its parents are
      * active.
      */
     public final boolean isAbsoluteActive() {
+        if (this instanceof TDesktop) {
+            // The desktop itself is not active (because the active flag is a
+            // different beast for windows), but any widget on it are.  Allow
+            // these widgets to report isAbsoluteActive() as true.
+            return true;
+        }
         if (parent == this) {
             return active;
         }
@@ -1393,9 +1460,7 @@ public abstract class TWidget implements Comparable<TWidget> {
             child.active = true;
             activeChild = child;
         }
-        for (int i = 0; i < children.size(); i++) {
-            children.get(i).tabOrder = i;
-        }
+        resetTabOrder();
         if (layout != null) {
             layout.add(child);
         }
@@ -1541,7 +1606,6 @@ public abstract class TWidget implements Comparable<TWidget> {
                 tabOrder--;
             }
             if (tabOrder < 0) {
-
                 // If at the end, pass the switch to my parent.
                 if ((!forward) && (parent != this)) {
                     parent.switchWidget(forward);
@@ -1711,9 +1775,11 @@ public abstract class TWidget implements Comparable<TWidget> {
      */
     @Override
     public String toString() {
-        return String.format("%s(%8x) position (%d, %d) geometry %dx%d " +
-            "active %s enabled %s visible %s", getClass().getName(),
-            hashCode(), x, y, width, height, active, enabled, visible);
+        return String.format("%s(%8x) position (%d, %d) (abs %d, %d) " +
+            "geometry %dx%d active %s (abs %s) enabled %s visible %s",
+            getClass().getName(), hashCode(), x, y,
+            getAbsoluteX(), getAbsoluteY(), width, height,
+            active, isAbsoluteActive(), enabled, visible);
     }
 
     /**

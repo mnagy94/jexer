@@ -84,6 +84,11 @@ public class TSplitPane extends TWidget {
      */
     private TMouseEvent mouse;
 
+    /**
+     * If true, focus will follow mouse.
+     */
+    private boolean focusFollowsMouse = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -193,6 +198,18 @@ public class TSplitPane extends TWidget {
         ) {
             // Mouse has travelled out of my window.
             inSplitMove = false;
+        }
+
+        if (focusFollowsMouse) {
+            if ((top != null) && (top.mouseWouldHit(mouse))) {
+                activate(top);
+            } else if ((bottom != null) && (bottom.mouseWouldHit(mouse))) {
+                activate(bottom);
+            } else if ((left != null) && (left.mouseWouldHit(mouse))) {
+                activate(left);
+            } else if ((right != null) && (right.mouseWouldHit(mouse))) {
+                activate(right);
+            }
         }
 
         if (inSplitMove) {
@@ -314,9 +331,76 @@ public class TSplitPane extends TWidget {
             isActive(), isEnabled(), isVisible());
     }
 
+    /**
+     * Reset the tab order of children to match their position in the list.
+     * Available so that subclasses can re-order their widgets if needed.
+     */
+    @Override
+    protected void resetTabOrder() {
+        if (getChildren().size() < 2) {
+            super.resetTabOrder();
+            return;
+        }
+        if (vertical) {
+            left.tabOrder = 0;
+            right.tabOrder = 1;
+        } else {
+            top.tabOrder = 0;
+            bottom.tabOrder = 1;
+        }
+    }
+
     // ------------------------------------------------------------------------
     // TSplitPane -------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Get focusFollowsMouse flag.
+     *
+     * @return true if focus follows mouse: widgets automatically activated
+     * if the mouse passes over them
+     */
+    public boolean getFocusFollowsMouse() {
+        return focusFollowsMouse;
+    }
+
+    /**
+     * Set focusFollowsMouse flag.
+     *
+     * @param focusFollowsMouse if true, focus follows mouse: widgets are
+     * automatically activated if the mouse passes over them
+     */
+    public void setFocusFollowsMouse(final boolean focusFollowsMouse) {
+        this.focusFollowsMouse = focusFollowsMouse;
+    }
+
+    /**
+     * Set focusFollowsMouse flag.
+     *
+     * @param focusFollowsMouse if true, focus follows mouse: widgets are
+     * automatically activated if the mouse passes over them
+     * @param recursive if true, set the focusFollowsMouse flag of all child
+     * TSplitPane's recursively
+     */
+    public void setFocusFollowsMouse(final boolean focusFollowsMouse,
+        final boolean recursive) {
+
+        this.focusFollowsMouse = focusFollowsMouse;
+        if (recursive) {
+            if (left instanceof TSplitPane) {
+                ((TSplitPane) left).setFocusFollowsMouse(recursive);
+            }
+            if (right instanceof TSplitPane) {
+                ((TSplitPane) right).setFocusFollowsMouse(recursive);
+            }
+            if (top instanceof TSplitPane) {
+                ((TSplitPane) top).setFocusFollowsMouse(recursive);
+            }
+            if (bottom instanceof TSplitPane) {
+                ((TSplitPane) bottom).setFocusFollowsMouse(recursive);
+            }
+        }
+    }
 
     /**
      * Get the widget on the left side.

@@ -391,4 +391,44 @@ public class CellAttributes {
             (isBlink() ? "blink " : ""), foreColor, backColor);
     }
 
+    /**
+     * Convert these cell attributes into the style attributes of an HTML
+     * &lt;font&gt; tag.
+     *
+     * @return the HTML string
+     */
+    public String toHtml() {
+        String fontWeight = "normal";
+        String textDecoration = "none";
+        String fgText;
+        String bgText;
+
+        if (isBlink() && isUnderline()) {
+            textDecoration = "blink, underline";
+        } else if (isUnderline()) {
+            textDecoration = "underline";
+        } else if (isBlink()) {
+            textDecoration = "blink";
+        }
+        if (isReverse()) {
+            fgText = backColor.toRgbString(false);
+            if (isBold()) {
+                bgText = foreColor.toRgbString(true);
+            } else {
+                bgText = foreColor.toRgbString(false);
+            }
+        } else {
+            bgText = backColor.toRgbString(false);
+            if (isBold()) {
+                fgText = foreColor.toRgbString(true);
+            } else {
+                fgText = foreColor.toRgbString(false);
+            }
+        }
+
+        return String.format("style=\"color: %s; background-color: %s; " +
+            "text-decoration: %s; font-weight: %s\"",
+            fgText, bgText, textDecoration, fontWeight);
+    }
+
 }

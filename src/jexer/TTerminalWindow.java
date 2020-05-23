@@ -55,7 +55,7 @@ public class TTerminalWindow extends TScrollableWindow {
     /**
      * The terminal.
      */
-    private TTerminalWidget terminal;
+    protected TTerminalWidget terminal;
 
     /**
      * If true, close the window when the shell exits.

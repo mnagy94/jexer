@@ -1256,7 +1256,7 @@ public class SwingTerminal extends LogicalScreen
                     getTextHeight(), swing.getFrame());
             } else {
                 gr.drawImage(image, xPixel, yPixel,  getTextWidth(),
-                    getTextHeight(),swing.getComponent());
+                    getTextHeight(), swing.getComponent());
             }
             return;
         }

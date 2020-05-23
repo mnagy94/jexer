@@ -108,7 +108,32 @@ public class TInputBox extends TMessageBox {
         }
 
         setHeight(getHeight() + 2);
-        field = addField(1, getHeight() - 6, getWidth() - 4, false, text);
+        field = addField(1, getHeight() - 6, getWidth() - 4, false, text,
+            new TAction() {
+                public void DO() {
+                    switch (type) {
+                    case OK:
+                        result = Result.OK;
+                        getApplication().closeWindow(TInputBox.this);
+                        return;
+
+                    case OKCANCEL:
+                        result = Result.OK;
+                        getApplication().closeWindow(TInputBox.this);
+                        return;
+
+                    case YESNO:
+                        result = Result.YES;
+                        getApplication().closeWindow(TInputBox.this);
+                        return;
+
+                    case YESNOCANCEL:
+                        result = Result.YES;
+                        getApplication().closeWindow(TInputBox.this);
+                        return;
+                    }
+                }
+            }, null);
 
         // Set the secondaryThread to run me
         getApplication().enableSecondaryEventReceiver(this);

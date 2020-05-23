@@ -32,8 +32,12 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -113,10 +117,10 @@ public class TTerminalWidget extends TScrollableWidget
     private boolean blinkState = true;
 
     /**
-     * Timer flag, used only by ECMA48 backend and when double-width chars
-     * must be drawn.
+     * Timer, used only by ECMA48 backend and when double-width chars must be
+     * drawn.
      */
-    private boolean haveTimer = false;
+    private TTimer blinkTimer = null;
 
     /**
      * The last seen visible display.
@@ -444,7 +448,23 @@ public class TTerminalWidget extends TScrollableWidget
             typingHidMouse = true;
         }
 
-        // Scrollback up/down
+        // Scrollback up/down/home/end
+        if (keypress.equals(kbShiftHome)
+            || keypress.equals(kbCtrlHome)
+            || keypress.equals(kbAltHome)
+        ) {
+            toTop();
+            dirty = true;
+            return;
+        }
+        if (keypress.equals(kbShiftEnd)
+            || keypress.equals(kbCtrlEnd)
+            || keypress.equals(kbAltEnd)
+        ) {
+            toBottom();
+            dirty = true;
+            return;
+        }
         if (keypress.equals(kbShiftPgUp)
             || keypress.equals(kbCtrlPgUp)
             || keypress.equals(kbAltPgUp)
@@ -764,6 +784,12 @@ public class TTerminalWidget extends TScrollableWidget
             shell.destroy();
             shell = null;
         }
+        if (blinkTimer != null) {
+            TApplication app = getApplication();
+            if (app != null) {
+                app.removeTimer(blinkTimer);
+            }
+        }
     }
 
     /**
@@ -942,27 +968,114 @@ public class TTerminalWidget extends TScrollableWidget
      * or may not work.
      */
     private void terminateShellChildProcess() {
-        int pid = -1;
-        if (shell.getClass().getName().equals("java.lang.UNIXProcess")) {
-            /* get the PID on unix/linux systems */
-            try {
-                Field field = shell.getClass().getDeclaredField("pid");
-                field.setAccessible(true);
-                pid = field.getInt(shell);
-            } catch (Throwable e) {
-                // SQUASH, this didn't work.  Just bail out quietly.
-                return;
-            }
-        }
+        long pid = getPid();
         if (pid != -1) {
             // shell.destroy() works successfully at killing this side of
             // 'script'.  But we need to make sure the other side (child
             // process) is also killed.
             String [] cmdKillIt = {
-                "pkill", "-P", Integer.toString(pid)
+                "pkill", "-P", Long.toString(pid), "--signal", "KILL"
             };
             try {
                 Runtime.getRuntime().exec(cmdKillIt);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return;
+            }
+        }
+    }
+
+    /**
+     * Get the PID of the child process.
+     *
+     * @return the pid, or -1 if it cannot be determined
+     */
+    public long getPid() {
+        try {
+            // Java 9 or later, public access to Process.pid().
+            Method method = Process.class.getMethod("pid");
+            if (Modifier.isPublic(method.getModifiers())) {
+                return ((Long) method.invoke(shell)).longValue();
+            } else {
+                // This is probably related to JDK-4283544: a public
+                // interface method on a private implementation class.  Fall
+                // through to a pre-Java 9 attempt.
+            }
+        } catch (NoSuchMethodException e) {
+            // This will be before Java 9, fall through.
+        } catch (Throwable e) {
+            // SQUASH, this didn't work.  Just bail out quietly.
+            return -1;
+        }
+
+        if (shell.getClass().getName().equals("java.lang.UNIXProcess")) {
+            // Java 1.6 or earlier.  Should work smoothly.
+            try {
+                Field field = shell.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                return field.getInt(shell);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return -1;
+            }
+        }
+
+        if (shell.getClass().getName().equals("java.lang.ProcessImpl")) {
+            // Java 1.7 and 1.8.  If this is actually running on a Java 9+
+            // there will be nasty errors in stderr from the setAccessible()
+            // call.
+            try {
+                Field field = shell.getClass().getDeclaredField("pid");
+                field.setAccessible(true);
+                return field.getInt(shell);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return -1;
+            }
+        }
+
+        // Don't know how to get the PID.
+        return -1;
+    }
+
+    /**
+     * Send a signal to the the child of the 'script' or 'ptypipe' process
+     * used on POSIX.  This may or may not work.
+     *
+     * @param signal the signal number
+     */
+    public void signalShellChildProcess(final int signal) {
+        long pid = getPid();
+
+        if (pid != -1) {
+            String [] cmdSendSignal = {
+                "kill", Long.toString(pid), "--signal",
+                Integer.toString(signal)
+            };
+            try {
+                Runtime.getRuntime().exec(cmdSendSignal);
+            } catch (Throwable e) {
+                // SQUASH, this didn't work.  Just bail out quietly.
+                return;
+            }
+        }
+    }
+
+    /**
+     * Send a signal to the the child of the 'script' or 'ptypipe' process
+     * used on POSIX.  This may or may not work.
+     *
+     * @param signal the signal name
+     */
+    public void signalShellChildProcess(final String signal) {
+        long pid = getPid();
+
+        if (pid != -1) {
+            String [] cmdSendSignal = {
+                "kill", Long.toString(pid), "--signal", signal
+            };
+            try {
+                Runtime.getRuntime().exec(cmdSendSignal);
             } catch (Throwable e) {
                 // SQUASH, this didn't work.  Just bail out quietly.
                 return;
@@ -1212,18 +1325,20 @@ public class TTerminalWidget extends TScrollableWidget
         // Special case: the ECMA48 backend needs to have a timer to drive
         // its blink state.
         if (getScreen() instanceof jexer.backend.ECMA48Terminal) {
-            if (!haveTimer) {
+            if (blinkTimer == null) {
                 // Blink every 500 millis.
                 long millis = 500;
-                getApplication().addTimer(millis, true,
+                blinkTimer = getApplication().addTimer(millis, true,
                     new TAction() {
                         public void DO() {
                             blinkState = !blinkState;
-                            getApplication().doRepaint();
+                            TApplication app = getApplication();
+                            if (app != null) {
+                                app.doRepaint();
+                            }
                         }
                     }
                 );
-                haveTimer = true;
             }
         }
     }
@@ -1247,7 +1362,10 @@ public class TTerminalWidget extends TScrollableWidget
         } else {
             dirty = true;
         }
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+        TApplication app = getApplication();
+        if (app != null) {
+            app.postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+        }
     }
 
     /**
@@ -1281,6 +1399,80 @@ public class TTerminalWidget extends TScrollableWidget
      */
     public int getExitValue() {
         return exitValue;
+    }
+
+    /**
+     * Get the scrollback buffer from the emulator.
+     *
+     * @return the scrollback buffer, all the lines that have scrolled off
+     * screen
+     */
+    public final List<DisplayLine> getScrollbackBuffer() {
+        ArrayList<DisplayLine> buffer = new ArrayList<DisplayLine>();
+        for (DisplayLine line: emulator.getScrollbackBuffer()) {
+            buffer.add(new DisplayLine(line));
+        }
+        return buffer;
+    }
+
+    /**
+     * Get the display buffer from the emulator.
+     *
+     * @return the display buffer, the lines that are on the visible screen
+     */
+    public final List<DisplayLine> getDisplayBuffer() {
+        ArrayList<DisplayLine> buffer = new ArrayList<DisplayLine>();
+        for (DisplayLine line: emulator.getDisplayBuffer()) {
+            buffer.add(new DisplayLine(line));
+        }
+        return buffer;
+    }
+
+    /**
+     * Write the entire session (scrollback and display buffers) as plain
+     * text to a writer.
+     *
+     * @param writer the output writer
+     * @throws IOException of a java.io operation throws
+     */
+    public void writeSessionAsText(final Writer writer) throws IOException {
+        for (DisplayLine line: emulator.getScrollbackBuffer()) {
+            for (int i = 0; i < line.length(); i++) {
+                writer.write(new String(Character.toChars(
+                        line.charAt(i).getChar())));
+            }
+            writer.write("\n");
+        }
+        for (DisplayLine line: emulator.getDisplayBuffer()) {
+            for (int i = 0; i < line.length(); i++) {
+                writer.write(new String(Character.toChars(
+                        line.charAt(i).getChar())));
+            }
+            writer.write("\n");
+        }
+    }
+
+    /**
+     * Write the entire session (scrollback and display buffers) as colorized
+     * HTML to a writer.  This method does not write the HTML header/body
+     * tags.
+     *
+     * @param writer the output writer
+     * @throws IOException of a java.io operation throws
+     */
+    public void writeSessionAsHtml(final Writer writer) throws IOException {
+        for (DisplayLine line: emulator.getScrollbackBuffer()) {
+            for (int i = 0; i < line.length(); i++) {
+                writer.write(line.charAt(i).toHtml());
+            }
+            writer.write("\n");
+        }
+        for (DisplayLine line: emulator.getDisplayBuffer()) {
+            for (int i = 0; i < line.length(); i++) {
+                writer.write(line.charAt(i).toHtml());
+            }
+            writer.write("\n");
+        }
     }
 
     // ------------------------------------------------------------------------
