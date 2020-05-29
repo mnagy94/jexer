@@ -961,6 +961,15 @@ public class TTerminalWidget extends TScrollableWidget
 
             hideMouseWhenTyping = false;
         }
+
+        try {
+            int scrollbackMax = Integer.parseInt(System.getProperty(
+                "jexer.TTerminal.scrollbackMax", "2000"));
+            emulator.setScrollbackMax(scrollbackMax);
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+
     }
 
     /**

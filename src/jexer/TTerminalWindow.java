@@ -62,6 +62,11 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     private boolean closeOnExit = false;
 
+    /**
+     * If true, setTitle() was called and this title will be honored.
+     */
+    private boolean titleOverride = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -221,7 +226,7 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     @Override
     public void draw() {
-        if (terminal != null) {
+        if ((terminal != null) && (titleOverride == false)) {
             setTitle(terminal.getTitle());
         }
         reflowData();
@@ -475,6 +480,18 @@ public class TTerminalWindow extends TScrollableWindow {
             return -1;
         }
         return terminal.getExitValue();
+    }
+
+    /**
+     * Set window title.
+     *
+     * @param title new window title
+     * @param override if true, force the title to never change regardless of
+     * the desired title from the running terminal
+     */
+    public final void setTitle(final String title, final boolean override) {
+        super.setTitle(title);
+        this.titleOverride = override;
     }
 
 }

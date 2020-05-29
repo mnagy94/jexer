@@ -28,7 +28,6 @@
  */
 package jexer.bits;
 
-import java.awt.Color;
 import java.awt.image.BufferedImage;
 
 /**
@@ -94,7 +93,7 @@ public class Cell extends CellAttributes {
      * The background color used for the area the image portion might not
      * cover.
      */
-    private Color background = Color.BLACK;
+    private java.awt.Color background = java.awt.Color.BLACK;
 
     /**
      * hashCode() needs to call image.hashCode(), which can get quite
@@ -194,7 +193,7 @@ public class Cell extends CellAttributes {
      *
      * @return the bitmap image background color
      */
-    public Color getBackground() {
+    public java.awt.Color getBackground() {
         return background;
     }
 
@@ -306,7 +305,7 @@ public class Cell extends CellAttributes {
         image = null;
         imageHashCode = 0;
         invertedImage = null;
-        background = Color.BLACK;
+        background = java.awt.Color.BLACK;
         backgroundHashCode = 0;
     }
 
@@ -321,7 +320,7 @@ public class Cell extends CellAttributes {
         image = null;
         imageHashCode = 0;
         invertedImage = null;
-        background = Color.BLACK;
+        background = java.awt.Color.BLACK;
         backgroundHashCode = 0;
     }
 
@@ -336,8 +335,8 @@ public class Cell extends CellAttributes {
         if ((ch == UNSET_VALUE) || (image != null)) {
             return false;
         }
-        if ((getForeColor().equals(Color.WHITE))
-            && (getBackColor().equals(Color.BLACK))
+        if ((getForeColor().equals(jexer.bits.Color.WHITE))
+            && (getBackColor().equals(jexer.bits.Color.BLACK))
             && !isBold()
             && !isBlink()
             && !isReverse()
@@ -350,7 +349,6 @@ public class Cell extends CellAttributes {
         ) {
             return true;
         }
-
         return false;
     }
 

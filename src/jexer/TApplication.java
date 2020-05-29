@@ -101,7 +101,7 @@ public class TApplication implements Runnable {
      * If true, do "smart placement" on new windows that are not specified to
      * be centered.
      */
-    private static final boolean smartWindowPlacement = true;
+    protected boolean smartWindowPlacement = true;
 
     /**
      * Two backend types are available.
@@ -286,7 +286,7 @@ public class TApplication implements Runnable {
     /**
      * If true, display a text-based mouse cursor.
      */
-    private boolean textMouse = true;
+    protected boolean textMouse = true;
 
     /**
      * If true, hide the mouse after typing a keystroke.
@@ -308,6 +308,14 @@ public class TApplication implements Runnable {
      * If true, hide the menu bar.
      */
     private boolean hideMenuBar = false;
+
+    /**
+     * If true, the desktop can have the cursor blinking/visible even if the
+     * top-most window does not have the cursor active.  This can lead to a
+     * visible artifact where the desktop's cursor is "showing through" a
+     * window over it.
+     */
+    protected boolean desktopCanHaveCursor = false;
 
     /**
      * Optional text to display at the top right of the menu.
@@ -363,6 +371,11 @@ public class TApplication implements Runnable {
      * The stack of help topics.
      */
     protected ArrayList<Topic> helpTopics = new ArrayList<Topic>();
+
+    /**
+     * The last time user input (mouse or keyboard) was received.
+     */
+    protected long lastUserInputTime = System.currentTimeMillis();
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -489,6 +502,12 @@ public class TApplication implements Runnable {
                     // We will have an event to process, so repaint the
                     // screen at the end.
                     application.repaint = true;
+
+                    if ((event instanceof TMouseEvent)
+                        || (event instanceof TKeypressEvent)
+                    ) {
+                        lastUserInputTime = event.getTime().getTime();
+                    }
 
                     if (primary) {
                         primaryHandleEvent(event);
@@ -1111,7 +1130,7 @@ public class TApplication implements Runnable {
             return true;
         }
         if (menu.getId() == TMenu.MID_SCREEN_OPTIONS) {
-            new TFontChooserWindow(this);
+            new TScreenOptionsWindow(this);
             return true;
         }
 
@@ -1223,7 +1242,8 @@ public class TApplication implements Runnable {
         // Process timers and call doIdle()'s
         doIdle();
 
-        // Give subclass TApplications a chance to update something
+        // Give subclass TApplications a chance to update something before
+        // the screen is drawn.
         onPreDraw();
 
         // Update the screen
@@ -1274,6 +1294,8 @@ public class TApplication implements Runnable {
             // Screen resize
             if (event instanceof TResizeEvent) {
                 TResizeEvent resize = (TResizeEvent) event;
+                assert (resize.getType() == TResizeEvent.Type.SCREEN);
+
                 synchronized (getScreen()) {
                     if ((System.currentTimeMillis() - screenResizeTime >= 15)
                         || (resize.getWidth() < getScreen().getWidth())
@@ -1294,6 +1316,9 @@ public class TApplication implements Runnable {
                     desktop.setDimensions(0, desktopTop, resize.getWidth(),
                         (desktopBottom - desktopTop));
                     desktop.onResize(resize);
+                }
+                for (TWindow window: windows) {
+                    window.onResize(resize);
                 }
 
                 // Change menu edges if needed.
@@ -1954,6 +1979,14 @@ public class TApplication implements Runnable {
                 getScreen().getWidth(), desktop.getHeight());
             desktop.onResize(resize);
         }
+        if (hideMenuBar == false) {
+            // Push any windows that are on the top line down.
+            for (TWindow window: windows) {
+                if (window.getY() == 0) {
+                    window.setY(1);
+                }
+            }
+        }
     }
 
     /**
@@ -2022,6 +2055,20 @@ public class TApplication implements Runnable {
         return true;
     }
 
+    /**
+     * Check if a system-wide modal thread is running.  This thread is used
+     * to drive a few special dialog boxes such as TMessageBox, TInputBox,
+     * and TFileOpenBox.
+     *
+     * @return true if the modal (secondary) thread is running
+     */
+    public boolean isModalThreadRunning() {
+        if (secondaryEventReceiver != null) {
+            return true;
+        }
+        return false;
+    }
+
     // ------------------------------------------------------------------------
     // Screen refresh loop ----------------------------------------------------
     // ------------------------------------------------------------------------
@@ -2032,6 +2079,16 @@ public class TApplication implements Runnable {
      * set menuTrayText.
      */
     protected void onPreDraw() {
+        // Default does nothing
+    }
+
+    /**
+     * Function called immediately after the screen is drawn, while the
+     * screen is still synchronized/locked.  This can be used by subclasses
+     * of TApplication to alter the final post-rendered screen before it goes
+     * out -- or even replace the entire thing such as a screensaver.
+     */
+    protected void onPostDraw() {
         // Default does nothing
     }
 
@@ -2154,7 +2211,12 @@ public class TApplication implements Runnable {
                 oldDrawnMouseX = mouseX;
                 oldDrawnMouseY = mouseY;
             }
+
             if (getScreen().isDirty()) {
+                // Give subclass TApplications a chance to update the
+                // post-rendered screen.
+                onPostDraw();
+
                 screenHandler.setDirty();
             }
             return;
@@ -2191,26 +2253,34 @@ public class TApplication implements Runnable {
         }
 
         if (hideMenuBar == false) {
-
             // Draw the blank menubar line - reset the screen clipping first
             // so it won't trim it out.
             getScreen().resetClipping();
             getScreen().hLineXY(0, 0, getScreen().getWidth(), ' ',
                 theme.getColor("tmenu"));
-            // Now draw the menus.
-            int x = 1;
-            for (TMenu menu: menus) {
-                CellAttributes menuColor;
-                CellAttributes menuMnemonicColor;
-                if (menu.isActive()) {
-                    menuIsActive = true;
+        }
+
+        // Now draw the menus.
+        int x = 1;
+        for (TMenu menu: menus) {
+            CellAttributes menuColor;
+            CellAttributes menuMnemonicColor;
+            if (menu.isActive()) {
+                menuIsActive = true;
+                if (!menu.isContext()) {
                     menuColor = theme.getColor("tmenu.highlighted");
                     menuMnemonicColor = theme.getColor("tmenu.mnemonic.highlighted");
-                    topLevel = menu;
                 } else {
                     menuColor = theme.getColor("tmenu");
                     menuMnemonicColor = theme.getColor("tmenu.mnemonic");
                 }
+                topLevel = menu;
+            } else {
+                menuColor = theme.getColor("tmenu");
+                menuMnemonicColor = theme.getColor("tmenu.mnemonic");
+            }
+
+            if (hideMenuBar == false) {
                 // Draw the menu title
                 getScreen().hLineXY(x, 0,
                     StringUtils.width(menu.getTitle()) + 2, ' ', menuColor);
@@ -2219,31 +2289,31 @@ public class TApplication implements Runnable {
                 getScreen().putCharXY(x + 1 +
                     menu.getMnemonic().getScreenShortcutIdx(),
                     0, menu.getMnemonic().getShortcut(), menuMnemonicColor);
-
-                if (menu.isActive()) {
-                    ((TWindow) menu).drawChildren();
-                    // Reset the screen clipping so we can draw the next
-                    // title.
-                    getScreen().resetClipping();
-                }
-                x += StringUtils.width(menu.getTitle()) + 2;
             }
 
-            for (TMenu menu: subMenus) {
-                // Reset the screen clipping so we can draw the next
-                // sub-menu.
-                getScreen().resetClipping();
+            if (menu.isActive()) {
                 ((TWindow) menu).drawChildren();
+                // Reset the screen clipping so we can draw the next title.
+                getScreen().resetClipping();
             }
+            x += StringUtils.width(menu.getTitle()) + 2;
+        }
 
+        for (TMenu menu: subMenus) {
+            // Reset the screen clipping so we can draw the next sub-menu.
+            getScreen().resetClipping();
+            ((TWindow) menu).drawChildren();
+        }
+
+        if (hideMenuBar == false) {
             if ((menuTrayText != null) && (menuTrayText.length() > 0)) {
                 getScreen().resetClipping();
                 getScreen().putStringXY(getScreen().getWidth() -
                     StringUtils.width(menuTrayText), 0, menuTrayText,
                     theme.getColor("tmenu"));
             }
-
         }
+
         getScreen().resetClipping();
 
         if (hideStatusBar == false) {
@@ -2321,7 +2391,7 @@ public class TApplication implements Runnable {
                     visibleWindowCount++;
                 }
             }
-            if (visibleWindowCount == 0) {
+            if ((visibleWindowCount == 0) || desktopCanHaveCursor) {
                 // No windows are visible, only the desktop.  Allow it to
                 // have the cursor.
                 if (desktop != null) {
@@ -2357,6 +2427,10 @@ public class TApplication implements Runnable {
         }
 
         if (getScreen().isDirty()) {
+            // Give subclass TApplications a chance to update the
+            // post-rendered screen.
+            onPostDraw();
+
             screenHandler.setDirty();
         }
         repaint = false;
@@ -3052,14 +3126,33 @@ public class TApplication implements Runnable {
 
         if ((mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
             && (activeMenu != null)
-            && (mouse.getAbsoluteY() != 0)
+            && (activeMenu.isContext())
             && (!mouseOnMenu(mouse))
         ) {
-            // They clicked outside the active menu, turn it off
+            // They clicked outside the active context menu, turn it off
             activeMenu.setActive(false);
+            activeMenu.setContext(false);
             activeMenu = null;
             for (TMenu menu: subMenus) {
                 menu.setActive(false);
+                menu.setContext(false);
+            }
+            subMenus.clear();
+            // Continue checks
+        }
+
+        if ((mouse.getType() == TMouseEvent.Type.MOUSE_DOWN)
+            && (activeMenu != null)
+            && (mouse.getAbsoluteY() != 0)
+            && (!mouseOnMenu(mouse))
+        ) {
+            // They clicked outside the active non-context menu, turn it off
+            activeMenu.setActive(false);
+            assert (activeMenu.isContext() == false);
+            activeMenu = null;
+            for (TMenu menu: subMenus) {
+                menu.setActive(false);
+                menu.setContext(false);
             }
             subMenus.clear();
             // Continue checks
@@ -3076,6 +3169,7 @@ public class TApplication implements Runnable {
 
             for (TMenu menu: subMenus) {
                 menu.setActive(false);
+                assert (menu.isContext() == false);
             }
             subMenus.clear();
 
@@ -3086,6 +3180,7 @@ public class TApplication implements Runnable {
                         + StringUtils.width(menu.getTitle()) + 2)
                 ) {
                     menu.setActive(true);
+                    assert (menu.isContext() == false);
                     activeMenu = menu;
                 } else {
                     menu.setActive(false);
@@ -3105,6 +3200,7 @@ public class TApplication implements Runnable {
             TMenu oldMenu = activeMenu;
             for (TMenu menu: subMenus) {
                 menu.setActive(false);
+                assert (menu.isContext() == false);
             }
             subMenus.clear();
 
@@ -3115,6 +3211,7 @@ public class TApplication implements Runnable {
                         + StringUtils.width(menu.getTitle()) + 2)
                 ) {
                     menu.setActive(true);
+                    assert (menu.isContext() == false);
                     activeMenu = menu;
                 }
             }
@@ -3175,9 +3272,14 @@ public class TApplication implements Runnable {
     public final void closeMenu() {
         if (activeMenu != null) {
             activeMenu.setActive(false);
+            if (activeMenu.isContext()) {
+                activeMenu.setY(0);
+                activeMenu.setContext(false);
+            }
             activeMenu = null;
             for (TMenu menu: subMenus) {
                 menu.setActive(false);
+                menu.setContext(false);
             }
             subMenus.clear();
         }
@@ -3191,6 +3293,34 @@ public class TApplication implements Runnable {
     public final List<TMenu> getAllMenus() {
         return new ArrayList<TMenu>(menus);
     }
+
+    /**
+     * Open a previously created menu as a context menu at a specific
+     * location.
+     *
+     * @param menu the menu to open
+     * @param x the context menu X position
+     * @param y the context menu Y position
+     * @throws IllegalArgumentException if the menu is already used in
+     * another TApplication
+     */
+    public final void openContextMenu(final TMenu menu, final int x,
+        final int y) {
+
+        if ((menu.getApplication() != null)
+            && (menu.getApplication() != this)
+        ) {
+            throw new IllegalArgumentException("Menu " + menu + " is already " +
+                "part of application " + menu.getApplication());
+        }
+
+        assert (activeMenu == null);
+
+        menu.setContext(true, x, y);
+        menu.setActive(true);
+        activeMenu = menu;
+    }
+
 
     /**
      * Add a top-level menu to the list.

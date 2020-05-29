@@ -422,21 +422,22 @@ public class TImage extends TWidget implements EditMenuUser {
                     }
 
                     Cell cell = new Cell();
-                    if ((width != textWidth) || (height != textHeight)) {
-                        BufferedImage newImage;
-                        newImage = new BufferedImage(textWidth, textHeight,
-                            BufferedImage.TYPE_INT_ARGB);
 
-                        java.awt.Graphics gr = newImage.getGraphics();
-                        gr.drawImage(image.getSubimage(x * textWidth,
-                                y * textHeight, width, height),
-                            0, 0, null, null);
-                        gr.dispose();
-                        cell.setImage(newImage);
-                    } else {
-                        cell.setImage(image.getSubimage(x * textWidth,
-                                y * textHeight, width, height));
-                    }
+                    // Always re-render the image against the cell
+                    // background, so that alpha in the image does not lead
+                    // to bleed-through artifacts.
+                    BufferedImage newImage;
+                    newImage = new BufferedImage(textWidth, textHeight,
+                        BufferedImage.TYPE_INT_ARGB);
+
+                    java.awt.Graphics gr = newImage.getGraphics();
+                    gr.setColor(cell.getBackground());
+                    gr.fillRect(0, 0, textWidth, textHeight);
+                    gr.drawImage(image.getSubimage(x * textWidth,
+                            y * textHeight, width, height),
+                        0, 0, null, null);
+                    gr.dispose();
+                    cell.setImage(newImage);
 
                     cells[x][y] = cell;
                 }

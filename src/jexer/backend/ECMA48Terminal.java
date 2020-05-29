@@ -3117,6 +3117,86 @@ public class ECMA48Terminal extends LogicalScreen
     // ------------------------------------------------------------------------
 
     /**
+     * Get the wideCharImages flag.
+     *
+     * @return true if fullwidth characters (e.g. CJK) are being drawn as
+     * images
+     */
+    public boolean isWideCharImages() {
+        return wideCharImages;
+    }
+
+    /**
+     * Set the wideCharImages flag.
+     *
+     * @param wideCharImages if true, draw fullwidth characters (e.g. CJK) as
+     * images
+     */
+    public void setWideCharImages(final boolean wideCharImages) {
+        this.wideCharImages = wideCharImages;
+    }
+
+    /**
+     * Get the rgbColor flag.
+     *
+     * @return true if the standard system colors will be emitted as 24-bit RGB
+     */
+    public boolean isRgbColor() {
+        return doRgbColor;
+    }
+
+    /**
+     * Set the rgbColor flag.
+     *
+     * @param rgbColor if true, the standard system colors will be emitted as
+     * 24-bit RGB images
+     */
+    public void setRgbColor(final boolean rgbColor) {
+        doRgbColor = rgbColor;
+    }
+
+    /**
+     * Set sixel output support flag.
+     *
+     * @param sixel if true, then images will be emitted as sixel
+     */
+    public void setHasSixel(final boolean sixel) {
+        // Don't step on the screen refresh thread.
+        synchronized (this) {
+            this.sixel = sixel;
+            palette = null;
+            sixelCache = null;
+            clearPhysical();
+        }
+    }
+
+    /**
+     * Get the sixel shared palette option.
+     *
+     * @return true if all sixel output is using the same palette that is set
+     * in one DCS sequence and used in later sequences
+     */
+    public boolean hasSixelSharedPalette() {
+        return sixelSharedPalette;
+    }
+
+    /**
+     * Set the sixel shared palette option.
+     *
+     * @param sharedPalette if true, then all sixel output will use the same
+     * palette that is set in one DCS sequence and used in later sequences
+     */
+    public void setSixelSharedPalette(final boolean sharedPalette) {
+        // Don't step on the screen refresh thread.
+        synchronized (this) {
+            this.sixelSharedPalette = sharedPalette;
+            palette = null;
+            sixelCache = null;
+            clearPhysical();
+        }
+    }
+
+    /**
      * Get the number of colors in the sixel palette.
      *
      * @return the palette size

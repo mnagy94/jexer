@@ -1029,7 +1029,7 @@ public class TWindow extends TWidget {
      *
      * @param key the key to start taking control of
      */
-    protected void addShortcutKeypress(final TKeypress key) {
+    public void addShortcutKeypress(final TKeypress key) {
         keyboardShortcuts.add(key);
     }
 
@@ -1038,7 +1038,7 @@ public class TWindow extends TWidget {
      *
      * @param key the key to stop taking control of
      */
-    protected void removeShortcutKeypress(final TKeypress key) {
+    public void removeShortcutKeypress(final TKeypress key) {
         keyboardShortcuts.remove(key);
     }
 
@@ -1080,6 +1080,15 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Get the maximum width for this window.
+     *
+     * @return the maximum width
+     */
+    public final int getMaximumWindowWidth() {
+        return maximumWindowWidth;
+    }
+
+    /**
      * Set the maximum width for this window.
      *
      * @param maximumWindowWidth new maximum width
@@ -1092,6 +1101,15 @@ public class TWindow extends TWidget {
                 "be smaller than minimum window width + 1");
         }
         this.maximumWindowWidth = maximumWindowWidth;
+    }
+
+    /**
+     * Get the minimum width for this window.
+     *
+     * @return the minimum width
+     */
+    public final int getMinimumWindowWidth() {
+        return minimumWindowWidth;
     }
 
     /**
@@ -1110,6 +1128,15 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Get the maximum height for this window.
+     *
+     * @return the maximum height
+     */
+    public final int getMaximumWindowHeight() {
+        return maximumWindowHeight;
+    }
+
+    /**
      * Set the maximum height for this window.
      *
      * @param maximumWindowHeight new maximum height
@@ -1122,6 +1149,15 @@ public class TWindow extends TWidget {
                 "be smaller than minimum window height + 1");
         }
         this.maximumWindowHeight = maximumWindowHeight;
+    }
+
+    /**
+     * Get the minimum height for this window.
+     *
+     * @return the minimum height
+     */
+    public final int getMinimumWindowHeight() {
+        return minimumWindowHeight;
     }
 
     /**

@@ -1351,9 +1351,9 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
-     * Called by parent to render to TWindow.  Note package private access.
+     * Called by parent to render to TWindow.
      */
-    final void drawChildren() {
+    public final void drawChildren() {
         if (!isDrawable()) {
             return;
         }
@@ -1686,6 +1686,9 @@ public abstract class TWidget implements Comparable<TWidget> {
             // TSplitPane has a left/right/top/bottom link to me somewhere,
             // replace it with a link to splitPane.
             ((TSplitPane) myParent).replaceWidget(this, splitPane);
+
+            splitPane.setFocusFollowsMouse(((TSplitPane) myParent).
+                getFocusFollowsMouse());
         }
         splitPane.setParent(myParent, false);
         if (newWidgetOnLeft) {
@@ -1737,6 +1740,9 @@ public abstract class TWidget implements Comparable<TWidget> {
             // TSplitPane has a left/right/top/bottom link to me somewhere,
             // replace it with a link to splitPane.
             ((TSplitPane) myParent).replaceWidget(this, splitPane);
+
+            splitPane.setFocusFollowsMouse(((TSplitPane) myParent).
+                getFocusFollowsMouse());
         }
         splitPane.setParent(myParent, false);
         if (newWidgetOnTop) {

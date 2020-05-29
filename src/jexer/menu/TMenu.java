@@ -159,6 +159,11 @@ public class TMenu extends TWindow {
      */
     boolean useIcons = false;
 
+    /**
+     * If true, this is a context menu.
+     */
+    private boolean context = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -314,14 +319,18 @@ public class TMenu extends TWindow {
             return;
         }
         if (keypress.equals(kbRight)) {
-            getApplication().switchMenu(true);
+            if (!context) {
+                getApplication().switchMenu(true);
+            }
             return;
         }
         if (keypress.equals(kbLeft)) {
             if (isSubMenu) {
                 getApplication().closeSubMenu();
             } else {
-                getApplication().switchMenu(false);
+                if (!context) {
+                    getApplication().switchMenu(false);
+                }
             }
             return;
         }
@@ -433,6 +442,50 @@ public class TMenu extends TWindow {
      */
     public MnemonicString getMnemonic() {
         return mnemonic;
+    }
+
+    /**
+     * Get the context flag.
+     *
+     * @return true if this menu is a right-click context menu
+     */
+    public boolean isContext() {
+        return context;
+    }
+
+    /**
+     * Set the context flag, used to open a context menu at a specific screen
+     * position.
+     *
+     * @param context if true, this is a context menu
+     * @param x the screen X position
+     * @param y the screen Y position
+     */
+    public void setContext(final boolean context, final int x, final int y) {
+        this.context = context;
+        setX(x);
+        setY(y);
+
+        while (getX() + getWidth() > getScreen().getWidth()) {
+            setX(getX() - 1);
+        }
+        while (getY() + getHeight() > getApplication().getDesktopBottom()) {
+            setY(getY() - 1);
+        }
+    }
+
+    /**
+     * Set the context flag.
+     *
+     * @param context if true, this is a context menu
+     */
+    public void setContext(final boolean context) {
+        if (context == false) {
+            setX(0);
+            setY(1);
+            getApplication().recomputeMenuX();
+        }
+        this.context = context;
     }
 
     /**

@@ -141,7 +141,15 @@ public class Document {
         other.overwrite = overwrite;
         other.dirty = dirty;
         other.defaultColor = defaultColor;
-        other.highlighter.setTo(highlighter);
+        if ((other.highlighter != null) && (this.highlighter != null)) {
+            other.highlighter.setTo(highlighter);
+        } else if (this.highlighter == null) {
+            other.highlighter = this.highlighter;
+        } else {
+            assert (other.highlighter == null);
+            other.highlighter = new Highlighter();
+            other.highlighter.setTo(this.highlighter);
+        }
         return other;
     }
 

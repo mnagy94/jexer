@@ -82,8 +82,12 @@ public class Highlighter {
      * @param rhs an instance of Highlighter
      */
     public void setTo(final Highlighter rhs) {
-        colors = new TreeMap<String, CellAttributes>();
-        colors.putAll(rhs.colors);
+        if (rhs.colors != null) {
+            colors = new TreeMap<String, CellAttributes>();
+            colors.putAll(rhs.colors);
+        } else {
+            colors = null;
+        }
     }
 
     /**

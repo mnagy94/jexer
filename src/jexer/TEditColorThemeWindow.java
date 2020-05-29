@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.ResourceBundle;
 
@@ -91,6 +92,11 @@ public class TEditColorThemeWindow extends TWindow {
         boolean bold;
 
         /**
+         * The RGB background color.
+         */
+        TField rgb;
+
+        /**
          * Public constructor.
          *
          * @param parent parent widget
@@ -103,6 +109,11 @@ public class TEditColorThemeWindow extends TWindow {
             final int y, final int width, final int height) {
 
             super(parent, x, y, width, height);
+
+            addLabel(i18n.getString("rgbHex"), 1, 6,
+                "twindow.background.modal");
+
+            rgb = addField(6, 6, 7, true, "");
         }
 
         /**
@@ -289,13 +300,16 @@ public class TEditColorThemeWindow extends TWindow {
          */
         @Override
         public void onKeypress(final TKeypressEvent keypress) {
-            if (keypress.equals(kbRight)) {
+            if (rgb.isActive()) {
+                rgb.onKeypress(keypress);
+            } else if (keypress.equals(kbRight)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color, bold);
                 if (dotX < 10) {
                     dotX += 3;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else if (keypress.equals(kbLeft)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color, bold);
@@ -303,6 +317,7 @@ public class TEditColorThemeWindow extends TWindow {
                     dotX -= 3;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else if (keypress.equals(kbUp)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color, bold);
@@ -311,6 +326,7 @@ public class TEditColorThemeWindow extends TWindow {
                 }
                 color = getColorFromPosition(dotX, dotY);
                 bold = getBoldFromPosition(dotY);
+                rgb.setText("");
             } else if (keypress.equals(kbDown)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color, bold);
@@ -319,10 +335,10 @@ public class TEditColorThemeWindow extends TWindow {
                 }
                 color = getColorFromPosition(dotX, dotY);
                 bold = getBoldFromPosition(dotY);
+                rgb.setText("");
             } else {
                 // Pass to my parent
                 super.onKeypress(keypress);
-                return;
             }
 
             // Save this update to the local theme.
@@ -345,6 +361,7 @@ public class TEditColorThemeWindow extends TWindow {
                 }
                 color = getColorFromPosition(dotX, dotY);
                 bold = getBoldFromPosition(dotY);
+                rgb.setText("");
             } else if (mouse.isMouseWheelDown()) {
                 // Do this like kbDown
                 int dotX = getXColorPosition(color);
@@ -354,17 +371,18 @@ public class TEditColorThemeWindow extends TWindow {
                 }
                 color = getColorFromPosition(dotX, dotY);
                 bold = getBoldFromPosition(dotY);
+                rgb.setText("");
             } else if ((mouse.getX() > 0)
                 && (mouse.getX() < getWidth() - 1)
                 && (mouse.getY() > 0)
-                && (mouse.getY() < getHeight() - 1)
+                && (mouse.getY() < getHeight() - 3)
             ) {
                 color = getColorFromPosition(mouse.getX(), mouse.getY());
                 bold = getBoldFromPosition(mouse.getY());
+                rgb.setText("");
             } else {
                 // Let parent class handle it.
                 super.onMouseDown(mouse);
-                return;
             }
 
             // Save this update to the local theme.
@@ -384,6 +402,11 @@ public class TEditColorThemeWindow extends TWindow {
         Color color;
 
         /**
+         * The RGB background color.
+         */
+        TField rgb;
+
+        /**
          * Public constructor.
          *
          * @param parent parent widget
@@ -396,6 +419,10 @@ public class TEditColorThemeWindow extends TWindow {
             final int y, final int width, final int height) {
 
             super(parent, x, y, width, height);
+
+            addLabel(i18n.getString("rgbHex"), 1, 4,
+                "twindow.background.modal");
+            rgb = addField(6, 4, 7, true, "");
         }
 
         /**
@@ -543,13 +570,16 @@ public class TEditColorThemeWindow extends TWindow {
          */
         @Override
         public void onKeypress(final TKeypressEvent keypress) {
-            if (keypress.equals(kbRight)) {
+            if (rgb.isActive()) {
+                rgb.onKeypress(keypress);
+            } else if (keypress.equals(kbRight)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color);
                 if (dotX < 10) {
                     dotX += 3;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else if (keypress.equals(kbLeft)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color);
@@ -557,6 +587,7 @@ public class TEditColorThemeWindow extends TWindow {
                     dotX -= 3;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else if (keypress.equals(kbUp)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color);
@@ -564,6 +595,7 @@ public class TEditColorThemeWindow extends TWindow {
                     dotY--;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else if (keypress.equals(kbDown)) {
                 int dotX = getXColorPosition(color);
                 int dotY = getYColorPosition(color);
@@ -571,6 +603,7 @@ public class TEditColorThemeWindow extends TWindow {
                     dotY++;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else {
                 // Pass to my parent
                 super.onKeypress(keypress);
@@ -595,6 +628,7 @@ public class TEditColorThemeWindow extends TWindow {
                     dotY--;
                 }
                 color = getColorFromPosition(dotX, dotY);
+                rgb.setText("");
             } else if (mouse.isMouseWheelDown()) {
                 // Do this like kbDown
                 int dotX = getXColorPosition(color);
@@ -603,17 +637,17 @@ public class TEditColorThemeWindow extends TWindow {
                     dotY++;
                 }
                 color = getColorFromPosition(dotX, dotY);
-                return;
+                rgb.setText("");
             } else if ((mouse.getX() > 0)
                 && (mouse.getX() < getWidth() - 1)
                 && (mouse.getY() > 0)
-                && (mouse.getY() < getHeight() - 1)
+                && (mouse.getY() < getHeight() - 3)
             ) {
                 color = getColorFromPosition(mouse.getX(), mouse.getY());
+                rgb.setText("");
             } else {
                 // Let parent class handle it.
                 super.onMouseDown(mouse);
-                return;
             }
 
             // Save this update to the local theme.
@@ -634,7 +668,7 @@ public class TEditColorThemeWindow extends TWindow {
     public TEditColorThemeWindow(final TApplication application) {
 
         // Register with the TApplication
-        super(application, i18n.getString("windowTitle"), 0, 0, 60, 18, MODAL);
+        super(application, i18n.getString("windowTitle"), 0, 0, 60, 22, MODAL);
 
         // Initialize with the first color
         List<String> colors = getTheme().getColorNames();
@@ -666,12 +700,12 @@ public class TEditColorThemeWindow extends TWindow {
                 }
             }
         );
-        foreground = new ForegroundPicker(this, 42, 1, 14, 6);
-        background = new BackgroundPicker(this, 42, 7, 14, 4);
+        foreground = new ForegroundPicker(this, 42, 1, 14, 8);
+        background = new BackgroundPicker(this, 42, 9, 14, 6);
         refreshFromTheme(colors.get(0));
         colorNames.setSelectedIndex(0);
 
-        addButton(i18n.getString("okButton"), getWidth() - 37, getHeight() - 4,
+        addButton(i18n.getString("okButton"), getWidth() - 53, getHeight() - 4,
             new TAction() {
                 public void DO() {
                     ColorTheme global = getTheme();
@@ -686,7 +720,42 @@ public class TEditColorThemeWindow extends TWindow {
             }
         );
 
-        addButton(i18n.getString("cancelButton"), getWidth() - 25,
+        addButton(i18n.getString("loadButton"), getWidth() - 41,
+            getHeight() - 4,
+            new TAction() {
+                public void DO() {
+                    try {
+                        String filename = null;
+                        filename = fileOpenBox(".");
+                        if (filename != null) {
+                            editTheme.load(filename);
+                            refreshFromTheme(colorNames.getSelected());
+                        }
+                    } catch (IOException e) {
+                        new TExceptionDialog(getApplication(), e);
+                    }
+                }
+            }
+        );
+
+        addButton(i18n.getString("saveButton"), getWidth() - 29,
+            getHeight() - 4,
+            new TAction() {
+                public void DO() {
+                    try {
+                        String filename = null;
+                        filename = fileSaveBox(".");
+                        if (filename != null) {
+                            editTheme.save(filename);
+                        }
+                    } catch (IOException e) {
+                        new TExceptionDialog(getApplication(), e);
+                    }
+                }
+            }
+        );
+
+        addButton(i18n.getString("cancelButton"), getWidth() - 17,
             getHeight() - 4,
             new TAction() {
                 public void DO() {
@@ -745,9 +814,38 @@ public class TEditColorThemeWindow extends TWindow {
 
         // Draw the sample text box
         attr.reset();
-        attr.setForeColor(foreground.color);
         attr.setBold(foreground.bold);
+        attr.setForeColor(foreground.color);
+        try {
+            String text = foreground.rgb.getText();
+            while (text.startsWith("#")) {
+                text = text.substring(1);
+            }
+            if (text.length() > 0) {
+                int foreColorRGB = Integer.parseInt(text, 16);
+                if (foreColorRGB >= 0) {
+                    attr.setForeColorRGB(foreColorRGB);
+                }
+            }
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+
         attr.setBackColor(background.color);
+        try {
+            String text = background.rgb.getText();
+            while (text.startsWith("#")) {
+                text = text.substring(1);
+            }
+            if (text.length() > 0) {
+                int backColorRGB = Integer.parseInt(text, 16);
+                if (backColorRGB >= 0) {
+                    attr.setBackColorRGB(backColorRGB);
+                }
+            }
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
         putStringXY(getWidth() - 17, getHeight() - 6,
             i18n.getString("textTextText"), attr);
         putStringXY(getWidth() - 17, getHeight() - 5,
@@ -765,9 +863,26 @@ public class TEditColorThemeWindow extends TWindow {
      */
     private void refreshFromTheme(final String colorName) {
         CellAttributes attr = editTheme.getColor(colorName);
+
         foreground.color = attr.getForeColor();
+
+        if (attr.getForeColorRGB() >= 0) {
+            foreground.rgb.setText(String.format("%06x",
+                    attr.getForeColorRGB()));
+        } else {
+            foreground.rgb.setText("");
+        }
+
         foreground.bold = attr.isBold();
+
         background.color = attr.getBackColor();
+
+        if (attr.getBackColorRGB() >= 0) {
+            background.rgb.setText(String.format("%06x",
+                    attr.getBackColorRGB()));
+        } else {
+            foreground.rgb.setText("");
+        }
     }
 
     /**
@@ -781,8 +896,38 @@ public class TEditColorThemeWindow extends TWindow {
         }
         CellAttributes attr = editTheme.getColor(colorName);
         attr.setForeColor(foreground.color);
+        try {
+            String text = foreground.rgb.getText();
+            while (text.startsWith("#")) {
+                text = text.substring(1);
+            }
+            if (text.length() > 0) {
+                int foreColorRGB = Integer.parseInt(text, 16);
+                if (foreColorRGB >= 0) {
+                    attr.setForeColorRGB(foreColorRGB);
+                }
+            }
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
         attr.setBold(foreground.bold);
+
         attr.setBackColor(background.color);
+        try {
+            String text = background.rgb.getText();
+            while (text.startsWith("#")) {
+                text = text.substring(1);
+            }
+            if (text.length() > 0) {
+                int backColorRGB = Integer.parseInt(text, 16);
+                if (backColorRGB >= 0) {
+                    attr.setBackColorRGB(backColorRGB);
+                }
+            }
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+
         editTheme.setColor(colorName, attr);
     }
 

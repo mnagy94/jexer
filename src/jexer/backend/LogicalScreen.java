@@ -1223,4 +1223,23 @@ public class LogicalScreen implements Screen {
         clipboard.copyText(sb.toString());
     }
 
+    /**
+     * Obtain a snapshot copy of the screen.
+     *
+     * @return a copy of the screen's data
+     */
+    public Screen snapshot() {
+        LogicalScreen other = null;
+        synchronized (this) {
+            other = new LogicalScreen();
+            other.setDimensions(width, height);
+            for (int row = 0; row < height; row++) {
+                for (int col = 0; col < width; col++) {
+                    other.logical[col][row] = new Cell(logical[col][row]);
+                }
+            }
+        }
+        return other;
+    }
+
 }

@@ -167,13 +167,14 @@ public class SwingComponent {
         if (System.getProperty("jexer.Swing.mouseImage") != null) {
             component.setCursor(getMouseImage());
         } else if (System.getProperty("jexer.Swing.mouseStyle") != null) {
-            component.setCursor(getMouseCursor());
+            setMouseStyle(System.getProperty("jexer.Swing.mouseStyle"));
         } else if (System.getProperty("jexer.textMouse",
                 "true").equals("false")
         ) {
             // If the user has suppressed the text mouse, don't kill the X11
             // mouse.
-            component.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            component.setCursor(Cursor.getPredefinedCursor(
+                Cursor.DEFAULT_CURSOR));
         } else {
             // Kill the X11 cursor
             // Transparent 16 x 16 pixel cursor image.
@@ -200,13 +201,13 @@ public class SwingComponent {
         if (System.getProperty("jexer.Swing.mouseImage") != null) {
             frame.setCursor(getMouseImage());
         } else if (System.getProperty("jexer.Swing.mouseStyle") != null) {
-            frame.setCursor(getMouseCursor());
+            setMouseStyle(System.getProperty("jexer.Swing.mouseStyle"));
         } else if (System.getProperty("jexer.textMouse",
                 "true").equals("false")
         ) {
             // If the user has suppressed the text mouse, don't kill the X11
             // mouse.
-            frame.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         } else {
             // Kill the X11 cursor
             // Transparent 16 x 16 pixel cursor image.
@@ -269,37 +270,43 @@ public class SwingComponent {
     }
 
     /**
-     * Get the appropriate mouse cursor based on jexer.Swing.mouseStyle.
+     * Set the mouse cursor style.
      *
-     * @return the cursor
+     * @param style the cursor style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair"
      */
-    private Cursor getMouseCursor() {
-        Cursor cursor = Cursor.getDefaultCursor();
-        String style = System.getProperty("jexer.Swing.mouseStyle");
+    public void setMouseStyle(final String style) {
         assert (style != null);
 
-        style = style.toLowerCase();
+        String styleLower = style.toLowerCase();
 
-        if (style.equals("none")) {
+        Cursor cursor = Cursor.getDefaultCursor();
+
+        if (styleLower.equals("none")) {
             // Transparent 16 x 16 pixel cursor image.
             BufferedImage cursorImg = new BufferedImage(16, 16,
                 BufferedImage.TYPE_INT_ARGB);
             // Create a new blank cursor.
             cursor = Toolkit.getDefaultToolkit().createCustomCursor(
                 cursorImg, new Point(0, 0), "blank cursor");
-        } else if (style.equals("default")) {
+        } else if (styleLower.equals("default")) {
             cursor = Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR);
-        } else if (style.equals("hand")) {
+        } else if (styleLower.equals("hand")) {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR);
-        } else if (style.equals("text")) {
+        } else if (styleLower.equals("text")) {
             cursor = Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR);
-        } else if (style.equals("move")) {
+        } else if (styleLower.equals("move")) {
             cursor = Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR);
-        } else if (style.equals("crosshair")) {
+        } else if (styleLower.equals("crosshair")) {
             cursor = Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR);
         }
 
-        return cursor;
+        if (frame != null) {
+            frame.setCursor(cursor);
+        }
+        if (component != null) {
+            component.setCursor(cursor);
+        }
     }
 
     /**

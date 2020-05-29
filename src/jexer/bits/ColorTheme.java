@@ -151,7 +151,11 @@ public class ColorTheme {
             // Foreground
             int foreColorRGB = -1;
             try {
-                foreColorRGB = Integer.parseInt(tokenizer.nextToken(), 16);
+                String rgbText = tokenizer.nextToken();
+                while (rgbText.startsWith("#")) {
+                    rgbText = rgbText.substring(1);
+                }
+                foreColorRGB = Integer.parseInt(rgbText, 16);
             } catch (NumberFormatException e) {
                 // Default to white on black
                 foreColorRGB = 0xFFFFFF;
@@ -166,7 +170,11 @@ public class ColorTheme {
             // Background
             int backColorRGB = -1;
             try {
-                backColorRGB = Integer.parseInt(tokenizer.nextToken(), 16);
+                String rgbText = tokenizer.nextToken();
+                while (rgbText.startsWith("#")) {
+                    rgbText = rgbText.substring(1);
+                }
+                backColorRGB = Integer.parseInt(rgbText, 16);
             } catch (NumberFormatException e) {
                 backColorRGB = 0;
             }

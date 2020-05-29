@@ -245,6 +245,7 @@ public class CellAttributes {
      */
     public final void setForeColor(final Color foreColor) {
         this.foreColor = foreColor;
+        this.foreColorRGB = -1;
     }
 
     /**
@@ -263,6 +264,7 @@ public class CellAttributes {
      */
     public final void setBackColor(final Color backColor) {
         this.backColor = backColor;
+        this.backColorRGB = -1;
     }
 
     /**
@@ -383,9 +385,22 @@ public class CellAttributes {
     @Override
     public String toString() {
         if ((foreColorRGB >= 0) || (backColorRGB >= 0)) {
-            return String.format("RGB: #%06x on #%06x",
-                (foreColorRGB & 0xFFFFFF),
-                (backColorRGB & 0xFFFFFF));
+            StringBuilder sb = new StringBuilder("RGB: ");
+
+            if (foreColorRGB < 0) {
+                sb.append(foreColor.toRgbString());
+            } else {
+                sb.append(String.format("#%06x",
+                        (foreColorRGB & 0xFFFFFF)));
+            }
+            sb.append(" on ");
+            if (backColorRGB < 0) {
+                sb.append(backColor.toRgbString());
+            } else {
+                sb.append(String.format("#%06x",
+                        (backColorRGB & 0xFFFFFF)));
+            }
+            return sb.toString();
         }
         return String.format("%s%s%s on %s", (isBold() ? "bold " : ""),
             (isBlink() ? "blink " : ""), foreColor, backColor);

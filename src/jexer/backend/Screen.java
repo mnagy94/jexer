@@ -456,4 +456,11 @@ public interface Screen {
         final int x0, final int y0, final int x1, final int y1,
         final boolean rectangle);
 
+    /**
+     * Obtain a snapshot copy of the screen.
+     *
+     * @return a copy of the screen's data
+     */
+    public Screen snapshot();
+
 }

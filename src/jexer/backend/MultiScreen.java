@@ -770,4 +770,26 @@ public class MultiScreen implements Screen {
         }
     }
 
+    /**
+     * Obtain a snapshot copy of the screen.
+     *
+     * @return a copy of the screen's data
+     */
+    public Screen snapshot() {
+        // Only copy from the first screen.
+        if (screens.size() > 0) {
+            return screens.get(0).snapshot();
+        }
+
+        // No screens are defined, create a blank.
+
+        LogicalScreen other = null;
+
+        other = new LogicalScreen();
+        int width = 80;
+        int height = 25;
+        other.setDimensions(width, height);
+        return other;
+    }
+
 }

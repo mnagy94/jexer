@@ -357,7 +357,7 @@ public class TSplitPane extends TWidget {
     /**
      * Get focusFollowsMouse flag.
      *
-     * @return true if focus follows mouse: widgets automatically activated
+     * @return true if focus follows mouse: widgets automatically activate
      * if the mouse passes over them
      */
     public boolean getFocusFollowsMouse() {

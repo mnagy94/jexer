@@ -246,6 +246,11 @@ public class SwingTerminal extends LogicalScreen
     private CursorStyle cursorStyle = CursorStyle.UNDERLINE;
 
     /**
+     * The mouse cursor style.
+     */
+    private String mouseStyle = "default";
+
+    /**
      * The number of millis to wait before switching the blink from visible
      * to invisible.  Set to 0 or negative to disable blinking.
      */
@@ -411,6 +416,8 @@ public class SwingTerminal extends LogicalScreen
 
                     SwingTerminal.this.resizeToScreen(true);
                     SwingTerminal.this.swing.setVisible(true);
+
+                    SwingTerminal.this.swing.setMouseStyle(mouseStyle);
                 }
             });
         } catch (java.lang.reflect.InvocationTargetException e) {
@@ -524,6 +531,8 @@ public class SwingTerminal extends LogicalScreen
                         new SwingSessionInfo(SwingTerminal.this.swing,
                             SwingTerminal.this.textWidth,
                             SwingTerminal.this.textHeight);
+
+                    SwingTerminal.this.swing.setMouseStyle(mouseStyle);
                 }
             });
         } catch (java.lang.reflect.InvocationTargetException e) {
@@ -644,17 +653,8 @@ public class SwingTerminal extends LogicalScreen
      */
     public void reloadOptions() {
         // Figure out my cursor style.
-        String cursorStyleString = System.getProperty(
-            "jexer.Swing.cursorStyle", "underline").toLowerCase();
-        if (cursorStyleString.equals("underline")) {
-            cursorStyle = CursorStyle.UNDERLINE;
-        } else if (cursorStyleString.equals("outline")) {
-            cursorStyle = CursorStyle.OUTLINE;
-        } else if (cursorStyleString.equals("block")) {
-            cursorStyle = CursorStyle.BLOCK;
-        } else if (cursorStyleString.equals("verticalbar")) {
-            cursorStyle = CursorStyle.VERTICAL_BAR;
-        }
+        setCursorStyle(System.getProperty("jexer.Swing.cursorStyle",
+                "underline"));
 
         // Pull the system property for triple buffering.
         if (System.getProperty("jexer.Swing.tripleBuffer",
@@ -665,6 +665,8 @@ public class SwingTerminal extends LogicalScreen
             SwingComponent.tripleBuffer = false;
         }
 
+        mouseStyle = System.getProperty("jexer.Swing.mouseStyle", "default");
+
         // Set custom colors
         setCustomSystemColors();
     }
@@ -672,6 +674,80 @@ public class SwingTerminal extends LogicalScreen
     // ------------------------------------------------------------------------
     // SwingTerminal ----------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Get triple buffering flag.
+     *
+     * @return true if triple buffering is enabled
+     */
+    public boolean isTripleBuffer() {
+        return SwingComponent.tripleBuffer;
+    }
+
+    /**
+     * Set triple buffering.
+     *
+     * @param tripleBuffer if true, enable triple buffering
+     */
+    public void setTripleBuffer(final boolean tripleBuffer) {
+        SwingComponent.tripleBuffer = tripleBuffer;
+    }
+
+    /**
+     * Set the mouse cursor style.
+     *
+     * @param style the cursor style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair"
+     */
+    public void setMouseStyle(final String style) {
+        this.mouseStyle = style;
+        swing.setMouseStyle(mouseStyle);
+    }
+
+    /**
+     * Get the mouse cursor style.
+     *
+     * @return the cursor style string, one of: "default", "none", "hand",
+     * "text", "move", or "crosshair"
+     */
+    public String getMouseStyle() {
+        return mouseStyle;
+    }
+
+    /**
+     * Get the cursor style.
+     *
+     * @return the cursor style
+     */
+    public CursorStyle getCursorStyle() {
+        return cursorStyle;
+    }
+
+    /**
+     * Set the cursor style.
+     *
+     * @param cursorStyle the new cursor style
+     */
+    public void setCursorStyle(final CursorStyle cursorStyle) {
+        this.cursorStyle = cursorStyle;
+    }
+
+    /**
+     * Set the cursor style.
+     *
+     * @param cursorStyleString the new cursor style
+     */
+    public void setCursorStyle(final String cursorStyleString) {
+        if (cursorStyleString.toLowerCase().equals("underline")) {
+            cursorStyle = CursorStyle.UNDERLINE;
+        } else if (cursorStyleString.toLowerCase().equals("outline")) {
+            cursorStyle = CursorStyle.OUTLINE;
+        } else if (cursorStyleString.toLowerCase().equals("block")) {
+            cursorStyle = CursorStyle.BLOCK;
+        } else if (cursorStyleString.toLowerCase().equals("verticalbar")) {
+            cursorStyle = CursorStyle.VERTICAL_BAR;
+        }
+    }
 
     /**
      * Get the width of a character cell in pixels.
@@ -1238,27 +1314,15 @@ public class SwingTerminal extends LogicalScreen
         // Draw the background rectangle, then the foreground character.
         assert (cell.isImage());
 
-        // Enable anti-aliasing
-        if (gr instanceof Graphics2D) {
-            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-        }
-
-        gr.setColor(cell.getBackground());
-        gr.fillRect(xPixel, yPixel, textWidth, textHeight);
-
         BufferedImage image = cell.getImage();
-        if (image != null) {
-            if (swing.getFrame() != null) {
-                gr.drawImage(image, xPixel, yPixel, getTextWidth(),
-                    getTextHeight(), swing.getFrame());
-            } else {
-                gr.drawImage(image, xPixel, yPixel,  getTextWidth(),
-                    getTextHeight(), swing.getComponent());
-            }
-            return;
+        assert (image != null);
+
+        if (swing.getFrame() != null) {
+            gr.drawImage(image, xPixel, yPixel, textWidth,
+                textHeight, swing.getFrame());
+        } else {
+            gr.drawImage(image, xPixel, yPixel, textWidth,
+                textHeight, swing.getComponent());
         }
     }
 
@@ -1316,17 +1380,6 @@ public class SwingTerminal extends LogicalScreen
         if (cell.isReverse()) {
             cellColor.setForeColor(cell.getBackColor());
             cellColor.setBackColor(cell.getForeColor());
-        }
-
-        // Enable anti-aliasing
-        if ((gr instanceof Graphics2D) && (swing.getFrame() != null)) {
-            // Anti-aliasing on JComponent makes the hash character disappear
-            // for Terminus font, and also kills performance.  Only enable it
-            // for JFrame.
-            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-            ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
         }
 
         // Draw the background rectangle, then the foreground character.

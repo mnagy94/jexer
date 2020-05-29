@@ -129,7 +129,9 @@ public class TSubMenu extends TMenuItem {
             if (parentMenu.isSubMenu) {
                 getApplication().closeSubMenu();
             } else {
-                getApplication().switchMenu(false);
+                if (!parentMenu.isContext()) {
+                    getApplication().switchMenu(false);
+                }
             }
             return;
         }
@@ -174,8 +176,23 @@ public class TSubMenu extends TMenuItem {
         assert (isEnabled());
         if (isAbsoluteActive()) {
             if (!menu.isActive()) {
+                menu.setX(getAbsoluteX() + getWidth() - 1);
+                menu.setY(getAbsoluteY());
+                while (menu.getX() + menu.getWidth() > getScreen().getWidth()) {
+                    menu.setX(menu.getX() - 1);
+                }
+                while (menu.getY() + menu.getHeight() > getApplication().
+                    getDesktopBottom()
+                ) {
+                    menu.setY(menu.getY() - 1);
+                }
+
                 getApplication().addSubMenu(menu);
                 menu.setActive(true);
+                TMenu parentMenu = (TMenu) getParent();
+                if (parentMenu.isContext()) {
+                    menu.setContext(true, menu.getX(), menu.getY());
+                }
             }
         }
     }
