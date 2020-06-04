@@ -430,7 +430,7 @@ public class TSplitPane extends TWidget {
         }
         this.left = left;
         left.setParent(this, false);
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+        onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
     }
 
@@ -462,7 +462,7 @@ public class TSplitPane extends TWidget {
         }
         this.right = right;
         right.setParent(this, false);
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+        onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
     }
 
@@ -494,7 +494,7 @@ public class TSplitPane extends TWidget {
         }
         this.top = top;
         top.setParent(this, false);
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+        onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
     }
 
@@ -526,7 +526,7 @@ public class TSplitPane extends TWidget {
         }
         this.bottom = bottom;
         bottom.setParent(this, false);
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+        onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
     }
 
@@ -623,25 +623,25 @@ public class TSplitPane extends TWidget {
         if (vertical) {
             if (left != null) {
                 left.setDimensions(0, 0, split, getHeight());
-                left.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                left.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                         left.getWidth(), left.getHeight()));
             }
             if (right != null) {
                 right.setDimensions(split + 1, 0, getWidth() - split - 1,
                     getHeight());
-                right.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                right.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                         right.getWidth(), right.getHeight()));
             }
         } else {
             if (top != null) {
                 top.setDimensions(0, 0, getWidth(), split);
-                top.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                top.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                         top.getWidth(), top.getHeight()));
             }
             if (bottom != null) {
                 bottom.setDimensions(0, split + 1, getWidth(),
                     getHeight() - split - 1);
-                bottom.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                bottom.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                         bottom.getWidth(), bottom.getHeight()));
             }
         }
@@ -716,8 +716,8 @@ public class TSplitPane extends TWidget {
         } else {
             keep.setParent(myParent, false);
             keep.setDimensions(getX(), getY(), getWidth(), getHeight());
-            keep.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
-                    getHeight()));
+            keep.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
+                    getWidth(), getHeight()));
         }
 
         return keep;

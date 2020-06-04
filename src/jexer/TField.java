@@ -152,6 +152,24 @@ public class TField extends TWidget implements EditMenuUser {
      * @param fixed if true, the text cannot exceed the display width
      * @param text initial text, default is empty string
      * @param enterAction function to call when enter key is pressed
+     */
+    public TField(final TWidget parent, final int x, final int y,
+        final int width, final boolean fixed, final String text,
+        final TAction enterAction) {
+
+        this(parent, x, y, width, fixed, text, enterAction, null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width visible text width
+     * @param fixed if true, the text cannot exceed the display width
+     * @param text initial text, default is empty string
+     * @param enterAction function to call when enter key is pressed
      * @param updateAction function to call when the text is updated
      */
     public TField(final TWidget parent, final int x, final int y,

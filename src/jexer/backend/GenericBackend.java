@@ -70,6 +70,16 @@ public abstract class GenericBackend implements Backend {
      */
     boolean abortOnDisconnect = true;
 
+    /**
+     * The last time user input (mouse or keyboard) was received.
+     */
+    protected long lastUserInputTime = System.currentTimeMillis();
+
+    /**
+     * Whether or not this backend is read-only.
+     */
+    protected boolean readOnly = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -109,7 +119,16 @@ public abstract class GenericBackend implements Backend {
      * @return if true, getEvents() has something to return to the application
      */
     public boolean hasEvents() {
-        return terminal.hasEvents();
+        if (terminal.hasEvents()) {
+            return true;
+        }
+        long now = System.currentTimeMillis();
+        sessionInfo.setIdleTime((int) (now - lastUserInputTime) / 1000);
+        /*
+        System.err.println(sessionInfo + " idle " +
+            sessionInfo.getIdleTime());
+         */
+        return false;
     }
 
     /**
@@ -121,16 +140,43 @@ public abstract class GenericBackend implements Backend {
         if (terminal.hasEvents()) {
             terminal.getEvents(queue);
 
-            // This default backend assumes a single user, and if that user
-            // becomes disconnected we should terminate the application.
-            if ((queue.size() > 0) && (abortOnDisconnect == true)) {
+            long now = System.currentTimeMillis();
+            TCommandEvent backendDisconnect = null;
+            boolean disconnect = false;
+
+            if (queue.size() > 0) {
+                lastUserInputTime = now;
+
                 TInputEvent event = queue.get(queue.size() - 1);
                 if (event instanceof TCommandEvent) {
                     TCommandEvent command = (TCommandEvent) event;
                     if (command.equals(cmBackendDisconnect)) {
-                        queue.add(new TCommandEvent(cmAbort));
+                        backendDisconnect = command;
+                        // This default backend assumes a single user, and if
+                        // that user becomes disconnected we should terminate
+                        // the application.
+                        if (abortOnDisconnect == true) {
+                            disconnect = true;
+                        }
                     }
                 }
+            }
+
+            sessionInfo.setIdleTime((int) (now - lastUserInputTime) / 1000);
+
+            if (readOnly) {
+                queue.clear();
+                if (backendDisconnect != null) {
+                    queue.add(backendDisconnect);
+                }
+            }
+
+            if (disconnect) {
+                assert (backendDisconnect != null);
+                assert (queue.size() > 0);
+                assert (queue.get(queue.size() - 1).equals(backendDisconnect));
+                queue.add(new TCommandEvent(backendDisconnect.getBackend(),
+                        cmAbort));
             }
         }
     }
@@ -166,6 +212,24 @@ public abstract class GenericBackend implements Backend {
      */
     public void reloadOptions() {
         terminal.reloadOptions();
+    }
+
+    /**
+     * Check if backend is read-only.
+     *
+     * @return true if user input events from the backend are discarded
+     */
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    /**
+     * Set read-only flag.
+     *
+     * @param readOnly if true, then input events will be discarded
+     */
+    public void setReadOnly(final boolean readOnly) {
+        this.readOnly = readOnly;
     }
 
 }

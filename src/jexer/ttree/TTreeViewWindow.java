@@ -255,8 +255,9 @@ public class TTreeViewWindow extends TScrollableWindow {
     public void onResize(final TResizeEvent resize) {
         if (resize.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the treeView field.
-            TResizeEvent treeSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                resize.getWidth() - 2, resize.getHeight() - 2);
+            TResizeEvent treeSize = new TResizeEvent(resize.getBackend(),
+                TResizeEvent.Type.WIDGET, resize.getWidth() - 2,
+                resize.getHeight() - 2);
             treeView.onResize(treeSize);
 
             // Have TScrollableWindow handle the scrollbars.

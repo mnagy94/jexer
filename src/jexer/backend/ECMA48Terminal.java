@@ -110,7 +110,12 @@ public class ECMA48Terminal extends LogicalScreen
      * is a) expensive in bandwidth, and b) potentially terrible looking for
      * non-xterms.
      */
-    private static boolean doRgbColor = false;
+    private boolean doRgbColor = false;
+
+    /**
+     * The backend that is reading from this terminal.
+     */
+    private Backend backend;
 
     /**
      * The session information.
@@ -249,6 +254,12 @@ public class ECMA48Terminal extends LogicalScreen
      * If true, then we changed System.in and need to change it back.
      */
     private boolean setRawMode = false;
+
+    /**
+     * If true, the DA response has been seen and options that it affects
+     * should not be reset in reloadOption().
+     */
+    private boolean daResponseSeen = false;
 
     /**
      * If true, then we will set modifyOtherKeys.
@@ -1078,6 +1089,7 @@ public class ECMA48Terminal extends LogicalScreen
      * Constructor sets up state for getEvent().  If either windowWidth or
      * windowHeight are less than 1, the terminal is not resized.
      *
+     * @param backend the backend that will read from this terminal
      * @param listener the object this backend needs to wake up when new
      * input comes in
      * @param input an InputStream connected to the remote user, or null for
@@ -1093,11 +1105,12 @@ public class ECMA48Terminal extends LogicalScreen
      * @throws UnsupportedEncodingException if an exception is thrown when
      * creating the InputStreamReader
      */
-    public ECMA48Terminal(final Object listener, final InputStream input,
-        final OutputStream output, final int windowWidth,
+    public ECMA48Terminal(final Backend backend, final Object listener,
+        final InputStream input, final OutputStream output,
+        final int windowWidth,
         final int windowHeight) throws UnsupportedEncodingException {
 
-        this(listener, input, output);
+        this(backend, listener, input, output);
 
         // Send dtterm/xterm sequences, which will probably not work because
         // allowWindowOps is defaulted to false.
@@ -1112,6 +1125,7 @@ public class ECMA48Terminal extends LogicalScreen
     /**
      * Constructor sets up state for getEvent().
      *
+     * @param backend the backend that will read from this terminal
      * @param listener the object this backend needs to wake up when new
      * input comes in
      * @param input an InputStream connected to the remote user, or null for
@@ -1125,8 +1139,11 @@ public class ECMA48Terminal extends LogicalScreen
      * @throws UnsupportedEncodingException if an exception is thrown when
      * creating the InputStreamReader
      */
-    public ECMA48Terminal(final Object listener, final InputStream input,
+    public ECMA48Terminal(final Backend backend, final Object listener,
+        final InputStream input,
         final OutputStream output) throws UnsupportedEncodingException {
+
+        this.backend    = backend;
 
         resetParser();
         mouse1           = false;
@@ -1187,7 +1204,7 @@ public class ECMA48Terminal extends LogicalScreen
             sessionInfo.getWindowHeight());
 
         // Hang onto the window size
-        windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
+        windowResize = new TResizeEvent(backend, TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
         reloadOptions();
@@ -1210,6 +1227,7 @@ public class ECMA48Terminal extends LogicalScreen
     /**
      * Constructor sets up state for getEvent().
      *
+     * @param backend the backend that will read from this terminal
      * @param listener the object this backend needs to wake up when new
      * input comes in
      * @param input the InputStream underlying 'reader'.  Its available()
@@ -1221,8 +1239,8 @@ public class ECMA48Terminal extends LogicalScreen
      * which uses System.in.
      * @throws IllegalArgumentException if input, reader, or writer are null.
      */
-    public ECMA48Terminal(final Object listener, final InputStream input,
-        final Reader reader, final PrintWriter writer,
+    public ECMA48Terminal(final Backend backend, final Object listener,
+        final InputStream input, final Reader reader, final PrintWriter writer,
         final boolean setRawMode) {
 
         if (input == null) {
@@ -1234,7 +1252,11 @@ public class ECMA48Terminal extends LogicalScreen
         if (writer == null) {
             throw new IllegalArgumentException("Writer must be specified");
         }
+
+        this.backend     = backend;
+
         resetParser();
+
         mouse1           = false;
         mouse2           = false;
         mouse3           = false;
@@ -1285,7 +1307,7 @@ public class ECMA48Terminal extends LogicalScreen
             sessionInfo.getWindowHeight());
 
         // Hang onto the window size
-        windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
+        windowResize = new TResizeEvent(backend, TResizeEvent.Type.SCREEN,
             sessionInfo.getWindowWidth(), sessionInfo.getWindowHeight());
 
         reloadOptions();
@@ -1308,6 +1330,7 @@ public class ECMA48Terminal extends LogicalScreen
     /**
      * Constructor sets up state for getEvent().
      *
+     * @param backend the backend that will read from this terminal
      * @param listener the object this backend needs to wake up when new
      * input comes in
      * @param input the InputStream underlying 'reader'.  Its available()
@@ -1316,10 +1339,11 @@ public class ECMA48Terminal extends LogicalScreen
      * @param writer a PrintWriter connected to the remote user.
      * @throws IllegalArgumentException if input, reader, or writer are null.
      */
-    public ECMA48Terminal(final Object listener, final InputStream input,
-        final Reader reader, final PrintWriter writer) {
+    public ECMA48Terminal(final Backend backend, final Object listener,
+        final InputStream input, final Reader reader,
+        final PrintWriter writer) {
 
-        this(listener, input, reader, writer, false);
+        this(backend, listener, input, reader, writer, false);
     }
 
     // ------------------------------------------------------------------------
@@ -1333,8 +1357,10 @@ public class ECMA48Terminal extends LogicalScreen
      */
     @Override
     public void setTitle(final String title) {
-        output.write(getSetTitleString(title));
-        flush();
+        if (output != null) {
+            output.write(getSetTitleString(title));
+            flush();
+        }
     }
 
     /**
@@ -1356,8 +1382,10 @@ public class ECMA48Terminal extends LogicalScreen
             sb.append(cursor(false));
             flushString(sb);
         }
-        output.write(sb.toString());
-        flush();
+        if (output != null) {
+            output.write(sb.toString());
+            flush();
+        }
     }
 
     /**
@@ -1365,12 +1393,18 @@ public class ECMA48Terminal extends LogicalScreen
      */
     @Override
     public void resizeToScreen() {
+        if (backend.isReadOnly()) {
+            return;
+        }
+
         // Send dtterm/xterm sequences, which will probably not work because
         // allowWindowOps is defaulted to false.
         String resizeString = String.format("\033[8;%d;%dt", getHeight(),
             getWidth());
-        this.output.write(resizeString);
-        this.output.flush();
+        if (output != null) {
+            this.output.write(resizeString);
+            this.output.flush();
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -1528,25 +1562,27 @@ public class ECMA48Terminal extends LogicalScreen
             sixelSharedPalette = true;
         }
 
-        // Default to not supporting iTerm2 images.
-        if (System.getProperty("jexer.ECMA48.iTerm2Images",
-                "false").equals("true")) {
-            iterm2Images = true;
-        } else {
-            iterm2Images = false;
-        }
+        if (!daResponseSeen) {
+            // Default to not supporting iTerm2 images.
+            if (System.getProperty("jexer.ECMA48.iTerm2Images",
+                    "false").equals("true")) {
+                iterm2Images = true;
+            } else {
+                iterm2Images = false;
+            }
 
-        // Default to using JPG Jexer images if terminal supports it.
-        String jexerImageStr = System.getProperty("jexer.ECMA48.jexerImages",
-            "jpg").toLowerCase();
-        if (jexerImageStr.equals("false")) {
-            jexerImageOption = JexerImageOption.DISABLED;
-        } else if (jexerImageStr.equals("jpg")) {
-            jexerImageOption = JexerImageOption.JPG;
-        } else if (jexerImageStr.equals("png")) {
-            jexerImageOption = JexerImageOption.PNG;
-        } else if (jexerImageStr.equals("rgb")) {
-            jexerImageOption = JexerImageOption.RGB;
+            // Default to using JPG Jexer images if terminal supports it.
+            String jexerImageStr = System.getProperty("jexer.ECMA48.jexerImages",
+                "jpg").toLowerCase();
+            if (jexerImageStr.equals("false")) {
+                jexerImageOption = JexerImageOption.DISABLED;
+            } else if (jexerImageStr.equals("jpg")) {
+                jexerImageOption = JexerImageOption.JPG;
+            } else if (jexerImageStr.equals("png")) {
+                jexerImageOption = JexerImageOption.PNG;
+            } else if (jexerImageStr.equals("rgb")) {
+                jexerImageOption = JexerImageOption.RGB;
+            }
         }
 
         // Set custom colors
@@ -1630,9 +1666,11 @@ public class ECMA48Terminal extends LogicalScreen
                         events.clear();
                     }
 
-                    if (output.checkError()) {
-                        // This is EOF.
-                        done = true;
+                    if (output != null) {
+                        if (output.checkError()) {
+                            // This is EOF.
+                            done = true;
+                        }
                     }
 
                     // Wait 20 millis for more data
@@ -1649,7 +1687,7 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Pass an event up to TApplication to tell it this Backend is done.
         synchronized (eventQueue) {
-            eventQueue.add(new TCommandEvent(cmBackendDisconnect));
+            eventQueue.add(new TCommandEvent(backend, cmBackendDisconnect));
         }
         if (listener != null) {
             synchronized (listener) {
@@ -1778,7 +1816,9 @@ public class ECMA48Terminal extends LogicalScreen
      * Flush output.
      */
     public void flush() {
-        output.flush();
+        if (output != null) {
+            output.flush();
+        }
     }
 
     /**
@@ -1795,6 +1835,14 @@ public class ECMA48Terminal extends LogicalScreen
         int textEnd = 0;
         for (int x = 0; x < width; x++) {
             Cell lCell = logical[x][y];
+            if (lCell.isImage()) {
+                // TODO: Figure out why image cells followed by blanks to the
+                // edge of the screen lead to showing only the first column
+                // of the image.  For now, just force any image row to draw
+                // the entire row.
+                textEnd = width;
+                break;
+            }
             if (!lCell.isBlank()) {
                 textEnd = x;
             }
@@ -2118,6 +2166,10 @@ public class ECMA48Terminal extends LogicalScreen
                     physical[x + i][y].setTo(lCell);
                 }
                 if (cellsToDraw.size() > 0) {
+                    if (debugToStderr) {
+                        System.err.println("images to render: iTerm2: " +
+                            iterm2Images + " Jexer: " + jexerImageOption);
+                    }
                     if (iterm2Images) {
                         sb.append(toIterm2Image(x, y, cellsToDraw));
                     } else if (jexerImageOption != JexerImageOption.DISABLED) {
@@ -2172,21 +2224,21 @@ public class ECMA48Terminal extends LogicalScreen
         switch (ch) {
         case 0x0D:
             // Carriage return --> ENTER
-            return new TKeypressEvent(kbEnter, alt, false, false);
+            return new TKeypressEvent(backend, kbEnter, alt, false, false);
         case 0x0A:
             // Linefeed --> ENTER
-            return new TKeypressEvent(kbEnter, alt, false, false);
+            return new TKeypressEvent(backend, kbEnter, alt, false, false);
         case 0x1B:
             // ESC
-            return new TKeypressEvent(kbEsc, alt, false, false);
+            return new TKeypressEvent(backend, kbEsc, alt, false, false);
         case '\t':
             // TAB
-            return new TKeypressEvent(kbTab, alt, false, false);
+            return new TKeypressEvent(backend, kbTab, alt, false, false);
         default:
             // Make all other control characters come back as the alphabetic
             // character with the ctrl field set.  So SOH would be 'A' +
             // ctrl.
-            return new TKeypressEvent(false, 0, (char)(ch + 0x40),
+            return new TKeypressEvent(backend, false, 0, (char)(ch + 0x40),
                 alt, true, false);
         }
     }
@@ -2217,55 +2269,56 @@ public class ECMA48Terminal extends LogicalScreen
 
         switch (key) {
         case 1:
-            return new TKeypressEvent(kbHome, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbHome, alt, ctrl, shift);
         case 2:
-            return new TKeypressEvent(kbIns, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbIns, alt, ctrl, shift);
         case 3:
-            return new TKeypressEvent(kbDel, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbDel, alt, ctrl, shift);
         case 4:
-            return new TKeypressEvent(kbEnd, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbEnd, alt, ctrl, shift);
         case 5:
-            return new TKeypressEvent(kbPgUp, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbPgUp, alt, ctrl, shift);
         case 6:
-            return new TKeypressEvent(kbPgDn, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbPgDn, alt, ctrl, shift);
         case 15:
-            return new TKeypressEvent(kbF5, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF5, alt, ctrl, shift);
         case 17:
-            return new TKeypressEvent(kbF6, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF6, alt, ctrl, shift);
         case 18:
-            return new TKeypressEvent(kbF7, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF7, alt, ctrl, shift);
         case 19:
-            return new TKeypressEvent(kbF8, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF8, alt, ctrl, shift);
         case 20:
-            return new TKeypressEvent(kbF9, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF9, alt, ctrl, shift);
         case 21:
-            return new TKeypressEvent(kbF10, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF10, alt, ctrl, shift);
         case 23:
-            return new TKeypressEvent(kbF11, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF11, alt, ctrl, shift);
         case 24:
-            return new TKeypressEvent(kbF12, alt, ctrl, shift);
+            return new TKeypressEvent(backend, kbF12, alt, ctrl, shift);
 
         case 27:
             // modifyOtherKeys sequence
             switch (otherKey) {
             case 8:
-                return new TKeypressEvent(kbBackspace, alt, ctrl, shift);
+                return new TKeypressEvent(backend, kbBackspace, alt, ctrl, shift);
             case 9:
-                return new TKeypressEvent(kbTab, alt, ctrl, shift);
+                return new TKeypressEvent(backend, kbTab, alt, ctrl, shift);
             case 13:
-                return new TKeypressEvent(kbEnter, alt, ctrl, shift);
+                return new TKeypressEvent(backend, kbEnter, alt, ctrl, shift);
             case 27:
-                return new TKeypressEvent(kbEsc, alt, ctrl, shift);
+                return new TKeypressEvent(backend, kbEsc, alt, ctrl, shift);
             default:
                 if (otherKey < 32) {
                     break;
                 }
                 if ((otherKey >= 'a') && (otherKey <= 'z') && ctrl) {
                     // Turn Ctrl-lowercase into Ctrl-uppercase
-                    return new TKeypressEvent(false, 0, (otherKey - 32),
+                    return new TKeypressEvent(backend, false, 0, (otherKey - 32),
                         alt, ctrl, shift);
                 }
-                return new TKeypressEvent(false, 0, otherKey, alt, ctrl, shift);
+                return new TKeypressEvent(backend, false, 0, otherKey,
+                    alt, ctrl, shift);
             }
 
             // Unsupported other key
@@ -2402,7 +2455,7 @@ public class ECMA48Terminal extends LogicalScreen
             eventCtrl = true;
         }
 
-        return new TMouseEvent(eventType, x, y, x, y,
+        return new TMouseEvent(backend, eventType, x, y, x, y,
             eventMouse1, eventMouse2, eventMouse3,
             eventMouseWheelUp, eventMouseWheelDown,
             eventAlt, eventCtrl, eventShift);
@@ -2516,7 +2569,7 @@ public class ECMA48Terminal extends LogicalScreen
             eventCtrl = true;
         }
 
-        return new TMouseEvent(eventType, x, y, x, y,
+        return new TMouseEvent(backend, eventType, x, y, x, y,
             eventMouse1, eventMouse2, eventMouse3,
             eventMouseWheelUp, eventMouseWheelDown,
             eventAlt, eventCtrl, eventShift);
@@ -2562,12 +2615,14 @@ public class ECMA48Terminal extends LogicalScreen
                         getTextWidth() + " x " + getTextHeight());
                 }
 
-                this.output.printf("%s", xtermReportPixelDimensions());
-                this.output.flush();
+                if (output != null) {
+                    output.printf("%s", xtermReportPixelDimensions());
+                    output.flush();
+                }
 
-                TResizeEvent event = new TResizeEvent(TResizeEvent.Type.SCREEN,
-                    newWidth, newHeight);
-                windowResize = new TResizeEvent(TResizeEvent.Type.SCREEN,
+                TResizeEvent event = new TResizeEvent(backend,
+                    TResizeEvent.Type.SCREEN, newWidth, newHeight);
+                windowResize = new TResizeEvent(backend, TResizeEvent.Type.SCREEN,
                     newWidth, newHeight);
                 queue.add(event);
             }
@@ -2675,7 +2730,7 @@ public class ECMA48Terminal extends LogicalScreen
 
             if (ch >= 0x20) {
                 // Normal character
-                events.add(new TKeypressEvent(false, 0, ch,
+                events.add(new TKeypressEvent(backend, false, 0, ch,
                         false, false, false));
                 resetParser();
                 return;
@@ -2708,7 +2763,8 @@ public class ECMA48Terminal extends LogicalScreen
                 shift = true;
             }
             alt = true;
-            events.add(new TKeypressEvent(false, 0, ch, alt, ctrl, shift));
+            events.add(new TKeypressEvent(backend, false, 0, ch,
+                    alt, ctrl, shift));
             resetParser();
             return;
 
@@ -2717,16 +2773,16 @@ public class ECMA48Terminal extends LogicalScreen
                 // Function key
                 switch (ch) {
                 case 'P':
-                    events.add(new TKeypressEvent(kbF1));
+                    events.add(new TKeypressEvent(backend, kbF1));
                     break;
                 case 'Q':
-                    events.add(new TKeypressEvent(kbF2));
+                    events.add(new TKeypressEvent(backend, kbF2));
                     break;
                 case 'R':
-                    events.add(new TKeypressEvent(kbF3));
+                    events.add(new TKeypressEvent(backend, kbF3));
                     break;
                 case 'S':
-                    events.add(new TKeypressEvent(kbF4));
+                    events.add(new TKeypressEvent(backend, kbF4));
                     break;
                 default:
                     break;
@@ -2757,37 +2813,37 @@ public class ECMA48Terminal extends LogicalScreen
                 switch (ch) {
                 case 'A':
                     // Up
-                    events.add(new TKeypressEvent(kbUp, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbUp, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'B':
                     // Down
-                    events.add(new TKeypressEvent(kbDown, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbDown, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'C':
                     // Right
-                    events.add(new TKeypressEvent(kbRight, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbRight, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'D':
                     // Left
-                    events.add(new TKeypressEvent(kbLeft, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbLeft, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'H':
                     // Home
-                    events.add(new TKeypressEvent(kbHome));
+                    events.add(new TKeypressEvent(backend, kbHome));
                     resetParser();
                     return;
                 case 'F':
                     // End
-                    events.add(new TKeypressEvent(kbEnd));
+                    events.add(new TKeypressEvent(backend, kbEnd));
                     resetParser();
                     return;
                 case 'Z':
                     // CBT - Cursor backward X tab stops (default 1)
-                    events.add(new TKeypressEvent(kbBackTab));
+                    events.add(new TKeypressEvent(backend, kbBackTab));
                     resetParser();
                     return;
                 case 'M':
@@ -2878,7 +2934,7 @@ public class ECMA48Terminal extends LogicalScreen
                         alt = csiIsAlt(params.get(1));
                         ctrl = csiIsCtrl(params.get(1));
                     }
-                    events.add(new TKeypressEvent(kbUp, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbUp, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'B':
@@ -2888,7 +2944,7 @@ public class ECMA48Terminal extends LogicalScreen
                         alt = csiIsAlt(params.get(1));
                         ctrl = csiIsCtrl(params.get(1));
                     }
-                    events.add(new TKeypressEvent(kbDown, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbDown, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'C':
@@ -2898,7 +2954,7 @@ public class ECMA48Terminal extends LogicalScreen
                         alt = csiIsAlt(params.get(1));
                         ctrl = csiIsCtrl(params.get(1));
                     }
-                    events.add(new TKeypressEvent(kbRight, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbRight, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'D':
@@ -2908,7 +2964,7 @@ public class ECMA48Terminal extends LogicalScreen
                         alt = csiIsAlt(params.get(1));
                         ctrl = csiIsCtrl(params.get(1));
                     }
-                    events.add(new TKeypressEvent(kbLeft, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbLeft, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'H':
@@ -2918,7 +2974,7 @@ public class ECMA48Terminal extends LogicalScreen
                         alt = csiIsAlt(params.get(1));
                         ctrl = csiIsCtrl(params.get(1));
                     }
-                    events.add(new TKeypressEvent(kbHome, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbHome, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'F':
@@ -2928,7 +2984,7 @@ public class ECMA48Terminal extends LogicalScreen
                         alt = csiIsAlt(params.get(1));
                         ctrl = csiIsCtrl(params.get(1));
                     }
-                    events.add(new TKeypressEvent(kbEnd, alt, ctrl, shift));
+                    events.add(new TKeypressEvent(backend, kbEnd, alt, ctrl, shift));
                     resetParser();
                     return;
                 case 'c':
@@ -2936,9 +2992,14 @@ public class ECMA48Terminal extends LogicalScreen
                     if (decPrivateModeFlag == false) {
                         break;
                     }
+                    daResponseSeen = true;
+
                     boolean reportsJexerImages = false;
                     boolean reportsIterm2Images = false;
                     for (String x: params) {
+                        if (debugToStderr) {
+                            System.err.println("Device Attributes: x = " + x);
+                        }
                         if (x.equals("4")) {
                             // Terminal reports sixel support
                             if (debugToStderr) {
@@ -2964,11 +3025,17 @@ public class ECMA48Terminal extends LogicalScreen
                         // Terminal does not support Jexer images, disable
                         // them.
                         jexerImageOption = JexerImageOption.DISABLED;
+                        if (debugToStderr) {
+                            System.err.println("Device Attributes: Disable Jexer images");
+                        }
                     }
                     if (reportsIterm2Images == false) {
                         // Terminal does not support iTerm2 images, disable
                         // them.
                         iterm2Images = false;
+                        if (debugToStderr) {
+                            System.err.println("Device Attributes: Disable iTerm2 images");
+                        }
                     }
                     resetParser();
                     return;
@@ -3734,7 +3801,34 @@ public class ECMA48Terminal extends LogicalScreen
          *
          */
 
-        // File contents can be several image formats.  We will use PNG.
+        // File contents can be several image formats.  We will use JPG.
+        ByteArrayOutputStream jpgOutputStream = new ByteArrayOutputStream(1024);
+
+        // Convert from ARGB to RGB, otherwise the JPG encode will fail.
+        BufferedImage jpgImage = new BufferedImage(image.getWidth(),
+            image.getHeight(), BufferedImage.TYPE_INT_RGB);
+        int [] pixels = new int[image.getWidth() * image.getHeight()];
+        image.getRGB(0, 0, image.getWidth(), image.getHeight(), pixels,
+            0, image.getWidth());
+        jpgImage.setRGB(0, 0, image.getWidth(), image.getHeight(), pixels,
+            0, image.getWidth());
+
+        try {
+            if (!ImageIO.write(jpgImage.getSubimage(0, 0,
+                        jpgImage.getWidth(),
+                        Math.min(jpgImage.getHeight(), fullHeight)),
+                    "JPG", jpgOutputStream)
+            ) {
+                // We failed to render image, bail out.
+                return "";
+            }
+        } catch (IOException e) {
+            // We failed to render image, bail out.
+            return "";
+        }
+
+        // Logic for PNG encode is below.  Leaving it in for reference.
+        /*
         ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream(1024);
         try {
             if (!ImageIO.write(image.getSubimage(0, 0, image.getWidth(),
@@ -3748,19 +3842,21 @@ public class ECMA48Terminal extends LogicalScreen
             // We failed to render image, bail out.
             return "";
         }
+        */
 
-        sb.append("\033]1337;File=");
-        /*
-        sb.append(String.format("width=$d;height=1;preserveAspectRatio=1;",
-                cells.size()));
-         */
-        /*
-        sb.append(String.format("width=$dpx;height=%dpx;preserveAspectRatio=1;",
+        sb.append("\033]1337;File=name=");
+        sb.append(StringUtils.toBase64("jexer".getBytes()));
+        sb.append(";inline=1;");
+        sb.append(String.format("width=%dpx;height=%dpx;preserveAspectRatio=1:",
                 image.getWidth(), Math.min(image.getHeight(),
                     getTextHeight())));
-         */
-        sb.append("inline=1:");
-        sb.append(StringUtils.toBase64(pngOutputStream.toByteArray()));
+
+        // mintty has a bug where it displays all of the iTerm2 sequence to
+        // screen if it sees CR or LF.  Strip those out.
+        String bytes = StringUtils.toBase64(jpgOutputStream.toByteArray());
+        bytes = bytes.replaceAll("[\n\r]", "");
+        sb.append(bytes);
+
         sb.append("\007");
 
         if (saveInCache) {

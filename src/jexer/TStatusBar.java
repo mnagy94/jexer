@@ -162,7 +162,8 @@ public class TStatusBar extends TWidget {
     public boolean statusBarKeypress(final TKeypressEvent keypress) {
         for (TStatusBarKey key: keys) {
             if (keypress.equals(key.key)) {
-                getApplication().postMenuEvent(new TCommandEvent(key.cmd));
+                getApplication().postMenuEvent(new TCommandEvent(
+                    keypress.getBackend(), key.cmd));
                 return true;
             }
         }
@@ -218,7 +219,8 @@ public class TStatusBar extends TWidget {
                 key.selected = false;
 
                 // Dispatch the event
-                getApplication().postMenuEvent(new TCommandEvent(key.cmd));
+                getApplication().postMenuEvent(new TCommandEvent(
+                    mouse.getBackend(), key.cmd));
                 return true;
             }
         }

@@ -28,6 +28,8 @@
  */
 package jexer.event;
 
+import jexer.backend.Backend;
+
 /**
  * This class encapsulates a menu selection event.
  * TApplication.getMenuItem(id) can be used to obtain the TMenuItem itself,
@@ -51,9 +53,12 @@ public class TMenuEvent extends TInputEvent {
     /**
      * Public contructor.
      *
+     * @param backend the backend that generated this event
      * @param id the MenuItem ID
      */
-    public TMenuEvent(final int id) {
+    public TMenuEvent(final Backend backend, final int id) {
+        super(backend);
+
         this.id = id;
     }
 

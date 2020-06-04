@@ -357,6 +357,7 @@ public class TList extends TScrollableWidget {
         if (vScroller != null) {
             vScroller.setHeight(getHeight() - 1);
         }
+        setSelectedIndex(selectedString);
     }
 
     /**
@@ -456,7 +457,26 @@ public class TList extends TScrollableWidget {
      * @param index -1 to unselect, otherwise the index into the list
      */
     public final void setSelectedIndex(final int index) {
-        selectedString = index;
+        if ((strings.size() == 0) || (index < 0)) {
+            toTop();
+            selectedString = -1;
+            return;
+        }
+        if (index > strings.size() - 1) {
+            toBottom();
+            selectedString = strings.size() - 1;
+            return;
+        }
+
+        toTop();
+        selectedString = 0;
+        while (index > selectedString) {
+            selectedString++;
+            while (selectedString - getVerticalValue() >= getHeight() - 1) {
+                verticalIncrement();
+            }
+        }
+        assert (index == selectedString);
     }
 
     /**

@@ -242,8 +242,9 @@ public class TTerminalWindow extends TScrollableWindow {
     public void onResize(final TResizeEvent resize) {
         if (resize.getType() == TResizeEvent.Type.WIDGET) {
             if (terminal != null) {
-                terminal.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                        getWidth() - 2, getHeight() - 2));
+                terminal.onResize(new TResizeEvent(resize.getBackend(),
+                        TResizeEvent.Type.WIDGET, getWidth() - 2,
+                        getHeight() - 2));
             }
 
             // Resize the scroll bars
@@ -454,7 +455,7 @@ public class TTerminalWindow extends TScrollableWindow {
             close();
         }
         clearShortcutKeypresses();
-        getApplication().postEvent(new TMenuEvent(TMenu.MID_REPAINT));
+        getApplication().postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));
     }
 
     /**

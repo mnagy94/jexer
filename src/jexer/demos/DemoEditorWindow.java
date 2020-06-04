@@ -133,8 +133,9 @@ public class DemoEditorWindow extends TWindow {
     public void onResize(final TResizeEvent event) {
         if (event.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the text field
-            TResizeEvent editSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                event.getWidth() - 2, event.getHeight() - 2);
+            TResizeEvent editSize = new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET, event.getWidth() - 2,
+                event.getHeight() - 2);
             editField.onResize(editSize);
             return;
         }

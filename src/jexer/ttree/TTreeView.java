@@ -131,11 +131,13 @@ public class TTreeView extends TWidget {
             }
         } else if (keypress.equals(kbPgDn)) {
             for (int i = 0; i < getHeight() - 1; i++) {
-                onKeypress(new TKeypressEvent(TKeypress.kbDown));
+                onKeypress(new TKeypressEvent(keypress.getBackend(),
+                        TKeypress.kbDown));
             }
         } else if (keypress.equals(kbPgUp)) {
             for (int i = 0; i < getHeight() - 1; i++) {
-                onKeypress(new TKeypressEvent(TKeypress.kbUp));
+                onKeypress(new TKeypressEvent(keypress.getBackend(),
+                        TKeypress.kbUp));
             }
         } else if (keypress.equals(kbHome)) {
             setSelected((TTreeItem) getChildren().get(0), false);

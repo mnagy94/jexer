@@ -59,7 +59,9 @@ public class MultiScreen implements Screen {
      * @param screen the screen to add
      */
     public MultiScreen(final Screen screen) {
-        screens.add(screen);
+        synchronized (screens) {
+            screens.add(screen);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -72,8 +74,10 @@ public class MultiScreen implements Screen {
      * @param offsetX new drawing offset
      */
     public void setOffsetX(final int offsetX) {
-        for (Screen screen: screens) {
-            screen.setOffsetX(offsetX);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setOffsetX(offsetX);
+            }
         }
     }
 
@@ -83,8 +87,10 @@ public class MultiScreen implements Screen {
      * @param offsetY new drawing offset
      */
     public void setOffsetY(final int offsetY) {
-        for (Screen screen: screens) {
-            screen.setOffsetY(offsetY);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setOffsetY(offsetY);
+            }
         }
     }
 
@@ -94,10 +100,12 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipRight() {
-        if (screens.size() > 0) {
-            return screens.get(0).getClipRight();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getClipRight();
+            }
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -106,8 +114,10 @@ public class MultiScreen implements Screen {
      * @param clipRight new boundary
      */
     public void setClipRight(final int clipRight) {
-        for (Screen screen: screens) {
-            screen.setClipRight(clipRight);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setClipRight(clipRight);
+            }
         }
     }
 
@@ -117,10 +127,12 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipBottom() {
-        if (screens.size() > 0) {
-            return screens.get(0).getClipBottom();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getClipBottom();
+            }
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -129,8 +141,10 @@ public class MultiScreen implements Screen {
      * @param clipBottom new boundary
      */
     public void setClipBottom(final int clipBottom) {
-        for (Screen screen: screens) {
-            screen.setClipBottom(clipBottom);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setClipBottom(clipBottom);
+            }
         }
     }
 
@@ -140,10 +154,12 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipLeft() {
-        if (screens.size() > 0) {
-            return screens.get(0).getClipLeft();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getClipLeft();
+            }
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -152,8 +168,10 @@ public class MultiScreen implements Screen {
      * @param clipLeft new boundary
      */
     public void setClipLeft(final int clipLeft) {
-        for (Screen screen: screens) {
-            screen.setClipLeft(clipLeft);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setClipLeft(clipLeft);
+            }
         }
     }
 
@@ -163,10 +181,12 @@ public class MultiScreen implements Screen {
      * @return drawing boundary
      */
     public int getClipTop() {
-        if (screens.size() > 0) {
-            return screens.get(0).getClipTop();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getClipTop();
+            }
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -175,8 +195,10 @@ public class MultiScreen implements Screen {
      * @param clipTop new boundary
      */
     public void setClipTop(final int clipTop) {
-        for (Screen screen: screens) {
-            screen.setClipTop(clipTop);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setClipTop(clipTop);
+            }
         }
     }
 
@@ -187,12 +209,14 @@ public class MultiScreen implements Screen {
      * screen
      */
     public boolean isDirty() {
-        for (Screen screen: screens) {
-            if (screen.isDirty()) {
-                return true;
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                if (screen.isDirty()) {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 
     /**
@@ -203,10 +227,12 @@ public class MultiScreen implements Screen {
      * @return attributes at (x, y)
      */
     public CellAttributes getAttrXY(final int x, final int y) {
-        if (screens.size() > 0) {
-            return screens.get(0).getAttrXY(x, y);
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getAttrXY(x, y);
+            }
+            return new CellAttributes();
         }
-        return new CellAttributes();
     }
 
     /**
@@ -217,10 +243,12 @@ public class MultiScreen implements Screen {
      * @return the character + attributes
      */
     public Cell getCharXY(final int x, final int y) {
-        if (screens.size() > 0) {
-            return screens.get(0).getCharXY(x, y);
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getCharXY(x, y);
+            }
+            return new Cell();
         }
-        return new Cell();
     }
 
     /**
@@ -233,8 +261,10 @@ public class MultiScreen implements Screen {
     public void putAttrXY(final int x, final int y,
         final CellAttributes attr) {
 
-        for (Screen screen: screens) {
-            screen.putAttrXY(x, y, attr);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putAttrXY(x, y, attr);
+            }
         }
     }
 
@@ -249,8 +279,10 @@ public class MultiScreen implements Screen {
     public void putAttrXY(final int x, final int y,
         final CellAttributes attr, final boolean clip) {
 
-        for (Screen screen: screens) {
-            screen.putAttrXY(x, y, attr, clip);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putAttrXY(x, y, attr, clip);
+            }
         }
     }
 
@@ -261,8 +293,10 @@ public class MultiScreen implements Screen {
      * @param attr attributes to use (bold, foreColor, backColor)
      */
     public void putAll(final int ch, final CellAttributes attr) {
-        for (Screen screen: screens) {
-            screen.putAll(ch, attr);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putAll(ch, attr);
+            }
         }
     }
 
@@ -274,8 +308,10 @@ public class MultiScreen implements Screen {
      * @param ch character + attributes to draw
      */
     public void putCharXY(final int x, final int y, final Cell ch) {
-        for (Screen screen: screens) {
-            screen.putCharXY(x, y, ch);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putCharXY(x, y, ch);
+            }
         }
     }
 
@@ -290,8 +326,10 @@ public class MultiScreen implements Screen {
     public void putCharXY(final int x, final int y, final int ch,
         final CellAttributes attr) {
 
-        for (Screen screen: screens) {
-            screen.putCharXY(x, y, ch, attr);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putCharXY(x, y, ch, attr);
+            }
         }
     }
 
@@ -303,8 +341,10 @@ public class MultiScreen implements Screen {
      * @param ch character to draw
      */
     public void putCharXY(final int x, final int y, final int ch) {
-        for (Screen screen: screens) {
-            screen.putCharXY(x, y, ch);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putCharXY(x, y, ch);
+            }
         }
     }
 
@@ -319,8 +359,10 @@ public class MultiScreen implements Screen {
     public void putStringXY(final int x, final int y, final String str,
         final CellAttributes attr) {
 
-        for (Screen screen: screens) {
-            screen.putStringXY(x, y, str, attr);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putStringXY(x, y, str, attr);
+            }
         }
     }
 
@@ -333,8 +375,10 @@ public class MultiScreen implements Screen {
      * @param str string to draw
      */
     public void putStringXY(final int x, final int y, final String str) {
-        for (Screen screen: screens) {
-            screen.putStringXY(x, y, str);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putStringXY(x, y, str);
+            }
         }
     }
 
@@ -350,8 +394,10 @@ public class MultiScreen implements Screen {
     public void vLineXY(final int x, final int y, final int n,
         final int ch, final CellAttributes attr) {
 
-        for (Screen screen: screens) {
-            screen.vLineXY(x, y, n, ch, attr);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.vLineXY(x, y, n, ch, attr);
+            }
         }
     }
 
@@ -367,8 +413,10 @@ public class MultiScreen implements Screen {
     public void hLineXY(final int x, final int y, final int n,
         final int ch, final CellAttributes attr) {
 
-        for (Screen screen: screens) {
-            screen.hLineXY(x, y, n, ch, attr);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.hLineXY(x, y, n, ch, attr);
+            }
         }
     }
 
@@ -379,8 +427,10 @@ public class MultiScreen implements Screen {
      * @param width new screen width
      */
     public void setWidth(final int width) {
-        for (Screen screen: screens) {
-            screen.setWidth(width);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setWidth(width);
+            }
         }
     }
 
@@ -391,8 +441,10 @@ public class MultiScreen implements Screen {
      * @param height new screen height
      */
     public void setHeight(final int height) {
-        for (Screen screen: screens) {
-            screen.setHeight(height);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setHeight(height);
+            }
         }
     }
 
@@ -404,20 +456,22 @@ public class MultiScreen implements Screen {
      * @param height new screen height
      */
     public void setDimensions(final int width, final int height) {
-        for (Screen screen: screens) {
-            // Do not blindly call setDimension() on every screen.  Instead
-            // call it only on those screens that do not already have the
-            // requested dimension.  With this very small check, we have the
-            // ability for ANY screen in the MultiBackend to resize ALL of
-            // the screens.
-            if ((screen.getWidth() != width)
-                || (screen.getHeight() != height)
-            ) {
-                screen.setDimensions(width, height);
-            } else {
-                // The screen that didn't change is probably the one that
-                // prompted the resize.  Force it to repaint.
-                screen.clearPhysical();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                // Do not blindly call setDimension() on every screen.
+                // Instead call it only on those screens that do not already
+                // have the requested dimension.  With this very small check,
+                // we have the ability for ANY screen in the MultiBackend to
+                // resize ALL of the screens.
+                if ((screen.getWidth() != width)
+                    || (screen.getHeight() != height)
+                ) {
+                    screen.setDimensions(width, height);
+                } else {
+                    // The screen that didn't change is probably the one that
+                    // prompted the resize.  Force it to repaint.
+                    screen.clearPhysical();
+                }
             }
         }
     }
@@ -430,15 +484,17 @@ public class MultiScreen implements Screen {
     public int getHeight() {
         // Return the smallest height of the screens.
         int height = 25;
-        if (screens.size() > 0) {
-            height = screens.get(0).getHeight();
-        }
-        for (Screen screen: screens) {
-            if (screen.getHeight() < height) {
-                height = screen.getHeight();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                height = screens.get(0).getHeight();
             }
+            for (Screen screen: screens) {
+                if (screen.getHeight() < height) {
+                    height = screen.getHeight();
+                }
+            }
+            return height;
         }
-        return height;
     }
 
     /**
@@ -449,15 +505,17 @@ public class MultiScreen implements Screen {
     public int getWidth() {
         // Return the smallest width of the screens.
         int width = 80;
-        if (screens.size() > 0) {
-            width = screens.get(0).getWidth();
-        }
-        for (Screen screen: screens) {
-            if (screen.getWidth() < width) {
-                width = screen.getWidth();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                width = screens.get(0).getWidth();
             }
+            for (Screen screen: screens) {
+                if (screen.getWidth() < width) {
+                    width = screen.getWidth();
+                }
+            }
+            return width;
         }
-        return width;
     }
 
     /**
@@ -465,8 +523,10 @@ public class MultiScreen implements Screen {
      * clip variables.
      */
     public void reset() {
-        for (Screen screen: screens) {
-            screen.reset();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.reset();
+            }
         }
     }
 
@@ -474,8 +534,10 @@ public class MultiScreen implements Screen {
      * Flush the offset and clip variables.
      */
     public void resetClipping() {
-        for (Screen screen: screens) {
-            screen.resetClipping();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.resetClipping();
+            }
         }
     }
 
@@ -483,8 +545,10 @@ public class MultiScreen implements Screen {
      * Clear the logical screen.
      */
     public void clear() {
-        for (Screen screen: screens) {
-            screen.clear();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.clear();
+            }
         }
     }
 
@@ -502,8 +566,10 @@ public class MultiScreen implements Screen {
         final int right, final int bottom,
         final CellAttributes border, final CellAttributes background) {
 
-        for (Screen screen: screens) {
-            screen.drawBox(left, top, right, bottom, border, background);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.drawBox(left, top, right, bottom, border, background);
+            }
         }
     }
 
@@ -526,9 +592,11 @@ public class MultiScreen implements Screen {
         final CellAttributes border, final CellAttributes background,
         final int borderType, final boolean shadow) {
 
-        for (Screen screen: screens) {
-            screen.drawBox(left, top, right, bottom, border, background,
-                borderType, shadow);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.drawBox(left, top, right, bottom, border, background,
+                    borderType, shadow);
+            }
         }
     }
 
@@ -543,8 +611,10 @@ public class MultiScreen implements Screen {
     public void drawBoxShadow(final int left, final int top,
         final int right, final int bottom) {
 
-        for (Screen screen: screens) {
-            screen.drawBoxShadow(left, top, right, bottom);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.drawBoxShadow(left, top, right, bottom);
+            }
         }
     }
 
@@ -552,8 +622,10 @@ public class MultiScreen implements Screen {
      * Clear the physical screen.
      */
     public void clearPhysical() {
-        for (Screen screen: screens) {
-            screen.clearPhysical();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.clearPhysical();
+            }
         }
     }
 
@@ -564,8 +636,10 @@ public class MultiScreen implements Screen {
      * @param y row coordinate.  0 is the top-most row.
      */
     public final void unsetImageRow(final int y) {
-        for (Screen screen: screens) {
-            screen.unsetImageRow(y);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.unsetImageRow(y);
+            }
         }
     }
 
@@ -574,8 +648,10 @@ public class MultiScreen implements Screen {
      * the physical device.
      */
     public void flushPhysical() {
-        for (Screen screen: screens) {
-            screen.flushPhysical();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.flushPhysical();
+            }
         }
     }
 
@@ -587,8 +663,10 @@ public class MultiScreen implements Screen {
      * @param y row coordinate to put the cursor on
      */
     public void putCursor(final boolean visible, final int x, final int y) {
-        for (Screen screen: screens) {
-            screen.putCursor(visible, x, y);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.putCursor(visible, x, y);
+            }
         }
     }
 
@@ -596,8 +674,10 @@ public class MultiScreen implements Screen {
      * Hide the cursor.
      */
     public void hideCursor() {
-        for (Screen screen: screens) {
-            screen.hideCursor();
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.hideCursor();
+            }
         }
     }
 
@@ -607,10 +687,12 @@ public class MultiScreen implements Screen {
      * @return true if the cursor is visible
      */
     public boolean isCursorVisible() {
-        if (screens.size() > 0) {
-            return screens.get(0).isCursorVisible();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).isCursorVisible();
+            }
+            return true;
         }
-        return true;
     }
 
     /**
@@ -619,10 +701,12 @@ public class MultiScreen implements Screen {
      * @return the cursor x column position
      */
     public int getCursorX() {
-        if (screens.size() > 0) {
-            return screens.get(0).getCursorX();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getCursorX();
+            }
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -631,10 +715,12 @@ public class MultiScreen implements Screen {
      * @return the cursor y row position
      */
     public int getCursorY() {
-        if (screens.size() > 0) {
-            return screens.get(0).getCursorY();
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getCursorY();
+            }
+            return 0;
         }
-        return 0;
     }
 
     /**
@@ -643,8 +729,10 @@ public class MultiScreen implements Screen {
      * @param title the new title
      */
     public void setTitle(final String title) {
-        for (Screen screen: screens) {
-            screen.setTitle(title);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setTitle(title);
+            }
         }
     }
 
@@ -658,7 +746,9 @@ public class MultiScreen implements Screen {
      * @param screen the screen to add
      */
     public void addScreen(final Screen screen) {
-        screens.add(screen);
+        synchronized (screens) {
+            screens.add(screen);
+        }
     }
 
     /**
@@ -667,8 +757,10 @@ public class MultiScreen implements Screen {
      * @param screen the screen to remove
      */
     public void removeScreen(final Screen screen) {
-        if (screens.size() > 1) {
-            screens.remove(screen);
+        synchronized (screens) {
+            if (screens.size() > 1) {
+                screens.remove(screen);
+            }
         }
     }
 
@@ -679,13 +771,15 @@ public class MultiScreen implements Screen {
      */
     public int getTextWidth() {
         int textWidth = 16;
-        for (Screen screen: screens) {
-            int newTextWidth = screen.getTextWidth();
-            if (newTextWidth < textWidth) {
-                textWidth = newTextWidth;
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                int newTextWidth = screen.getTextWidth();
+                if (newTextWidth < textWidth) {
+                    textWidth = newTextWidth;
+                }
             }
+            return textWidth;
         }
-        return textWidth;
     }
 
     /**
@@ -695,13 +789,15 @@ public class MultiScreen implements Screen {
      */
     public int getTextHeight() {
         int textHeight = 20;
-        for (Screen screen: screens) {
-            int newTextHeight = screen.getTextHeight();
-            if (newTextHeight < textHeight) {
-                textHeight = newTextHeight;
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                int newTextHeight = screen.getTextHeight();
+                if (newTextHeight < textHeight) {
+                    textHeight = newTextHeight;
+                }
             }
+            return textHeight;
         }
-        return textHeight;
     }
 
     /**
@@ -712,8 +808,10 @@ public class MultiScreen implements Screen {
      * @param y row position
      */
     public void invertCell(final int x, final int y) {
-        for (Screen screen: screens) {
-            screen.invertCell(x, y);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.invertCell(x, y);
+            }
         }
     }
 
@@ -728,8 +826,10 @@ public class MultiScreen implements Screen {
     public void invertCell(final int x, final int y,
         final boolean onlyThisCell) {
 
-        for (Screen screen: screens) {
-            screen.invertCell(x, y, onlyThisCell);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.invertCell(x, y, onlyThisCell);
+            }
         }
     }
 
@@ -745,8 +845,10 @@ public class MultiScreen implements Screen {
     public void setSelection(final int x0, final int y0,
         final int x1, final int y1, final boolean rectangle) {
 
-        for (Screen screen: screens) {
-            screen.setSelection(x0, y0, x1, y1, rectangle);
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.setSelection(x0, y0, x1, y1, rectangle);
+            }
         }
     }
 
@@ -764,9 +866,12 @@ public class MultiScreen implements Screen {
         final int x0, final int y0, final int x1, final int y1,
         final boolean rectangle) {
 
-        // Only copy from the first screen.
-        if (screens.size() > 0) {
-            screens.get(0).copySelection(clipboard, x0, y0, x1, y1, rectangle);
+        synchronized (screens) {
+            // Only copy from the first screen.
+            if (screens.size() > 0) {
+                screens.get(0).copySelection(clipboard, x0, y0, x1, y1,
+                    rectangle);
+            }
         }
     }
 
@@ -776,20 +881,22 @@ public class MultiScreen implements Screen {
      * @return a copy of the screen's data
      */
     public Screen snapshot() {
-        // Only copy from the first screen.
-        if (screens.size() > 0) {
-            return screens.get(0).snapshot();
+        synchronized (screens) {
+            // Only copy from the first screen.
+            if (screens.size() > 0) {
+                return screens.get(0).snapshot();
+            }
+
+            // No screens are defined, create a blank.
+
+            LogicalScreen other = null;
+
+            other = new LogicalScreen();
+            int width = 80;
+            int height = 25;
+            other.setDimensions(width, height);
+            return other;
         }
-
-        // No screens are defined, create a blank.
-
-        LogicalScreen other = null;
-
-        other = new LogicalScreen();
-        int width = 80;
-        int height = 25;
-        other.setDimensions(width, height);
-        return other;
     }
 
 }

@@ -96,7 +96,7 @@ public class SwingBackend extends GenericBackend {
         final int windowHeight, final int fontSize) {
 
         // Create a Swing backend using a JFrame
-        terminal = new SwingTerminal(windowWidth, windowHeight, fontSize,
+        terminal = new SwingTerminal(this, windowWidth, windowHeight, fontSize,
             listener);
 
         // Hang onto the session info
@@ -121,7 +121,7 @@ public class SwingBackend extends GenericBackend {
         final int windowWidth, final int windowHeight, final int fontSize) {
 
         // Create a Swing backend using a JComponent
-        terminal = new SwingTerminal(component, windowWidth, windowHeight,
+        terminal = new SwingTerminal(this, component, windowWidth, windowHeight,
             fontSize, listener);
 
         // Hang onto the session info

@@ -649,6 +649,11 @@ public class ColorTheme {
         color.setBackColor(Color.CYAN);
         color.setBold(false);
         colors.put("teditor.selected", color);
+        color = new CellAttributes();
+        color.setForeColor(Color.WHITE);
+        color.setBackColor(Color.RED);
+        color.setBold(true);
+        colors.put("teditor.margin", color);
 
         // TTable
         color = new CellAttributes();

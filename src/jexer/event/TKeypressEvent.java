@@ -29,6 +29,7 @@
 package jexer.event;
 
 import jexer.TKeypress;
+import jexer.backend.Backend;
 
 /**
  * This class encapsulates a keyboard input event.
@@ -51,15 +52,19 @@ public class TKeypressEvent extends TInputEvent {
     /**
      * Public contructor.
      *
+     * @param backend the backend that generated this event
      * @param key the TKeypress received
      */
-    public TKeypressEvent(final TKeypress key) {
+    public TKeypressEvent(final Backend backend, final TKeypress key) {
+        super(backend);
+
         this.key = key;
     }
 
     /**
      * Public constructor.
      *
+     * @param backend the backend that generated this event
      * @param isKey is true, this is a function key
      * @param fnKey the function key code (only valid if isKey is true)
      * @param ch the character (only valid if fnKey is false)
@@ -67,8 +72,11 @@ public class TKeypressEvent extends TInputEvent {
      * @param ctrl if true, CTRL was pressed with this keystroke
      * @param shift if true, SHIFT was pressed with this keystroke
      */
-    public TKeypressEvent(final boolean isKey, final int fnKey, final int ch,
-        final boolean alt, final boolean ctrl, final boolean shift) {
+    public TKeypressEvent(final Backend backend, final boolean isKey,
+        final int fnKey, final int ch, final boolean alt, final boolean ctrl,
+        final boolean shift) {
+
+        super(backend);
 
         this.key = new TKeypress(isKey, fnKey, ch, alt, ctrl, shift);
     }
@@ -76,13 +84,16 @@ public class TKeypressEvent extends TInputEvent {
     /**
      * Public constructor.
      *
+     * @param backend the backend that generated this event
      * @param key the TKeypress received
      * @param alt if true, ALT was pressed with this keystroke
      * @param ctrl if true, CTRL was pressed with this keystroke
      * @param shift if true, SHIFT was pressed with this keystroke
      */
-    public TKeypressEvent(final TKeypress key,
+    public TKeypressEvent(final Backend backend, final TKeypress key,
         final boolean alt, final boolean ctrl, final boolean shift) {
+
+        super(backend);
 
         this.key = new TKeypress(key.isFnKey(), key.getKeyCode(), key.getChar(),
             alt, ctrl, shift);
@@ -160,7 +171,7 @@ public class TKeypressEvent extends TInputEvent {
      * @return duplicate intance
      */
     public TKeypressEvent dup() {
-        TKeypressEvent keypress = new TKeypressEvent(key.dup());
+        TKeypressEvent keypress = new TKeypressEvent(getBackend(), key.dup());
         return keypress;
     }
 

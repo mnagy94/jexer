@@ -192,8 +192,9 @@ public class THelpWindow extends TWindow {
 
             helpText.setDimensions(1, 1, getWidth() - buttonOffset - 4,
                 getHeight() - 4);
-            helpText.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                    helpText.getWidth(), helpText.getHeight()));
+            helpText.onResize(new TResizeEvent(event.getBackend(),
+                    TResizeEvent.Type.WIDGET, helpText.getWidth(),
+                    helpText.getHeight()));
 
             return;
         } else {

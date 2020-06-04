@@ -124,6 +124,11 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     private int undoLevel = 50;
 
     /**
+     * An optional margin to display, or 0 for no margin.
+     */
+    private int margin = 0;
+
+    /**
      * The saved state for an undo/redo operation.
      */
     private class SavedState {
@@ -558,15 +563,17 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                     int ch = text.codePointAt(i);
                     switch (ch) {
                     case '\n':
-                        onKeypress(new TKeypressEvent(kbEnter));
+                        onKeypress(new TKeypressEvent(command.getBackend(),
+                                kbEnter));
                         break;
                     case '\t':
-                        onKeypress(new TKeypressEvent(kbTab));
+                        onKeypress(new TKeypressEvent(command.getBackend(),
+                                kbTab));
                         break;
                     default:
                         if ((ch >= 0x20) && (ch != 0x7F)) {
-                            onKeypress(new TKeypressEvent(false, 0, ch,
-                                    false, false, false));
+                            onKeypress(new TKeypressEvent(command.getBackend(),
+                                    false, 0, ch, false, false, false));
                         }
                         break;
                     }
@@ -595,6 +602,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     @Override
     public void draw() {
         CellAttributes selectedColor = getTheme().getColor("teditor.selected");
+        CellAttributes marginColor = getTheme().getColor("teditor.margin");
 
         boolean drawSelection = true;
 
@@ -665,7 +673,10 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
                 }
 
             }
-        }
+            if (margin > 0) {
+                putAttrXY(margin - 1 - leftColumn, i, marginColor);
+            }
+        } // for (int i = 0; i < getHeight(); i++)
     }
 
     // ------------------------------------------------------------------------
@@ -679,6 +690,15 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      */
     public void setUndoLevel(final int undoLevel) {
         this.undoLevel = undoLevel;
+    }
+
+    /**
+     * Set the right margin.
+     *
+     * @param margin column number, or 0 to disable
+     */
+    public void setMargin(final int margin) {
+        this.margin = margin;
     }
 
     /**
@@ -1284,14 +1304,14 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
             int ch = text.codePointAt(i);
             switch (ch) {
             case '\n':
-                onKeypress(new TKeypressEvent(kbEnter));
+                onKeypress(new TKeypressEvent(null, kbEnter));
                 break;
             case '\t':
-                onKeypress(new TKeypressEvent(kbTab));
+                onKeypress(new TKeypressEvent(null, kbTab));
                 break;
             default:
                 if ((ch >= 0x20) && (ch != 0x7F)) {
-                    onKeypress(new TKeypressEvent(false, 0, ch,
+                    onKeypress(new TKeypressEvent(null, false, 0, ch,
                             false, false, false));
                 }
                 break;

@@ -133,7 +133,7 @@ public class Demo6 {
                 width + 2, height + 2);
             windowBackend.setDrawLock(multiScreen);
             windowBackend.setOtherApplication(demoApp);
-            multiBackend.addBackend(windowBackend);
+            multiBackend.addBackend(windowBackend, true);
 
             /*
              * Three screens, two applications: spin them up!

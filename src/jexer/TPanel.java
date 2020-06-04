@@ -76,8 +76,9 @@ public class TPanel extends TWidget {
                 if ((child instanceof TSplitPane)
                     || (child instanceof TPanel)
                 ) {
-                    child.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                            resize.getWidth(), resize.getHeight()));
+                    child.onResize(new TResizeEvent(resize.getBackend(),
+                            TResizeEvent.Type.WIDGET, resize.getWidth(),
+                            resize.getHeight()));
                 }
                 return;
             }
@@ -91,10 +92,8 @@ public class TPanel extends TWidget {
     // TWidget ----------------------------------------------------------------
     // ------------------------------------------------------------------------
 
-
     // ------------------------------------------------------------------------
     // TPanel -----------------------------------------------------------------
     // ------------------------------------------------------------------------
-
 
 }

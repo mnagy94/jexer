@@ -131,4 +131,23 @@ public class HeadlessBackend extends LogicalScreen implements Backend {
         // NOP
     }
 
+    /**
+     * Check if backend is read-only.  For a HeadlessBackend, this is always
+     * false.
+     *
+     * @return true
+     */
+    public boolean isReadOnly() {
+        return true;
+    }
+
+    /**
+     * Set read-only flag.  This does nothing for HeadlessBackend.
+     *
+     * @param readOnly ignored
+     */
+    public void setReadOnly(final boolean readOnly) {
+        // NOP
+    }
+
 }

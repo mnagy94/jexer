@@ -28,6 +28,8 @@
  */
 package jexer.event;
 
+import jexer.backend.Backend;
+
 /**
  * This class encapsulates a screen or window resize event.
  */
@@ -79,11 +81,16 @@ public class TResizeEvent extends TInputEvent {
     /**
      * Public contructor.
      *
+     * @param backend the backend that generated this event
      * @param type the Type of resize, Screen or Widget
      * @param width the new width
      * @param height the new height
      */
-    public TResizeEvent(final Type type, final int width, final int height) {
+    public TResizeEvent(final Backend backend, final Type type,
+        final int width, final int height) {
+
+        super(backend);
+
         this.type   = type;
         this.width  = width;
         this.height = height;

@@ -101,4 +101,18 @@ public interface Backend {
      */
     public void reloadOptions();
 
+    /**
+     * Check if backend is read-only.
+     *
+     * @return true if user input events from the backend are discarded
+     */
+    public boolean isReadOnly();
+
+    /**
+     * Set read-only flag.
+     *
+     * @param readOnly if true, then input events will be discarded
+     */
+    public void setReadOnly(final boolean readOnly);
+
 }

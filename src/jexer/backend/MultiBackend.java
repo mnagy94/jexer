@@ -168,7 +168,7 @@ public class MultiBackend implements Backend {
             }
         }
         if (backends.size() == 0) {
-            queue.add(new TCommandEvent(cmAbort));
+            queue.add(new TCommandEvent(null, cmAbort));
         }
     }
 
@@ -224,6 +224,17 @@ public class MultiBackend implements Backend {
      * @param backend the backend to add
      */
     public void addBackend(final Backend backend) {
+        addBackend(backend, false);
+    }
+
+    /**
+     * Add a backend to the list.
+     *
+     * @param backend the backend to add
+     * @param readOnly set the backend as read-only.  If this would result in
+     * all backends begin read-only, it is ignored.
+     */
+    public void addBackend(final Backend backend, final boolean readOnly) {
         backends.add(backend);
         if (backend instanceof TWindowBackend) {
             multiScreen.addScreen(((TWindowBackend) backend).getOtherScreen());
@@ -233,6 +244,27 @@ public class MultiBackend implements Backend {
         if (backend instanceof GenericBackend) {
             ((GenericBackend) backend).abortOnDisconnect = false;
         }
+
+        boolean allReadOnly = true;
+        for (Backend b: backends) {
+            // If a read-write backend has been idle for too long, treat it
+            // like a read-only backend so that someone else can take over
+            // the session if needed.
+            if (b.getSessionInfo().getIdleTime() > 600) {
+                continue;
+            }
+
+            if (!b.isReadOnly()) {
+                allReadOnly = false;
+                break;
+            }
+        }
+        if (allReadOnly) {
+            backend.setReadOnly(false);
+        } else {
+            backend.setReadOnly(readOnly);
+        }
+
     }
 
     /**
@@ -249,6 +281,41 @@ public class MultiBackend implements Backend {
             }
             backends.remove(backend);
         }
+    }
+
+    /**
+     * Get the active backends.
+     *
+     * @return the list of active (not headless) backends, including
+     * read-only backends
+     */
+    public List<Backend> getBackends() {
+        ArrayList<Backend> result = new ArrayList<Backend>();
+        for (Backend backend: backends) {
+            if (!(backend instanceof HeadlessBackend)) {
+                result.add(backend);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Check if backend is read-only.  For a MultiBackend, this is always
+     * false.
+     *
+     * @return false
+     */
+    public boolean isReadOnly() {
+        return false;
+    }
+
+    /**
+     * Set read-only flag.  This does nothing for MultiBackend.
+     *
+     * @param readOnly ignored
+     */
+    public void setReadOnly(final boolean readOnly) {
+        // NOP
     }
 
 }

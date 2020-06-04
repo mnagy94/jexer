@@ -271,7 +271,7 @@ public class TMenu extends TWindow {
                 // Activate this menu item
                 activate(widget);
                 if (widget instanceof TSubMenu) {
-                    ((TSubMenu) widget).dispatch();
+                    ((TSubMenu) widget).dispatch(mouse.getBackend());
                 }
                 return;
             }
@@ -353,7 +353,8 @@ public class TMenu extends TWindow {
 
                     // Send an enter keystroke to it
                     activate(item);
-                    item.handleEvent(new TKeypressEvent(kbEnter));
+                    item.handleEvent(new TKeypressEvent(keypress.getBackend(),
+                            kbEnter));
                     return;
                 }
             }

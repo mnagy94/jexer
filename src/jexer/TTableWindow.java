@@ -299,8 +299,9 @@ public class TTableWindow extends TScrollableWindow {
     public void onResize(final TResizeEvent event) {
         if (event.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the table
-            TResizeEvent tableSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                event.getWidth() - 2, event.getHeight() - 2);
+            TResizeEvent tableSize = new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET, event.getWidth() - 2,
+                event.getHeight() - 2);
             tableField.onResize(tableSize);
 
             // Have TScrollableWindow handle the scrollbars

@@ -30,6 +30,7 @@ package jexer.menu;
 
 import jexer.TKeypress;
 import jexer.TWidget;
+import jexer.backend.Backend;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.event.TKeypressEvent;
@@ -95,7 +96,7 @@ public class TSubMenu extends TMenuItem {
             && (Character.toLowerCase(getMnemonic().getShortcut())
                 == Character.toLowerCase(keypress.getKey().getChar()))
         ) {
-            dispatch();
+            dispatch(keypress.getBackend());
             return;
         }
 
@@ -105,12 +106,12 @@ public class TSubMenu extends TMenuItem {
         }
 
         if (keypress.equals(kbEnter)) {
-            dispatch();
+            dispatch(keypress.getBackend());
             return;
         }
 
         if (keypress.equals(kbRight)) {
-            dispatch();
+            dispatch(keypress.getBackend());
             return;
         }
 
@@ -170,9 +171,11 @@ public class TSubMenu extends TMenuItem {
 
     /**
      * Override dispatch() to do nothing.
+     *
+     * @param backend the backend that generated the user input
      */
     @Override
-    public void dispatch() {
+    public void dispatch(final Backend backend) {
         assert (isEnabled());
         if (isAbsoluteActive()) {
             if (!menu.isActive()) {

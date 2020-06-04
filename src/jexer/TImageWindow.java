@@ -208,8 +208,9 @@ public class TImageWindow extends TScrollableWindow {
     public void onResize(final TResizeEvent event) {
         if (event.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the image field
-            TResizeEvent imageSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                event.getWidth() - 2, event.getHeight() - 2);
+            TResizeEvent imageSize = new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET, event.getWidth() - 2,
+                event.getHeight() - 2);
             imageField.onResize(imageSize);
 
             // Have TScrollableWindow handle the scrollbars

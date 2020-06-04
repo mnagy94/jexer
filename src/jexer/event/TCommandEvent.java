@@ -29,6 +29,7 @@
 package jexer.event;
 
 import jexer.TCommand;
+import jexer.backend.Backend;
 
 /**
  * This class encapsulates a user command event.  User commands can be
@@ -53,9 +54,12 @@ public class TCommandEvent extends TInputEvent {
     /**
      * Public contructor.
      *
+     * @param backend the backend that generated this event
      * @param cmd the TCommand dispatched
      */
-    public TCommandEvent(final TCommand cmd) {
+    public TCommandEvent(final Backend backend, final TCommand cmd) {
+        super(backend);
+
         this.cmd = cmd;
     }
 

@@ -101,8 +101,9 @@ public class DemoTreeViewWindow extends TWindow {
     public void onResize(final TResizeEvent resize) {
         if (resize.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the treeView field
-            TResizeEvent treeSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                resize.getWidth() - 4, resize.getHeight() - 4);
+            TResizeEvent treeSize = new TResizeEvent(resize.getBackend(),
+                TResizeEvent.Type.WIDGET, resize.getWidth() - 4,
+                resize.getHeight() - 4);
             treeView.onResize(treeSize);
             return;
         }

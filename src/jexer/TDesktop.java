@@ -83,8 +83,8 @@ public class TDesktop extends TWindow {
             TWidget child = getChildren().get(0);
             if (!(child instanceof TWindow)) {
                 // Only one child, resize it to match my size.
-                child.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                        getWidth(), getHeight()));
+                child.onResize(new TResizeEvent(resize.getBackend(),
+                        TResizeEvent.Type.WIDGET, getWidth(), getHeight()));
             }
         }
         if (resize.getType() == TResizeEvent.Type.SCREEN) {

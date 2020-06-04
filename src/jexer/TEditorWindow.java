@@ -292,8 +292,9 @@ public class TEditorWindow extends TScrollableWindow {
     public void onResize(final TResizeEvent event) {
         if (event.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the text field
-            TResizeEvent editSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                event.getWidth() - 2, event.getHeight() - 2);
+            TResizeEvent editSize = new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET, event.getWidth() - 2,
+                event.getHeight() - 2);
             editField.onResize(editSize);
 
             // Have TScrollableWindow handle the scrollbars
@@ -362,11 +363,17 @@ public class TEditorWindow extends TScrollableWindow {
         switch (menu.getId()) {
         case TMenu.MID_UNDO:
             editField.undo();
-            break;
+            return;
+
         case TMenu.MID_REDO:
             editField.redo();
+            return;
+
+        default:
             break;
         }
+
+        super.onMenu(menu);
     }
 
     // ------------------------------------------------------------------------
@@ -438,6 +445,16 @@ public class TEditorWindow extends TScrollableWindow {
                 "true").equals("false")) {
 
             hideMouseWhenTyping = false;
+        }
+
+        String marginString = System.getProperty("jexer.TEditor.margin");
+        if (marginString != null) {
+            try {
+                int margin = Integer.parseInt(marginString);
+                editField.setMargin(margin);
+            } catch (NumberFormatException e) {
+                // SQUASH
+            }
         }
     }
 

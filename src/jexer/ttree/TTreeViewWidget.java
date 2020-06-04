@@ -121,8 +121,9 @@ public class TTreeViewWidget extends TScrollableWidget {
         super.onResize(event);
 
         if (event.getType() == TResizeEvent.Type.WIDGET) {
-            treeView.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                    getWidth() - 1, getHeight() - 1));
+            treeView.onResize(new TResizeEvent(event.getBackend(),
+                    TResizeEvent.Type.WIDGET, getWidth() - 1,
+                    getHeight() - 1));
             return;
         } else {
             super.onResize(event);
@@ -222,13 +223,15 @@ public class TTreeViewWidget extends TScrollableWidget {
             bigVerticalIncrement();
         } else if (keypress.equals(kbPgDn)) {
             for (int i = 0; i < getHeight() - 2; i++) {
-                treeView.onKeypress(new TKeypressEvent(TKeypress.kbDown));
+                treeView.onKeypress(new TKeypressEvent(keypress.getBackend(),
+                        TKeypress.kbDown));
             }
             reflowData();
             return;
         } else if (keypress.equals(kbPgUp)) {
             for (int i = 0; i < getHeight() - 2; i++) {
-                treeView.onKeypress(new TKeypressEvent(TKeypress.kbUp));
+                treeView.onKeypress(new TKeypressEvent(keypress.getBackend(),
+                        TKeypress.kbUp));
             }
             reflowData();
             return;

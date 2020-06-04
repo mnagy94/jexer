@@ -103,8 +103,9 @@ public class DemoTableWindow extends TWindow {
     public void onResize(final TResizeEvent event) {
         if (event.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the text field
-            TResizeEvent tableSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                event.getWidth() - 2, event.getHeight() - 2);
+            TResizeEvent tableSize = new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET, event.getWidth() - 2,
+                event.getHeight() - 2);
             tableField.onResize(tableSize);
             return;
         }

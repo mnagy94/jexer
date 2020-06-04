@@ -58,6 +58,17 @@ public class TSessionInfo implements SessionInfo {
      */
     private int windowHeight = 24;
 
+    /**
+     * The time this session was started.
+     */
+    private long startTime = System.currentTimeMillis();
+
+    /**
+     * The number of seconds since the last user input event from this
+     * session.
+     */
+    private int idleTime = Integer.MAX_VALUE;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -83,6 +94,35 @@ public class TSessionInfo implements SessionInfo {
     // ------------------------------------------------------------------------
     // SessionInfo ------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Get the time this session was started.
+     *
+     * @return the number of millis since midnight, January 1, 1970 UTC
+     */
+    public long getStartTime() {
+        return startTime;
+    }
+
+    /**
+     * Get the time this session was idle.
+     *
+     * @return the number of seconds since the last user input event from
+     * this session
+     */
+    public int getIdleTime() {
+        return idleTime;
+    }
+
+    /**
+     * Set the time this session was idle.
+     *
+     * @param seconds the number of seconds since the last user input event
+     * from this session
+     */
+    public void setIdleTime(final int seconds) {
+        idleTime = seconds;
+    }
 
     /**
      * Username getter.

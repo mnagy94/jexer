@@ -271,7 +271,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * Subclasses should override this method to cleanup resources.  This is
      * called by TWindow.onClose().
      */
-    protected void close() {
+    public void close() {
         // Default: call close() on children.
         while (getChildren().size() > 0) {
             TWidget w = getChildren().get(0);
@@ -370,7 +370,8 @@ public abstract class TWidget implements Comparable<TWidget> {
                         == Character.toLowerCase(keypress.getKey().getChar()))
                 ) {
 
-                    widget.onKeypress(new TKeypressEvent(kbEnter));
+                    widget.onKeypress(new TKeypressEvent(keypress.getBackend(),
+                            kbEnter));
                     return;
                 }
             }
@@ -407,7 +408,8 @@ public abstract class TWidget implements Comparable<TWidget> {
                         == Character.toLowerCase(keypress.getKey().getChar()))
                 ) {
                     activate(widget);
-                    widget.onKeypress(new TKeypressEvent(kbSpace));
+                    widget.onKeypress(new TKeypressEvent(keypress.getBackend(),
+                            kbSpace));
                     return;
                 }
             }
@@ -424,7 +426,8 @@ public abstract class TWidget implements Comparable<TWidget> {
                         ) {
                             activate(widget);
                             widget.activate(child);
-                            child.onKeypress(new TKeypressEvent(kbSpace));
+                            child.onKeypress(new TKeypressEvent(
+                                keypress.getBackend(), kbSpace));
                             return;
                         }
                     }
@@ -598,8 +601,8 @@ public abstract class TWidget implements Comparable<TWidget> {
             height = resize.getHeight();
             if (layout != null) {
                 if (this instanceof TWindow) {
-                    layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                            width - 2, height - 2));
+                    layout.onResize(new TResizeEvent(resize.getBackend(),
+                            TResizeEvent.Type.WIDGET, width - 2, height - 2));
                 } else {
                     layout.onResize(resize);
                 }
@@ -785,6 +788,16 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * See if a widget is a child of this widget.
+     *
+     * @param child the child widget
+     * @return true if child is one of this widget's children
+     */
+    public boolean hasChild(final TWidget child) {
+        return children.contains(child);
+    }
+
+    /**
      * Set this widget's parent to a different widget.
      *
      * @param newParent new parent widget
@@ -918,7 +931,7 @@ public abstract class TWidget implements Comparable<TWidget> {
     public void setWidth(final int width) {
         this.width = width;
         if (layout != null) {
-            layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+            layout.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                     width, height));
         }
     }
@@ -940,7 +953,7 @@ public abstract class TWidget implements Comparable<TWidget> {
     public void setHeight(final int height) {
         this.height = height;
         if (layout != null) {
-            layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+            layout.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                     width, height));
         }
     }
@@ -962,7 +975,7 @@ public abstract class TWidget implements Comparable<TWidget> {
         setWidth(width);
         setHeight(height);
         if (layout != null) {
-            layout.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+            layout.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                     width, height));
         }
     }
@@ -2279,6 +2292,24 @@ public abstract class TWidget implements Comparable<TWidget> {
         final int width, final boolean fixed, final String text) {
 
         return new TField(this, x, y, width, fixed, text);
+    }
+
+    /**
+     * Convenience function to add a text field to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width visible text width
+     * @param fixed if true, the text cannot exceed the display width
+     * @param text initial text, default is empty string
+     * @param enterAction function to call when enter key is pressed
+     * @return the new text field
+     */
+    public final TField addField(final int x, final int y,
+        final int width, final boolean fixed, final String text,
+        final TAction enterAction) {
+
+        return new TField(this, x, y, width, fixed, text, enterAction);
     }
 
     /**

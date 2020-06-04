@@ -28,6 +28,8 @@
  */
 package jexer.event;
 
+import jexer.backend.Backend;
+
 /**
  * This class encapsulates several kinds of mouse input events.  Note that
  * the relative (x,y) ARE MUTABLE: TWidget's onMouse() handlers perform that
@@ -140,6 +142,7 @@ public class TMouseEvent extends TInputEvent {
     /**
      * Public contructor.
      *
+     * @param backend the backend that generated this event
      * @param type the type of event, MOUSE_MOTION, MOUSE_DOWN, or MOUSE_UP
      * @param x relative column
      * @param y relative row
@@ -154,11 +157,13 @@ public class TMouseEvent extends TInputEvent {
      * @param ctrl if true, CTRL was pressed with this mouse event
      * @param shift if true, SHIFT was pressed with this mouse event
      */
-    public TMouseEvent(final Type type, final int x, final int y,
-        final int absoluteX, final int absoluteY,
+    public TMouseEvent(final Backend backend, final Type type,
+        final int x, final int y, final int absoluteX, final int absoluteY,
         final boolean mouse1, final boolean mouse2, final boolean mouse3,
         final boolean mouseWheelUp, final boolean mouseWheelDown,
         final boolean alt, final boolean ctrl, final boolean shift) {
+
+        super(backend);
 
         this.type               = type;
         this.x                  = x;
@@ -344,9 +349,9 @@ public class TMouseEvent extends TInputEvent {
      * @return duplicate intance
      */
     public TMouseEvent dup() {
-        TMouseEvent mouse = new TMouseEvent(type, x, y, absoluteX, absoluteY,
-            mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown,
-            alt, ctrl, shift);
+        TMouseEvent mouse = new TMouseEvent(getBackend(), type, x, y,
+            absoluteX, absoluteY, mouse1, mouse2, mouse3,
+            mouseWheelUp, mouseWheelDown, alt, ctrl, shift);
 
         return mouse;
     }

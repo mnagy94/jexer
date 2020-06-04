@@ -30,6 +30,7 @@ package jexer.menu;
 
 import jexer.TKeypress;
 import jexer.TWidget;
+import jexer.backend.Backend;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
@@ -200,7 +201,7 @@ public class TMenuItem extends TWidget {
     @Override
     public void onMouseUp(final TMouseEvent mouse) {
         if ((mouseOnMenuItem(mouse)) && (mouse.isMouse1())) {
-            dispatch();
+            dispatch(mouse.getBackend());
             return;
         }
     }
@@ -213,7 +214,7 @@ public class TMenuItem extends TWidget {
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
         if (keypress.equals(kbEnter)) {
-            dispatch();
+            dispatch(keypress.getBackend());
             return;
         }
 
@@ -379,11 +380,13 @@ public class TMenuItem extends TWidget {
 
     /**
      * Dispatch event(s) due to selection or click.
+     *
+     * @param backend the backend that generated the user input
      */
-    public void dispatch() {
+    public void dispatch(final Backend backend) {
         assert (isEnabled());
 
-        getApplication().postMenuEvent(new TMenuEvent(id));
+        getApplication().postMenuEvent(new TMenuEvent(backend, id));
         if (checkable) {
             checked = !checked;
         }

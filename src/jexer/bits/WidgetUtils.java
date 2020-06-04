@@ -132,7 +132,7 @@ public class WidgetUtils {
             if ((w.getWidth() != oldWidth)
                 || (w.getHeight() != oldHeight)
             ) {
-                w.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                w.onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET,
                         w.getWidth(), w.getHeight()));
             }
         }

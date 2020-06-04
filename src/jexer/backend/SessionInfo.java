@@ -35,6 +35,29 @@ package jexer.backend;
 public interface SessionInfo {
 
     /**
+     * Get the time this session was started.
+     *
+     * @return the number of millis since midnight, January 1, 1970 UTC
+     */
+    public long getStartTime();
+
+    /**
+     * Get the time this session was idle.
+     *
+     * @return the number of seconds since the last user input event from
+     * this session
+     */
+    public int getIdleTime();
+
+    /**
+     * Set the time this session was idle.
+     *
+     * @param seconds the number of seconds since the last user input event
+     * from this session
+     */
+    public void setIdleTime(final int seconds);
+
+    /**
      * Username getter.
      *
      * @return the username

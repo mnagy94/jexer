@@ -811,24 +811,31 @@ public class TApplication implements Runnable {
 
         // Special case: the Swing backend needs to have a timer to drive its
         // blink state.
-        if ((backend instanceof SwingBackend)
-            || (backend instanceof MultiBackend)
-        ) {
-            // Default to 500 millis, unless a SwingBackend has its own
-            // value.
-            long millis = 500;
-            if (backend instanceof SwingBackend) {
-                millis = ((SwingBackend) backend).getBlinkMillis();
-            }
-            if (millis > 0) {
-                addTimer(millis, true,
-                    new TAction() {
-                        public void DO() {
-                            TApplication.this.doRepaint();
-                        }
+        if (backend instanceof SwingBackend) {
+            long millis = ((SwingBackend) backend).getBlinkMillis();
+            addTimer(millis, true,
+                new TAction() {
+                    public void DO() {
+                        TApplication.this.doRepaint();
                     }
-                );
-            }
+                }
+            );
+        }
+
+        // Special case: the MultiBackend needs to have a timer to drive
+        // blink state and idle checks.
+        if (backend instanceof MultiBackend) {
+            // Default to 500 millis.
+            long millis = 500;
+            addTimer(millis, true,
+                new TAction() {
+                    public void DO() {
+                        TApplication.this.doRepaint();
+                        // Update idle checks.
+                        TApplication.this.getBackend().hasEvents();
+                    }
+                }
+            );
         }
 
         // Load the help system
@@ -1135,19 +1142,19 @@ public class TApplication implements Runnable {
         }
 
         if (menu.getId() == TMenu.MID_CUT) {
-            postMenuEvent(new TCommandEvent(cmCut));
+            postMenuEvent(new TCommandEvent(menu.getBackend(), cmCut));
             return true;
         }
         if (menu.getId() == TMenu.MID_COPY) {
-            postMenuEvent(new TCommandEvent(cmCopy));
+            postMenuEvent(new TCommandEvent(menu.getBackend(), cmCopy));
             return true;
         }
         if (menu.getId() == TMenu.MID_PASTE) {
-            postMenuEvent(new TCommandEvent(cmPaste));
+            postMenuEvent(new TCommandEvent(menu.getBackend(), cmPaste));
             return true;
         }
         if (menu.getId() == TMenu.MID_CLEAR) {
-            postMenuEvent(new TCommandEvent(cmClear));
+            postMenuEvent(new TCommandEvent(menu.getBackend(), cmClear));
             return true;
         }
 
@@ -1402,8 +1409,8 @@ public class TApplication implements Runnable {
                         doubleClickTime) {
 
                         // This is a double-click.
-                        doubleClick = new TMouseEvent(TMouseEvent.Type.
-                            MOUSE_DOUBLE_CLICK,
+                        doubleClick = new TMouseEvent(mouse.getBackend(),
+                            TMouseEvent.Type.MOUSE_DOUBLE_CLICK,
                             mouse.getX(), mouse.getY(),
                             mouse.getAbsoluteX(), mouse.getAbsoluteY(),
                             mouse.isMouse1(), mouse.isMouse2(),
@@ -1492,7 +1499,7 @@ public class TApplication implements Runnable {
                 if (item != null) {
                     if (item.isEnabled()) {
                         // Let the menu item dispatch
-                        item.dispatch();
+                        item.dispatch(keypress.getBackend());
                         return;
                     }
                 }
@@ -1607,8 +1614,8 @@ public class TApplication implements Runnable {
                         doubleClickTime) {
 
                         // This is a double-click.
-                        doubleClick = new TMouseEvent(TMouseEvent.Type.
-                            MOUSE_DOUBLE_CLICK,
+                        doubleClick = new TMouseEvent(mouse.getBackend(),
+                            TMouseEvent.Type.MOUSE_DOUBLE_CLICK,
                             mouse.getX(), mouse.getY(),
                             mouse.getAbsoluteX(), mouse.getAbsoluteY(),
                             mouse.isMouse1(), mouse.isMouse2(),
@@ -1902,8 +1909,9 @@ public class TApplication implements Runnable {
                 1 : 0);
             desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
                 (desktopBottom - desktopTop));
-            TResizeEvent resize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                getScreen().getWidth(), desktop.getHeight());
+            TResizeEvent resize = new TResizeEvent(null,
+                TResizeEvent.Type.WIDGET, getScreen().getWidth(),
+                desktop.getHeight());
             desktop.onResize(resize);
         }
 
@@ -1975,8 +1983,9 @@ public class TApplication implements Runnable {
             desktopTop = (hideMenuBar ? 0 : 1);
             desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
                 (desktopBottom - desktopTop));
-            TResizeEvent resize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                getScreen().getWidth(), desktop.getHeight());
+            TResizeEvent resize = new TResizeEvent(null,
+                TResizeEvent.Type.WIDGET, getScreen().getWidth(),
+                desktop.getHeight());
             desktop.onResize(resize);
         }
         if (hideMenuBar == false) {
@@ -2002,8 +2011,9 @@ public class TApplication implements Runnable {
                 1 : 0);
             desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
                 (desktopBottom - desktopTop));
-            TResizeEvent resize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                getScreen().getWidth(), desktop.getHeight());
+            TResizeEvent resize = new TResizeEvent(null,
+                TResizeEvent.Type.WIDGET, getScreen().getWidth(),
+                desktop.getHeight());
             desktop.onResize(resize);
         }
     }

@@ -707,9 +707,9 @@ public class TTableWidget extends TWidget {
             // Treat wheel up/down as 3 up/down
             TKeypressEvent keyEvent;
             if (mouse.isMouseWheelUp()) {
-                keyEvent = new TKeypressEvent(kbUp);
+                keyEvent = new TKeypressEvent(mouse.getBackend(), kbUp);
             } else {
-                keyEvent = new TKeypressEvent(kbDown);
+                keyEvent = new TKeypressEvent(mouse.getBackend(), kbDown);
             }
             for (int i = 0; i < 3; i++) {
                 onKeypress(keyEvent);

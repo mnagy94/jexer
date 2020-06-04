@@ -30,6 +30,8 @@ package jexer.event;
 
 import java.util.Date;
 
+import jexer.backend.Backend;
+
 /**
  * This is the parent class of all events dispatched to the UI.
  */
@@ -44,14 +46,23 @@ public abstract class TInputEvent {
      */
     private Date time;
 
+    /**
+     * The backend that generated this event.
+     */
+    private Backend backend;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
      * Protected contructor.
+     *
+     * @param backend the backend that generated this event
      */
-    protected TInputEvent() {
+    protected TInputEvent(final Backend backend) {
+        this.backend = backend;
+
         // Save the current time
         time = new Date();
     }
@@ -67,6 +78,16 @@ public abstract class TInputEvent {
      */
     public final Date getTime() {
         return time;
+    }
+
+    /**
+     * Get the backend that generated this event.
+     *
+     * @return the backend that generated this event, or null if this event
+     * was generated internally
+     */
+    public final Backend getBackend() {
+        return backend;
     }
 
 }

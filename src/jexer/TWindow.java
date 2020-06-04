@@ -509,8 +509,8 @@ public class TWindow extends TWidget {
                 maximize();
             }
             // Pass a resize event to my children
-            onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                    getWidth(), getHeight()));
+            onResize(new TResizeEvent(mouse.getBackend(),
+                    TResizeEvent.Type.WIDGET, getWidth(), getHeight()));
             return;
         }
 
@@ -588,8 +588,8 @@ public class TWindow extends TWidget {
             }
 
             // Pass a resize event to my children
-            onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                    getWidth(), getHeight()));
+            onResize(new TResizeEvent(mouse.getBackend(),
+                    TResizeEvent.Type.WIDGET, getWidth(), getHeight()));
             return;
         }
 
@@ -682,8 +682,8 @@ public class TWindow extends TWidget {
                 }
 
                 // Pass a resize event to my children
-                onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
-                        getWidth(), getHeight()));
+                onResize(new TResizeEvent(keypress.getBackend(),
+                        TResizeEvent.Type.WIDGET, getWidth(), getHeight()));
 
             } // if ((flags & RESIZABLE) != 0)
 
@@ -875,11 +875,11 @@ public class TWindow extends TWidget {
                     || (child instanceof TPanel)
                 ) {
                     if (this instanceof TDesktop) {
-                        child.onResize(new TResizeEvent(
+                        child.onResize(new TResizeEvent(resize.getBackend(),
                             TResizeEvent.Type.WIDGET,
                             resize.getWidth(), resize.getHeight()));
                     } else {
-                        child.onResize(new TResizeEvent(
+                        child.onResize(new TResizeEvent(resize.getBackend(),
                             TResizeEvent.Type.WIDGET,
                             resize.getWidth() - 2, resize.getHeight() - 2));
                     }
@@ -1212,7 +1212,7 @@ public class TWindow extends TWidget {
         setY(application.getDesktopTop());
         maximized = true;
 
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+        onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
     }
 
@@ -1230,7 +1230,7 @@ public class TWindow extends TWidget {
         setY(restoreWindowY);
         maximized = false;
 
-        onResize(new TResizeEvent(TResizeEvent.Type.WIDGET, getWidth(),
+        onResize(new TResizeEvent(null, TResizeEvent.Type.WIDGET, getWidth(),
                 getHeight()));
     }
 

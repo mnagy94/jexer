@@ -86,6 +86,16 @@ public class TWindowBackend extends TWindow implements Backend {
     private SessionInfo sessionInfo;
 
     /**
+     * The last time user input (mouse or keyboard) was received.
+     */
+    private long lastUserInputTime = System.currentTimeMillis();
+
+    /**
+     * Whether or not this backend is read-only.
+     */
+    private boolean readOnly = false;
+
+    /**
      * OtherScreen provides a hook to notify TWindowBackend of screen size
      * changes.
      */
@@ -161,7 +171,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
-        setHiddenMouse(true);
+        setHiddenMouse(!readOnly);
     }
 
     /**
@@ -187,7 +197,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
-        setHiddenMouse(true);
+        setHiddenMouse(!readOnly);
     }
 
     /**
@@ -214,7 +224,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
-        setHiddenMouse(true);
+        setHiddenMouse(!readOnly);
     }
 
     /**
@@ -243,7 +253,7 @@ public class TWindowBackend extends TWindow implements Backend {
         otherScreen = new OtherScreen(this);
         otherScreen.setDimensions(width - 2, height - 2);
         drawLock = otherScreen;
-        setHiddenMouse(true);
+        setHiddenMouse(!readOnly);
     }
 
     // ------------------------------------------------------------------------
@@ -266,8 +276,8 @@ public class TWindowBackend extends TWindow implements Backend {
                 // I was resized, notify the screen I am watching to match my
                 // new size.
                 synchronized (eventQueue) {
-                    eventQueue.add(new TResizeEvent(TResizeEvent.Type.SCREEN,
-                            newWidth, newHeight));
+                    eventQueue.add(new TResizeEvent(this,
+                            TResizeEvent.Type.SCREEN, newWidth, newHeight));
                 }
                 synchronized (listener) {
                     listener.notifyAll();
@@ -431,7 +441,7 @@ public class TWindowBackend extends TWindow implements Backend {
     @Override
     public void onClose() {
         synchronized (eventQueue) {
-            eventQueue.add(new TCommandEvent(cmBackendDisconnect));
+            eventQueue.add(new TCommandEvent(this, cmBackendDisconnect));
         }
     }
 
@@ -463,7 +473,12 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     public boolean hasEvents() {
         synchronized (eventQueue) {
-            return (eventQueue.size() > 0);
+            if (eventQueue.size() > 0) {
+                return true;
+            }
+            long now = System.currentTimeMillis();
+            sessionInfo.setIdleTime((int) (now - lastUserInputTime) / 1000);
+            return false;
         }
     }
 
@@ -475,12 +490,17 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     public void getEvents(List<TInputEvent> queue) {
         synchronized (eventQueue) {
+            long now = System.currentTimeMillis();
             if (eventQueue.size() > 0) {
-                synchronized (queue) {
-                    queue.addAll(eventQueue);
+                lastUserInputTime = now;
+                if (!readOnly) {
+                    synchronized (queue) {
+                        queue.addAll(eventQueue);
+                    }
                 }
                 eventQueue.clear();
             }
+            sessionInfo.setIdleTime((int) (now - lastUserInputTime) / 1000);
         }
     }
 
@@ -507,6 +527,25 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     public void reloadOptions() {
         // NOP
+    }
+
+    /**
+     * Check if backend is read-only.
+     *
+     * @return true if user input events from the backend are discarded
+     */
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+
+    /**
+     * Set read-only flag.
+     *
+     * @param readOnly if true, then input events will be discarded
+     */
+    public void setReadOnly(final boolean readOnly) {
+        this.readOnly = readOnly;
+        setHiddenMouse(!readOnly);
     }
 
     // ------------------------------------------------------------------------

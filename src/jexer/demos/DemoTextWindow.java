@@ -147,8 +147,9 @@ public class DemoTextWindow extends TWindow {
     public void onResize(final TResizeEvent event) {
         if (event.getType() == TResizeEvent.Type.WIDGET) {
             // Resize the text field
-            TResizeEvent textSize = new TResizeEvent(TResizeEvent.Type.WIDGET,
-                event.getWidth() - 4, event.getHeight() - 6);
+            TResizeEvent textSize = new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET, event.getWidth() - 4,
+                event.getHeight() - 6);
             textField.onResize(textSize);
             return;
         }
