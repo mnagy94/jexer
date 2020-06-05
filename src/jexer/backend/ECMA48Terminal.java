@@ -193,14 +193,24 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean wideCharImages = true;
 
     /**
-     * Window width in pixels.  Used for sixel support.
+     * Window width in pixels.  Used for image support.
      */
     private int widthPixels = 640;
 
     /**
-     * Window height in pixels.  Used for sixel support.
+     * Window height in pixels.  Used for image support.
      */
     private int heightPixels = 400;
+
+    /**
+     * Text cell width in pixels.
+     */
+    private int textWidthPixels = -1;
+
+    /**
+     * Text cell height in pixels.
+     */
+    private int textHeightPixels = -1;
 
     /**
      * If true, emit image data via sixel.
@@ -1115,6 +1125,11 @@ public class ECMA48Terminal extends LogicalScreen
         // Send dtterm/xterm sequences, which will probably not work because
         // allowWindowOps is defaulted to false.
         if ((windowWidth > 0) && (windowHeight > 0)) {
+            if (debugToStderr) {
+                System.err.println("ECMA48Terminal() request screen size " +
+                    getWidth() + " x " + getHeight());
+            }
+
             String resizeString = String.format("\033[8;%d;%dt", windowHeight,
                 windowWidth);
             this.output.write(resizeString);
@@ -1395,6 +1410,19 @@ public class ECMA48Terminal extends LogicalScreen
     public void resizeToScreen() {
         if (backend.isReadOnly()) {
             return;
+        }
+        if (!daResponseSeen) {
+            if (debugToStderr) {
+                System.err.println("resizeToScreen() -- ABORT no DA seen --");
+            }
+            // Do not resize immediately until we have seen device
+            // attributes.
+            return;
+        }
+
+        if (debugToStderr) {
+            System.err.println("resizeToScreen() " + getWidth() + " x " +
+                getHeight());
         }
 
         // Send dtterm/xterm sequences, which will probably not work because
@@ -1708,6 +1736,9 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the width in pixels of a character cell
      */
     public int getTextWidth() {
+        if (textWidthPixels > 0) {
+            return textWidthPixels;
+        }
         if (sessionInfo.getWindowWidth() > 0) {
             return (widthPixels / sessionInfo.getWindowWidth());
         }
@@ -1720,6 +1751,9 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the height in pixels of a character cell
      */
     public int getTextHeight() {
+        if (textHeightPixels > 0) {
+            return textHeightPixels;
+        }
         if (sessionInfo.getWindowHeight() > 0) {
             return (heightPixels / sessionInfo.getWindowHeight());
         }
@@ -1853,6 +1887,7 @@ public class ECMA48Terminal extends LogicalScreen
         // DEBUG
         // reallyCleared = true;
 
+        final boolean reallyDebug = false;
         boolean hasImage = false;
 
         for (int x = 0; x < width; x++) {
@@ -1861,7 +1896,7 @@ public class ECMA48Terminal extends LogicalScreen
 
             if (!lCell.equals(pCell) || reallyCleared) {
 
-                if (debugToStderr) {
+                if (debugToStderr && reallyDebug) {
                     System.err.printf("\n--\n");
                     System.err.printf(" Y: %d X: %d\n", y, x);
                     System.err.printf("   lCell: %s\n", lCell);
@@ -1942,7 +1977,7 @@ public class ECMA48Terminal extends LogicalScreen
                     sb.append(color(lCell.isBold(),
                             lCell.getForeColor(), lCell.getBackColor()));
 
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.printf("1 Change only fore/back colors\n");
                     }
 
@@ -1958,7 +1993,7 @@ public class ECMA48Terminal extends LogicalScreen
                     sb.append(colorRGB(lCell.getForeColorRGB(),
                             lCell.getBackColorRGB()));
 
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.printf("1 Change only fore/back colors (RGB)\n");
                     }
                 } else if ((lCell.getForeColor() != lastAttr.getForeColor())
@@ -1976,7 +2011,7 @@ public class ECMA48Terminal extends LogicalScreen
                             lCell.isBlink(),
                             lCell.isUnderline()));
 
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.printf("2 Set all attributes\n");
                     }
                 } else if ((lCell.getForeColor() != lastAttr.getForeColor())
@@ -1992,7 +2027,7 @@ public class ECMA48Terminal extends LogicalScreen
                     sb.append(color(lCell.isBold(),
                             lCell.getForeColor(), true));
 
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.printf("3 Change foreColor\n");
                     }
                 } else if (lCell.isRGB()
@@ -2008,7 +2043,7 @@ public class ECMA48Terminal extends LogicalScreen
                     // Attributes same, foreColor different
                     sb.append(colorRGB(lCell.getForeColorRGB(), true));
 
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.printf("3 Change foreColor (RGB)\n");
                     }
                 } else if ((lCell.getForeColor() == lastAttr.getForeColor())
@@ -2023,7 +2058,7 @@ public class ECMA48Terminal extends LogicalScreen
                     sb.append(color(lCell.isBold(),
                             lCell.getBackColor(), false));
 
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.printf("4 Change backColor\n");
                     }
                 } else if (lCell.isRGB()
@@ -2037,8 +2072,8 @@ public class ECMA48Terminal extends LogicalScreen
                     // Attributes same, foreColor different
                     sb.append(colorRGB(lCell.getBackColorRGB(), false));
 
-                    if (debugToStderr) {
-                        System.err.printf("4 Change backColor (RGB)\n");
+                    if (debugToStderr && reallyDebug) {
+                        System.err.printf("5 Change backColor (RGB)\n");
                     }
                 } else if ((lCell.getForeColor() == lastAttr.getForeColor())
                     && (lCell.getBackColor() == lastAttr.getBackColor())
@@ -2053,8 +2088,8 @@ public class ECMA48Terminal extends LogicalScreen
                     // All attributes the same, just print the char
                     // NOP
 
-                    if (debugToStderr) {
-                        System.err.printf("5 Only emit character\n");
+                    if (debugToStderr && reallyDebug) {
+                        System.err.printf("6 Only emit character\n");
                     }
                 } else {
                     // Just reset everything again
@@ -2066,8 +2101,8 @@ public class ECMA48Terminal extends LogicalScreen
                                 lCell.isBlink(),
                                 lCell.isUnderline()));
 
-                        if (debugToStderr) {
-                            System.err.printf("6 Change all attributes\n");
+                        if (debugToStderr && reallyDebug) {
+                            System.err.printf("7 Change all attributes\n");
                         }
                     } else {
                         sb.append(colorRGB(lCell.getForeColorRGB(),
@@ -2076,8 +2111,8 @@ public class ECMA48Terminal extends LogicalScreen
                                 lCell.isReverse(),
                                 lCell.isBlink(),
                                 lCell.isUnderline()));
-                        if (debugToStderr) {
-                            System.err.printf("6 Change all attributes (RGB)\n");
+                        if (debugToStderr && reallyDebug) {
+                            System.err.printf("8 Change all attributes (RGB)\n");
                         }
                     }
 
@@ -2112,6 +2147,8 @@ public class ECMA48Terminal extends LogicalScreen
      * physical screen
      */
     private String flushString(final StringBuilder sb) {
+        final boolean reallyDebug = false;
+
         CellAttributes attr = null;
 
         if (reallyCleared) {
@@ -2166,7 +2203,7 @@ public class ECMA48Terminal extends LogicalScreen
                     physical[x + i][y].setTo(lCell);
                 }
                 if (cellsToDraw.size() > 0) {
-                    if (debugToStderr) {
+                    if (debugToStderr && reallyDebug) {
                         System.err.println("images to render: iTerm2: " +
                             iterm2Images + " Jexer: " + jexerImageOption);
                     }
@@ -2609,9 +2646,9 @@ public class ECMA48Terminal extends LogicalScreen
                         windowResize);
                     System.err.println("                     new size " +
                         newWidth + " x " + newHeight);
-                    System.err.println("                   old pixels " +
+                    System.err.println("                old cell sixe " +
                         oldTextWidth + " x " + oldTextHeight);
-                    System.err.println("                   new pixels " +
+                    System.err.println("                new cell size " +
                         getTextWidth() + " x " + getTextHeight());
                 }
 
@@ -3043,7 +3080,7 @@ public class ECMA48Terminal extends LogicalScreen
                     // windowOps
                     if ((params.size() > 2) && (params.get(0).equals("4"))) {
                         if (debugToStderr) {
-                            System.err.printf("windowOp pixels: " +
+                            System.err.printf("windowOp 4t pixels: " +
                                 "height %s width %s\n",
                                 params.get(1), params.get(2));
                         }
@@ -3061,26 +3098,32 @@ public class ECMA48Terminal extends LogicalScreen
                         if (heightPixels <= 0) {
                             heightPixels = 400;
                         }
+                        if (debugToStderr) {
+                            System.err.printf("   screen pixels: %d x %d",
+                                widthPixels, heightPixels);
+                            System.err.println("  new cell size: " +
+                                getTextWidth() + " x " + getTextHeight());
+                        }
                     }
                     if ((params.size() > 2) && (params.get(0).equals("6"))) {
                         if (debugToStderr) {
-                            System.err.printf("windowOp text cell pixels: " +
-                                "height %s width %s\n",
+                            System.err.printf("windowOp 6t text cell pixels: " +
+                                "cell height %s cell width %s\n",
                                 params.get(1), params.get(2));
+                            System.err.printf("             old screen size: " +
+                                "%d x %d cells\n", width, height);
                         }
                         try {
-                            widthPixels = width * Integer.parseInt(params.get(2));
-                            heightPixels = height * Integer.parseInt(params.get(1));
+                            textWidthPixels = Integer.parseInt(params.get(2));
+                            textHeightPixels = Integer.parseInt(params.get(1));
                         } catch (NumberFormatException e) {
                             if (debugToStderr) {
                                 e.printStackTrace();
                             }
                         }
-                        if (widthPixels <= 0) {
-                            widthPixels = 640;
-                        }
-                        if (heightPixels <= 0) {
-                            heightPixels = 400;
+                        if (debugToStderr) {
+                            System.err.println("  new cell size: " +
+                                textWidthPixels + " x " + textHeightPixels);
                         }
                     }
                     resetParser();
@@ -3149,9 +3192,9 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the string to emit to xterm
      */
     private String xtermReportPixelDimensions() {
-        // We will ask for both window and text cell dimensions, and
-        // hopefully one of them will work.
-        return "\033[14t\033[16t";
+        // We will ask for both text cell and window dimensions (in that
+        // order!), and hopefully one of them will work.
+        return "\033[16t\033[14t";
     }
 
     /**

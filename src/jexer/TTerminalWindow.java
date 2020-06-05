@@ -363,6 +363,15 @@ public class TTerminalWindow extends TScrollableWindow {
     // ------------------------------------------------------------------------
 
     /**
+     * Get the full command line that spawned the shell.
+     *
+     * @return the command line
+     */
+    public String [] getCommandLine() {
+        return terminal.getCommandLine();
+    }
+
+    /**
      * Returns true if this window does not want the application-wide mouse
      * cursor drawn over it.
      *

@@ -84,6 +84,11 @@ public class TTerminalWidget extends TScrollableWidget
     private Process shell;
 
     /**
+     * The command line for the shell.
+     */
+    private String [] commandLine;
+
+    /**
      * If true, something called 'ptypipe' is on the PATH and executable.
      */
     private static boolean ptypipeOnPath = false;
@@ -874,6 +879,15 @@ public class TTerminalWidget extends TScrollableWidget
     }
 
     /**
+     * Get the full command line that spawned the shell.
+     *
+     * @return the command line
+     */
+    public String [] getCommandLine() {
+        return commandLine;
+    }
+
+    /**
      * Returns true if this widget does not want the application-wide mouse
      * cursor drawn over it.
      *
@@ -923,6 +937,8 @@ public class TTerminalWidget extends TScrollableWidget
      * @param command the command line to execute
      */
     private void spawnShell(final String [] command) {
+
+        commandLine = command;
 
         /*
         System.err.printf("spawnShell(): '%s'\n",
