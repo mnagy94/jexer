@@ -157,7 +157,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | iTerm2         | Mac                | yes         | yes          | no(5)  |
 | kitty(3)       | X11                | yes         | yes          | no     |
 | lcxterm(3)     | CLI, Linux console | yes         | yes          | no     |
-| mintty         | Windows            | yes         | yes          | no(7)  |
+| mintty         | Windows            | yes         | yes          | yes(7) |
 | rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | xfce4-terminal | X11                | yes         | yes          | no     |
 | aminal(3)      | X11                | yes         | no           | no     |
