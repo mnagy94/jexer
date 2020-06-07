@@ -47,16 +47,6 @@ The Jexer source code is hosted at: https://gitlab.com/klamonte/jexer
 
 
 
-1.0.0 Release
--------------
-
-
-Jexer's original list of features for its 1.0.0 release are undergoing
-final testing.  Issues and merge requests are disabled until that
-release is out.
-
-
-
 Documentation
 -------------
 
@@ -73,7 +63,14 @@ Documentation
 Programming Examples
 --------------------
 
-The examples/ folder currently contains:
+See [Xterm Window Manager](https://xtermwm.sourceforge.io) for a more
+comprehensive demonstration of what Jexer can accomplish.  Here one
+can see a floating terminal window over tiled terminals, two of which
+are showing images:
+
+![Floating terminal over tiled terminals](/screenshots/floating_terminal.png?raw=true "Floating terminal over tiled terminals")
+
+Jexer's examples/ folder currently contains:
 
   * A [prototype tiling window
     manager](/examples/JexerTilingWindowManager.java) in less than 250
