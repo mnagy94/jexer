@@ -1195,6 +1195,24 @@ public class TWindow extends TWidget {
     }
 
     /**
+     * Move the window as needed to ensure it is visible on screen.
+     */
+    public void ensureOnScreen() {
+        if (getX() < 0) {
+            setX(0);
+        }
+        if (getY() < getApplication().getDesktopTop()) {
+            setY(getApplication().getDesktopTop());
+        }
+        while (getX() + getWidth() > getScreen().getWidth()) {
+            setX(getX() - 1);
+        }
+        while (getY() + getHeight() > getApplication().getDesktopBottom()) {
+            setY(getY() - 1);
+        }
+    }
+
+    /**
      * Maximize window.
      */
     public void maximize() {

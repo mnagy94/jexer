@@ -241,6 +241,10 @@ public class TTerminalWidget extends TScrollableWidget
 
         this.closeAction = closeAction;
 
+        // Save the external command line that can be used to recreate this
+        // terminal, not the fully-processed command line.
+        commandLine = command;
+
         String [] fullCommand;
 
         // Spawn a shell and pass its I/O to the other constructor.
@@ -347,6 +351,9 @@ public class TTerminalWidget extends TScrollableWidget
             spawnShell(shell.split("\\s+"));
             return;
         }
+
+        // Save an empty command line.
+        commandLine = new String[0];
 
         String cmdShellWindows = "cmd.exe";
 
@@ -937,9 +944,6 @@ public class TTerminalWidget extends TScrollableWidget
      * @param command the command line to execute
      */
     private void spawnShell(final String [] command) {
-
-        commandLine = command;
-
         /*
         System.err.printf("spawnShell(): '%s'\n",
             stringArrayToString(command));

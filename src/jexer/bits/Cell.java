@@ -390,7 +390,7 @@ public class Cell extends CellAttributes {
             // Either both objects have their image inverted, or neither do.
             // Now if the images are identical the cells are the same
             // visually.
-            if (image.equals(that.image)
+            if ((imageHashCode == that.imageHashCode)
                 && (background.equals(that.background))
             ) {
                 return true;

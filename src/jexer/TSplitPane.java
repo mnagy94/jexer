@@ -648,6 +648,45 @@ public class TSplitPane extends TWidget {
     }
 
     /**
+     * Get whether or not this is a vertical split.
+     *
+     * @return if true, this is a vertical split
+     */
+    public boolean isVertical() {
+        return vertical;
+    }
+
+    /**
+     * Get whether or not this is a horizontal split.
+     *
+     * @return if true, this is a horizontal split
+     */
+    public boolean isHorizontal() {
+        return !vertical;
+    }
+
+    /**
+     * Get the split location.
+     *
+     * @return the row of the divider for a horizontal, or the column for a
+     * vertical split
+     */
+    public int getSplit() {
+        return split;
+    }
+
+    /**
+     * Set the split location.
+     *
+     * @param split the row of the divider for a horizontal, or the column
+     * for a vertical split
+     */
+    public void setSplit(final int split) {
+        this.split = split;
+        layoutChildren();
+    }
+
+    /**
      * Recenter the split to the middle of this split pane.
      */
     public void center() {

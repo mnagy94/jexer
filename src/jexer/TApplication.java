@@ -3982,6 +3982,9 @@ public class TApplication implements Runnable {
     public final TTerminalWindow openTerminal(final int x, final int y,
         final int flags, final String [] command) {
 
+        if (command.length == 0) {
+            return new TTerminalWindow(this, x, y, flags);
+        }
         return new TTerminalWindow(this, x, y, flags, command);
     }
 
