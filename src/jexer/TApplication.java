@@ -88,6 +88,13 @@ public class TApplication implements Runnable {
     // ------------------------------------------------------------------------
 
     /**
+     * If true, do not confirm on exit, and leave the terminal in its final
+     * state (do not restore the console).  This is used for generating
+     * captures to test terminals that advertise images support.
+     */
+    public static final boolean imageSupportTest = false;
+
+    /**
      * If true, emit thread stuff to System.err.
      */
     private static final boolean debugThreads = false;
@@ -652,6 +659,13 @@ public class TApplication implements Runnable {
         final int windowHeight, final int fontSize)
         throws UnsupportedEncodingException {
 
+        if (imageSupportTest) {
+            backend = new ECMA48Backend(this, null, null, windowWidth,
+                windowHeight, fontSize);
+            TApplicationImpl();
+            return;
+        }
+
         switch (backendType) {
         case SWING:
             backend = new SwingBackend(this, windowWidth, windowHeight,
@@ -680,6 +694,12 @@ public class TApplication implements Runnable {
      */
     public TApplication(final BackendType backendType)
         throws UnsupportedEncodingException {
+
+        if (imageSupportTest) {
+            backend = new ECMA48Backend(this, null, null);
+            TApplicationImpl();
+            return;
+        }
 
         switch (backendType) {
         case SWING:
@@ -981,6 +1001,11 @@ public class TApplication implements Runnable {
     protected boolean onCommand(final TCommandEvent command) {
         // Default: handle cmExit
         if (command.equals(cmExit)) {
+            if (imageSupportTest) {
+                exit();
+                return true;
+            }
+
             if (messageBox(i18n.getString("exitDialogTitle"),
                     i18n.getString("exitDialogText"),
                     TMessageBox.Type.YESNO).isYes()) {
@@ -1041,6 +1066,11 @@ public class TApplication implements Runnable {
 
         // Default: handle MID_EXIT
         if (menu.getId() == TMenu.MID_EXIT) {
+            if (imageSupportTest) {
+                exit();
+                return true;
+            }
+
             if (messageBox(i18n.getString("exitDialogTitle"),
                     i18n.getString("exitDialogText"),
                     TMessageBox.Type.YESNO).isYes()) {
@@ -2090,6 +2120,12 @@ public class TApplication implements Runnable {
      */
     protected void onPreDraw() {
         // Default does nothing
+
+        if (imageSupportTest) {
+            menuTrayText = String.format("%d x %d cells, %d x %d cell size",
+                getScreen().getWidth(), getScreen().getHeight(),
+                getScreen().getTextWidth(), getScreen().getTextHeight());
+        }
     }
 
     /**

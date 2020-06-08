@@ -1486,9 +1486,11 @@ public class ECMA48Terminal extends LogicalScreen
         // Disable mouse reporting and show cursor.  Defensive null check
         // here in case closeTerminal() is called twice.
         if (output != null) {
-            output.printf("%s%s%s%s", mouse(false), cursor(true),
-                defaultColor(), xtermResetSixelSettings());
-            output.printf("\033[>4m");
+            if (!jexer.TApplication.imageSupportTest) {
+                output.printf("%s%s%s%s", mouse(false), cursor(true),
+                    defaultColor(), xtermResetSixelSettings());
+                output.printf("\033[>4m");
+            }
             output.flush();
         }
 
