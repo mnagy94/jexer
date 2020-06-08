@@ -3068,7 +3068,9 @@ public class ECMA48Terminal extends LogicalScreen
                             System.err.println("Device Attributes: Disable Jexer images");
                         }
                     }
-                    if (reportsIterm2Images == false) {
+                    if ((reportsIterm2Images == false)
+                        && (jexer.TApplication.imageSupportTest == false)
+                    ) {
                         // Terminal does not support iTerm2 images, disable
                         // them.
                         iterm2Images = false;
