@@ -477,7 +477,8 @@ public class Cell extends CellAttributes {
      */
     @Override
     public String toString() {
-        return String.format("fore: %s back: %s bold: %s blink: %s ch %c",
+        return String.format("%s fore: %s back: %s bold: %s blink: %s ch %c",
+            (isImage() ? "IMAGE" : ""),
             getForeColor(), getBackColor(), isBold(), isBlink(), ch);
     }
 

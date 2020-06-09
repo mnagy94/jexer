@@ -1871,16 +1871,10 @@ public class ECMA48Terminal extends LogicalScreen
         int textEnd = 0;
         for (int x = 0; x < width; x++) {
             Cell lCell = logical[x][y];
-            if (lCell.isImage()) {
-                // TODO: Figure out why image cells followed by blanks to the
-                // edge of the screen lead to showing only the first column
-                // of the image.  For now, just force any image row to draw
-                // the entire row.
-                textEnd = width;
-                break;
-            }
             if (!lCell.isBlank()) {
                 textEnd = x;
+            } else {
+                assert (!lCell.isImage());
             }
         }
         // Push textEnd to first column beyond the text area
@@ -1900,7 +1894,8 @@ public class ECMA48Terminal extends LogicalScreen
 
                 if (debugToStderr && reallyDebug) {
                     System.err.printf("\n--\n");
-                    System.err.printf(" Y: %d X: %d\n", y, x);
+                    System.err.printf(" Y: %d X: %d lastX %d textEnd %d\n",
+                        y, x, lastX, textEnd);
                     System.err.printf("   lCell: %s\n", lCell);
                     System.err.printf("   pCell: %s\n", pCell);
                     System.err.printf("    ====    \n");
@@ -1913,8 +1908,14 @@ public class ECMA48Terminal extends LogicalScreen
 
                 // Place the cell
                 if ((lastX != (x - 1)) || (lastX == -1)) {
-                    // Advancing at least one cell, or the first gotoXY
-                    sb.append(gotoXY(x, y));
+                    if (!lCell.isImage()) {
+                        if (debugToStderr && reallyDebug) {
+                            System.err.println("1 gotoXY() " + x + " " + y +
+                                " lastX " + lastX);
+                        }
+                        // Advancing at least one cell, or the first gotoXY
+                        sb.append(gotoXY(x, y));
+                    }
                 }
 
                 assert (lastAttr != null);
@@ -1929,6 +1930,12 @@ public class ECMA48Terminal extends LogicalScreen
                     }
 
                     // Clear remaining line
+                    if (debugToStderr && reallyDebug) {
+                        System.err.println("2 gotoXY() " + x + " " + y +
+                            " lastX " + lastX);
+                        System.err.println("X: " + x + " clearRemainingLine()");
+                    }
+                    sb.append(gotoXY(x, y));
                     sb.append(clearRemainingLine());
                     lastAttr.reset();
                     return;
@@ -1963,8 +1970,13 @@ public class ECMA48Terminal extends LogicalScreen
 
                 if (hasImage) {
                     hasImage = false;
+                    if (debugToStderr && reallyDebug) {
+                        System.err.println("3 gotoXY() " + x + " " + y +
+                            " lastX " + lastX);
+                    }
                     sb.append(gotoXY(x, y));
                 }
+                assert (!lCell.isImage());
 
                 // Now emit only the modified attributes
                 if ((lCell.getForeColor() != lastAttr.getForeColor())
