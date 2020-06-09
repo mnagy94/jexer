@@ -3052,10 +3052,18 @@ public class ECMA48Terminal extends LogicalScreen
                             }
                             reportsJexerImages = true;
                         }
-                        if (x.equals("1337")) {
+                        if (true) {
+                            /*
+                             * This check left in place so that I have a hook
+                             * for later.  At the moment there is no way to
+                             * reliably detect iTerm2 image support, so if
+                             * jexer.ECMA48.iTerm2Images=true, we just
+                             * blindly start using them.
+                             */
+
                             // Terminal reports iTerm2 images support
                             if (debugToStderr) {
-                                System.err.println("Device Attributes: iTerm2 images");
+                                System.err.println("Device Attributes: ASSUMING iTerm2 image support");
                             }
                             reportsIterm2Images = true;
                         }
@@ -3898,12 +3906,8 @@ public class ECMA48Terminal extends LogicalScreen
                 image.getWidth(), Math.min(image.getHeight(),
                     getTextHeight())));
 
-        // mintty has a bug where it displays all of the iTerm2 sequence to
-        // screen if it sees CR or LF.  Strip those out.
         String bytes = StringUtils.toBase64(jpgOutputStream.toByteArray());
-        bytes = bytes.replaceAll("[\n\r]", "");
         sb.append(bytes);
-
         sb.append("\007");
 
         if (saveInCache) {
