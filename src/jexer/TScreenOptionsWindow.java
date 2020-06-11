@@ -350,7 +350,7 @@ public class TScreenOptionsWindow extends TWindow {
             String [] sixelSizes = { "2", "256", "512", "1024", "2048" };
             List<String> sizes = new ArrayList<String>();
             sizes.addAll(Arrays.asList(sixelSizes));
-            sixelPaletteSize = addComboBox(col, 17, 10, sizes, 0, 6,
+            sixelPaletteSize = addComboBox(col, 17, 10, sizes, 0, 4,
                 new TAction() {
                     public void DO() {
                         try {

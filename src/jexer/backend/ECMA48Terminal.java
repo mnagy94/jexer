@@ -2761,7 +2761,9 @@ public class ECMA48Terminal extends LogicalScreen
         boolean alt = false;
         boolean shift = false;
 
-        // System.err.printf("state: %s ch %c\r\n", state, ch);
+        if (debugToStderr && false) {
+            System.err.printf("state: %s ch %c\r\n", state, ch);
+        }
 
         switch (state) {
         case GROUND:
@@ -3038,6 +3040,54 @@ public class ECMA48Terminal extends LogicalScreen
                     events.add(new TKeypressEvent(backend, kbEnd, alt, ctrl, shift));
                     resetParser();
                     return;
+                case 'S':
+                    // Report graphics property.
+                    if (decPrivateModeFlag == false) {
+                        break;
+                    }
+
+                    if ((params.size() > 2)
+                        && (!params.get(1).equals("0"))
+                    ) {
+                        if (debugToStderr) {
+                            System.err.printf("Graphics query error: " +
+                                params);
+                        }
+                        break;
+                    }
+
+                    if (params.size() > 2) {
+                        if (debugToStderr) {
+                            System.err.printf("Graphics result: " +
+                                "status %s Ps %s Pv %s\n", params.get(0),
+                                params.get(1), params.get(2));
+                        }
+                        if (params.get(0).equals("1")) {
+                            int registers = sixelPaletteSize;
+                            try {
+                                registers = Integer.parseInt(params.get(2));
+                                if (debugToStderr) {
+                                    System.err.println("Terminal reports " +
+                                        registers + " sixel colors, current " +
+                                        "size = " + sixelPaletteSize);
+                                }
+                                if ((registers >= 2)
+                                    && (registers < sixelPaletteSize)
+                                ) {
+                                    setSixelPaletteSize(Integer.highestOneBit(registers));
+                                    if (debugToStderr) {
+                                        System.err.println("New palette size: "
+                                            + sixelPaletteSize);
+                                    }
+                                }
+                            } catch (NumberFormatException e) {
+                                if (debugToStderr) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                    break;
                 case 'c':
                     // Device Attributes
                     if (decPrivateModeFlag == false) {
@@ -3064,7 +3114,7 @@ public class ECMA48Terminal extends LogicalScreen
                             }
                             reportsJexerImages = true;
                         }
-                        if (true) {
+                        if (iterm2Images) {
                             /*
                              * This check left in place so that I have a hook
                              * for later.  At the moment there is no way to
@@ -3190,9 +3240,9 @@ public class ECMA48Terminal extends LogicalScreen
      */
     private String xtermSetSixelSettings() {
         if (sixelSharedPalette == true) {
-            return "\033[?80h\033[?1070l";
+            return "\033[?80h\033[?1070l\033[?1;1;0S";
         } else {
-            return "\033[?80h\033[?1070h";
+            return "\033[?80h\033[?1070h\033[?1;1;0S";
         }
     }
 
