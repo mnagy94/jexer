@@ -91,7 +91,7 @@ public class DisplayLine {
         for (Cell cell: line.chars) {
             chars.add(new Cell(cell));
         }
-        attr = line.attr;
+        attr = new CellAttributes(line.attr);
         doubleWidth = line.doubleWidth;
         doubleHeight = line.doubleHeight;
         reverseColor = line.reverseColor;
@@ -103,7 +103,7 @@ public class DisplayLine {
      * @param attr current drawing attributes
      */
     public DisplayLine(final CellAttributes attr) {
-        this.attr = attr;
+        this.attr = new CellAttributes(attr);
     }
 
     // ------------------------------------------------------------------------

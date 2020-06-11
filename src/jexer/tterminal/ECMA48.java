@@ -5267,7 +5267,9 @@ public class ECMA48 implements Runnable {
         switch (item) {
         case 1:
             if (action == 1) {
-                // Report number of color registers.
+                // Report number of color registers.  Though we can support
+                // effectively unlimited colors, report the same max as stock
+                // xterm (MAX_COLOR_REGISTERS).
                 writeRemote(String.format("\033[?%d;%d;%dS", item, 0, 1024));
                 return;
             }

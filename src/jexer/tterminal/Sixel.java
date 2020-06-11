@@ -204,6 +204,8 @@ public class Sixel {
             if ((rasterWidth > width) || (rasterHeight > y + 1)) {
                 resizeImage(Math.max(width, rasterWidth),
                     Math.max(y + 1, rasterHeight));
+                return image.getSubimage(0, 0, Math.max(width, rasterWidth),
+                    Math.max(y + 1, rasterHeight));
             }
             return image.getSubimage(0, 0, width, y + 1);
         }
