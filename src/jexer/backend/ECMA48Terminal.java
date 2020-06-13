@@ -3524,6 +3524,26 @@ public class ECMA48Terminal extends LogicalScreen
             // System.err.println("CACHE MISS");
         }
 
+        // If the final image would be larger than 1000 pixels wide, break it
+        // up into smaller images.
+        if (cells.size() * getTextWidth() > 1000) {
+            StringBuilder chunkSb = new StringBuilder();
+            int chunkStart = 0;
+            int chunkSize = 1000 / getTextWidth();
+            int remaining = cells.size();
+            int chunkX = x;
+            ArrayList<Cell> chunk;
+            while (remaining > 0) {
+                chunk = new ArrayList<Cell>(cells.subList(chunkStart,
+                        chunkStart + Math.min(chunkSize, remaining)));
+                chunkSb.append(toSixel(chunkX, y, chunk));
+                chunkStart += chunkSize;
+                remaining -= chunkSize;
+                chunkX += chunkSize;
+            }
+            return chunkSb.toString();
+        }
+
         BufferedImage image = cellsToImage(cells);
         int fullHeight = image.getHeight();
 
