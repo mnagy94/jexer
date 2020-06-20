@@ -169,7 +169,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | wezterm        | X11, Windows       | no          | no           | yes(7) |
 | yaft           | Linux console (FB) | no          | no           | yes    |
 | Linux          | Linux console      | no          | no           | no(2)  |
-| MacTerm        | Mac                | no          | no           | no(5)  |
+| MacTerm        | Mac                | no          | no           | no(2)  |
 | Windows Terminal(6) | Windows       | no          | no           | no(2)  |
 
 1 - Requires mouse support from host terminal.
