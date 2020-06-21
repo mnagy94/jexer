@@ -31,6 +31,7 @@ package jexer;
 import java.util.ResourceBundle;
 
 import jexer.menu.TMenu;
+import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
@@ -150,7 +151,7 @@ public class TTerminalWindow extends TScrollableWindow {
         TStatusBar statusBar = newStatusBar(i18n.getString("statusBarRunning"));
         statusBar.addShortcutKeypress(kbF1, cmHelp,
             i18n.getString("statusBarHelp"));
-        statusBar.addShortcutKeypress(kbF10, cmMenu,
+        statusBar.addShortcutKeypress(kbShiftF10, cmMenu,
             i18n.getString("statusBarMenu"));
 
         // Spin it up
@@ -206,7 +207,7 @@ public class TTerminalWindow extends TScrollableWindow {
         TStatusBar statusBar = newStatusBar(i18n.getString("statusBarRunning"));
         statusBar.addShortcutKeypress(kbF1, cmHelp,
             i18n.getString("statusBarHelp"));
-        statusBar.addShortcutKeypress(kbF10, cmMenu,
+        statusBar.addShortcutKeypress(kbShiftF10, cmMenu,
             i18n.getString("statusBarMenu"));
 
         // Spin it up
@@ -276,6 +277,14 @@ public class TTerminalWindow extends TScrollableWindow {
      */
     @Override
     public void onKeypress(final TKeypressEvent keypress) {
+        // We have to match the keystroke on the status bar here, because
+        // otherwise the emulator will get it.
+        if (keypress.equals(kbShiftF10)) {
+            getApplication().postEvent(new TCommandEvent(
+                keypress.getBackend(), cmMenu));
+            return;
+        }
+
         if ((terminal != null)
             && (terminal.isReading())
             && (!inKeyboardResize)

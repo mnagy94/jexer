@@ -94,7 +94,7 @@ public class SwingTerminal extends LogicalScreen
     /**
      * The icon image location.
      */
-    private static final String ICONFILE = "jexer_logo_128.png";
+    private static final String ICONFILE = "logo_128.png";
 
     /**
      * The terminus font resource filename.

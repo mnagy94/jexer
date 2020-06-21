@@ -437,7 +437,7 @@ public class TEditorWindow extends TScrollableWindow {
             i18n.getString("statusBarSave"));
         statusBar.addShortcutKeypress(kbF3, cmOpen,
             i18n.getString("statusBarOpen"));
-        statusBar.addShortcutKeypress(kbF10, cmMenu,
+        statusBar.addShortcutKeypress(kbShiftF10, cmMenu,
             i18n.getString("statusBarMenu"));
 
         // Hide mouse when typing option
