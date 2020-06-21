@@ -72,14 +72,17 @@ public class Sixel {
     private static int HEIGHT_INCREASE = 400;
 
     /**
-     * Maximum width in pixels.
+     * Maximum width in pixels.  Xterm's max is 1000, but that's pretty
+     * limited for today's systems, so we will support up to "4K Ultra HD"
+     * width and three times that height.
      */
-    private static int MAX_WIDTH = 1000;
+    private static int MAX_WIDTH = 1 * 3840;
 
     /**
-     * Maximum height in pixels.
+     * Maximum height in pixels.  Xterm's max is 1000, but that's pretty
+     * limited for today's systems, so we will support up to "4K Ultra HD".
      */
-    private static int MAX_HEIGHT = 1000;
+    private static int MAX_HEIGHT = 3 * 2160;
 
     /**
      * Current scanning state.

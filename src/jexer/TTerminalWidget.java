@@ -641,12 +641,21 @@ public class TTerminalWidget extends TScrollableWidget
         int width = getDisplayWidth();
 
         boolean syncEmulator = false;
+
+        // If the emulator notified of an update, sync.
         synchronized (dirtyQueue) {
             if (dirtyQueue.size() > 0) {
                 dirtyQueue.remove(dirtyQueue.size() - 1);
                 syncEmulator = true;
             }
         }
+
+        // If it has been longer than 250 milliseconds, sync.
+        long now = System.currentTimeMillis();
+        if ((now - lastUpdateTime) > 250) {
+            syncEmulator = true;
+        }
+        lastUpdateTime = now;
 
         if ((syncEmulator == true)
             || (display == null)
@@ -1386,15 +1395,7 @@ public class TTerminalWidget extends TScrollableWidget
      * Called by emulator when fresh data has come in.
      */
     public void displayChanged() {
-        if (emulator != null) {
-            // Force sync here: EMCA48.run() thread might be setting
-            // dirty=true while TTerminalWdiget.draw() is setting
-            // dirty=false.  If these writes start interleaving, the display
-            // stops getting updated.
-            synchronized (emulator) {
-                setDirty();
-            }
-        } else {
+        synchronized (emulator) {
             setDirty();
         }
         TApplication app = getApplication();
