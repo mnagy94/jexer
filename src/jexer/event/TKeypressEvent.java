@@ -3,7 +3,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (C) 2019 Kevin Lamonte
+ * Copyright (C) 2021 Autumn Lamonte
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,7 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  *
- * @author Kevin Lamonte [kevin.lamonte@gmail.com]
+ * @author Autumn Lamonte [AutumnWalksTheLake@gmail.com] ⚧ Trans Liberation Now
  * @version 1
  */
 package jexer.event;
