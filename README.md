@@ -36,7 +36,7 @@ Jexer is available on Maven Central:
 <dependency>
   <groupId>com.gitlab.klamonte</groupId>
   <artifactId>jexer</artifactId>
-  <version>0.3.2</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
