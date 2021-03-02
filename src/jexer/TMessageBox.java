@@ -359,45 +359,63 @@ public class TMessageBox extends TWindow {
             return;
         }
 
-        // Some convenience for message boxes: Alt won't be needed for the
+        String keyStr = keypress.getKey().toString().toLowerCase();
+
+        // Some convenience for message boxes: Alt is optional for the
         // buttons.
         switch (type) {
 
         case OK:
-            if (keypress.equals(kbO)) {
+            if (keyStr.equals(i18n.getString("kbO"))
+                || keyStr.equals(i18n.getString("kbAltO"))
+            ) {
                 buttons.get(0).dispatch();
                 return;
             }
             break;
 
         case OKCANCEL:
-            if (keypress.equals(kbO)) {
+            if (keyStr.equals(i18n.getString("kbO"))
+                || keyStr.equals(i18n.getString("kbAltO"))
+            ) {
                 buttons.get(0).dispatch();
                 return;
-            } else if (keypress.equals(kbC)) {
+            } else if (keyStr.equals(i18n.getString("kbC"))
+                || keyStr.equals(i18n.getString("kbAltC"))
+            ) {
                 buttons.get(1).dispatch();
                 return;
             }
             break;
 
         case YESNO:
-            if (keypress.equals(kbY)) {
+            if (keyStr.equals(i18n.getString("kbY"))
+                || keyStr.equals(i18n.getString("kbAltY"))
+            ) {
                 buttons.get(0).dispatch();
                 return;
-            } else if (keypress.equals(kbN)) {
+            } else if (keyStr.equals(i18n.getString("kbN"))
+                || keyStr.equals(i18n.getString("kbAltN"))
+            ) {
                 buttons.get(1).dispatch();
                 return;
             }
             break;
 
         case YESNOCANCEL:
-            if (keypress.equals(kbY)) {
+            if (keyStr.equals(i18n.getString("kbY"))
+                || keyStr.equals(i18n.getString("kbAltY"))
+            ) {
                 buttons.get(0).dispatch();
                 return;
-            } else if (keypress.equals(kbN)) {
+            } else if (keyStr.equals(i18n.getString("kbN"))
+                || keyStr.equals(i18n.getString("kbAltN"))
+            ) {
                 buttons.get(1).dispatch();
                 return;
-            } else if (keypress.equals(kbC)) {
+            } else if (keyStr.equals(i18n.getString("kbC"))
+                || keyStr.equals(i18n.getString("kbAltC"))
+            ) {
                 buttons.get(2).dispatch();
                 return;
             }
