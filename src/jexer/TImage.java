@@ -679,12 +679,12 @@ public class TImage extends TWidget implements EditMenuUser {
         case NONE:
             destWidth = (int) (image.getWidth() * factor);
             destHeight = (int) (image.getHeight() * factor);
-            newImage = new BufferedImage(destWidth, destHeight,
-                BufferedImage.TYPE_INT_ARGB);
+            newImage = new BufferedImage(Math.max(1, destWidth),
+                Math.max(1, destHeight), BufferedImage.TYPE_INT_ARGB);
             break;
         case STRETCH:
-            destWidth = width * textWidth;
-            destHeight = height * textHeight;
+            destWidth = Math.max(1, width) * textWidth;
+            destHeight = Math.max(1, height) * textHeight;
             newImage = new BufferedImage(destWidth, destHeight,
                 BufferedImage.TYPE_INT_ARGB);
             break;
@@ -704,9 +704,9 @@ public class TImage extends TWidget implements EditMenuUser {
 
             if (a > b) {
                 // Horizontal letterbox
-                destWidth = width * textWidth;
+                destWidth = Math.max(1, width) * textWidth;
                 destHeight = (int) (destWidth / a);
-                y = ((height * textHeight) - destHeight) / 2;
+                y = ((Math.max(1, height) * textHeight) - destHeight) / 2;
                 assert (y >= 0);
                 /*
                 System.err.println("Horizontal letterbox: " + destWidth +
@@ -714,17 +714,17 @@ public class TImage extends TWidget implements EditMenuUser {
                  */
             } else {
                 // Vertical letterbox
-                destHeight = height * textHeight;
+                destHeight = Math.max(1, height) * textHeight;
                 destWidth = (int) (destHeight * a);
-                x = ((width * textWidth) - destWidth) / 2;
+                x = ((Math.max(1, width) * textWidth) - destWidth) / 2;
                 assert (x >= 0);
                 /*
                 System.err.println("Vertical letterbox: " + destWidth +
                     "x" + destHeight + ", X offset " + x);
                  */
             }
-            newImage = new BufferedImage(width * textWidth, height * textHeight,
-                BufferedImage.TYPE_INT_ARGB);
+            newImage = new BufferedImage(Math.max(1, width) * textWidth,
+                Math.max(1, height) * textHeight, BufferedImage.TYPE_INT_ARGB);
             break;
         }
 

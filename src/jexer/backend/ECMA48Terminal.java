@@ -3074,10 +3074,17 @@ public class ECMA48Terminal extends LogicalScreen
                                 if ((registers >= 2)
                                     && (registers < sixelPaletteSize)
                                 ) {
-                                    setSixelPaletteSize(Integer.highestOneBit(registers));
-                                    if (debugToStderr) {
-                                        System.err.println("New palette size: "
-                                            + sixelPaletteSize);
+                                    try {
+                                        setSixelPaletteSize(Integer.highestOneBit(registers));
+                                        if (debugToStderr) {
+                                            System.err.println("New palette size: "
+                                                + sixelPaletteSize);
+                                        }
+                                    } catch (IllegalArgumentException e) {
+                                        if (debugToStderr) {
+                                            System.err.println("Unsupported palette size: "
+                                                + registers);
+                                        }
                                     }
                                 }
                             } catch (NumberFormatException e) {
