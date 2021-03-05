@@ -456,6 +456,8 @@ public class TEditorWindow extends TScrollableWindow {
                 // SQUASH
             }
         }
+        editField.setAutoWrap(System.getProperty("jexer.TEditor.autoWrap",
+                "false").equals("true"));
     }
 
     /**

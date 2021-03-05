@@ -449,6 +449,7 @@ public abstract class TWidget implements Comparable<TWidget> {
                 ) {
                     activate(checkBox);
                     checkBox.setChecked(true);
+                    checkBox.dispatch();
                     return;
                 }
             }
@@ -1333,7 +1334,13 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @return the ColorTheme
      */
     public final ColorTheme getTheme() {
-        return window.getApplication().getTheme();
+        if (window != null) {
+            return window.getApplication().getTheme();
+        }
+
+        // This widget is not yet tied to a window, return a default color
+        // theme.
+        return new ColorTheme();
     }
 
     /**
@@ -2162,6 +2169,22 @@ public abstract class TWidget implements Comparable<TWidget> {
         final String label, final boolean checked) {
 
         return new TCheckBox(this, x, y, label, checked);
+    }
+
+    /**
+     * Convenience function to add a checkbox to this container/window.
+     *
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param label label to display next to (right of) the checkbox
+     * @param checked initial check state
+     * @param action the action to perform when the checkbox is toggled
+     * @return the new checkbox
+     */
+    public final TCheckBox addCheckBox(final int x, final int y,
+        final String label, final boolean checked, final TAction action) {
+
+        return new TCheckBox(this, x, y, label, checked, action);
     }
 
     /**

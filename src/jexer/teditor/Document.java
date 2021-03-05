@@ -110,10 +110,7 @@ public class Document {
         // language keywords.
         highlighter.setJavaColors();
 
-        String [] rawLines = str.split("\n");
-        for (int i = 0; i < rawLines.length; i++) {
-            lines.add(new Line(rawLines[i], this.defaultColor, highlighter));
-        }
+        setText(str);
     }
 
     /**
@@ -126,6 +123,19 @@ public class Document {
     // ------------------------------------------------------------------------
     // Document ---------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Set the entire contents of the document from one string.
+     *
+     * @param text the new contents
+     */
+    public void setText(final String text) {
+        lines.clear();
+        String [] rawLines = text.split("\n");
+        for (int i = 0; i < rawLines.length; i++) {
+            lines.add(new Line(rawLines[i], defaultColor, highlighter));
+        }
+    }
 
     /**
      * Create a duplicate instance.
@@ -309,7 +319,9 @@ public class Document {
             }
             return true;
         }
-        return false;
+
+        // Bottom line: treat down() like end().
+        return end();
     }
 
     /**
@@ -352,7 +364,9 @@ public class Document {
             }
             return true;
         }
-        return false;
+
+        // Top line: treat up() like home().
+        return home();
     }
 
     /**
@@ -826,6 +840,55 @@ public class Document {
         }
         sb.append(string.substring(tabCount * 8));
         return sb.toString();
+    }
+
+    /**
+     * Wrap the document text to fit in a new width.
+     *
+     * @param width the width to fit to
+     */
+    public void wrapText(final int width) {
+        /*
+         * Procedure:
+         *
+         * 1. Record the position in the string where the cursor is at as N.
+         *
+         * 2. Reflow the text same as TText with LEFT justification.
+         *
+         * 3. setLineNumber(0), home(), right() by N times.
+         *
+         * This is hideously inefficient, but it works.
+         */
+
+        int N = 0;
+        while (left()) {
+            N++;
+        }
+
+        String text = getText();
+        String parBreakToken = "$$$PARAGRAPH$BREAK$$$";
+        text = text.replace("\n\n", parBreakToken);
+        text = text.replace("\n", " ");
+        text = text.replace(parBreakToken, "\n\n");
+
+        String [] paragraphs = text.split("\n\n");
+        List<String> newLines = new ArrayList<String>();
+        for (String p : paragraphs) {
+            newLines.addAll(jexer.bits.StringUtils.left(p, width - 1));
+            newLines.add("");
+        }
+        StringBuilder newText = new StringBuilder();
+        for (String line: newLines) {
+            newText.append(line);
+            newText.append("\n");
+        }
+        setText(newText.toString());
+
+        setLineNumber(0);
+        home();
+        for (int i = 0; i < N; i++) {
+            right();
+        }
     }
 
 }

@@ -62,6 +62,11 @@ public class TCheckBox extends TWidget {
      */
     private boolean useWindowBackground = false;
 
+    /**
+     * The action to perform when the checkbox is toggled.
+     */
+    private TAction action;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -78,11 +83,28 @@ public class TCheckBox extends TWidget {
     public TCheckBox(final TWidget parent, final int x, final int y,
         final String label, final boolean checked) {
 
+        this(parent, x, y, label, checked, null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param label label to display next to (right of) the checkbox
+     * @param checked initial check state
+     * @param action the action to perform when the checkbox is toggled
+     */
+    public TCheckBox(final TWidget parent, final int x, final int y,
+        final String label, final boolean checked, final TAction action) {
+
         // Set parent and window
         super(parent, x, y, StringUtils.width(label) + 4, 1);
 
         mnemonic = new MnemonicString(label);
         this.checked = checked;
+        this.action = action;
 
         setCursorVisible(true);
         setCursorX(1);
@@ -118,6 +140,7 @@ public class TCheckBox extends TWidget {
         if ((mouseOnCheckBox(mouse)) && (mouse.isMouse1())) {
             // Switch state
             checked = !checked;
+            dispatch();
         }
     }
 
@@ -132,11 +155,13 @@ public class TCheckBox extends TWidget {
             || keypress.equals(kbEnter)
         ) {
             checked = !checked;
+            dispatch();
             return;
         }
 
         if (keypress.equals(kbEsc)) {
             checked = false;
+            dispatch();
             return;
         }
 
@@ -211,6 +236,16 @@ public class TCheckBox extends TWidget {
      */
     public MnemonicString getMnemonic() {
         return mnemonic;
+    }
+
+    /**
+     * Act as though the checkbox was pressed.  This is useful for other UI
+     * elements to get the same action as if the user clicked the checkbox.
+     */
+    public void dispatch() {
+        if (action != null) {
+            action.DO(this);
+        }
     }
 
 }

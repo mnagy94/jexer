@@ -301,27 +301,23 @@ public class TText extends TScrollableWidget {
         lines.clear();
 
         // Break up text into paragraphs
-        String[] paragraphs = text.split("\n\n");
+        String [] paragraphs = text.split("\n\n");
         for (String p : paragraphs) {
             switch (justification) {
             case NONE:
                 lines.addAll(Arrays.asList(p.split("\n")));
                 break;
             case LEFT:
-                lines.addAll(jexer.bits.StringUtils.left(p,
-                        getWidth() - 1));
+                lines.addAll(StringUtils.left(p, getWidth() - 1));
                 break;
             case CENTER:
-                lines.addAll(jexer.bits.StringUtils.center(p,
-                        getWidth() - 1));
+                lines.addAll(StringUtils.center(p, getWidth() - 1));
                 break;
             case RIGHT:
-                lines.addAll(jexer.bits.StringUtils.right(p,
-                        getWidth() - 1));
+                lines.addAll(StringUtils.right(p, getWidth() - 1));
                 break;
             case FULL:
-                lines.addAll(jexer.bits.StringUtils.full(p,
-                        getWidth() - 1));
+                lines.addAll(StringUtils.full(p, getWidth() - 1));
                 break;
             }
 

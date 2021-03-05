@@ -651,7 +651,7 @@ public class ColorTheme {
         colors.put("teditor.selected", color);
         color = new CellAttributes();
         color.setForeColor(Color.WHITE);
-        color.setBackColor(Color.RED);
+        color.setBackColor(Color.CYAN);
         color.setBold(true);
         colors.put("teditor.margin", color);
 

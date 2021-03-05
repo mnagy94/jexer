@@ -129,6 +129,11 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     private int margin = 0;
 
     /**
+     * If true, automatically reflow text to fit the margin.
+     */
+    private boolean autoWrap = false;
+
+    /**
      * The saved state for an undo/redo operation.
      */
     private class SavedState {
@@ -260,6 +265,40 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
 
         // Pass to children
         super.onMouseDown(mouse);
+    }
+
+    /**
+     * Handle mouse release events.
+     *
+     * @param mouse mouse button release event
+     */
+    @Override
+    public void onMouseUp(final TMouseEvent mouse) {
+        if (mouse.isMouse1() && inSelection) {
+            int newLine = topLine + mouse.getY();
+            int newX = leftColumn + mouse.getX();
+            int newSelectionLine0 = selectionLine0;
+            int newSelectionColumn0 = selectionColumn0;
+
+            if (newLine > document.getLineCount() - 1) {
+                newSelectionLine0 = document.getLineCount() - 1;
+            } else {
+                newSelectionLine0 = topLine + mouse.getY();
+            }
+            newSelectionColumn0 = leftColumn + mouse.getX();
+            newSelectionColumn0 = Math.max(0, Math.min(newSelectionColumn0,
+                    document.getLine(newSelectionLine0).getDisplayLength() - 1));
+            if ((newSelectionLine0 == selectionLine0)
+                && (newSelectionColumn0 == selectionColumn0)
+            ) {
+                // The mouse clicked on a cell, but did not continue
+                // selecting.
+                inSelection = false;
+                return;
+            }
+        }
+        // Didn't handle the event, pass on.
+        super.onMouseUp(mouse);
     }
 
     /**
@@ -684,6 +723,25 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     // ------------------------------------------------------------------------
 
     /**
+     * Get the wrapping behavior.
+     *
+     * @return true if the editor automatically wraps text to fit in the
+     * margin
+     */
+    public boolean isAutoWrap() {
+        return autoWrap;
+    }
+
+    /**
+     * Set the wrapping behavior.
+     *
+     * @param autoWrap if true, automatically wrap text to fit in the margin
+     */
+    public void setAutoWrap(final boolean autoWrap) {
+        this.autoWrap = autoWrap;
+    }
+
+    /**
      * Set the undo level.
      *
      * @param undoLevel the maximum number of undo operations
@@ -699,6 +757,9 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      */
     public void setMargin(final int margin) {
         this.margin = margin;
+        if (autoWrap) {
+            wrapText();
+        }
     }
 
     /**
@@ -955,6 +1016,16 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
     }
 
     /**
+     * Reflow the text to fit inside the margin.
+     */
+    public void wrapText() {
+        if (margin > 0) {
+            document.wrapText(margin);
+            alignDocument(true);
+        }
+    }
+
+    /**
      * Delete text within the selection bounds.
      */
     private void deleteSelection() {
@@ -1049,9 +1120,12 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
      */
     private void copySelection() {
         if (!inSelection) {
-            return;
+            // Copy the entire buffer.
+            getClipboard().copyText(getText());
+        } else {
+            // Copy just the selected portion.
+            getClipboard().copyText(getSelection());
         }
-        getClipboard().copyText(getSelection());
     }
 
     /**
