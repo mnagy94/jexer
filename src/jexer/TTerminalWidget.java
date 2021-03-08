@@ -1390,47 +1390,6 @@ public class TTerminalWidget extends TScrollableWidget
         }
     }
 
-    // ------------------------------------------------------------------------
-    // DisplayListener --------------------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Called by emulator when fresh data has come in.
-     */
-    public void displayChanged() {
-        synchronized (emulator) {
-            setDirty();
-        }
-        TApplication app = getApplication();
-        if (app != null) {
-            app.postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));
-        }
-    }
-
-    /**
-     * Function to call to obtain the display width.
-     *
-     * @return the number of columns in the display
-     */
-    public int getDisplayWidth() {
-        if (ptypipe) {
-            return getWidth();
-        }
-        return 80;
-    }
-
-    /**
-     * Function to call to obtain the display height.
-     *
-     * @return the number of rows in the display
-     */
-    public int getDisplayHeight() {
-        if (ptypipe) {
-            return getHeight();
-        }
-        return 24;
-    }
-
     /**
      * Get the exit value for the emulator.
      *
@@ -1512,6 +1471,47 @@ public class TTerminalWidget extends TScrollableWidget
             }
             writer.write("\n");
         }
+    }
+
+    // ------------------------------------------------------------------------
+    // DisplayListener --------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Called by emulator when fresh data has come in.
+     */
+    public void displayChanged() {
+        synchronized (emulator) {
+            setDirty();
+        }
+        TApplication app = getApplication();
+        if (app != null) {
+            app.postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));
+        }
+    }
+
+    /**
+     * Function to call to obtain the display width.
+     *
+     * @return the number of columns in the display
+     */
+    public int getDisplayWidth() {
+        if (ptypipe) {
+            return getWidth();
+        }
+        return 80;
+    }
+
+    /**
+     * Function to call to obtain the display height.
+     *
+     * @return the number of rows in the display
+     */
+    public int getDisplayHeight() {
+        if (ptypipe) {
+            return getHeight();
+        }
+        return 24;
     }
 
     // ------------------------------------------------------------------------

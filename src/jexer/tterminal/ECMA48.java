@@ -37,6 +37,7 @@ import java.io.CharArrayWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -658,9 +659,10 @@ public class ECMA48 implements Runnable {
 
         this.type         = type;
         if (inputStream instanceof TimeoutInputStream) {
-            this.inputStream  = (TimeoutInputStream)inputStream;
+            this.inputStream  = (TimeoutInputStream) inputStream;
         } else {
-            this.inputStream  = new TimeoutInputStream(inputStream, 2000);
+            this.inputStream  = new TimeoutInputStream(inputStream,
+                ((inputStream instanceof FileInputStream) ? 0 : 2000));
         }
         if (type == DeviceType.XTERM) {
             this.input    = new InputStreamReader(new BufferedInputStream(
@@ -743,7 +745,14 @@ public class ECMA48 implements Runnable {
                     } catch (InterruptedException e) {
                         // SQUASH
                     }
-                    continue;
+
+                    if (inputStream.getStream() instanceof FileInputStream) {
+                        // Special case: force a read of files in order
+                        // to see the EOF.
+                    } else {
+                        // Go back to waiting.
+                        continue;
+                    }
                 }
 
                 int rc = -1;
@@ -756,6 +765,7 @@ public class ECMA48 implements Runnable {
                             readBuffer.length);
                     }
                 } catch (ReadTimeoutException e) {
+                    // System.err.println("ReadTimeoutException");
                     rc = 0;
                 }
 
@@ -803,13 +813,14 @@ public class ECMA48 implements Runnable {
                 }
                 // System.err.println("end while loop"); System.err.flush();
             } catch (IOException e) {
+                // System.err.println("IOException");
                 done = true;
 
                 // This is an unusual case.  We want to see the stack trace,
                 // but it is related to the spawned process rather than the
                 // actual UI.  We will generate the stack trace, and consume
                 // it as though it was emitted by the shell.
-                CharArrayWriter writer= new CharArrayWriter();
+                CharArrayWriter writer = new CharArrayWriter();
                 // Send a ST and RIS to clear the emulator state.
                 try {
                     writer.write("\033\\\033c");
@@ -1243,16 +1254,27 @@ public class ECMA48 implements Runnable {
         if (scrollRegionTop >= scrollRegionBottom) {
             scrollRegionTop = 0;
         }
+        currentState.cursorY += delta;
+        savedState.cursorY += delta;
+        if (currentState.cursorY < 0) {
+            currentState.cursorY = 0;
+        }
         if (currentState.cursorY >= height) {
             currentState.cursorY = height - 1;
+        }
+        if (savedState.cursorY < 0) {
+            savedState.cursorY = 0;
         }
         if (savedState.cursorY >= height) {
             savedState.cursorY = height - 1;
         }
         while (display.size() < height) {
-            DisplayLine line = new DisplayLine(currentState.attr);
-            line.setReverseColor(reverseVideo);
-            display.add(line);
+            if (scrollback.size() == 0) {
+                DisplayLine line = new DisplayLine(currentState.attr);
+                line.setReverseColor(reverseVideo);
+                scrollback.add(0, line);
+            }
+            display.add(0, scrollback.remove(scrollback.size() - 1));
         }
         while (display.size() > height) {
             appendScrollbackLine(display.remove(0));

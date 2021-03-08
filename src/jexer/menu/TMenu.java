@@ -62,7 +62,8 @@ public class TMenu extends TWindow {
     // Tools menu
     public static final int MID_REPAINT         = 1;
     public static final int MID_VIEW_IMAGE      = 2;
-    public static final int MID_SCREEN_OPTIONS  = 3;
+    public static final int MID_VIEW_ANSI       = 3;
+    public static final int MID_SCREEN_OPTIONS  = 4;
 
     // File menu
     public static final int MID_NEW             = 10;
@@ -629,6 +630,10 @@ public class TMenu extends TWindow {
 
         case MID_VIEW_IMAGE:
             label = i18n.getString("menuViewImage");
+            break;
+
+        case MID_VIEW_ANSI:
+            label = i18n.getString("menuViewAnsiArt");
             break;
 
         case MID_SCREEN_OPTIONS:

@@ -1166,6 +1166,10 @@ public class TApplication implements Runnable {
             openImage();
             return true;
         }
+        if (menu.getId() == TMenu.MID_VIEW_ANSI) {
+            openAnsiFile();
+            return true;
+        }
         if (menu.getId() == TMenu.MID_SCREEN_OPTIONS) {
             new TScreenOptionsWindow(this);
             return true;
@@ -2076,6 +2080,21 @@ public class TApplication implements Runnable {
             String filename = fileOpenBox(".", TFileOpenBox.Type.OPEN, filters);
             if (filename != null) {
                 new TImageWindow(this, new File(filename));
+            }
+        } catch (IOException e) {
+            // Show this exception to the user.
+            new TExceptionDialog(this, e);
+        }
+    }
+
+    /**
+     * Handle the Tool | Open ANSI menu item.
+     */
+    private void openAnsiFile() {
+        try {
+            String filename = fileOpenBox(".", TFileOpenBox.Type.OPEN);
+            if (filename != null) {
+                new TTextPictureWindow(this, filename);
             }
         } catch (IOException e) {
             // Show this exception to the user.
@@ -3635,6 +3654,7 @@ public class TApplication implements Runnable {
         TMenu toolMenu = addMenu(i18n.getString("toolMenuTitle"));
         toolMenu.addDefaultItem(TMenu.MID_REPAINT);
         toolMenu.addDefaultItem(TMenu.MID_VIEW_IMAGE);
+        toolMenu.addDefaultItem(TMenu.MID_VIEW_ANSI);
         toolMenu.addDefaultItem(TMenu.MID_SCREEN_OPTIONS);
         TStatusBar toolStatusBar = toolMenu.newStatusBar(i18n.
             getString("toolMenuStatus"));

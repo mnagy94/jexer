@@ -58,6 +58,11 @@ public class TimeoutInputStream extends InputStream {
      */
     private volatile boolean cancel = false;
 
+    /**
+     * If true, EOF was encountered.
+     */
+    private boolean eof = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -108,14 +113,26 @@ public class TimeoutInputStream extends InputStream {
     @Override
     public int read() throws IOException {
 
+        if (eof) {
+            return -1;
+        }
+
         if (timeoutMillis == 0) {
             // Block on the read().
-            return stream.read();
+            int rc = stream.read();
+            if (rc == -1) {
+                eof = true;
+            }
+            return rc;
         }
 
         if (stream.available() > 0) {
             // A byte is available now, return it.
-            return stream.read();
+            int rc = stream.read();
+            if (rc == -1) {
+                eof = true;
+            }
+            return rc;
         }
 
         // We will wait up to timeoutMillis to see if a byte is available.
@@ -143,7 +160,11 @@ public class TimeoutInputStream extends InputStream {
 
         if (stream.available() > 0) {
             // A byte is available now, return it.
-            return stream.read();
+            int rc = stream.read();
+            if (rc == -1) {
+                eof = true;
+            }
+            return rc;
         }
 
         throw new IOException("InputStream claimed a byte was available, but " +
@@ -161,16 +182,29 @@ public class TimeoutInputStream extends InputStream {
      */
     @Override
     public int read(final byte[] b) throws IOException {
+
+        if (eof) {
+            return -1;
+        }
+
         if (timeoutMillis == 0) {
             // Block on the read().
-            return stream.read(b);
+            int rc = stream.read(b);
+            if (rc == -1) {
+                eof = true;
+            }
+            return rc;
         }
 
         int remaining = b.length;
 
         if (stream.available() >= remaining) {
             // Enough bytes are available now, return them.
-            return stream.read(b);
+            int rc = stream.read(b);
+            if (rc == -1) {
+                eof = true;
+            }
+            return rc;
         }
 
         while (remaining > 0) {
@@ -179,7 +213,7 @@ public class TimeoutInputStream extends InputStream {
             // available.  If not, we throw ReadTimeoutException.
             long checkTime = System.currentTimeMillis();
             while (stream.available() == 0) {
-                if (remaining > 0) {
+                if ((remaining > 0) && (remaining != b.length)) {
                     return (b.length - remaining);
                 }
 
@@ -211,6 +245,8 @@ public class TimeoutInputStream extends InputStream {
                 }
                 int rc = stream.read(b, b.length - remaining, n);
                 if (rc == -1) {
+                    eof = true;
+
                     // This shouldn't happen.
                     throw new IOException("InputStream claimed bytes were " +
                         "available, but read() returned -1.  What is going " +
@@ -242,16 +278,28 @@ public class TimeoutInputStream extends InputStream {
     public int read(final byte[] b, final int off,
         final int len) throws IOException {
 
+        if (eof) {
+            return -1;
+        }
+
         if (timeoutMillis == 0) {
             // Block on the read().
-            return stream.read(b, off, len);
+            int rc = stream.read(b, off, len);
+            if (rc == -1) {
+                eof = true;
+            }
+            return rc;
         }
 
         int remaining = len;
 
         if (stream.available() >= remaining) {
             // Enough bytes are available now, return them.
-            return stream.read(b, off, remaining);
+            int rc = stream.read(b, off, remaining);
+            if (rc <= 0) {
+                eof = true;
+            }
+            return rc;
         }
 
         while (remaining > 0) {
@@ -260,7 +308,7 @@ public class TimeoutInputStream extends InputStream {
             // available.  If not, we throw ReadTimeoutException.
             long checkTime = System.currentTimeMillis();
             while (stream.available() == 0) {
-                if (remaining > 0) {
+                if ((remaining > 0) && (remaining != len)) {
                     return (len - remaining);
                 }
 
@@ -291,7 +339,9 @@ public class TimeoutInputStream extends InputStream {
                     n = remaining;
                 }
                 int rc = stream.read(b, off + len - remaining, n);
-                if (rc == -1) {
+                if (rc <= 0) {
+                    eof = true;
+
                     // This shouldn't happen.
                     throw new IOException("InputStream claimed bytes were " +
                         "available, but read() returned -1.  What is going " +
@@ -388,6 +438,15 @@ public class TimeoutInputStream extends InputStream {
      */
     public synchronized void cancelRead() {
         cancel = true;
+    }
+
+    /**
+     * Get the underlying stream.
+     *
+     * @return the stream
+     */
+    public InputStream getStream() {
+        return stream;
     }
 
 }
