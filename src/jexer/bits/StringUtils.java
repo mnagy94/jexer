@@ -455,8 +455,9 @@ public class StringUtils {
                 || ((ch >= 0xffe0) && (ch <= 0xffe6))
                 || ((ch >= 0x20000) && (ch <= 0x2fffd))
                 || ((ch >= 0x30000) && (ch <= 0x3fffd))
-                // emoji
-                || ((ch >= 0x1f004) && (ch <= 0x1fffd))
+                // emoji - exclude symbols for legacy computing
+                || ((ch >= 0x1f004) && (ch < 0x1fb00))
+                || ((ch >= 0x1fc00) && (ch <= 0x1fffd))
             )
         ) {
             return 2;
