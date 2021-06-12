@@ -3247,9 +3247,9 @@ public class ECMA48Terminal extends LogicalScreen
      */
     private String xtermSetSixelSettings() {
         if (sixelSharedPalette == true) {
-            return "\033[?80h\033[?1070l\033[?1;1;0S";
+            return "\033[?1070l\033[?1;1;0S";
         } else {
-            return "\033[?80h\033[?1070h\033[?1;1;0S";
+            return "\033[?1070h\033[?1;1;0S";
         }
     }
 
@@ -3263,7 +3263,7 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the string to emit to xterm
      */
     private String xtermResetSixelSettings() {
-        return "\033[?80h\033[?1070h";
+        return "\033[?1070h";
     }
 
     /**
