@@ -5284,6 +5284,11 @@ public class ECMA48 implements Runnable {
      * Respond to xterm sixel query.
      */
     private void xtermSixelQuery() {
+        if (csiParams.size() > 3) {
+            // This is an invalid query, disregard it.
+            return;
+        }
+
         int item = getCsiParam(0, 0);
         int action = getCsiParam(1, 0);
         int value = getCsiParam(2, 0);
