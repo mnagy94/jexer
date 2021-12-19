@@ -112,7 +112,7 @@ public class JexerTilingWindowManager extends TApplication {
         int newX = tile.getX() + tile.getWidth() - newWidth;
         makeTile(newX, newY, newWidth, tile.getHeight(), tile);
         tile.setWidth(tile.getWidth() - newWidth);
-        tile.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+        tile.onResize(new TResizeEvent(getBackend(), TResizeEvent.Type.WIDGET,
                 tile.getWidth(), tile.getHeight()));
     }
 
@@ -132,7 +132,7 @@ public class JexerTilingWindowManager extends TApplication {
         int newX = tile.getX();
         makeTile(newX, newY, tile.getWidth(), newHeight, tile);
         tile.setHeight(tile.getHeight() - newHeight);
-        tile.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+        tile.onResize(new TResizeEvent(getBackend(), TResizeEvent.Type.WIDGET,
                 tile.getWidth(), tile.getHeight()));
     }
 
@@ -174,7 +174,8 @@ public class JexerTilingWindowManager extends TApplication {
                         otherTile.setY(Math.min(otherTile.getY(), getY()));
                         otherTile.setHeight(otherTile.getHeight() + getHeight());
                     }
-                    otherTile.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+                    otherTile.onResize(new TResizeEvent(getBackend(),
+                            TResizeEvent.Type.WIDGET,
                             otherTile.getWidth(), otherTile.getHeight()));
                 }
             }
@@ -214,7 +215,7 @@ public class JexerTilingWindowManager extends TApplication {
         // window size.
         tile.setWidth(width);
         tile.setHeight(height);
-        tile.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+        tile.onResize(new TResizeEvent(getBackend(), TResizeEvent.Type.WIDGET,
                 tile.getWidth(), tile.getHeight()));
 
         return tile;

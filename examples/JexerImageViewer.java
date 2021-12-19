@@ -171,17 +171,20 @@ class ImageViewerDesktop extends TDesktop {
         treeView.setY(1);
         treeView.setWidth(getWidth() / 2);
         treeView.setHeight(getHeight() - 1);
-        treeView.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+        treeView.onResize(new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET,
                 treeView.getWidth(),
                 treeView.getHeight()));
-        treeView.getTreeView().onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+        treeView.getTreeView().onResize(new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET,
                 treeView.getWidth() - 1,
                 treeView.getHeight() - 1));
         directoryList.setX(getWidth() / 2 + 1);
         directoryList.setY(1);
         directoryList.setWidth(getWidth() / 2 - 1);
         directoryList.setHeight(getHeight() / 2 - 1);
-        directoryList.onResize(new TResizeEvent(TResizeEvent.Type.WIDGET,
+        directoryList.onResize(new TResizeEvent(event.getBackend(),
+                TResizeEvent.Type.WIDGET,
                 directoryList.getWidth(),
                 directoryList.getHeight()));
 
