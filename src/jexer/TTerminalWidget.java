@@ -1000,7 +1000,9 @@ public class TTerminalWidget extends TScrollableWidget
         try {
             int scrollbackMax = Integer.parseInt(System.getProperty(
                 "jexer.TTerminal.scrollbackMax", "2000"));
-            emulator.setScrollbackMax(scrollbackMax);
+            if (emulator != null) {
+                emulator.setScrollbackMax(scrollbackMax);
+            }
         } catch (NumberFormatException e) {
             // SQUASH
         }

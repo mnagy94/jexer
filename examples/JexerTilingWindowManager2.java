@@ -48,8 +48,15 @@ public class JexerTilingWindowManager2 extends TApplication {
         // Let's also suppress the status line.
         System.setProperty("jexer.hideStatusBar", "true");
 
-        JexerTilingWindowManager2 jtwm = new JexerTilingWindowManager2();
+        final JexerTilingWindowManager2 jtwm = new JexerTilingWindowManager2();
         (new Thread(jtwm)).start();
+
+        jtwm.invokeLater(new Runnable() {
+            public void run() {
+                // Spin up the root terminal
+                jtwm.createRootTerminal();
+            }
+        });
     }
 
     /**
@@ -92,8 +99,6 @@ public class JexerTilingWindowManager2 extends TApplication {
             }
         });
 
-        // Spin up the root terminal
-        createRootTerminal();
     }
 
     /**
