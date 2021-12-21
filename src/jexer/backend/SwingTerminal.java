@@ -1593,8 +1593,10 @@ public class SwingTerminal extends LogicalScreen
 
                         if (lCell.isImage()) {
                             if (imagesOverText) {
-                                // Draw the glyph underneath the image.
-                                drawGlyph(gr, lCell, xPixel, yPixel);
+                                if (lCell.isTransparentImage()) {
+                                    // Draw the glyph underneath the image.
+                                    drawGlyph(gr, lCell, xPixel, yPixel);
+                                }
                             }
                             drawImage(gr, lCell, xPixel, yPixel);
                         } else {
@@ -1671,8 +1673,10 @@ public class SwingTerminal extends LogicalScreen
                         ) {
                             if (lCell.isImage()) {
                                 if (imagesOverText) {
-                                    // Draw the glyph underneath the image.
-                                    drawGlyph(gr, lCell, xPixel, yPixel);
+                                    if (lCell.isTransparentImage()) {
+                                        // Draw the glyph underneath the image.
+                                        drawGlyph(gr, lCell, xPixel, yPixel);
+                                    }
                                 }
                                 drawImage(gr, lCell, xPixel, yPixel);
                             } else {

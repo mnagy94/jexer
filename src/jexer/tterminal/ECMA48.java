@@ -7763,6 +7763,15 @@ public class ECMA48 implements Runnable {
                     cell.setImage(image.getSubimage(x * textWidth,
                             y * textHeight, width, height));
                 }
+                if (transparent && maybeTransparent) {
+                    // Check now if this cell has transparent pixels.  This
+                    // will slow down the reader thread but unload the render
+                    // thread.
+                    //
+                    // Truth is performance is going to be bad for a while...
+                    cell.isTransparentImage();
+                }
+
                 cells[x][y] = cell;
             }
         }

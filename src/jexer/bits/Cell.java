@@ -107,6 +107,14 @@ public class Cell extends CellAttributes {
      */
     private int backgroundHashCode = 0;
 
+    /**
+     * If this cell has image data, whether or not it also has transparent
+     * pixels.  -1 = no image data; 0 = unknown if transparent pixels are
+     * present; 1 = transparent pixels are present; 2 = transparent pixels
+     * are not present.
+     */
+    private int hasTransparentPixels = -1;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -172,6 +180,7 @@ public class Cell extends CellAttributes {
      */
     public void setImage(final BufferedImage image) {
         this.image = image;
+        hasTransparentPixels = 0;
         imageHashCode = image.hashCode();
         width = Width.SINGLE;
     }
@@ -205,6 +214,38 @@ public class Cell extends CellAttributes {
      */
     public boolean isImage() {
         if (image != null) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * If true, this cell has image data and some of the pixels are
+     * transparent.
+     *
+     * @return true if this cell has image data with transparent pixels
+     */
+    public boolean isTransparentImage() {
+        if (image == null) {
+            return false;
+        }
+        if (hasTransparentPixels == 0) {
+            // Scan for transparent pixels.
+            int [] rgbArray = image.getRGB(0, 0,
+                image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+
+            for (int i = 0; i < rgbArray.length; i++) {
+                if (((rgbArray[i] >>> 24) & 0xFF) != 0xFF) {
+                    // A pixel might be transparent.
+                    hasTransparentPixels = 1;
+                    return true;
+                }
+            }
+            // No transparent pixels.
+            hasTransparentPixels = 2;
+        }
+        if (hasTransparentPixels == 1) {
+            // Transparent pixels were found at some time.
             return true;
         }
         return false;
@@ -249,8 +290,6 @@ public class Cell extends CellAttributes {
                 if (rgbArray[i] != 0x00FFFFFF) {
                     rgbArray[i] ^= 0x00FFFFFF;
                 }
-                // Also set alpha to non-transparent.
-                rgbArray[i] |= 0xFF000000;
             }
             invertedImage.setRGB(0, 0, image.getWidth(), image.getHeight(),
                 rgbArray, 0, image.getWidth());
@@ -307,6 +346,7 @@ public class Cell extends CellAttributes {
         invertedImage = null;
         background = java.awt.Color.BLACK;
         backgroundHashCode = 0;
+        hasTransparentPixels = -1;
     }
 
     /**
@@ -322,6 +362,7 @@ public class Cell extends CellAttributes {
         invertedImage = null;
         background = java.awt.Color.BLACK;
         backgroundHashCode = 0;
+        hasTransparentPixels = -1;
     }
 
     /**
@@ -457,6 +498,7 @@ public class Cell extends CellAttributes {
             this.background = that.background;
             this.imageHashCode = that.imageHashCode;
             this.backgroundHashCode = that.backgroundHashCode;
+            this.hasTransparentPixels = that.hasTransparentPixels;
         }
     }
 
@@ -467,6 +509,7 @@ public class Cell extends CellAttributes {
      */
     public void setAttr(final CellAttributes that) {
         image = null;
+        hasTransparentPixels = -1;
         super.setTo(that);
     }
 
@@ -479,6 +522,7 @@ public class Cell extends CellAttributes {
     public void setAttr(final CellAttributes that, final boolean keepImage) {
         if (!keepImage) {
             image = null;
+            hasTransparentPixels = -1;
         }
         super.setTo(that);
     }
