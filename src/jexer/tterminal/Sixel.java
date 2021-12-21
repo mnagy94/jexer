@@ -46,6 +46,7 @@ public class Sixel {
      * Parser character scan states.
      */
     private enum ScanState {
+        INIT,
         GROUND,
         RASTER,
         COLOR,
@@ -87,7 +88,7 @@ public class Sixel {
     /**
      * Current scanning state.
      */
-    private ScanState scanState = ScanState.GROUND;
+    private ScanState scanState = ScanState.INIT;
 
     /**
      * Parameters being collected.
@@ -155,9 +156,19 @@ public class Sixel {
     private Color color = Color.BLACK;
 
     /**
+     * The background color.
+     */
+    private Color background = Color.BLACK;
+
+    /**
      * If set, abort processing this image.
      */
     private boolean abort = false;
+
+    /**
+     * If set, color index 0 will be set to transparent.
+     */
+    private boolean transparent = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -168,14 +179,18 @@ public class Sixel {
      *
      * @param buffer the sixel data to parse
      * @param palette palette to use, or null for a private palette
+     * @param the background color to use
      */
-    public Sixel(final String buffer, final HashMap<Integer, Color> palette) {
+    public Sixel(final String buffer, final HashMap<Integer, Color> palette,
+        Color background) {
+
         this.buffer = buffer;
         if (palette == null) {
             this.palette = new HashMap<Integer, Color>();
         } else {
             this.palette = palette;
         }
+        this.background = background;
     }
 
     // ------------------------------------------------------------------------
@@ -200,8 +215,8 @@ public class Sixel {
 
         if ((width > 0) && (height > 0) && (image != null)) {
             /*
-            System.err.println(String.format("%d %d %d %d", width, y + 1,
-                    rasterWidth, rasterHeight));
+            System.err.println(String.format("getImage() %d %d %d %d %d %d",
+                    width, height, x, y, rasterWidth, rasterHeight));
             */
 
             if ((rasterWidth > width) || (rasterHeight > y + 1)) {
@@ -225,18 +240,23 @@ public class Sixel {
         BufferedImage newImage = new BufferedImage(newWidth, newHeight,
             BufferedImage.TYPE_INT_ARGB);
 
-        if (image == null) {
-            image = newImage;
-            return;
-        }
-
         if (DEBUG) {
-            System.err.println("resizeImage(); old " + image.getWidth() + "x" +
-                image.getHeight() + " new " + newWidth + "x" + newHeight);
+            System.err.println("resizeImage(); old " +
+                (image != null ? image.getWidth() : "null ") + "x " +
+                (image != null ? image.getHeight() : "null ") + "y " +
+                "new " + newWidth + "x " + newHeight + "y " +
+                "transparency: " + transparent);
         }
 
         Graphics2D gr = newImage.createGraphics();
-        gr.drawImage(image, 0, 0, image.getWidth(), image.getHeight(), null);
+        if (!transparent) {
+            gr.setColor(background);
+            gr.fillRect(0, 0, newWidth, newHeight);
+        }
+        if (image != null) {
+            gr.drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
+                null);
+        }
         gr.dispose();
         image = newImage;
     }
@@ -422,6 +442,44 @@ public class Sixel {
     }
 
     /**
+     * Parse the initializer.
+     */
+    private void parseInit() {
+        int p1 = getParam(0, 0);        // Pixel aspect ratio (ignored)
+        int p2 = getParam(1, 0);        // Background color option
+        int p3 = getParam(2, 0);        // Horizontal grid size (ignored)
+
+        if (DEBUG) {
+            System.err.println("parseInit() " + p1 + " " + p2 + " " + p3);
+        }
+
+        switch (p2) {
+        case 1:
+            /*
+             * Pixels that are not specified with a color will be
+             * transparent.
+             *
+             * The only backend that can currently display transparent images
+             * is the Swing backend.  If that backend is not enabled, then do
+             * not support transparency here because it would lead to screen
+             * artifacts.
+             */
+            if (System.getProperty("jexer.Swing.imagesOverText",
+                    "false").equals("true")) {
+                transparent = true;
+            } else {
+                transparent = false;
+            }
+            break;
+        default:
+            // Pixels that are not specified with a color will be the current
+            // background color.
+            transparent = false;
+            break;
+        }
+    }
+
+    /**
      * Parse the raster attributes.
      */
     private void parseRaster() {
@@ -429,6 +487,11 @@ public class Sixel {
         int pad = getParam(1, 0);  // Aspect ratio denominator
         int pah = getParam(2, 0);  // Horizontal width
         int pav = getParam(3, 0);  // Vertical height
+
+        if (DEBUG) {
+            System.err.println("parseRaster() " + pan + " " + pad + " " +
+                pah + " " + pav);
+        }
 
         if ((pan == pad) && (pah > 0) && (pav > 0)) {
             rasterWidth = pah;
@@ -453,10 +516,21 @@ public class Sixel {
         // DEBUG
         // System.err.printf("Sixel.consume() %c STATE = %s\n", ch, scanState);
 
+        if ((ch == 'q') && (scanState == ScanState.INIT)) {
+            // This is the normal happy path with the introducer string.
+            parseInit();
+            toGround();
+            return;
+        }
+
         // Between decimal 63 (inclusive) and 127 (exclusive) --> pixels
         if ((ch >= 63) && (ch < 127)) {
             if (scanState == ScanState.COLOR) {
                 setPalette();
+            }
+            if (scanState == ScanState.INIT) {
+                parseInit();
+                toGround();
             }
             if (scanState == ScanState.RASTER) {
                 parseRaster();
@@ -473,6 +547,10 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
+            if (scanState == ScanState.INIT) {
+                parseInit();
+                toGround();
+            }
             if (scanState == ScanState.RASTER) {
                 parseRaster();
                 toGround();
@@ -487,6 +565,10 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
+            if (scanState == ScanState.INIT) {
+                parseInit();
+                toGround();
+            }
             if (scanState == ScanState.RASTER) {
                 parseRaster();
                 toGround();
@@ -499,6 +581,10 @@ public class Sixel {
         if (ch == '-') {
             if (scanState == ScanState.COLOR) {
                 setPalette();
+                toGround();
+            }
+            if (scanState == ScanState.INIT) {
+                parseInit();
                 toGround();
             }
             if (scanState == ScanState.RASTER) {
@@ -523,6 +609,10 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
+            if (scanState == ScanState.INIT) {
+                parseInit();
+                toGround();
+            }
             if (scanState == ScanState.RASTER) {
                 parseRaster();
                 toGround();
@@ -536,6 +626,10 @@ public class Sixel {
                 setPalette();
                 toGround();
             }
+            if (scanState == ScanState.INIT) {
+                parseInit();
+                toGround();
+            }
             scanState = ScanState.RASTER;
             return;
         }
@@ -546,6 +640,19 @@ public class Sixel {
             // Unknown character.
             if (DEBUG) {
                 System.err.println("UNKNOWN CHAR: " + ch);
+            }
+            return;
+
+        case INIT:
+            // 30-39, 3B --> param
+            if ((ch >= '0') && (ch <= '9')) {
+                params[paramsI] *= 10;
+                params[paramsI] += (ch - '0');
+            }
+            if (ch == ';') {
+                if (paramsI < params.length - 1) {
+                    paramsI++;
+                }
             }
             return;
 

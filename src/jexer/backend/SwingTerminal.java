@@ -313,6 +313,12 @@ public class SwingTerminal extends LogicalScreen
      */
     private boolean mouse3 = false;
 
+    /**
+     * If true, draw text glyphs underneath images on cells.  This is
+     * expensive.
+     */
+    private boolean imagesOverText = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -676,6 +682,13 @@ public class SwingTerminal extends LogicalScreen
         }
 
         setMouseStyle(System.getProperty("jexer.Swing.mouseStyle", "default"));
+
+        if (System.getProperty("jexer.Swing.imagesOverText",
+                "false").equals("true")) {
+            imagesOverText = true;
+        } else {
+            imagesOverText = false;
+        }
 
         // Set custom colors
         setCustomSystemColors();
@@ -1323,7 +1336,6 @@ public class SwingTerminal extends LogicalScreen
             " " + cell);
         */
 
-        // Draw the background rectangle, then the foreground character.
         assert (cell.isImage());
 
         BufferedImage image = cell.getImage();
@@ -1580,6 +1592,10 @@ public class SwingTerminal extends LogicalScreen
                         || (swing.getFrame() == null)) {
 
                         if (lCell.isImage()) {
+                            if (imagesOverText) {
+                                // Draw the glyph underneath the image.
+                                drawGlyph(gr, lCell, xPixel, yPixel);
+                            }
                             drawImage(gr, lCell, xPixel, yPixel);
                         } else {
                             drawGlyph(gr, lCell, xPixel, yPixel);
@@ -1654,6 +1670,10 @@ public class SwingTerminal extends LogicalScreen
                             || (lCell.isBlink())
                         ) {
                             if (lCell.isImage()) {
+                                if (imagesOverText) {
+                                    // Draw the glyph underneath the image.
+                                    drawGlyph(gr, lCell, xPixel, yPixel);
+                                }
                                 drawImage(gr, lCell, xPixel, yPixel);
                             } else {
                                 drawGlyph(gr, lCell, xPixel, yPixel);

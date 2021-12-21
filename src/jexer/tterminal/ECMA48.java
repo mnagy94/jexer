@@ -7224,6 +7224,16 @@ public class ECMA48 implements Runnable {
             // 0x71 goes to DCS_SIXEL
             if (ch == 0x71) {
                 sixelParseBuffer.setLength(0);
+                // Params contains the sixel introducer string, include it
+                // and the trailing 'q'.
+                for (Integer ps: csiParams) {
+                    sixelParseBuffer.append(ps.toString());
+                    sixelParseBuffer.append(';');
+                }
+                if (sixelParseBuffer.length() > 0) {
+                    sixelParseBuffer.setLength(sixelParseBuffer.length() - 1);
+                    sixelParseBuffer.append('q');
+                }
                 scanState = ScanState.DCS_SIXEL;
             } else if ((ch >= 0x40) && (ch <= 0x7E)) {
                 // 0x40-7E goes to DCS_PASSTHROUGH
@@ -7480,7 +7490,8 @@ public class ECMA48 implements Runnable {
             + "'");
         */
 
-        Sixel sixel = new Sixel(sixelParseBuffer.toString(), sixelPalette);
+        Sixel sixel = new Sixel(sixelParseBuffer.toString(), sixelPalette,
+            jexer.backend.SwingTerminal.attrToBackgroundColor(currentState.attr));
         BufferedImage image = sixel.getImage();
 
         // System.err.println("parseSixel(): image " + image);
@@ -7497,7 +7508,12 @@ public class ECMA48 implements Runnable {
             return;
         }
 
-        imageToCells(image, true);
+        boolean maybeTransparent = false;
+        if (System.getProperty("jexer.Swing.imagesOverText",
+                "false").equals("true")) {
+            maybeTransparent = true;
+        }
+        imageToCells(image, true, maybeTransparent);
     }
 
     /**
@@ -7564,7 +7580,7 @@ public class ECMA48 implements Runnable {
             }
         }
 
-        imageToCells(image, scroll);
+        imageToCells(image, scroll, false);
     }
 
     /**
@@ -7582,6 +7598,7 @@ public class ECMA48 implements Runnable {
         int imageHeight = 0;
         boolean scroll = false;
         BufferedImage image = null;
+        boolean maybeTransparent = false;
         try {
             byte [] bytes = StringUtils.fromBase64(data.getBytes());
 
@@ -7599,6 +7616,7 @@ public class ECMA48 implements Runnable {
                     // File does not have PNG header, bail out.
                     return;
                 }
+                maybeTransparent = true;
                 break;
 
             case 2:
@@ -7639,7 +7657,7 @@ public class ECMA48 implements Runnable {
             return;
         }
 
-        imageToCells(image, scroll);
+        imageToCells(image, scroll, maybeTransparent);
     }
 
     /**
@@ -7647,8 +7665,12 @@ public class ECMA48 implements Runnable {
      *
      * @param image the image to display
      * @param scroll if true, scroll the image and move the cursor
+     * @param maybeTransparent if true, this image format might have
+     * transparency
      */
-    private void imageToCells(final BufferedImage image, final boolean scroll) {
+    private void imageToCells(BufferedImage image, final boolean scroll,
+        final boolean maybeTransparent) {
+
         assert (image != null);
 
         /*
@@ -7667,26 +7689,50 @@ public class ECMA48 implements Runnable {
          *
          * 2. Set (x, y) cell image data.
          *
-         * 3. For the right and bottom edges:
+         * 3. For the right and bottom edges (not yet done):
          *
          *   a. Render the text to pixels using Terminus font.
          *
          *   b. Blit the image on top of the text, using alpha channel.
          */
+
+        // If the backend supports transparent images, then we will not
+        // draw the black underneath the cells.
+        boolean transparent = false;
+        if (System.getProperty("jexer.Swing.imagesOverText",
+                "false").equals("true")) {
+            transparent = true;
+        }
+
         int cellColumns = image.getWidth() / textWidth;
-        if (cellColumns * textWidth < image.getWidth()) {
+        while (cellColumns * textWidth < image.getWidth()) {
             cellColumns++;
         }
         int cellRows = image.getHeight() / textHeight;
-        if (cellRows * textHeight < image.getHeight()) {
+        while (cellRows * textHeight < image.getHeight()) {
             cellRows++;
+        }
+
+        if (!transparent && maybeTransparent) {
+            // Re-render the image against a black background, so that alpha
+            // in the image does not lead to bleed-through artifacts.
+            BufferedImage newImage;
+            newImage = new BufferedImage(cellColumns * textWidth,
+                cellRows * textHeight, BufferedImage.TYPE_INT_ARGB);
+
+            java.awt.Graphics gr = newImage.getGraphics();
+            gr.setColor(java.awt.Color.BLACK);
+            gr.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+            gr.drawImage(image, 0, 0, null, null);
+            gr.dispose();
+            image = newImage;
         }
 
         // Break the image up into an array of cells.
         Cell [][] cells = new Cell[cellColumns][cellRows];
-
         for (int x = 0; x < cellColumns; x++) {
             for (int y = 0; y < cellRows; y++) {
+                Cell cell = new Cell();
 
                 int width = textWidth;
                 if ((x + 1) * textWidth > image.getWidth()) {
@@ -7696,25 +7742,27 @@ public class ECMA48 implements Runnable {
                 if ((y + 1) * textHeight > image.getHeight()) {
                     height = image.getHeight() - (y * textHeight);
                 }
-
-                Cell cell = new Cell();
-
-                // Always re-render the image against a black background, so
-                // that alpha in the image does not lead to bleed-through
-                // artifacts.
-                BufferedImage newImage;
-                newImage = new BufferedImage(textWidth, textHeight,
-                    BufferedImage.TYPE_INT_ARGB);
-
-                java.awt.Graphics gr = newImage.getGraphics();
-                gr.setColor(java.awt.Color.BLACK);
-                gr.fillRect(0, 0, textWidth, textHeight);
-                gr.drawImage(image.getSubimage(x * textWidth,
-                        y * textHeight, width, height),
-                    0, 0, null, null);
-                gr.dispose();
-                cell.setImage(newImage);
-
+                if ((width != textWidth) || (height != textHeight)) {
+                    // Copy the smaller-than-text-cell-size image to a
+                    // full-text-cell-size.
+                    BufferedImage newImage;
+                    newImage = new BufferedImage(textWidth, textHeight,
+                        BufferedImage.TYPE_INT_ARGB);
+                    java.awt.Graphics gr = newImage.getGraphics();
+                    gr.setColor(java.awt.Color.BLACK);
+                    if (!transparent) {
+                        gr.fillRect(0, 0, newImage.getWidth(),
+                            newImage.getHeight());
+                    }
+                    gr.drawImage(image.getSubimage(x * textWidth,
+                            y * textHeight, width, height),
+                        0, 0, null, null);
+                    gr.dispose();
+                    cell.setImage(newImage);
+                } else {
+                    cell.setImage(image.getSubimage(x * textWidth,
+                            y * textHeight, width, height));
+                }
                 cells[x][y] = cell;
             }
         }
@@ -7722,14 +7770,16 @@ public class ECMA48 implements Runnable {
         int x0 = currentState.cursorX;
         int y0 = currentState.cursorY;
         for (int y = 0; y < cellRows; y++) {
+            DisplayLine line = display.get(currentState.cursorY);
+
             for (int x = 0; x < cellColumns; x++) {
                 assert (currentState.cursorX <= rightMargin);
 
-                // A real sixel terminal would render the text of the current
-                // cell first, then image over it (accounting for blank
-                // pixels).  We do not support that.  A cell is either text,
-                // or image, but not a mix of image-over-text.
-                DisplayLine line = display.get(currentState.cursorY);
+                // Keep the character data from the old cell, putting the
+                // image data over it.
+                Cell oldCell = line.charAt(currentState.cursorX);
+                cells[x][y].setChar(oldCell.getChar());
+                cells[x][y].setAttr(oldCell, true);
                 line.replace(currentState.cursorX, cells[x][y]);
 
                 // If at the end of the visible screen, stop.

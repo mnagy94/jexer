@@ -353,7 +353,7 @@ public class LogicalScreen implements Screen {
         }
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
-            logical[X][Y].setTo(attr);
+            logical[X][Y].setAttr(attr, true);
 
             // If this happens to be the cursor position, make the position
             // dirty.

@@ -136,7 +136,16 @@ The color wheel with that palette is shown below:
 
 ![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
 
+There is experimental support, only on the Swing backend, for
+rendering the text underneath images (jexer.Swing.imagesOverText).
+This is currently very not optimized -- cells are rendered below
+images irregardless if they are actually fully covered by pixels --
+but it is very cool looking.  (And if you like this, then you need to
+go check out [notcurses](https://github.com/dankamongmen/notcurses)
+poste haste.)  This is most visible in terminal windows with sixel and
+PNG images.
 
+![Hello notcurses! 🤘](/screenshots/for_nick.png?raw=true "Hello notcurses! 🤘🙂")
 
 Terminal Support
 ----------------

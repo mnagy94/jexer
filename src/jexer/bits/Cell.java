@@ -388,13 +388,13 @@ public class Cell extends CellAttributes {
                 return false;
             }
             // Either both objects have their image inverted, or neither do.
-            // Now if the images are identical the cells are the same
-            // visually.
             if ((imageHashCode == that.imageHashCode)
                 && (background.equals(that.background))
             ) {
-                return true;
+                // Fall through to the attributes check below.
+                // ...
             } else {
+                // The cells are not the same visually.
                 return false;
             }
         }
@@ -467,6 +467,19 @@ public class Cell extends CellAttributes {
      */
     public void setAttr(final CellAttributes that) {
         image = null;
+        super.setTo(that);
+    }
+
+    /**
+     * Set my field attr values to that's field.
+     *
+     * @param that a CellAttributes instance
+     * @param keepImage if true, retain the image data
+     */
+    public void setAttr(final CellAttributes that, final boolean keepImage) {
+        if (!keepImage) {
+            image = null;
+        }
         super.setTo(that);
     }
 
