@@ -4733,6 +4733,38 @@ public class ECMA48 implements Runnable {
             writeRemote("\033P!|00010203\033\\");
         }
     }
+    /**
+     * XTVERSION - Report xterm name and version.
+     */
+    private void xtversion() {
+        int i = -1;
+        if (collectBuffer.length() > 0) {
+            String args = collectBuffer.substring(1);
+            if (collectBuffer.charAt(0) == '>') {
+                if (csiParams.size() > 0) {
+                    i = csiParams.get(0);
+                }
+            } else {
+                // Unknown code, bail out
+                return;
+            }
+        }
+
+        if (i != 0) {
+            return;
+        }
+
+        if (type == DeviceType.XTERM) {
+            if (i == 0) {
+                // DCS > | {text} ST
+                if (s8c1t == true) {
+                    writeRemote("\u0090>|jexer\u009c");
+                } else {
+                    writeRemote("\033P>|jexer\033\\");
+                }
+            }
+        }
+    }
 
     /**
      * DECSTBM - Set top and bottom margins.
@@ -6873,8 +6905,15 @@ public class ECMA48 implements Runnable {
                 case 'p':
                     break;
                 case 'q':
-                    // DECLL - Load leds
-                    // Not supported
+                    if ((type == DeviceType.XTERM)
+                        && (collectBuffer.length() > 0)
+                        && (collectBuffer.charAt(collectBuffer.length() - 1) == '>')
+                    ) {
+                        xtversion();
+                    } else {
+                        // DECLL - Load leds
+                        // Not supported
+                    }
                     break;
                 case 'r':
                     // DECSTBM - Set top and bottom margins

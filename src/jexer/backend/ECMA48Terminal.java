@@ -82,6 +82,7 @@ public class ECMA48Terminal extends LogicalScreen
         ESCAPE_INTERMEDIATE,
         CSI_ENTRY,
         CSI_PARAM,
+        XTVERSION,
         MOUSE,
         MOUSE_SGR,
     }
@@ -245,6 +246,11 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean iterm2Images = false;
 
     /**
+     * If true, allow iTerm2 images on the bottom row.
+     */
+    private boolean iterm2BottomRow = false;
+
+    /**
      * The iTerm2 post-rendered string cache.
      */
     private ImageCache iterm2Cache = null;
@@ -280,6 +286,17 @@ public class ECMA48Terminal extends LogicalScreen
      * If true, '?' was seen in terminal response.
      */
     private boolean decPrivateModeFlag = false;
+
+    /**
+     * If true, we are waiting on the XTVERSION response.  (Which might never
+     * come if this terminal doesn't support it.  Blech.)
+     */
+    private boolean xtversionQuery = false;
+
+    /**
+     * The string being built by XTVERSION.
+     */
+    private StringBuilder xtversionResponse = new StringBuilder();
 
     /**
      * The terminal's input.  If an InputStream is not specified in the
@@ -1199,6 +1216,10 @@ public class ECMA48Terminal extends LogicalScreen
                     "UTF-8"));
         }
 
+        // Request xterm version.  Due to the ambiguity between the response
+        // and Alt-P, this must be the first thing to request.
+        this.output.printf("%s", xtermReportVersion());
+
         // Request Device Attributes
         this.output.printf("\033[c");
 
@@ -1301,6 +1322,10 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         this.output = writer;
+
+        // Request xterm version.  Due to the ambiguity between the response
+        // and Alt-P, this must be the first thing to request.
+        this.output.printf("%s", xtermReportVersion());
 
         // Request Device Attributes
         this.output.printf("\033[c");
@@ -1530,6 +1555,10 @@ public class ECMA48Terminal extends LogicalScreen
      * Reload options from System properties.
      */
     public void reloadOptions() {
+        if (debugToStderr) {
+            System.err.println("reloadOptions()");
+        }
+
         // Permit RGB colors only if externally requested.
         if (System.getProperty("jexer.ECMA48.modifyOtherKeys",
                 "false").equals("true")
@@ -1593,12 +1622,17 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (!daResponseSeen) {
-            // Default to not supporting iTerm2 images.
-            if (System.getProperty("jexer.ECMA48.iTerm2Images",
-                    "false").equals("true")) {
-                iterm2Images = true;
-            } else {
-                iterm2Images = false;
+            if (xtversionQuery == false) {
+                String str = System.getProperty("jexer.ECMA48.iTerm2Images");
+                // Default to not supporting iTerm2 images.
+                if (str != null) {
+                    if (str.equals("false")) {
+                        iterm2Images = false;
+                    }
+                    if (str.equals("true")) {
+                        iterm2Images = true;
+                    }
+                }
             }
 
             // Default to using JPG Jexer images if terminal supports it.
@@ -2257,6 +2291,7 @@ public class ECMA48Terminal extends LogicalScreen
         params.clear();
         params.add("");
         decPrivateModeFlag = false;
+        xtversionResponse.setLength(0);
     }
 
     /**
@@ -2737,6 +2772,43 @@ public class ECMA48Terminal extends LogicalScreen
     }
 
     /**
+     * Apply heuristics against the version string returned by XTVERSION.
+     *
+     * @param text the xtversion text string
+     */
+    private void fingerprintTerminal(final String text) {
+        if (debugToStderr) {
+            System.err.println("fingerprintTerminal(): '" + text + "'");
+        }
+
+        // iTerm2 image support will be ASSUMED for the following terminals
+        // if iTerm2Images is not explicitly false.
+        if (text.contains("WezTerm")
+            || text.contains("mintty")
+            || text.contains("iTerm2")
+        ) {
+            String str = System.getProperty("jexer.ECMA48.iTerm2Images");
+            if ((str != null) && (str.equals("false"))) {
+                if (debugToStderr) {
+                    System.err.println("  -- terminal supports iTerm2, but " +
+                        "explicitly disabled in config");
+                }
+                iterm2Images = false;
+            } else {
+                if (debugToStderr) {
+                    System.err.println("  -- enable iTerm2 images");
+                }
+                iterm2Images = true;
+            }
+            // These iTerm2-compatible terminals also support
+            // doNotMoveCursor.
+            if (text.contains("WezTerm")) {
+                iterm2BottomRow = true;
+            }
+        }
+    }
+
+    /**
      * Parses the next character of input to see if an InputEvent is
      * fully here.
      *
@@ -2792,6 +2864,16 @@ public class ECMA48Terminal extends LogicalScreen
             break;
 
         case ESCAPE:
+            // 'P', during the XTVERSION query only, goes to XTVERSION.
+            // What a fucking mess.
+            if ((ch == 'P') && (xtversionQuery == true)) {
+                state = ParseState.XTVERSION;
+                xtversionResponse.setLength(0);
+                xtversionQuery = false;
+                return;
+            }
+            xtversionQuery = false;
+
             if (ch <= 0x1F) {
                 // ALT-Control character
                 events.add(controlChar(ch, true));
@@ -3227,6 +3309,23 @@ public class ECMA48Terminal extends LogicalScreen
             }
             return;
 
+        case XTVERSION:
+            if ((ch == '\\') &&
+                (xtversionResponse.length() > 0) &&
+                (xtversionResponse.charAt(xtversionResponse.length() - 1)
+                    == 0x1B)
+            ) {
+                // This is ST, end of the line.
+                fingerprintTerminal(xtversionResponse.substring(1,
+                        xtversionResponse.length() - 1));
+                resetParser();
+                return;
+            }
+
+            // Continue collecting until we see ST.
+            xtversionResponse.append(ch);
+            return;
+
         default:
             break;
         }
@@ -3264,6 +3363,29 @@ public class ECMA48Terminal extends LogicalScreen
      */
     private String xtermResetSixelSettings() {
         return "\033[?1070h";
+    }
+
+    /**
+     * Request (u)xterm to report its program version (XTVERSION).
+     *
+     * I am not a fan of fingerprinting terminals in this fashion.  They
+     * should instead be reporting their features in DA1 using one of the
+     * available ~10000 unused IDs out there.  It is also bad because the
+     * string returned looks like "Alt-P | {other text} ST", which is
+     * completely valid keyboard input, hence the boolean to bypass Alt-P
+     * processing IF the response comes in AND this has to be the FIRST thing
+     * we send to the terminal.
+     *
+     * Alas, fingerprinting is now the path of least resistance.
+     *
+     * This is currently only used to assume support for iTerm2 image
+     * protocol.
+     *
+     * @return the string to emit to xterm
+     */
+    private String xtermReportVersion() {
+        xtversionQuery = true;
+        return "\033[>0q";
     }
 
     /**
@@ -3873,6 +3995,18 @@ public class ECMA48Terminal extends LogicalScreen
             return sb.toString();
         }
 
+        if ((y == height - 1) && (iterm2BottomRow == false)) {
+            // We are on the bottom row.  If this terminal does not support
+            // doNotMoveCursor, then it will scroll the entire screen if we
+            // draw a picture here.  Do not draw the image, bail out instead.
+            sb.append(normal());
+            sb.append(gotoXY(x, y));
+            for (int j = 0; j < cells.size(); j++) {
+                sb.append(' ');
+            }
+            return sb.toString();
+        }
+
         if (iterm2Cache == null) {
             iterm2Cache = new ImageCache(height * 10);
         }
@@ -3990,7 +4124,7 @@ public class ECMA48Terminal extends LogicalScreen
 
         sb.append("\033]1337;File=name=");
         sb.append(StringUtils.toBase64("jexer".getBytes()));
-        sb.append(";inline=1;");
+        sb.append(";inline=1;doNotMoveCursor=1;");
         sb.append(String.format("width=%dpx;height=%dpx;preserveAspectRatio=1:",
                 image.getWidth(), Math.min(image.getHeight(),
                     getTextHeight())));
