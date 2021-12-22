@@ -66,7 +66,7 @@ public class HelpFile {
     /**
      * The XML factory.
      */
-    private static DocumentBuilder domBuilder;
+    private DocumentBuilder domBuilder;
 
     /**
      * The map of topics by title.
