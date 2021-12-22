@@ -137,7 +137,7 @@ The color wheel with that palette is shown below:
 ![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
 
 There is experimental support for rendering the text underneath images
-(jexer.Swing.imagesOverText and jexer.Swing.imagesOverText).  This is
+(jexer.ECMA48.imagesOverText and jexer.Swing.imagesOverText).  This is
 currently poorly optimized -- cells must check for transparency
 frequently -- but it is very cool looking.  (And if you like this,
 then you need to go check out
