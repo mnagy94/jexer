@@ -31,9 +31,9 @@ package jexer.tackboard;
 import java.awt.image.BufferedImage;
 
 /**
- * TackboardItem class represents a single item image on the tackboard.
+ * Bitmap is a raw bitmap image.
  */
-public class TackboardItem implements Comparable<TackboardItem> {
+public class Bitmap extends TackboardItem {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -44,19 +44,9 @@ public class TackboardItem implements Comparable<TackboardItem> {
     // ------------------------------------------------------------------------
 
     /**
-     * X pixel coordinate.
+     * The image data.
      */
-    private int x = 0;
-
-    /**
-     * Y pixel coordinate.
-     */
-    private int y = 0;
-
-    /**
-     * Z pixel coordinate.
-     */
-    private int z = 0;
+    private BufferedImage image;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -68,77 +58,18 @@ public class TackboardItem implements Comparable<TackboardItem> {
      * @param x X pixel coordinate
      * @param y Y pixel coordinate
      * @param z Z coordinate
+     * @param image the image
      */
-    public TackboardItem(final int x, final int y, final int z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
+    public Bitmap(final int x, final int y, final int z,
+        final BufferedImage image) {
 
-    /**
-     * Public constructor.
-     */
-    public TackboardItem() {
-        // NOP
+        super(x, y, z);
+        this.image = image;
     }
 
     // ------------------------------------------------------------------------
     // TackboardItem ----------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Get X position.
-     *
-     * @return absolute X position of the top-left corner in pixels
-     */
-    public final int getX() {
-        return x;
-    }
-
-    /**
-     * Set X position.
-     *
-     * @param x absolute X position of the top-left corner in pixels
-     */
-    public final void setX(final int x) {
-        this.x = x;
-    }
-
-    /**
-     * Get Y position.
-     *
-     * @return absolute Y position of the top-left corner in pixels
-     */
-    public final int getY() {
-        return y;
-    }
-
-    /**
-     * Set Y position.
-     *
-     * @param y absolute Y position of the top-left corner in pixels
-     */
-    public final void setY(final int y) {
-        this.y = y;
-    }
-
-    /**
-     * Get Z position.
-     *
-     * @return absolute Z position
-     */
-    public final int getZ() {
-        return z;
-    }
-
-    /**
-     * Set Z position.
-     *
-     * @param z absolute Z position
-     */
-    public final void setZ(final int z) {
-        this.z = z;
-    }
 
     /**
      * Comparison check.  All fields must match to return true.
@@ -148,13 +79,12 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     @Override
     public boolean equals(final Object rhs) {
-        if (!(rhs instanceof TackboardItem)) {
+        if (!(rhs instanceof Bitmap)) {
             return false;
         }
-        TackboardItem that = (TackboardItem) rhs;
-        return ((this.x == that.x)
-            && (this.y == that.y)
-            && (this.z == that.z));
+        Bitmap that = (Bitmap) rhs;
+        return (super.equals(rhs)
+            && (this.image.equals(that.image)));
     }
 
     /**
@@ -168,26 +98,8 @@ public class TackboardItem implements Comparable<TackboardItem> {
         int B = 23;
         int hash = A;
         hash = (B * hash) + super.hashCode();
-        hash = (B * hash) + x;
-        hash = (B * hash) + y;
-        hash = (B * hash) + z;
+        hash = (B * hash) + image.hashCode();
         return hash;
-    }
-
-    /**
-     * Comparison operator.
-     *
-     * @param that another TackboardItem instance
-     * @return differences between this.x/y/z and that.x/y/z
-     */
-    public int compareTo(final TackboardItem that) {
-        if (this.z != that.z) {
-            return this.z - that.z;
-        }
-        if (this.y != that.y) {
-            return that.y - this.y;
-        }
-        return that.x - this.x;
     }
 
     /**
@@ -197,7 +109,9 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     @Override
     public String toString() {
-        return String.format("(%d, %d, %d)", x, y, z);
+        return String.format("(%d, %d, %d) %d X %d", getX(), getY(), getZ(),
+            (image != null ? image.getWidth() : "null"),
+            (image != null ? image.getHeight() : "null"));
     }
 
     /**
@@ -206,9 +120,13 @@ public class TackboardItem implements Comparable<TackboardItem> {
      * @return the image, or null if this item does not have any pixels to
      * show
      */
+    @Override
     public BufferedImage getImage() {
-        // Default does nothing.
-        return null;
+        return image;
     }
+
+    // ------------------------------------------------------------------------
+    // Bitmap -----------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
 }

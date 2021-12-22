@@ -28,10 +28,12 @@
  */
 package jexer.demos;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import javax.imageio.ImageIO;
 
 import jexer.TAction;
 import jexer.TApplication;
@@ -45,6 +47,8 @@ import jexer.TWidget;
 import jexer.TWindow;
 import jexer.event.TCommandEvent;
 import jexer.layout.StretchLayoutManager;
+import jexer.tackboard.Bitmap;
+import jexer.tackboard.Tackboard;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -101,6 +105,11 @@ public class DemoMainWindow extends TWindow {
      * it can be accessed by the anonymous TAction class.
      */
     TProgressBar progressBar2;
+
+    /**
+     * Tackboard can display pixels over text.
+     */
+    Tackboard tackboard = new Tackboard();
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -293,6 +302,19 @@ public class DemoMainWindow extends TWindow {
             }
         );
 
+        if (false) {
+            // Testing: put an image on the screen.
+            try {
+                ClassLoader loader;
+                loader = Thread.currentThread().getContextClassLoader();
+                BufferedImage image;
+                image = ImageIO.read(loader.getResource("trans_icon.png"));
+                tackboard.addItem(new Bitmap(17, 41, 0, image));
+            } catch (Exception e) {
+                new jexer.TExceptionDialog(getApplication(), e);
+            }
+        }
+
         /*
         addButton("Exception", 35, row + 3,
             new TAction() {
@@ -323,6 +345,18 @@ public class DemoMainWindow extends TWindow {
     // ------------------------------------------------------------------------
     // TWindow ----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Show the bitmap(s) on the Tackboard.
+     */
+    @Override
+    public void draw() {
+        super.draw();
+
+        // For this one, render to the entire screen, not to the window.
+        getScreen().resetClipping();
+        tackboard.draw(getScreen());
+    }
 
     /**
      * We need to override onClose so that the timer will no longer be called
