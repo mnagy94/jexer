@@ -7749,7 +7749,13 @@ public class ECMA48 implements Runnable {
                 if ((y + 1) * textHeight > image.getHeight()) {
                     height = image.getHeight() - (y * textHeight);
                 }
-                if ((width != textWidth) || (height != textHeight)) {
+
+                // I'm genuinely not sure if making many small cells with
+                // array copy is better than slicing.  Memory pressure is
+                // killing it at high animation rates.  Leaving the true in
+                // the check below will use the smaller cells rather than
+                // subImages.
+                if (true || (width != textWidth) || (height != textHeight)) {
                     // Copy the smaller-than-text-cell-size image to a
                     // full-text-cell-size.
                     BufferedImage newImage;

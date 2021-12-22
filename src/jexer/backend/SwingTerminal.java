@@ -99,7 +99,7 @@ public class SwingTerminal extends LogicalScreen
     /**
      * The terminus font resource filename.
      */
-    public static final String FONTFILE = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
+    public static final String FONTFILE = "terminus-ttf-4.49.1/TerminusTTF-Bold-4.49.1.ttf";
 
     /**
      * Cursor style to draw.
