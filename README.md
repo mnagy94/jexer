@@ -146,10 +146,11 @@ This is most visible in terminal windows with sixel and PNG images.
 
 ![Hello notcurses! 🤘](/screenshots/for_nick.png?raw=true "Hello notcurses! 🤘🙂")
 
-Performance is still _very_ bad on multihead, and crashes lie in wait.
-(Also, on the ECMA48 backend the internal font is used for rendering
-because terminals are extremely finicky when putting sixel text over
-images and this was the most simple to get something going.)  But hey:
+Performance of transparent images-over-text is still _very_ bad on
+multihead, and crashes lie in wait.  (Also, on the ECMA48 backend the
+internal font is used for rendering because terminals are extremely
+finicky when putting text over sixel images and this was the most
+simple way to get something going.)  But hey:
 
 ![Trans Heart Multihead](/screenshots/overlapping_multihead.png?raw=true "Trans Heart Multihead")
 
