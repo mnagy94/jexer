@@ -7802,7 +7802,9 @@ public class ECMA48 implements Runnable {
                 Cell oldCell = line.charAt(currentState.cursorX);
                 cells[x][y].setChar(oldCell.getChar());
                 cells[x][y].setAttr(oldCell, true);
-                if (cells[x][y].isTransparentImage()) {
+                if (transparent && maybeTransparent
+                    && cells[x][y].isTransparentImage()
+                ) {
                     if (oldCell.isImage()) {
                         // Blit the old cell image underneath this cell's
                         // image.
@@ -7816,7 +7818,13 @@ public class ECMA48 implements Runnable {
                         gr.dispose();
                         cells[x][y].setImage(newImage);
                         cells[x][y].isTransparentImage();
-                    } else {
+                    } else if (false) {
+                        // This path would be good for the ECMA48 backend, as
+                        // it renders all images onto cells at once.  On the
+                        // Swing backend it can lead to multiple fonts and
+                        // kind of weird looking things, so leaving it
+                        // disabled.
+
                         // Render the old cell text underneath this cell.
                         if (lastTextHeight != textHeight) {
                             glyphMaker = GlyphMaker.getInstance(textHeight);
