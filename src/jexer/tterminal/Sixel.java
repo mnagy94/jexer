@@ -198,6 +198,15 @@ public class Sixel {
     // ------------------------------------------------------------------------
 
     /**
+     * If true, this image might have transparent pixels.
+     *
+     * @return whether this image might have transparent pixels
+     */
+    public boolean isTransparent() {
+        return transparent;
+    }
+
+    /**
      * Get the image.
      *
      * @return the sixel data as an image.

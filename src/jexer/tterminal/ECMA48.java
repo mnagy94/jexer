@@ -7508,10 +7508,12 @@ public class ECMA48 implements Runnable {
             return;
         }
 
-        boolean maybeTransparent = false;
-        if (System.getProperty("jexer.Swing.imagesOverText",
-                "false").equals("true")) {
-            maybeTransparent = true;
+        boolean maybeTransparent = sixel.isTransparent();
+        if (maybeTransparent) {
+            if (!System.getProperty("jexer.Swing.imagesOverText",
+                    "false").equals("true")) {
+                maybeTransparent = false;
+            }
         }
         imageToCells(image, true, maybeTransparent);
     }
@@ -7656,6 +7658,11 @@ public class ECMA48 implements Runnable {
         } else {
             return;
         }
+        if (maybeTransparent) {
+            if (image.getTransparency() == java.awt.Transparency.OPAQUE) {
+                maybeTransparent = false;
+            }
+        }
 
         imageToCells(image, scroll, maybeTransparent);
     }
@@ -7770,6 +7777,11 @@ public class ECMA48 implements Runnable {
                     //
                     // Truth is performance is going to be bad for a while...
                     cell.isTransparentImage();
+                } else if (transparent && !maybeTransparent) {
+                    // We support transparency, but this image doesn't have
+                    // any transparent pixels.  Force the cell to never check
+                    // transparency.
+                    cell.setOpaqueImage();
                 }
 
                 cells[x][y] = cell;
@@ -7780,6 +7792,7 @@ public class ECMA48 implements Runnable {
         int y0 = currentState.cursorY;
         for (int y = 0; y < cellRows; y++) {
             DisplayLine line = display.get(currentState.cursorY);
+            BufferedImage newImage;
 
             for (int x = 0; x < cellColumns; x++) {
                 assert (currentState.cursorX <= rightMargin);
@@ -7789,6 +7802,41 @@ public class ECMA48 implements Runnable {
                 Cell oldCell = line.charAt(currentState.cursorX);
                 cells[x][y].setChar(oldCell.getChar());
                 cells[x][y].setAttr(oldCell, true);
+                if (cells[x][y].isTransparentImage()) {
+                    if (oldCell.isImage()) {
+                        // Blit the old cell image underneath this cell's
+                        // image.
+                        newImage = new BufferedImage(textWidth,
+                            textHeight, BufferedImage.TYPE_INT_ARGB);
+
+                        java.awt.Graphics gr = newImage.getGraphics();
+                        gr.setColor(java.awt.Color.BLACK);
+                        gr.drawImage(oldCell.getImage(), 0, 0, null, null);
+                        gr.drawImage(cells[x][y].getImage(), 0, 0, null, null);
+                        gr.dispose();
+                        cells[x][y].setImage(newImage);
+                        cells[x][y].isTransparentImage();
+                    } else {
+                        // Render the old cell text underneath this cell.
+                        if (lastTextHeight != textHeight) {
+                            glyphMaker = GlyphMaker.getInstance(textHeight);
+                            lastTextHeight = textHeight;
+                        }
+                        newImage = new BufferedImage(textWidth,
+                            textHeight, BufferedImage.TYPE_INT_ARGB);
+
+                        BufferedImage textImage = glyphMaker.getImage(oldCell,
+                            textWidth, textHeight);
+
+                        java.awt.Graphics gr = newImage.getGraphics();
+                        gr.setColor(java.awt.Color.BLACK);
+                        gr.drawImage(textImage, 0, 0, null, null);
+                        gr.drawImage(cells[x][y].getImage(), 0, 0, null, null);
+                        gr.dispose();
+                        cells[x][y].setImage(newImage);
+                        cells[x][y].isTransparentImage();
+                    }
+                }
                 line.replace(currentState.cursorX, cells[x][y]);
 
                 // If at the end of the visible screen, stop.

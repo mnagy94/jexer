@@ -252,6 +252,16 @@ public class Cell extends CellAttributes {
     }
 
     /**
+     * Force calls to isTransparentImage() to always return false.
+     */
+    public void setOpaqueImage() {
+        if (image == null) {
+            hasTransparentPixels = -1;
+        }
+        hasTransparentPixels = 2;
+    }
+
+    /**
      * Restore the image in this cell to its normal version, if it has one.
      */
     public void restoreImage() {
