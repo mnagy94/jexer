@@ -1817,6 +1817,16 @@ public class SwingTerminal extends LogicalScreen
         return swing;
     }
 
+    /**
+     * Check if screen will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    public boolean isImagesOverText() {
+        return imagesOverText;
+    }
+
     // ------------------------------------------------------------------------
     // KeyListener ------------------------------------------------------------
     // ------------------------------------------------------------------------

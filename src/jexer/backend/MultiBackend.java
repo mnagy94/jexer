@@ -214,6 +214,22 @@ public class MultiBackend implements Backend {
         }
     }
 
+    /**
+     * Check if backend will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    public boolean isImagesOverText() {
+        // If any connected backends can do it, then this one can too.
+        for (Backend backend: backends) {
+            if (backend.isImagesOverText()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // ------------------------------------------------------------------------
     // MultiBackend -----------------------------------------------------------
     // ------------------------------------------------------------------------

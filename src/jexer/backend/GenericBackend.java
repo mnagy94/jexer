@@ -232,4 +232,16 @@ public abstract class GenericBackend implements Backend {
         this.readOnly = readOnly;
     }
 
+    /**
+     * Check if backend will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    public boolean isImagesOverText() {
+        // Default implementation: any images will completely replace text at
+        // that cell.
+        return false;
+    }
+
 }

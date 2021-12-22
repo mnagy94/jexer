@@ -51,6 +51,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import jexer.TKeypress;
+import jexer.backend.Backend;
 import jexer.backend.GlyphMaker;
 import jexer.bits.Color;
 import jexer.bits.Cell;
@@ -241,6 +242,11 @@ public class ECMA48 implements Runnable {
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * The backend that will be responsible for rendering.
+     */
+    private Backend backend;
 
     /**
      * The enclosing listening object.
@@ -869,6 +875,15 @@ public class ECMA48 implements Runnable {
     // ------------------------------------------------------------------------
     // ECMA48 -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Set the backend to enable querying uncommon rendering features.
+     *
+     * @param backend the backend
+     */
+    public void setBackend(final Backend backend) {
+        this.backend = backend;
+    }
 
     /**
      * Wait for a period of time to get output from the launched process.
@@ -7484,14 +7499,18 @@ public class ECMA48 implements Runnable {
      * the text cells.
      */
     private void parseSixel() {
-
         /*
         System.err.println("parseSixel(): '" + sixelParseBuffer.toString()
             + "'");
         */
 
+        boolean maybeTransparent = false;
+        if ((backend != null) && backend.isImagesOverText()) {
+            maybeTransparent = true;
+        }
         Sixel sixel = new Sixel(sixelParseBuffer.toString(), sixelPalette,
-            jexer.backend.SwingTerminal.attrToBackgroundColor(currentState.attr));
+            jexer.backend.SwingTerminal.attrToBackgroundColor(currentState.attr),
+            maybeTransparent);
         BufferedImage image = sixel.getImage();
 
         // System.err.println("parseSixel(): image " + image);
@@ -7508,12 +7527,8 @@ public class ECMA48 implements Runnable {
             return;
         }
 
-        boolean maybeTransparent = sixel.isTransparent();
         if (maybeTransparent) {
-            if (!System.getProperty("jexer.Swing.imagesOverText",
-                    "false").equals("true")) {
-                maybeTransparent = false;
-            }
+            maybeTransparent = sixel.isTransparent();
         }
         imageToCells(image, true, maybeTransparent);
     }
@@ -7706,8 +7721,7 @@ public class ECMA48 implements Runnable {
         // If the backend supports transparent images, then we will not
         // draw the black underneath the cells.
         boolean transparent = false;
-        if (System.getProperty("jexer.Swing.imagesOverText",
-                "false").equals("true")) {
+        if ((backend != null) && backend.isImagesOverText()) {
             transparent = true;
         }
 

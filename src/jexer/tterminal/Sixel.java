@@ -166,6 +166,11 @@ public class Sixel {
     private boolean abort = false;
 
     /**
+     * If true, transparency will be honored.
+     */
+    private boolean maybeTransparent = false;
+
+    /**
      * If set, color index 0 will be set to transparent.
      */
     private boolean transparent = false;
@@ -179,10 +184,12 @@ public class Sixel {
      *
      * @param buffer the sixel data to parse
      * @param palette palette to use, or null for a private palette
-     * @param the background color to use
+     * @param background the background color to use
+     * @param maybeTransparent if true, transparency in the image will be
+     * honored
      */
     public Sixel(final String buffer, final HashMap<Integer, Color> palette,
-        Color background) {
+        final Color background, final boolean maybeTransparent) {
 
         this.buffer = buffer;
         if (palette == null) {
@@ -191,6 +198,7 @@ public class Sixel {
             this.palette = palette;
         }
         this.background = background;
+        this.maybeTransparent = maybeTransparent;
     }
 
     // ------------------------------------------------------------------------
@@ -466,15 +474,9 @@ public class Sixel {
         case 1:
             /*
              * Pixels that are not specified with a color will be
-             * transparent.
-             *
-             * The only backend that can currently display transparent images
-             * is the Swing backend.  If that backend is not enabled, then do
-             * not support transparency here because it would lead to screen
-             * artifacts.
+             * transparent, IF transparency was enabled.
              */
-            if (System.getProperty("jexer.Swing.imagesOverText",
-                    "false").equals("true")) {
+            if (maybeTransparent) {
                 transparent = true;
             } else {
                 transparent = false;

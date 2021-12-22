@@ -548,6 +548,16 @@ public class TWindowBackend extends TWindow implements Backend {
         setHiddenMouse(!readOnly);
     }
 
+    /**
+     * Check if backend will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    public boolean isImagesOverText() {
+        return getApplication().getBackend().isImagesOverText();
+    }
+
     // ------------------------------------------------------------------------
     // TWindowBackend ---------------------------------------------------------
     // ------------------------------------------------------------------------

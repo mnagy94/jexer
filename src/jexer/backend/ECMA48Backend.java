@@ -190,4 +190,15 @@ public class ECMA48Backend extends GenericBackend {
         this(listener, input, reader, writer, false);
     }
 
+    /**
+     * Check if backend will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    @Override
+    public boolean isImagesOverText() {
+        return ((ECMA48Terminal) terminal).isImagesOverText();
+    }
+
 }

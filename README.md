@@ -136,16 +136,22 @@ The color wheel with that palette is shown below:
 
 ![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
 
-There is experimental support, only on the Swing backend, for
-rendering the text underneath images (jexer.Swing.imagesOverText).
-This is currently very not optimized -- cells are rendered below
-images irregardless if they are actually fully covered by pixels --
-but it is very cool looking.  (And if you like this, then you need to
-go check out [notcurses](https://github.com/dankamongmen/notcurses)
-poste haste.)  This is most visible in terminal windows with sixel and
-PNG images.
+There is experimental support for rendering the text underneath images
+(jexer.Swing.imagesOverText and jexer.Swing.imagesOverText).  This is
+currently poorly optimized -- cells must check for transparency
+frequently -- but it is very cool looking.  (And if you like this,
+then you need to go check out
+[notcurses](https://github.com/dankamongmen/notcurses) poste haste.)
+This is most visible in terminal windows with sixel and PNG images.
 
 ![Hello notcurses! 🤘](/screenshots/for_nick.png?raw=true "Hello notcurses! 🤘🙂")
+
+Performance is still _very_ bad on multihead, and crashes lie in wait.
+(Also, on the ECMA48 backend the internal font is used for rendering
+because terminals are extremely finicky when putting sixel text over
+images and this was the most simple to get something going.)  But hey:
+
+![Trans Heart Multihead](/screenshots/overlapping_multihead.png?raw=true "Trans Heart Multihead")
 
 Terminal Support
 ----------------

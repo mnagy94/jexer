@@ -299,6 +299,12 @@ public class ECMA48Terminal extends LogicalScreen
     private StringBuilder xtversionResponse = new StringBuilder();
 
     /**
+     * If true, draw text glyphs underneath images on cells.  This is
+     * expensive.
+     */
+    private boolean imagesOverText = false;
+
+    /**
      * The terminal's input.  If an InputStream is not specified in the
      * constructor, then this InputStreamReader will be bound to System.in
      * with UTF-8 encoding.
@@ -612,7 +618,6 @@ public class ECMA48Terminal extends LogicalScreen
                         pXpY = ((red & 0xFF) << 16);
                         pXpY |= ((green & 0xFF) << 8) | (blue & 0xFF);
                         ditheredImage.setRGB(imageX + 1, imageY, pXpY);
-
                         if (imageY < image.getHeight() - 1) {
                             int pXpYp = ditheredImage.getRGB(imageX + 1,
                                 imageY + 1);
@@ -1649,6 +1654,13 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
 
+        if (System.getProperty("jexer.ECMA48.imagesOverText",
+                "false").equals("true")) {
+            imagesOverText = true;
+        } else {
+            imagesOverText = false;
+        }
+
         // Set custom colors
         setCustomSystemColors();
     }
@@ -1996,7 +2008,8 @@ public class ECMA48Terminal extends LogicalScreen
                     || (!wideCharImages
                         && (!lCell.isImage()
                             || (lCell.isImage()
-                                && (lCell.getWidth() != Cell.Width.SINGLE)))));
+                                && (lCell.getWidth() != Cell.Width.SINGLE))))
+                );
 
                 if (!wideCharImages && (lCell.getWidth() == Cell.Width.RIGHT)) {
                     continue;
@@ -2178,7 +2191,7 @@ public class ECMA48Terminal extends LogicalScreen
                 lastX = x;
                 lastAttr.setTo(lCell);
 
-                // Physical is always updated
+                // Text cell: update, done.
                 physical[x][y].setTo(lCell);
 
             } // if (!lCell.equals(pCell) || (reallyCleared == true))
@@ -2233,7 +2246,6 @@ public class ECMA48Terminal extends LogicalScreen
                     continue;
                 }
 
-                int left = x;
                 int right = x;
                 while ((right < width)
                     && (logical[right][y].isImage())
@@ -2245,10 +2257,44 @@ public class ECMA48Terminal extends LogicalScreen
                 ArrayList<Cell> cellsToDraw = new ArrayList<Cell>();
                 for (int i = 0; i < (right - x); i++) {
                     assert (logical[x + i][y].isImage());
+                    GlyphMaker glyphMaker = null;
+                    BufferedImage newImage;
+                    BufferedImage textImage;
+
+                    if (logical[x + i][y].isTransparentImage()) {
+                        // We should only see transparent cells at this layer if
+                        // backend transparency was enabled.
+                        assert (imagesOverText == true);
+
+                        // Render this cell to a flat image.  The bad news is
+                        // that we don't get to use the actual terminal's
+                        // font, because putting image data over text is
+                        // really iffy depending on terminal.  So we render
+                        // it here instead.
+                        BufferedImage image = logical[x + i][y].getImage();
+                        int textWidth = image.getWidth();
+                        int textHeight = image.getHeight();
+                        if (glyphMaker == null) {
+                            glyphMaker = GlyphMaker.getInstance(textHeight);
+                        }
+                        newImage = new BufferedImage(textWidth,
+                            textHeight, BufferedImage.TYPE_INT_ARGB);
+                        textImage = glyphMaker.getImage(logical[x + i][y],
+                            textWidth, textHeight);
+
+                        java.awt.Graphics gr = newImage.getGraphics();
+                        gr.setColor(java.awt.Color.BLACK);
+                        gr.drawImage(textImage, 0, 0, null, null);
+                        gr.drawImage(logical[x + i][y].getImage(), 0, 0,
+                            null, null);
+                        gr.dispose();
+                        logical[x + i][y].setImage(newImage);
+                    }
+                    assert (!logical[x + i][y].isTransparentImage());
                     cellsToDraw.add(logical[x + i][y]);
 
                     // Physical is always updated.
-                    physical[x + i][y].setTo(lCell);
+                    physical[x + i][y].setTo(logical[x + i][y]);
                 }
                 if (cellsToDraw.size() > 0) {
                     if (debugToStderr && reallyDebug) {
@@ -2280,6 +2326,16 @@ public class ECMA48Terminal extends LogicalScreen
             System.err.printf("flushString(): %s\n", result);
         }
         return result;
+    }
+
+    /**
+     * Check if screen will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    public boolean isImagesOverText() {
+        return imagesOverText;
     }
 
     /**
@@ -3557,6 +3613,7 @@ public class ECMA48Terminal extends LogicalScreen
      * @return the string to emit to an ANSI / ECMA-style terminal
      */
     private String startSixel(final int x, final int y) {
+
         StringBuilder sb = new StringBuilder();
 
         assert (sixel == true);
@@ -3712,6 +3769,9 @@ public class ECMA48Terminal extends LogicalScreen
                      imageY++) {
 
                     int colorIdx = image.getRGB(imageX, imageY + currentRow);
+                    if (colorIdx == -1) {
+                        continue;
+                    }
                     assert (colorIdx >= 0);
                     assert (colorIdx < sixelPaletteSize);
 
@@ -3872,7 +3932,7 @@ public class ECMA48Terminal extends LogicalScreen
                 } catch (Exception e) {
                     throw new RuntimeException("image " + imageWidth + "x" +
                         imageHeight +
-                        "tile " + tileWidth + "x" +
+                        " tile " + tileWidth + "x" +
                         tileHeight +
                         " cells.get(i).getImage() " +
                         cells.get(i).getImage() +

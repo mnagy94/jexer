@@ -164,4 +164,15 @@ public class SwingBackend extends GenericBackend {
         return ((SwingTerminal) terminal).getSwingComponent();
     }
 
+    /**
+     * Check if backend will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    @Override
+    public boolean isImagesOverText() {
+        return ((SwingTerminal) terminal).isImagesOverText();
+    }
+
 }

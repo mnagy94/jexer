@@ -198,6 +198,42 @@ public class Cell extends CellAttributes {
     }
 
     /**
+     * Blit another cell's image on top of the image data for this cell.
+     *
+     * @param cell the other cell
+     */
+    public void blitImage(final Cell cell) {
+        if (!cell.isImage()) {
+            // The other cell has no image data.
+            return;
+        }
+        if (!isImage() || !cell.isTransparentImage()) {
+            // Just replace this cell's image.
+            setImage(cell.getImage());
+            return;
+        }
+        assert (isImage() && cell.isTransparentImage());
+        assert (image.getWidth() > 0);
+        assert (image.getHeight() > 0);
+        assert (cell.getImage().getWidth() > 0);
+        assert (cell.getImage().getHeight() > 0);
+
+        // Blit the new cell image over this cell's image.
+        int textWidth = Math.min(image.getWidth(), cell.getImage().getWidth());
+        int textHeight = Math.min(image.getHeight(),
+            cell.getImage().getHeight());
+        BufferedImage newImage = new BufferedImage(textWidth,
+            textHeight, BufferedImage.TYPE_INT_ARGB);
+
+        java.awt.Graphics gr = newImage.getGraphics();
+        gr.setColor(java.awt.Color.BLACK);
+        gr.drawImage(image, 0, 0, null, null);
+        gr.drawImage(cell.getImage(), 0, 0, null, null);
+        gr.dispose();
+        setImage(newImage);
+    }
+
+    /**
      * Get the bitmap image background color for this cell.
      *
      * @return the bitmap image background color

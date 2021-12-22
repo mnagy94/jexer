@@ -150,4 +150,14 @@ public class HeadlessBackend extends LogicalScreen implements Backend {
         // NOP
     }
 
+    /**
+     * Check if backend will support incomplete image fragments over text
+     * display.
+     *
+     * @return true if images can partially obscure text
+     */
+    public boolean isImagesOverText() {
+        return false;
+    }
+
 }
