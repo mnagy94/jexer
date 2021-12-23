@@ -31,7 +31,8 @@ package jexer.tackboard;
 import java.awt.image.BufferedImage;
 
 /**
- * TackboardItem class represents a single item image on the tackboard.
+ * TackboardItem class represents a single item that can generate pixels on
+ * the tackboard.
  */
 public class TackboardItem implements Comparable<TackboardItem> {
 

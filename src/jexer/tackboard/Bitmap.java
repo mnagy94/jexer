@@ -160,12 +160,12 @@ public class Bitmap extends TackboardItem {
             return;
         }
 
-        int columns = (getX() + image.getWidth()) / textWidth;
-        if ((getX() + image.getWidth()) % textWidth > 0) {
+        int columns = (dx + image.getWidth()) / textWidth;
+        if ((dx + image.getWidth()) % textWidth > 0) {
             columns++;
         }
-        int rows = (getY() + image.getHeight()) / textHeight;
-        if ((getY() + image.getHeight()) % textHeight > 0) {
+        int rows = (dy + image.getHeight()) / textHeight;
+        if ((dy + image.getHeight()) % textHeight > 0) {
             rows++;
         }
 
