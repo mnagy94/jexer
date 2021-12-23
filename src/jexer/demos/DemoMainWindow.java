@@ -32,6 +32,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 
@@ -49,6 +50,7 @@ import jexer.event.TCommandEvent;
 import jexer.layout.StretchLayoutManager;
 import jexer.tackboard.Bitmap;
 import jexer.tackboard.Tackboard;
+import jexer.tackboard.TackboardItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -76,6 +78,11 @@ public class DemoMainWindow extends TWindow {
      * Timer that increments a number.
      */
     private TTimer timer2;
+
+    /**
+     * Timer that moves things.
+     */
+    private TTimer timer3;
 
     /**
      * Timer label is updated with timer ticks.
@@ -110,6 +117,11 @@ public class DemoMainWindow extends TWindow {
      * Tackboard can display pixels over text.
      */
     Tackboard tackboard = new Tackboard();
+
+    /**
+     * Direction for the bitmaps to move.
+     */
+    boolean direction = true;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -302,7 +314,7 @@ public class DemoMainWindow extends TWindow {
             }
         );
 
-        if (false) {
+        if (true) {
             // Testing: put an image on the screen.
             try {
                 ClassLoader loader;
@@ -310,6 +322,41 @@ public class DemoMainWindow extends TWindow {
                 BufferedImage image;
                 image = ImageIO.read(loader.getResource("trans_icon.png"));
                 tackboard.addItem(new Bitmap(17, 41, 0, image));
+                tackboard.addItem(new Bitmap(101, 97, 0, image));
+
+                timer3 = getApplication().addTimer(200, true,
+                    new TAction() {
+                        public void DO() {
+                            List<TackboardItem> items = tackboard.getItems();
+                            int i = 0;
+                            for (TackboardItem item: items) {
+                                i++;
+                                int x = item.getX();
+                                int y = item.getY();
+                                if (i % 2 == 0) {
+                                    if (direction) {
+                                        item.setX(x + 1);
+                                    } else {
+                                        item.setX(x - 1);
+                                    }
+                                } else {
+                                    if (direction) {
+                                        item.setY(y + 1);
+                                    } else {
+                                        item.setY(y - 1);
+                                    }
+                                }
+                                if ((item.getX() < 0)
+                                    || (item.getX() > 300)
+                                    || (item.getY() < 0)
+                                    || (item.getY() > 300)
+                                ) {
+                                    direction = !direction;
+                                }
+                            }
+                        }
+                    }
+                );
             } catch (Exception e) {
                 new jexer.TExceptionDialog(getApplication(), e);
             }

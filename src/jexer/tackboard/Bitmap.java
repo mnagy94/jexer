@@ -48,6 +48,11 @@ public class Bitmap extends TackboardItem {
      */
     private BufferedImage image;
 
+    /**
+     * The rendered image data.
+     */
+    private BufferedImage renderedImage;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -115,18 +120,68 @@ public class Bitmap extends TackboardItem {
     }
 
     /**
-     * Get this item rendered to a bitmap.
+     * Get this item rendered to a bitmap, offset to align on a grid of
+     * cells with pixel dimensions (textWidth, textHeight).
      *
+     * @param textWidth the width of a text cell
+     * @param textHeight the height of a text cell
      * @return the image, or null if this item does not have any pixels to
      * show
      */
     @Override
-    public BufferedImage getImage() {
-        return image;
+    public BufferedImage getImage(final int textWidth, final int textHeight) {
+        if (dirty) {
+            render(textWidth, textHeight);
+            dirty = false;
+        }
+        return renderedImage;
     }
 
     // ------------------------------------------------------------------------
     // Bitmap -----------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Get this item rendered to a bitmap, offset to align on a grid of
+     * cells with pixel dimensions (textWidth, textHeight).
+     *
+     * @param textWidth the width of a text cell
+     * @param textHeight the height of a text cell
+     */
+    private void render(final int textWidth, final int textHeight) {
+        if (image == null) {
+            renderedImage = null;
+            return;
+        }
+        int dx = getX() % textWidth;
+        int dy = getY() % textHeight;
+        if ((dx == 0) && (dy == 0)) {
+            renderedImage = image;
+            return;
+        }
+
+        int columns = image.getWidth() / textWidth;
+        if (image.getWidth() % textWidth > 0) {
+            columns++;
+        }
+        if (dx > 0) {
+            columns++;
+        }
+        int rows = image.getHeight() / textHeight;
+        if (image.getHeight() % textHeight > 0) {
+            rows++;
+        }
+        if (dy > 0) {
+            rows++;
+        }
+
+        renderedImage = new BufferedImage(columns * textWidth,
+            rows * textHeight, BufferedImage.TYPE_INT_ARGB);
+
+        java.awt.Graphics gr = renderedImage.getGraphics();
+        gr.setColor(java.awt.Color.BLACK);
+        gr.drawImage(image, dx, dy, null, null);
+        gr.dispose();
+    }
 
 }

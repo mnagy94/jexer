@@ -97,126 +97,88 @@ public class Tackboard {
     }
 
     /**
+     * Get the list of items.
+     *
+     * @return the list of items
+     */
+    public List<TackboardItem> getItems() {
+        return items;
+    }
+
+    /**
      * Draw everything to the screen.
      *
      * @param screen the screen to render to
      */
     public void draw(final Screen screen) {
         Collections.sort(items);
+        int cellWidth = screen.getTextWidth();
+        int cellHeight = screen.getTextHeight();
 
         for (TackboardItem item: items) {
-            BufferedImage image = item.getImage();
+            BufferedImage image = item.getImage(cellWidth, cellHeight);
             if (image == null) {
                 continue;
             }
-            int width = image.getWidth();
-            int height = image.getHeight();
+
             int x = item.getX();
             int y = item.getY();
+            int textX = x / cellWidth;
+            int textY = y / cellHeight;
+            int width = image.getWidth();
+            int height = image.getHeight();
+
+            assert (width % cellWidth == 0);
+            assert (height % cellHeight == 0);
+
+            int columns = width / cellWidth;
+            int rows = height / cellHeight;
+
             int screenWidth = screen.getWidth() * screen.getTextWidth();
             int screenHeight = screen.getHeight() * screen.getTextHeight();
-            if ((x + width < 0)
-                || (y + height < 0)
-                || (x >= screenWidth)
-                || (y >= screenHeight)
+            if ((textX + columns < 0)
+                || (textY + rows < 0)
+                || (textX >= screen.getWidth())
+                || (textY >= screen.getHeight())
             ) {
-                // No pixels of this item will be visible on the screen.
+                // No cells of this item will be visible on the screen.
                 continue;
             }
 
-            // Some pixels need to be shown on the screen.
-            int cellWidth = screen.getTextWidth();
-            int cellHeight = screen.getTextHeight();
-            int textX = x / cellWidth;
-            int textY = y / cellHeight;
             int dx = x % cellWidth;
             int dy = y % cellHeight;
-            int columns = (dx + width) / cellWidth;
-            if ((dx + width) % cellWidth > 0) {
-                columns++;
-            }
-            int rows = (dy + height) / cellHeight;
-            if ((dy + height) % cellHeight > 0) {
-                rows++;
-            }
-            int ddx = cellWidth - dx;
-            int ddy = cellHeight - dy;
-
-            /*
-             * At this point:
-             *
-             * (cellWidth, cellHeight) is the text cell size.
-             *
-             * (textX, textY) is where the top-left corner of the image would
-             * be drawn, in cells.
-             *
-             * Every cell-sized piece of the image is offset by (dx, dy)
-             * pixels on the screen.  The location within image corresponding
-             * to a screen position is offset by (ddx, ddy).
-             *
-             * Drawing the entire image would take {columns} X {rows} to be
-             * fully on the screen, accounting for the cell offset.
-             *
-             */
+            int left = (dx == 0 ? 0 : -1);
+            int top = (dy == 0 ? 0 : -1);
             for (int sy = 0; sy < rows; sy++) {
-                if ((sy + textY < 0) || (sy + textY >= screen.getHeight())) {
+                if ((sy + textY + top < 0)
+                    || (sy + textY + top >= screen.getHeight())
+                ) {
                     // This row of cells is off-screen, skip it.
                     continue;
                 }
                 for (int sx = 0; sx < columns; sx++) {
-                    while (sx + textX < 0) {
-                        // This cell is off-screen.
+                    while (sx + textX + left < 0) {
+                        // This cell is off-screen, advance.
                         sx++;
                     }
-                    if (sx + textX >= screen.getWidth()) {
-                        // This cell is off-screen.
+                    if (sx + textX + left >= screen.getWidth()) {
+                        // This cell is off-screen, done with this entire row.
                         break;
                     }
 
                     // This cell is visible on the screen.
+                    assert (sx + textX + left < screen.getWidth());
+                    assert (sy + textY + top < screen.getHeight());
+
                     BufferedImage newImage;
-
-                    /*
-                    System.err.println("rows " + rows + " cols " + columns +
-                        " sx " + sx + " sy " + sy + " " +
-                        " dx " + dx + " dy " + dy + " " +
-                        " ddx " + ddx + " ddy " + ddy + " "
-                    );
-                     */
-
-                    if (((sy == 0) && (dy > 0))
-                        || ((sy == rows - 1) && (dy > 0))
-                        || ((sx == 0) && (dx > 0))
-                        || ((sx == columns - 1) && (dx > 0))
-                    ) {
-                        // This cell on the screen will contain a fragment
-                        // that does not fill the entire text cell.
-                        newImage = new BufferedImage(cellWidth, cellHeight,
-                            BufferedImage.TYPE_INT_ARGB);
-
-                        // TODO: copy the RGBA's of the rectangle over the
-                        // space it takes up on this cell.
-
-
-                    } else {
-                        /*
-                        System.err.println("subImage(" +
-                            image.getWidth() + "x" + image.getHeight() + ") " +
-                            (((sx - 1) * cellWidth) + ddx) + ", " +
-                            (((sy - 1) * cellHeight) + ddy) + ", " +
-                            cellWidth + ", " + cellHeight);
-                         */
-
-                        newImage = image.getSubimage(((sx - 1) * cellWidth) + ddx,
-                            ((sy - 1) * cellHeight) + ddy, cellWidth, cellHeight);
-                    }
+                    newImage = image.getSubimage(sx * cellWidth,
+                        sy * cellHeight, cellWidth, cellHeight);
 
                     // newImage has the image that needs to be overlaid on
-                    // (sx + textX, sy + textY)
-                    assert (sx + textX < screen.getWidth());
-                    assert (sy + textY < screen.getHeight());
+                    // (sx + textX + left, sy + textY + top)
 
-                    Cell oldCell = screen.getCharXY(sx + textX, sy + textY);
+                    Cell oldCell = screen.getCharXY(sx + textX + left,
+                        sy + textY + top);
                     if (oldCell.isImage()) {
                         // Blit this image over that one.
                         BufferedImage oldImage = oldCell.getImage();
@@ -229,9 +191,12 @@ public class Tackboard {
                         // Old cell is text only, just add the image.
                         oldCell.setImage(newImage);
                     }
-                    screen.putCharXY(sx + textX, sy + textY, oldCell);
-                }
-            }
+                    screen.putCharXY(sx + textX + left, sy + textY + top,
+                        oldCell);
+
+                } // for (int sx = 0; sx < columns; sx++)
+
+            } // for (int sy = 0; sy < rows; sy++)
 
         } // for (TackboardItem item: items)
     }

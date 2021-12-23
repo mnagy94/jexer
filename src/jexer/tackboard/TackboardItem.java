@@ -58,6 +58,12 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     private int z = 0;
 
+    /**
+     * Dirty flag, if true then getImage() needs to generate a rendering
+     * aligned to the text cells.
+     */
+    protected boolean dirty = true;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -102,6 +108,7 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     public final void setX(final int x) {
         this.x = x;
+        dirty = true;
     }
 
     /**
@@ -120,6 +127,7 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     public final void setY(final int y) {
         this.y = y;
+        dirty = true;
     }
 
     /**
@@ -138,6 +146,17 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     public final void setZ(final int z) {
         this.z = z;
+        dirty = true;
+    }
+
+    /**
+     * Get dirty flag.
+     *
+     * @return if true, the image data is not aligned with the physical
+     * screen cells
+     */
+    public final boolean isDirty() {
+        return dirty;
     }
 
     /**
@@ -201,12 +220,15 @@ public class TackboardItem implements Comparable<TackboardItem> {
     }
 
     /**
-     * Get this item rendered to a bitmap.
+     * Get this item rendered to a bitmap, offset to align on a grid of
+     * cells with pixel dimensions (textWidth, textHeight).
      *
+     * @param textWidth the width of a text cell
+     * @param textHeight the height of a text cell
      * @return the image, or null if this item does not have any pixels to
      * show
      */
-    public BufferedImage getImage() {
+    public BufferedImage getImage(final int textWidth, final int textHeight) {
         // Default does nothing.
         return null;
     }
