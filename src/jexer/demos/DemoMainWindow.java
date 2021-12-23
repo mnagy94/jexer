@@ -322,9 +322,9 @@ public class DemoMainWindow extends TWindow {
                 BufferedImage image;
                 image = ImageIO.read(loader.getResource("trans_icon.png"));
                 tackboard.addItem(new Bitmap(17, 41, 0, image));
-                tackboard.addItem(new Bitmap(101, 97, 0, image));
+                tackboard.addItem(new Bitmap(41, 97, 0, image));
 
-                timer3 = getApplication().addTimer(200, true,
+                timer3 = getApplication().addTimer(100, true,
                     new TAction() {
                         public void DO() {
                             List<TackboardItem> items = tackboard.getItems();

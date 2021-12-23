@@ -147,8 +147,11 @@ public class Tackboard {
 
             int dx = x % cellWidth;
             int dy = y % cellHeight;
-            int left = (dx == 0 ? 0 : -1);
-            int top = (dy == 0 ? 0 : -1);
+
+            // TODO: handle images that have negative X or Y coordinates.
+            int left = 0;
+            int top = 0;
+
             for (int sy = 0; sy < rows; sy++) {
                 if ((sy + textY + top < 0)
                     || (sy + textY + top >= screen.getHeight())
