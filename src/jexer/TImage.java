@@ -31,6 +31,7 @@ package jexer;
 import java.awt.image.BufferedImage;
 
 import jexer.bits.Cell;
+import jexer.bits.ImageUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
@@ -422,23 +423,14 @@ public class TImage extends TWidget implements EditMenuUser {
                     }
 
                     Cell cell = new Cell();
-
-                    // Always re-render the image against the cell
-                    // background, so that alpha in the image does not lead
-                    // to bleed-through artifacts.
-                    BufferedImage newImage;
-                    newImage = new BufferedImage(textWidth, textHeight,
-                        BufferedImage.TYPE_INT_ARGB);
-
-                    java.awt.Graphics gr = newImage.getGraphics();
-                    gr.setColor(cell.getBackground());
-                    gr.fillRect(0, 0, textWidth, textHeight);
-                    gr.drawImage(image.getSubimage(x * textWidth,
-                            y * textHeight, width, height),
-                        0, 0, null, null);
-                    gr.dispose();
-                    cell.setImage(newImage);
-
+                    cell.setTo(getWindow().getBackground());
+                    
+                    BufferedImage subImage = image.getSubimage(x * textWidth,
+                        y * textHeight, width, height);
+                    if (!ImageUtils.isFullyTransparent(subImage)) {
+                        cell.setImage(subImage);
+                        cell.flattenImage(false);
+                    }
                     cells[x][y] = cell;
                 }
             }

@@ -29,6 +29,7 @@
 package jexer.bits;
 
 import java.awt.image.BufferedImage;
+import jexer.backend.GlyphMaker;
 
 /**
  * This class represents a single text cell or bit of image on the screen.
@@ -196,6 +197,49 @@ public class Cell extends CellAttributes {
             return invertedImage;
         }
         return image;
+    }
+
+    /**
+     * Flatten the image on this cell by rendering it either onto the
+     * background color, or generating the glyph and rendering over that.
+     *
+     * @param overGlyph if true, render over the glyph
+     */
+    public void flattenImage(final boolean overGlyph) {
+        if (!isImage()) {
+            return;
+        }
+
+        if (hasTransparentPixels == 2) {
+            // The image already covers the entire cell.
+            return;
+        }
+
+        // We will be opaque when done.
+        hasTransparentPixels = 2;
+
+        int textWidth = image.getWidth();
+        int textHeight = image.getHeight();
+        BufferedImage newImage = new BufferedImage(textWidth,
+            textHeight, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics gr = newImage.getGraphics();
+        gr.setColor(jexer.backend.SwingTerminal.
+            attrToBackgroundColor(this));
+
+        if (overGlyph) {
+            // Render this cell to a flat image.  The bad news is that we
+            // won't get to use the actual terminal's font.
+            GlyphMaker glyphMaker = GlyphMaker.getInstance(textHeight);
+            gr.drawImage(glyphMaker.getImage(this, textWidth, textHeight),
+                0, 0, null, null);
+        } else {
+            // Put the background color behind the pixels.
+            gr.fillRect(0, 0, newImage.getWidth(),
+                newImage.getHeight());
+        }
+        gr.drawImage(image, 0, 0, null, null);
+        gr.dispose();
+        setImage(newImage);
     }
 
     /**

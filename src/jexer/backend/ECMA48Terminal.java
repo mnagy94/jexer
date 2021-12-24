@@ -2257,7 +2257,6 @@ public class ECMA48Terminal extends LogicalScreen
                 ArrayList<Cell> cellsToDraw = new ArrayList<Cell>();
                 for (int i = 0; i < (right - x); i++) {
                     assert (logical[x + i][y].isImage());
-                    GlyphMaker glyphMaker = null;
                     BufferedImage newImage;
                     BufferedImage textImage;
 
@@ -2271,47 +2270,9 @@ public class ECMA48Terminal extends LogicalScreen
                         // continue on.  Otherwise render a text character
                         // under the image.
                         if (imagesOverText == true) {
-                            // Render this cell to a flat image.  The bad
-                            // news is that we don't get to use the actual
-                            // terminal's font, because putting image data
-                            // over text is really iffy depending on
-                            // terminal.  So we render it here instead.
-                            BufferedImage image = logical[x + i][y].getImage();
-                            int textWidth = image.getWidth();
-                            int textHeight = image.getHeight();
-                            if (glyphMaker == null) {
-                                glyphMaker = GlyphMaker.getInstance(textHeight);
-                            }
-                            newImage = new BufferedImage(textWidth,
-                                textHeight, BufferedImage.TYPE_INT_ARGB);
-                            textImage = glyphMaker.getImage(logical[x + i][y],
-                                textWidth, textHeight);
-
-                            java.awt.Graphics gr = newImage.getGraphics();
-                            gr.setColor(jexer.backend.SwingTerminal.
-                                attrToBackgroundColor(logical[x + i][y]));
-                            gr.drawImage(textImage, 0, 0, null, null);
-                            gr.drawImage(logical[x + i][y].getImage(), 0, 0,
-                                null, null);
-                            gr.dispose();
-                            logical[x + i][y].setImage(newImage);
+                            logical[x + i][y].flattenImage(true);
                         } else {
-                            // Put the cell's background color behind the
-                            // pixels.
-                            BufferedImage image = logical[x + i][y].getImage();
-                            int textWidth = image.getWidth();
-                            int textHeight = image.getHeight();
-                            newImage = new BufferedImage(textWidth,
-                                textHeight, BufferedImage.TYPE_INT_ARGB);
-                            java.awt.Graphics gr = newImage.getGraphics();
-                            gr.setColor(jexer.backend.SwingTerminal.
-                                attrToBackgroundColor(logical[x + i][y]));
-                            gr.fillRect(0, 0, newImage.getWidth(),
-                                newImage.getHeight());
-                            gr.drawImage(logical[x + i][y].getImage(), 0, 0,
-                                null, null);
-                            gr.dispose();
-                            logical[x + i][y].setImage(newImage);
+                            logical[x + i][y].flattenImage(false);
                         }
                     }
                     assert (!logical[x + i][y].isTransparentImage());

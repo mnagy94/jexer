@@ -323,7 +323,7 @@ public class GlyphMaker {
     /**
      * The mono font resource filename (terminus).
      */
-    private static final String MONO = "terminus-ttf-4.39/TerminusTTF-Bold-4.39.ttf";
+    private static final String MONO = "terminus-ttf-4.49.1/TerminusTTF-Bold-4.49.1.ttf";
 
     /**
      * The CJK font resource filename.
