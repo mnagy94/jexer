@@ -2262,33 +2262,57 @@ public class ECMA48Terminal extends LogicalScreen
                     BufferedImage textImage;
 
                     if (logical[x + i][y].isTransparentImage()) {
-                        // We should only see transparent cells at this layer if
-                        // backend transparency was enabled.
-                        assert (imagesOverText == true);
+                        // We would normally only see transparent cells at
+                        // this layer if backend transparency was enabled.
+                        // But in the case of multihead, we may have been
+                        // passed a cell with transparency even though this
+                        // backend can't display it.  So we will check, and
+                        // if imagesOverText is disabled then we will quietly
+                        // continue on.  Otherwise render a text character
+                        // under the image.
+                        if (imagesOverText == true) {
+                            // Render this cell to a flat image.  The bad
+                            // news is that we don't get to use the actual
+                            // terminal's font, because putting image data
+                            // over text is really iffy depending on
+                            // terminal.  So we render it here instead.
+                            BufferedImage image = logical[x + i][y].getImage();
+                            int textWidth = image.getWidth();
+                            int textHeight = image.getHeight();
+                            if (glyphMaker == null) {
+                                glyphMaker = GlyphMaker.getInstance(textHeight);
+                            }
+                            newImage = new BufferedImage(textWidth,
+                                textHeight, BufferedImage.TYPE_INT_ARGB);
+                            textImage = glyphMaker.getImage(logical[x + i][y],
+                                textWidth, textHeight);
 
-                        // Render this cell to a flat image.  The bad news is
-                        // that we don't get to use the actual terminal's
-                        // font, because putting image data over text is
-                        // really iffy depending on terminal.  So we render
-                        // it here instead.
-                        BufferedImage image = logical[x + i][y].getImage();
-                        int textWidth = image.getWidth();
-                        int textHeight = image.getHeight();
-                        if (glyphMaker == null) {
-                            glyphMaker = GlyphMaker.getInstance(textHeight);
+                            java.awt.Graphics gr = newImage.getGraphics();
+                            gr.setColor(jexer.backend.SwingTerminal.
+                                attrToBackgroundColor(logical[x + i][y]));
+                            gr.drawImage(textImage, 0, 0, null, null);
+                            gr.drawImage(logical[x + i][y].getImage(), 0, 0,
+                                null, null);
+                            gr.dispose();
+                            logical[x + i][y].setImage(newImage);
+                        } else {
+                            // Put the cell's background color behind the
+                            // pixels.
+                            BufferedImage image = logical[x + i][y].getImage();
+                            int textWidth = image.getWidth();
+                            int textHeight = image.getHeight();
+                            newImage = new BufferedImage(textWidth,
+                                textHeight, BufferedImage.TYPE_INT_ARGB);
+                            java.awt.Graphics gr = newImage.getGraphics();
+                            gr.setColor(jexer.backend.SwingTerminal.
+                                attrToBackgroundColor(logical[x + i][y]));
+                            gr.fillRect(0, 0, newImage.getWidth(),
+                                newImage.getHeight());
+                            gr.drawImage(logical[x + i][y].getImage(), 0, 0,
+                                null, null);
+                            gr.dispose();
+                            logical[x + i][y].setImage(newImage);
                         }
-                        newImage = new BufferedImage(textWidth,
-                            textHeight, BufferedImage.TYPE_INT_ARGB);
-                        textImage = glyphMaker.getImage(logical[x + i][y],
-                            textWidth, textHeight);
-
-                        java.awt.Graphics gr = newImage.getGraphics();
-                        gr.setColor(java.awt.Color.BLACK);
-                        gr.drawImage(textImage, 0, 0, null, null);
-                        gr.drawImage(logical[x + i][y].getImage(), 0, 0,
-                            null, null);
-                        gr.dispose();
-                        logical[x + i][y].setImage(newImage);
                     }
                     assert (!logical[x + i][y].isTransparentImage());
                     cellsToDraw.add(logical[x + i][y]);

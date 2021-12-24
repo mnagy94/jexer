@@ -1432,13 +1432,15 @@ public class SwingTerminal extends LogicalScreen
         if ((SwingComponent.tripleBuffer) && (swing.getFrame() != null)) {
             gr2.dispose();
 
-            // We need a new key that will not be mutated by
-            // invertCell().
-            Cell key = new Cell(cell);
-            if (cell.isBlink() && !cursorBlinkVisible) {
-                glyphCacheBlink.put(key, image);
-            } else {
-                glyphCache.put(key, image);
+            if (!cell.isImage()) {
+                // We need a new key that will not be mutated by
+                // invertCell().
+                Cell key = new Cell(cell);
+                if (cell.isBlink() && !cursorBlinkVisible) {
+                    glyphCacheBlink.put(key, image);
+                } else {
+                    glyphCache.put(key, image);
+                }
             }
 
             if (swing.getFrame() != null) {

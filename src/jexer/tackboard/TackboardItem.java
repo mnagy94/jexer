@@ -161,6 +161,13 @@ public class TackboardItem implements Comparable<TackboardItem> {
     }
 
     /**
+     * Set dirty flag.
+     */
+    public final void setDirty() {
+        dirty = true;
+    }
+
+    /**
      * Comparison check.  All fields must match to return true.
      *
      * @param rhs another TackboardItem instance

@@ -36,6 +36,7 @@ import java.util.List;
 import jexer.backend.GlyphMaker;
 import jexer.backend.Screen;
 import jexer.bits.Cell;
+import jexer.bits.ImageUtils;
 
 /**
  * Tackboard maintains a collection of TackboardItems to draw on a Screen.
@@ -71,6 +72,16 @@ public class Tackboard {
      * The items on this board.
      */
     private ArrayList<TackboardItem> items = new ArrayList<TackboardItem>();
+
+    /**
+     * Last text width value.
+     */
+    private int lastTextWidth = -1;
+
+    /**
+     * Last text height value.
+     */
+    private int lastTextHeight = -1;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -109,13 +120,30 @@ public class Tackboard {
      * Draw everything to the screen.
      *
      * @param screen the screen to render to
+     * @param transparent if true, allow partially transparent images to be
+     * drawn to the screen
      */
-    public void draw(final Screen screen) {
+    public void draw(final Screen screen, final boolean transparent) {
         Collections.sort(items);
         int cellWidth = screen.getTextWidth();
         int cellHeight = screen.getTextHeight();
+        boolean redraw = false;
+
+        if ((lastTextWidth == -1)
+            || (lastTextWidth != cellWidth)
+            || (lastTextHeight != cellHeight)
+        ) {
+            // We need to force a redraw because the cell grid dimensions
+            // have changed.
+            redraw = true;
+            lastTextWidth = cellWidth;
+            lastTextHeight = cellHeight;
+        }
 
         for (TackboardItem item: items) {
+            if (redraw) {
+                item.setDirty();
+            }
             BufferedImage image = item.getImage(cellWidth, cellHeight);
             if (image == null) {
                 continue;
@@ -128,8 +156,20 @@ public class Tackboard {
             int width = image.getWidth();
             int height = image.getHeight();
 
-            assert (width % cellWidth == 0);
-            assert (height % cellHeight == 0);
+            if ((width % cellWidth != 0) || (height % cellHeight != 0)) {
+                // These should have lined up, that was the whole point of
+                // the redraw.  Why didn't they?
+                /*
+                System.err.println("HUH? width " + width +
+                    " cellWidth " + cellWidth +
+                    " height " + height +
+                    " cellHeight " + cellHeight);
+                 */
+            } else {
+                // This should be impossible, right?
+                assert (width % cellWidth == 0);
+                assert (height % cellHeight == 0);
+            }
 
             int columns = width / cellWidth;
             int rows = height / cellHeight;
@@ -148,9 +188,8 @@ public class Tackboard {
             int dx = x % cellWidth;
             int dy = y % cellHeight;
 
-            // TODO: handle images that have negative X or Y coordinates.
-            int left = 0;
-            int top = 0;
+            int left = (x < 0 ? -1 : 0);
+            int top = (y < 0 ? -1 : 0);
 
             for (int sy = 0; sy < rows; sy++) {
                 if ((sy + textY + top < 0)
@@ -177,6 +216,11 @@ public class Tackboard {
                     newImage = image.getSubimage(sx * cellWidth,
                         sy * cellHeight, cellWidth, cellHeight);
 
+                    if (ImageUtils.isFullyTransparent(newImage)) {
+                        // Skip this cell.
+                        continue;
+                    }
+
                     // newImage has the image that needs to be overlaid on
                     // (sx + textX + left, sy + textY + top)
 
@@ -186,13 +230,28 @@ public class Tackboard {
                         // Blit this image over that one.
                         BufferedImage oldImage = oldCell.getImage();
                         java.awt.Graphics gr = oldImage.getGraphics();
-                        gr.setColor(java.awt.Color.BLACK);
+                        gr.setColor(jexer.backend.SwingTerminal.
+                            attrToBackgroundColor(oldCell));
                         gr.drawImage(newImage, 0, 0, null, null);
                         gr.dispose();
                         oldCell.setImage(oldImage);
                     } else {
                         // Old cell is text only, just add the image.
-                        oldCell.setImage(newImage);
+                        if (!transparent) {
+                            BufferedImage backImage;
+                            backImage = new BufferedImage(cellWidth,
+                                cellHeight, BufferedImage.TYPE_INT_ARGB);
+                            java.awt.Graphics gr = backImage.getGraphics();
+                            gr.setColor(jexer.backend.SwingTerminal.
+                                attrToBackgroundColor(oldCell));
+                            gr.fillRect(0, 0, backImage.getWidth(),
+                                backImage.getHeight());
+                            gr.drawImage(newImage, 0, 0, null, null);
+                            gr.dispose();
+                            oldCell.setImage(backImage);
+                        } else {
+                            oldCell.setImage(newImage);
+                        }
                     }
                     screen.putCharXY(sx + textX + left, sy + textY + top,
                         oldCell);

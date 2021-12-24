@@ -56,6 +56,7 @@ import jexer.backend.GlyphMaker;
 import jexer.bits.Color;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.ImageUtils;
 import jexer.bits.StringUtils;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
@@ -7505,7 +7506,13 @@ public class ECMA48 implements Runnable {
         */
 
         boolean maybeTransparent = false;
-        if ((backend != null) && backend.isImagesOverText()) {
+        // The check below is forced to always enable maybeTransparent.  Even
+        // when imagesOverText is disabled, we can still process sixel images
+        // with missing pixels by way of checking for entirely empty text
+        // cell regions and removing them.  The effect is to have a blocky
+        // black outline around the image rather than an entire black
+        // rectangle.
+        if (true || ((backend != null) && backend.isImagesOverText())) {
             maybeTransparent = true;
         }
         Sixel sixel = new Sixel(sixelParseBuffer.toString(), sixelPalette,
@@ -7721,6 +7728,7 @@ public class ECMA48 implements Runnable {
         // If the backend supports transparent images, then we will not
         // draw the black underneath the cells.
         boolean transparent = false;
+
         if ((backend != null) && backend.isImagesOverText()) {
             transparent = true;
         }
@@ -7734,7 +7742,9 @@ public class ECMA48 implements Runnable {
             cellRows++;
         }
 
-        if (!transparent && maybeTransparent) {
+        // See the comment in parseSixel().  The partially-transparent cell
+        // will be rendered over a black background below inside the loop.
+        if (false && !transparent && maybeTransparent) {
             // Re-render the image against a black background, so that alpha
             // in the image does not lead to bleed-through artifacts.
             BufferedImage newImage;
@@ -7753,8 +7763,6 @@ public class ECMA48 implements Runnable {
         Cell [][] cells = new Cell[cellColumns][cellRows];
         for (int x = 0; x < cellColumns; x++) {
             for (int y = 0; y < cellRows; y++) {
-                Cell cell = new Cell();
-
                 int width = textWidth;
                 if ((x + 1) * textWidth > image.getWidth()) {
                     width = image.getWidth() - (x * textWidth);
@@ -7765,13 +7773,20 @@ public class ECMA48 implements Runnable {
                 }
 
                 // I'm genuinely not sure if making many small cells with
-                // array copy is better than slicing.  Memory pressure is
-                // killing it at high animation rates.  Leaving the true in
-                // the check below will use the smaller cells rather than
-                // subImages.
-                if (true || (width != textWidth) || (height != textHeight)) {
-                    // Copy the smaller-than-text-cell-size image to a
-                    // full-text-cell-size.
+                // array copy is better than lots of sumImages.  Memory
+                // pressure is killing it at high animation rates.  For now,
+                // we will ALWAYS make a copy.
+                Cell cell = new Cell();
+
+                BufferedImage imageSlice = image.getSubimage(x * textWidth,
+                    y * textHeight, width, height);
+
+                if (ImageUtils.isFullyTransparent(imageSlice)) {
+                    // There is nothing more to do, this entire image is
+                    // empty.
+
+                    // NOP
+                } else {
                     BufferedImage newImage;
                     newImage = new BufferedImage(textWidth, textHeight,
                         BufferedImage.TYPE_INT_ARGB);
@@ -7781,29 +7796,26 @@ public class ECMA48 implements Runnable {
                         gr.fillRect(0, 0, newImage.getWidth(),
                             newImage.getHeight());
                     }
-                    gr.drawImage(image.getSubimage(x * textWidth,
-                            y * textHeight, width, height),
-                        0, 0, null, null);
+                    gr.drawImage(imageSlice, 0, 0, null, null);
                     gr.dispose();
-                    cell.setImage(newImage);
-                } else {
-                    cell.setImage(image.getSubimage(x * textWidth,
-                            y * textHeight, width, height));
-                }
-                if (transparent && maybeTransparent) {
-                    // Check now if this cell has transparent pixels.  This
-                    // will slow down the reader thread but unload the render
-                    // thread.
-                    //
-                    // Truth is performance is going to be bad for a while...
-                    cell.isTransparentImage();
-                } else if (transparent && !maybeTransparent) {
-                    // We support transparency, but this image doesn't have
-                    // any transparent pixels.  Force the cell to never check
-                    // transparency.
-                    cell.setOpaqueImage();
-                }
 
+                    cell.setImage(newImage);
+
+                    if (maybeTransparent) {
+                        // Check now if this cell has transparent pixels.
+                        // This will slow down the reader thread but unload
+                        // the render thread.
+                        //
+                        // Truth is performance is going to be bad for a
+                        // while...
+                        cell.isTransparentImage();
+                    } else {
+                        // We support transparency, but this image doesn't
+                        // have any transparent pixels.  Force the cell to
+                        // never check transparency.
+                        cell.setOpaqueImage();
+                    }
+                }
                 cells[x][y] = cell;
             }
         }
@@ -7865,7 +7877,9 @@ public class ECMA48 implements Runnable {
                         cells[x][y].isTransparentImage();
                     }
                 }
-                line.replace(currentState.cursorX, cells[x][y]);
+                if (cells[x][y].isImage()) {
+                    line.replace(currentState.cursorX, cells[x][y]);
+                }
 
                 // If at the end of the visible screen, stop.
                 if (currentState.cursorX == rightMargin) {

@@ -402,7 +402,8 @@ public class DemoMainWindow extends TWindow {
 
         // For this one, render to the entire screen, not to the window.
         getScreen().resetClipping();
-        tackboard.draw(getScreen());
+        tackboard.draw(getScreen(),
+            getApplication().getBackend().isImagesOverText());
     }
 
     /**

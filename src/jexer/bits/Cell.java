@@ -111,7 +111,8 @@ public class Cell extends CellAttributes {
      * If this cell has image data, whether or not it also has transparent
      * pixels.  -1 = no image data; 0 = unknown if transparent pixels are
      * present; 1 = transparent pixels are present; 2 = transparent pixels
-     * are not present.
+     * are not present; 3 = the entire image is transparent; 4 = transparent
+     * pixels are present, but not all of the image.
      */
     private int hasTransparentPixels = -1;
 
@@ -203,7 +204,7 @@ public class Cell extends CellAttributes {
      * @param cell the other cell
      */
     public void blitImage(final Cell cell) {
-        if (!cell.isImage()) {
+        if (!cell.isImage() || cell.isFullyTransparentImage()) {
             // The other cell has no image data.
             return;
         }
@@ -280,8 +281,65 @@ public class Cell extends CellAttributes {
             // No transparent pixels.
             hasTransparentPixels = 2;
         }
-        if (hasTransparentPixels == 1) {
+        if ((hasTransparentPixels == 1)
+            || (hasTransparentPixels == 3)
+            || (hasTransparentPixels == 4)
+        ) {
             // Transparent pixels were found at some time.
+            return true;
+        }
+        assert (hasTransparentPixels == 2);
+        return false;
+    }
+
+    /**
+     * If true, this cell has image data and all of its pixels are fully
+     * transparent (alpha of 0).
+     *
+     * @return true if this cell has image data with only transparent pixels
+     */
+    public boolean isFullyTransparentImage() {
+        if (image == null) {
+            return false;
+        }
+        if ((hasTransparentPixels == 0) || (hasTransparentPixels == 1)) {
+            // Scan for transparent pixels.  Only if ALL pixels are
+            // transparent do we return true.
+            int [] rgbArray = image.getRGB(0, 0,
+                image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+
+            if (rgbArray.length == 0) {
+                // No image data, fully transparent.
+                hasTransparentPixels = 3;
+                return true;
+            }
+
+            boolean allOpaque = true;
+            boolean allTransparent = true;
+            for (int i = 0; i < rgbArray.length; i++) {
+                int alpha = (rgbArray[i] >>> 24) & 0xFF;
+                if ((alpha != 0xFF) && (alpha != 0x00)) {
+                    // Some transparent pixels, but not fully transparent.
+                    hasTransparentPixels = 4;
+                    return false;
+                }
+                // This pixel is either fully opaque or fully transparent.
+                if (alpha == 0xFF) {
+                    allTransparent = false;
+                } else {
+                    allOpaque = false;
+                }
+            }
+            if (allOpaque == true) {
+                // No transparent pixels.
+                hasTransparentPixels = 2;
+            } else {
+                assert (allTransparent == true);
+                hasTransparentPixels = 3;
+            }
+        }
+        if (hasTransparentPixels == 3) {
+            // Fully transparent.
             return true;
         }
         return false;
