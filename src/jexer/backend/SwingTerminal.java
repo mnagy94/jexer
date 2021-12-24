@@ -319,6 +319,11 @@ public class SwingTerminal extends LogicalScreen
      */
     private boolean imagesOverText = false;
 
+    /**
+     * If true, report mouse events per-pixel rather than per-text-cell.
+     */
+    private boolean pixelMouse = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1829,6 +1834,25 @@ public class SwingTerminal extends LogicalScreen
         return imagesOverText;
     }
 
+    /**
+     * Check if terminal is reporting pixel-based mouse position.
+     *
+     * @return true if single-pixel mouse movements are reported
+     */
+    public boolean isPixelMouse() {
+        return pixelMouse;
+    }
+
+    /**
+     * Set request for terminal to report pixel-based mouse position.
+     *
+     * @param pixelMouse if true, single-pixel mouse movements will be
+     * reported
+     */
+    public void setPixelMouse(final boolean pixelMouse) {
+        this.pixelMouse = pixelMouse;
+    }
+
     // ------------------------------------------------------------------------
     // KeyListener ------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -2307,16 +2331,18 @@ public class SwingTerminal extends LogicalScreen
         mouse3 = eventMouse3;
         int x = textColumn(mouse.getX());
         int y = textRow(mouse.getY());
-        if ((x == oldMouseX) && (y == oldMouseY)) {
+        if ((x == oldMouseX) && (y == oldMouseY) && (pixelMouse == false)) {
             // Bail out, we've moved some pixels but not a whole text cell.
             return;
         }
         oldMouseX = x;
         oldMouseY = y;
+        int offsetX = (mouse.getX() - left) % textWidth;
+        int offsetY = (mouse.getY() - top) % textHeight;
 
         TMouseEvent mouseEvent = new TMouseEvent(backend,
-            TMouseEvent.Type.MOUSE_MOTION,
-            x, y, x, y, mouse1, mouse2, mouse3, false, false,
+            TMouseEvent.Type.MOUSE_MOTION, x, y, x, y, offsetX, offsetY,
+            mouse1, mouse2, mouse3, false, false,
             eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
@@ -2338,12 +2364,14 @@ public class SwingTerminal extends LogicalScreen
     public void mouseMoved(final MouseEvent mouse) {
         int x = textColumn(mouse.getX());
         int y = textRow(mouse.getY());
-        if ((x == oldMouseX) && (y == oldMouseY)) {
+        if ((x == oldMouseX) && (y == oldMouseY) && (pixelMouse == false)) {
             // Bail out, we've moved some pixels but not a whole text cell.
             return;
         }
         oldMouseX = x;
         oldMouseY = y;
+        int offsetX = (mouse.getX() - left) % textWidth;
+        int offsetY = (mouse.getY() - top) % textHeight;
 
         boolean eventAlt = false;
         boolean eventCtrl = false;
@@ -2361,8 +2389,8 @@ public class SwingTerminal extends LogicalScreen
         }
 
         TMouseEvent mouseEvent = new TMouseEvent(backend,
-            TMouseEvent.Type.MOUSE_MOTION,
-            x, y, x, y, mouse1, mouse2, mouse3, false, false,
+            TMouseEvent.Type.MOUSE_MOTION, x, y, x, y, offsetX, offsetY,
+            mouse1, mouse2, mouse3, false, false,
             eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
@@ -2445,10 +2473,12 @@ public class SwingTerminal extends LogicalScreen
         mouse3 = eventMouse3;
         int x = textColumn(mouse.getX());
         int y = textRow(mouse.getY());
+        int offsetX = (mouse.getX() - left) % textWidth;
+        int offsetY = (mouse.getY() - top) % textHeight;
 
         TMouseEvent mouseEvent = new TMouseEvent(backend,
-            TMouseEvent.Type.MOUSE_DOWN,
-            x, y, x, y, mouse1, mouse2, mouse3, false, false,
+            TMouseEvent.Type.MOUSE_DOWN, x, y, x, y, offsetX, offsetY,
+            mouse1, mouse2, mouse3, false, false,
             eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
@@ -2509,10 +2539,12 @@ public class SwingTerminal extends LogicalScreen
         }
         int x = textColumn(mouse.getX());
         int y = textRow(mouse.getY());
+        int offsetX = (mouse.getX() - left) % textWidth;
+        int offsetY = (mouse.getY() - top) % textHeight;
 
         TMouseEvent mouseEvent = new TMouseEvent(backend,
-            TMouseEvent.Type.MOUSE_UP,
-            x, y, x, y, eventMouse1, eventMouse2, eventMouse3, false, false,
+            TMouseEvent.Type.MOUSE_UP, x, y, x, y, offsetX, offsetY,
+            eventMouse1, eventMouse2, eventMouse3, false, false,
             eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {
@@ -2576,10 +2608,12 @@ public class SwingTerminal extends LogicalScreen
         if (mouse.getWheelRotation() < 0) {
             mouseWheelUp = true;
         }
+        int offsetX = (mouse.getX() - left) % textWidth;
+        int offsetY = (mouse.getY() - top) % textHeight;
 
         TMouseEvent mouseEvent = new TMouseEvent(backend,
-            TMouseEvent.Type.MOUSE_DOWN,
-            x, y, x, y, mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown,
+            TMouseEvent.Type.MOUSE_DOWN, x, y, x, y, offsetX, offsetY,
+            mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown,
             eventAlt, eventCtrl, eventShift);
 
         synchronized (eventQueue) {

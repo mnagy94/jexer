@@ -305,6 +305,11 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean imagesOverText = false;
 
     /**
+     * If true, report mouse events per-pixel rather than per-text-cell.
+     */
+    private boolean pixelMouse = false;
+
+    /**
      * The terminal's input.  If an InputStream is not specified in the
      * constructor, then this InputStreamReader will be bound to System.in
      * with UTF-8 encoding.
@@ -2321,6 +2326,34 @@ public class ECMA48Terminal extends LogicalScreen
      */
     public boolean isImagesOverText() {
         return imagesOverText;
+    }
+
+    /**
+     * Check if terminal is reporting pixel-based mouse position.
+     *
+     * @return true if single-pixel mouse movements are reported
+     */
+    public boolean isPixelMouse() {
+        return pixelMouse;
+    }
+
+    /**
+     * Set request for terminal to report pixel-based mouse position.
+     *
+     * @param pixelMouse if true, single-pixel mouse movements will be
+     * reported
+     */
+    public void setPixelMouse(final boolean pixelMouse) {
+        /*
+         * TODO: SGR 1016 mode
+         *
+         * 1. DECRQM/DECRPM to check for 1016 support
+         *
+         * 2. If supported, send the sequence to turn it on and then parse
+         *    in MOUSE_SGR as pixels and not cells.
+         */
+        // Disable for now.
+        // this.pixelMouse = pixelMouse;
     }
 
     /**

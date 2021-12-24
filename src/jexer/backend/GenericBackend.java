@@ -244,4 +244,24 @@ public abstract class GenericBackend implements Backend {
         return false;
     }
 
+    /**
+     * Check if backend is reporting pixel-based mouse position.
+     *
+     * @return true if single-pixel mouse movements are reported
+     */
+    public boolean isPixelMouse() {
+        // Default: no pixel-based reporting.
+        return false;
+    }
+
+    /**
+     * Set request for backend to report pixel-based mouse position.
+     *
+     * @param pixelMouse if true, single-pixel mouse movements will be
+     * reported, if the backend supports it
+     */
+    public void setPixelMouse(final boolean pixelMouse) {
+        // Default: do nothing
+    }
+
 }

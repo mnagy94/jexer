@@ -49,8 +49,6 @@ import jexer.TWidget;
 import jexer.TWindow;
 import jexer.event.TCommandEvent;
 import jexer.layout.StretchLayoutManager;
-import jexer.tackboard.Bitmap;
-import jexer.tackboard.TackboardItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -78,11 +76,6 @@ public class DemoMainWindow extends TWindow {
      * Timer that increments a number.
      */
     private TTimer timer2;
-
-    /**
-     * Timer that moves things.
-     */
-    private TTimer timer3;
 
     /**
      * Timer label is updated with timer ticks.
@@ -113,11 +106,6 @@ public class DemoMainWindow extends TWindow {
      */
     TProgressBar progressBar2;
 
-    /**
-     * Direction for the bitmaps to move.
-     */
-    boolean direction = true;
-
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -140,7 +128,7 @@ public class DemoMainWindow extends TWindow {
     private DemoMainWindow(final TApplication parent, final int flags) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 23, flags);
+        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 25, flags);
 
         setLayoutManager(new StretchLayoutManager(getWidth() - 2,
                 getHeight() - 2));
@@ -266,6 +254,16 @@ public class DemoMainWindow extends TWindow {
                 }
             }
         );
+        row += 2;
+
+        addLabel(i18n.getString("pixelsLabel"), 1, row);
+        addButton(i18n.getString("pixelsButton"), 35, row,
+            new TAction() {
+                public void DO() {
+                    new DemoPixelsWindow(getApplication());
+                }
+            }
+        );
 
         row = 15;
         progressBar1 = addProgressBar(48, row, 12, 0);
@@ -308,61 +306,6 @@ public class DemoMainWindow extends TWindow {
                 }
             }
         );
-
-        if (true) {
-            // Testing: put an image on the screen.
-            try {
-                ClassLoader loader;
-                loader = Thread.currentThread().getContextClassLoader();
-                BufferedImage image;
-                image = ImageIO.read(loader.getResource("trans_icon.png"));
-                addUnderlay(new Bitmap(17, 33, 0, image));
-                addOverlay(new Bitmap(41, 97, 0, image));
-
-                timer3 = getApplication().addTimer(100, true,
-                    new TAction() {
-                        public void DO() {
-                            List<TackboardItem> items;
-                            items = new ArrayList<TackboardItem>();
-                            if (underlay != null) {
-                                items.addAll(underlay.getItems());
-                            }
-                            if (overlay != null) {
-                                items.addAll(overlay.getItems());
-                            }
-                            int i = 0;
-                            for (TackboardItem item: items) {
-                                i++;
-                                int x = item.getX();
-                                int y = item.getY();
-                                if (i % 2 == 0) {
-                                    if (direction) {
-                                        item.setX(x + 1);
-                                    } else {
-                                        item.setX(x - 1);
-                                    }
-                                } else {
-                                    if (direction) {
-                                        item.setY(y + 1);
-                                    } else {
-                                        item.setY(y - 1);
-                                    }
-                                }
-                                if ((item.getX() < 0)
-                                    || (item.getX() > 300)
-                                    || (item.getY() < 0)
-                                    || (item.getY() > 300)
-                                ) {
-                                    direction = !direction;
-                                }
-                            }
-                        }
-                    }
-                );
-            } catch (Exception e) {
-                new jexer.TExceptionDialog(getApplication(), e);
-            }
-        }
 
         /*
         addButton("Exception", 35, row + 3,

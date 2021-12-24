@@ -160,4 +160,23 @@ public class HeadlessBackend extends LogicalScreen implements Backend {
         return false;
     }
 
+    /**
+     * Check if backend is reporting pixel-based mouse position.
+     *
+     * @return true if single-pixel mouse movements are reported
+     */
+    public boolean isPixelMouse() {
+        return false;
+    }
+
+    /**
+     * Set request for backend to report pixel-based mouse position.
+     *
+     * @param pixelMouse if true, single-pixel mouse movements will be
+     * reported, if the backend supports it
+     */
+    public void setPixelMouse(final boolean pixelMouse) {
+        // NOP
+    }
+
 }

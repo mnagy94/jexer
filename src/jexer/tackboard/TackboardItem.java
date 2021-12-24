@@ -113,8 +113,10 @@ public class TackboardItem implements Comparable<TackboardItem> {
      * @param x absolute X position of the top-left corner in pixels
      */
     public final void setX(final int x) {
-        this.x = x;
-        dirty = true;
+        if (x != this.x) {
+            this.x = x;
+            dirty = true;
+        }
     }
 
     /**
@@ -132,8 +134,10 @@ public class TackboardItem implements Comparable<TackboardItem> {
      * @param y absolute Y position of the top-left corner in pixels
      */
     public final void setY(final int y) {
-        this.y = y;
-        dirty = true;
+        if (y != this.y) {
+            this.y = y;
+            dirty = true;
+        }
     }
 
     /**
@@ -151,8 +155,10 @@ public class TackboardItem implements Comparable<TackboardItem> {
      * @param z absolute Z position
      */
     public final void setZ(final int z) {
-        this.z = z;
-        dirty = true;
+        if (z != this.z) {
+            this.z = z;
+            dirty = true;
+        }
     }
 
     /**
@@ -170,6 +176,15 @@ public class TackboardItem implements Comparable<TackboardItem> {
      */
     public final void setDirty() {
         dirty = true;
+    }
+
+    /**
+     * Set the tackboard this item is on.
+     *
+     * @param tackboard
+     */
+    public final void setTackboard(final Tackboard tackboard) {
+        this.tackboard = tackboard;
     }
 
     /**
@@ -248,9 +263,10 @@ public class TackboardItem implements Comparable<TackboardItem> {
     }
 
     /**
-     * Remove this item from its board.
+     * Remove this item from its board.  Subclasses can use this for cleanup
+     * also.
      */
-    final public void remove() {
+    public void remove() {
         if (tackboard != null) {
             tackboard.getItems().remove(this);
         }

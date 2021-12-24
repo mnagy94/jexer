@@ -104,6 +104,7 @@ public class Tackboard {
      * @param item the item to add
      */
     public void addItem(final TackboardItem item) {
+        item.setTackboard(this);
         items.add(item);
     }
 
@@ -114,6 +115,16 @@ public class Tackboard {
      */
     public List<TackboardItem> getItems() {
         return items;
+    }
+
+    /**
+     * Remove everything on this board.
+     */
+    public void clear() {
+        for (TackboardItem item: items) {
+            // Give every item a shot to cleanup if it needs to.
+            item.remove();
+        }
     }
 
     /**
@@ -188,8 +199,8 @@ public class Tackboard {
             int dx = x % cellWidth;
             int dy = y % cellHeight;
 
-            int left = (x < 0 ? -1 : 0);
-            int top = (y < 0 ? -1 : 0);
+            int left = (x < 0 ? -1 : 0) * 0;
+            int top = (y < 0 ? -1 : 0) * 0;
 
             for (int sy = 0; sy < rows; sy++) {
                 if ((sy + textY + top < 0)

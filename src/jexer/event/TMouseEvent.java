@@ -96,6 +96,16 @@ public class TMouseEvent extends TInputEvent {
     private int absoluteY;
 
     /**
+     * Mouse X pixel offset relative to its text cell position.
+     */
+    private int pixelOffsetX;
+
+    /**
+     * Mouse Y pixel offset relative to its text cell position.
+     */
+    private int pixelOffsetY;
+
+    /**
      * Mouse button 1 (left button).
      */
     private boolean mouse1;
@@ -163,6 +173,38 @@ public class TMouseEvent extends TInputEvent {
         final boolean mouseWheelUp, final boolean mouseWheelDown,
         final boolean alt, final boolean ctrl, final boolean shift) {
 
+        this(backend, type, x, y, absoluteX, absoluteY, 0, 0,
+            mouse1, mouse2, mouse3, mouseWheelUp, mouseWheelDown,
+            alt, ctrl, shift);
+    }
+
+    /**
+     * Public contructor.
+     *
+     * @param backend the backend that generated this event
+     * @param type the type of event, MOUSE_MOTION, MOUSE_DOWN, or MOUSE_UP
+     * @param x relative column
+     * @param y relative row
+     * @param absoluteX absolute column
+     * @param absoluteY absolute row
+     * @param pixelOffsetX X pixel offset relative to text cell
+     * @param pixelOffsetY Y pixel offset relative to text cell
+     * @param mouse1 if true, left button is down
+     * @param mouse2 if true, right button is down
+     * @param mouse3 if true, middle button is down
+     * @param mouseWheelUp if true, mouse wheel (button 4) is down
+     * @param mouseWheelDown if true, mouse wheel (button 5) is down
+     * @param alt if true, ALT was pressed with this mouse event
+     * @param ctrl if true, CTRL was pressed with this mouse event
+     * @param shift if true, SHIFT was pressed with this mouse event
+     */
+    public TMouseEvent(final Backend backend, final Type type,
+        final int x, final int y, final int absoluteX, final int absoluteY,
+        final int pixelOffsetX, final int pixelOffsetY,
+        final boolean mouse1, final boolean mouse2, final boolean mouse3,
+        final boolean mouseWheelUp, final boolean mouseWheelDown,
+        final boolean alt, final boolean ctrl, final boolean shift) {
+
         super(backend);
 
         this.type               = type;
@@ -170,6 +212,8 @@ public class TMouseEvent extends TInputEvent {
         this.y                  = y;
         this.absoluteX          = absoluteX;
         this.absoluteY          = absoluteY;
+        this.pixelOffsetX       = pixelOffsetX;
+        this.pixelOffsetY       = pixelOffsetY;
         this.mouse1             = mouse1;
         this.mouse2             = mouse2;
         this.mouse3             = mouse3;
@@ -272,6 +316,42 @@ public class TMouseEvent extends TInputEvent {
     }
 
     /**
+     * Get pixelOffsetX.
+     *
+     * @return pixelOffsetX
+     */
+    public int getPixelOffsetX() {
+        return pixelOffsetX;
+    }
+
+    /**
+     * Set pixelOffsetX.
+     *
+     * @param pixelOffsetX the new value
+     */
+    public void setPixelOffsetX(final int pixelOffsetX) {
+        this.pixelOffsetX = pixelOffsetX;
+    }
+
+    /**
+     * Get pixelOffsetY.
+     *
+     * @return pixelOffsetY
+     */
+    public int getPixelOffsetY() {
+        return pixelOffsetY;
+    }
+
+    /**
+     * Set pixelOffsetY.
+     *
+     * @param pixelOffsetY the new value
+     */
+    public void setPixelOffsetY(final int pixelOffsetY) {
+        this.pixelOffsetY = pixelOffsetY;
+    }
+
+    /**
      * Get mouse1.
      *
      * @return mouse1
@@ -350,7 +430,8 @@ public class TMouseEvent extends TInputEvent {
      */
     public TMouseEvent dup() {
         TMouseEvent mouse = new TMouseEvent(getBackend(), type, x, y,
-            absoluteX, absoluteY, mouse1, mouse2, mouse3,
+            absoluteX, absoluteY, pixelOffsetX, pixelOffsetY,
+            mouse1, mouse2, mouse3,
             mouseWheelUp, mouseWheelDown, alt, ctrl, shift);
 
         return mouse;
@@ -363,10 +444,11 @@ public class TMouseEvent extends TInputEvent {
      */
     @Override
     public String toString() {
-        return String.format("Mouse: %s x %d y %d absoluteX %d absoluteY %d 1 %s 2 %s 3 %s DOWN %s UP %s ALT %s CTRL %s SHIFT %s",
+        return String.format("Mouse: %s x %d y %d absoluteX %d absoluteY %d pixelX %d pixelY %d 1 %s 2 %s 3 %s DOWN %s UP %s ALT %s CTRL %s SHIFT %s",
             type,
             x, y,
             absoluteX, absoluteY,
+            pixelOffsetX, pixelOffsetY,
             mouse1,
             mouse2,
             mouse3,

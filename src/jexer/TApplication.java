@@ -68,6 +68,8 @@ import jexer.help.Topic;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
 import jexer.menu.TSubMenu;
+import jexer.tackboard.Tackboard;
+import jexer.tackboard.TackboardItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -383,6 +385,16 @@ public class TApplication implements Runnable {
      * The last time user input (mouse or keyboard) was received.
      */
     protected long lastUserInputTime = System.currentTimeMillis();
+
+    /**
+     * The pixel-based overlay.
+     */
+    protected Tackboard overlay = new Tackboard();
+
+    /**
+     * An optional mouse pointer.
+     */
+    protected TackboardItem customMousePointer;
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -1409,6 +1421,11 @@ public class TApplication implements Runnable {
             typingHidMouse = false;
 
             TMouseEvent mouse = (TMouseEvent) event;
+
+            if (customMousePointer != null) {
+                setCustomMousePointerLocation(mouse);
+            }
+
             if (mouse.isMouse1() && (mouse.isShift() || mouse.isCtrl())) {
                 // Screen selection.
                 if (inScreenSelection) {
@@ -1636,6 +1653,11 @@ public class TApplication implements Runnable {
             typingHidMouse = false;
 
             TMouseEvent mouse = (TMouseEvent) event;
+
+            if (customMousePointer != null) {
+                setCustomMousePointerLocation(mouse);
+            }
+
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
                 mouseX = mouse.getX();
                 mouseY = mouse.getY();
@@ -2128,6 +2150,67 @@ public class TApplication implements Runnable {
         return false;
     }
 
+    /**
+     * Get the pixel-based overlay.
+     *
+     * @return the overlay
+     */
+    public final Tackboard getOverlay() {
+        return overlay;
+    }
+
+    /**
+     * Get the custom mouse pointer.
+     *
+     * @return the custom mouse pointer, or null if it was never set
+     */
+    public final TackboardItem getCustomMousePointer() {
+        return customMousePointer;
+    }
+
+    /**
+     * Set a custom mouse pointer.
+     *
+     * @param pointer the new mouse pointer, or null to use the default mouse
+     * pointer.
+     */
+    public final void setCustomMousePointer(final TackboardItem pointer) {
+        if (customMousePointer != null) {
+            customMousePointer.remove();
+        }
+        customMousePointer = pointer;
+        if (customMousePointer == null) {
+            // Mouse pointer removed.
+            return;
+        }
+
+        // Set a negative Z that should be above the default items on the
+        // overlay.  The user can always put items above it with more
+        // negative Z.
+        pointer.setZ(-1);
+
+        // Put it at the mouse location.
+        int pixelX = mouseX * getScreen().getTextWidth();
+        int pixelY = mouseY * getScreen().getTextHeight();
+        customMousePointer.setX(pixelX);
+        customMousePointer.setY(pixelY);
+        overlay.addItem(pointer);
+    }
+
+    /**
+     * Set the location of the custom mouse.
+     *
+     * @param mouse the mouse position
+     */
+    private void setCustomMousePointerLocation(final TMouseEvent mouse) {
+        int pixelX = mouse.getAbsoluteX() * getScreen().getTextWidth();
+        pixelX += mouse.getPixelOffsetX();
+        int pixelY = mouse.getAbsoluteY() * getScreen().getTextHeight();
+        pixelY += mouse.getPixelOffsetY();
+        customMousePointer.setX(pixelX);
+        customMousePointer.setY(pixelY);
+    }
+
     // ------------------------------------------------------------------------
     // Screen refresh loop ----------------------------------------------------
     // ------------------------------------------------------------------------
@@ -2268,7 +2351,9 @@ public class TApplication implements Runnable {
                         screenSelectionRectangle);
                 }
 
-                if ((textMouse == true) && (typingHidMouse == false)) {
+                if ((textMouse == true) && (typingHidMouse == false)
+                    && (customMousePointer == null)
+                ) {
                     // Draw mouse at the new position.
                     drawTextMouse(mouseX, mouseY);
                 }
@@ -2441,11 +2526,17 @@ public class TApplication implements Runnable {
                 screenSelectionX1, screenSelectionY1, screenSelectionRectangle);
         }
 
-        if ((textMouse == true) && (typingHidMouse == false)) {
+        if ((textMouse == true) && (typingHidMouse == false)
+            && (customMousePointer == null)
+        ) {
             drawTextMouse(mouseX, mouseY);
         }
         oldDrawnMouseX = mouseX;
         oldDrawnMouseY = mouseY;
+
+        // Draw the overlay
+        getScreen().resetClipping();
+        overlay.draw(getScreen(), getBackend().isImagesOverText());
 
         // Place the cursor if it is visible
         if (!menuIsActive) {

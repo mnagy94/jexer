@@ -201,4 +201,25 @@ public class ECMA48Backend extends GenericBackend {
         return ((ECMA48Terminal) terminal).isImagesOverText();
     }
 
+    /**
+     * Check if backend is reporting pixel-based mouse position.
+     *
+     * @return true if single-pixel mouse movements are reported
+     */
+    @Override
+    public boolean isPixelMouse() {
+        return ((ECMA48Terminal) terminal).isPixelMouse();
+    }
+
+    /**
+     * Set request for backend to report pixel-based mouse position.
+     *
+     * @param pixelMouse if true, single-pixel mouse movements will be
+     * reported, if the backend supports it
+     */
+    @Override
+    public void setPixelMouse(final boolean pixelMouse) {
+        ((ECMA48Terminal) terminal).setPixelMouse(pixelMouse);
+    }
+
 }
