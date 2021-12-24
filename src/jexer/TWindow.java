@@ -41,6 +41,8 @@ import jexer.event.TMenuEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.menu.TMenu;
+import jexer.tackboard.Tackboard;
+import jexer.tackboard.TackboardItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -203,6 +205,18 @@ public class TWindow extends TWidget {
      * The help topic for this window.
      */
     protected String helpTopic = "Help";
+
+    /**
+     * A means of drawing arbitrary items underneath all widgets on this
+     * window.
+     */
+    protected Tackboard underlay = null;
+
+    /**
+     * A means of drawing arbitrary items on top of all widgets on this
+     * window.
+     */
+    protected Tackboard overlay = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -925,7 +939,6 @@ public class TWindow extends TWidget {
         CellAttributes border = getBorder();
         CellAttributes background = getBackground();
         int borderType = getBorderType();
-
         drawBox(0, 0, getWidth(), getHeight(), border, background, borderType,
             true);
 
@@ -982,6 +995,15 @@ public class TWindow extends TWidget {
                 }
             }
         }
+
+        if (underlay != null) {
+            // This is a tad less slick that I want.  I would prefer the
+            // underlay to be fully contained within the window borders.
+            // Putting it here means it can draw over the window edge.
+            underlay.draw(getScreen(),
+                getApplication().getBackend().isImagesOverText());
+        }
+
     }
 
     // ------------------------------------------------------------------------
@@ -1571,6 +1593,30 @@ public class TWindow extends TWidget {
             "geometry %dx%d  hidden %s modal %s",
             getClass().getName(), hashCode(), title, getZ(),
             getX(), getY(), getWidth(), getHeight(), hidden, isModal());
+    }
+
+    /**
+     * Add a tackboard item to the underlay.
+     *
+     * @param item the item to add
+     */
+    public void addUnderlay(final TackboardItem item) {
+        if (underlay == null) {
+            underlay = new Tackboard();
+        }
+        underlay.addItem(item);
+    }
+
+    /**
+     * Add a tackboard item to the overlay.
+     *
+     * @param item the item to add
+     */
+    public void addOverlay(final TackboardItem item) {
+        if (overlay == null) {
+            overlay = new Tackboard();
+        }
+        overlay.addItem(item);
     }
 
 }

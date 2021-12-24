@@ -45,6 +45,11 @@ public class TackboardItem implements Comparable<TackboardItem> {
     // ------------------------------------------------------------------------
 
     /**
+     * The board this item is on.
+     */
+    private Tackboard tackboard;
+
+    /**
      * X pixel coordinate.
      */
     private int x = 0;
@@ -179,7 +184,8 @@ public class TackboardItem implements Comparable<TackboardItem> {
             return false;
         }
         TackboardItem that = (TackboardItem) rhs;
-        return ((this.x == that.x)
+        return ((this.tackboard == that.tackboard)
+            && (this.x == that.x)
             && (this.y == that.y)
             && (this.z == that.z));
     }
@@ -239,6 +245,16 @@ public class TackboardItem implements Comparable<TackboardItem> {
     public BufferedImage getImage(final int textWidth, final int textHeight) {
         // Default does nothing.
         return null;
+    }
+
+    /**
+     * Remove this item from its board.
+     */
+    final public void remove() {
+        if (tackboard != null) {
+            tackboard.getItems().remove(this);
+        }
+        tackboard = null;
     }
 
 }

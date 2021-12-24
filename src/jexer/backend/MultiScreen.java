@@ -82,6 +82,20 @@ public class MultiScreen implements Screen {
     }
 
     /**
+     * Get drawing offset for x.
+     *
+     * @return the drawing offset
+     */
+    public int getOffsetX() {
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getOffsetX();
+            }
+            return 0;
+        }
+    }
+
+    /**
      * Set drawing offset for y.
      *
      * @param offsetY new drawing offset
@@ -91,6 +105,20 @@ public class MultiScreen implements Screen {
             for (Screen screen: screens) {
                 screen.setOffsetY(offsetY);
             }
+        }
+    }
+
+    /**
+     * Get drawing offset for y.
+     *
+     * @return the drawing offset
+     */
+    public int getOffsetY() {
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getOffsetY();
+            }
+            return 0;
         }
     }
 
@@ -248,6 +276,26 @@ public class MultiScreen implements Screen {
                 return screens.get(0).getCharXY(x, y);
             }
             return new Cell();
+        }
+    }
+
+    /**
+     * Get the cell at one location, in either absolute or clipped
+     * coordinates.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param clip if true, honor clipping/offset
+     *
+     * @return the character + attributes, or null if this position is
+     * outside the clipping/offset region
+     */
+    public Cell getCharXY(final int x, final int y, final boolean clip) {
+        synchronized (screens) {
+            if (screens.size() > 0) {
+                return screens.get(0).getCharXY(x, y, clip);
+            }
+            return null;
         }
     }
 

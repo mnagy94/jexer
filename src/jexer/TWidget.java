@@ -46,6 +46,7 @@ import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.layout.LayoutManager;
 import jexer.menu.TMenu;
+import jexer.tackboard.Tackboard;
 import jexer.ttree.TTreeItem;
 import jexer.ttree.TTreeView;
 import jexer.ttree.TTreeViewWidget;
@@ -1427,6 +1428,12 @@ public abstract class TWidget implements Comparable<TWidget> {
         screen.setOffsetX(getAbsoluteX());
         screen.setOffsetY(getAbsoluteY());
 
+        // Hang onto these in case there is an overlay to draw
+        int overlayClipRight = screen.getClipRight();
+        int overlayClipBottom = screen.getClipBottom();
+        int overlayOffsetX = screen.getOffsetX();
+        int overlayOffsetY = screen.getOffsetY();
+
         // Draw me
         draw();
         if (!isDrawable()) {
@@ -1451,6 +1458,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         }
         if (activeChild != null) {
             activeChild.drawChildren();
+        }
+
+        // The TWindow overlay has to be here so that it can cover drawn
+        // widgets.
+        if (this instanceof TWindow) {
+            Tackboard overlay = ((TWindow) this).overlay;
+            if (overlay != null) {
+                screen.setClipRight(overlayClipRight);
+                screen.setClipBottom(overlayClipBottom);
+                screen.setOffsetX(overlayOffsetX);
+                screen.setOffsetY(overlayOffsetY);
+                overlay.draw(getScreen(),
+                    getApplication().getBackend().isImagesOverText());
+            }
         }
     }
 

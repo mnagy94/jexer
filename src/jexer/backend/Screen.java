@@ -45,11 +45,25 @@ public interface Screen {
     public void setOffsetX(final int offsetX);
 
     /**
+     * Get drawing offset for x.
+     *
+     * @return the drawing offset
+     */
+    public int getOffsetX();
+
+    /**
      * Set drawing offset for y.
      *
      * @param offsetY new drawing offset
      */
     public void setOffsetY(final int offsetY);
+
+    /**
+     * Get drawing offset for y.
+     *
+     * @return the drawing offset
+     */
+    public int getOffsetY();
 
     /**
      * Get right drawing clipping boundary.
@@ -125,13 +139,26 @@ public interface Screen {
     public CellAttributes getAttrXY(final int x, final int y);
 
     /**
-     * Get the cell at one location.
+     * Get the cell at one location in absolute coordinates.
      *
      * @param x column coordinate.  0 is the left-most column.
      * @param y row coordinate.  0 is the top-most row.
      * @return the character + attributes
      */
     public Cell getCharXY(final int x, final int y);
+
+    /**
+     * Get the cell at one location, in either absolute or clipped
+     * coordinates.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param clip if true, honor clipping/offset
+     *
+     * @return the character + attributes, or null if this position is
+     * outside the clipping/offset region
+     */
+    public Cell getCharXY(final int x, final int y, final boolean clip);
 
     /**
      * Set the attributes at one location.

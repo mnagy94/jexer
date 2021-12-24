@@ -208,9 +208,13 @@ public class Tackboard {
                         break;
                     }
 
-                    // This cell is visible on the screen.
-                    assert (sx + textX + left < screen.getWidth());
-                    assert (sy + textY + top < screen.getHeight());
+                    Cell oldCell = screen.getCharXY(sx + textX + left,
+                        sy + textY + top, true);
+                    if (oldCell == null) {
+                        // This image fragment would not be visible on the
+                        // screen.
+                        continue;
+                    }
 
                     BufferedImage newImage;
                     newImage = image.getSubimage(sx * cellWidth,
@@ -224,8 +228,6 @@ public class Tackboard {
                     // newImage has the image that needs to be overlaid on
                     // (sx + textX + left, sy + textY + top)
 
-                    Cell oldCell = screen.getCharXY(sx + textX + left,
-                        sy + textY + top);
                     if (oldCell.isImage()) {
                         // Blit this image over that one.
                         BufferedImage oldImage = oldCell.getImage();

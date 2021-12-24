@@ -32,6 +32,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
@@ -49,7 +50,6 @@ import jexer.TWindow;
 import jexer.event.TCommandEvent;
 import jexer.layout.StretchLayoutManager;
 import jexer.tackboard.Bitmap;
-import jexer.tackboard.Tackboard;
 import jexer.tackboard.TackboardItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
@@ -112,11 +112,6 @@ public class DemoMainWindow extends TWindow {
      * it can be accessed by the anonymous TAction class.
      */
     TProgressBar progressBar2;
-
-    /**
-     * Tackboard can display pixels over text.
-     */
-    Tackboard tackboard = new Tackboard();
 
     /**
      * Direction for the bitmaps to move.
@@ -321,13 +316,20 @@ public class DemoMainWindow extends TWindow {
                 loader = Thread.currentThread().getContextClassLoader();
                 BufferedImage image;
                 image = ImageIO.read(loader.getResource("trans_icon.png"));
-                tackboard.addItem(new Bitmap(17, 41, 0, image));
-                tackboard.addItem(new Bitmap(41, 97, 0, image));
+                addUnderlay(new Bitmap(17, 33, 0, image));
+                addOverlay(new Bitmap(41, 97, 0, image));
 
                 timer3 = getApplication().addTimer(100, true,
                     new TAction() {
                         public void DO() {
-                            List<TackboardItem> items = tackboard.getItems();
+                            List<TackboardItem> items;
+                            items = new ArrayList<TackboardItem>();
+                            if (underlay != null) {
+                                items.addAll(underlay.getItems());
+                            }
+                            if (overlay != null) {
+                                items.addAll(overlay.getItems());
+                            }
                             int i = 0;
                             for (TackboardItem item: items) {
                                 i++;
@@ -392,19 +394,6 @@ public class DemoMainWindow extends TWindow {
     // ------------------------------------------------------------------------
     // TWindow ----------------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Show the bitmap(s) on the Tackboard.
-     */
-    @Override
-    public void draw() {
-        super.draw();
-
-        // For this one, render to the entire screen, not to the window.
-        getScreen().resetClipping();
-        tackboard.draw(getScreen(),
-            getApplication().getBackend().isImagesOverText());
-    }
 
     /**
      * We need to override onClose so that the timer will no longer be called

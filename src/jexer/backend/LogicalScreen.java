@@ -180,12 +180,30 @@ public class LogicalScreen implements Screen {
     }
 
     /**
+     * Get drawing offset for x.
+     *
+     * @return the drawing offset
+     */
+    public int getOffsetX() {
+        return offsetX;
+    }
+
+    /**
      * Set drawing offset for y.
      *
      * @param offsetY new drawing offset
      */
     public final void setOffsetY(final int offsetY) {
         this.offsetY = offsetY;
+    }
+
+    /**
+     * Get drawing offset for y.
+     *
+     * @return the drawing offset
+     */
+    public int getOffsetY() {
+        return offsetY;
     }
 
     /**
@@ -299,7 +317,7 @@ public class LogicalScreen implements Screen {
     }
 
     /**
-     * Get the cell at one location.
+     * Get the cell at one location in absolute coordinates.
      *
      * @param x column coordinate.  0 is the left-most column.
      * @param y row coordinate.  0 is the top-most row.
@@ -311,6 +329,41 @@ public class LogicalScreen implements Screen {
             cell.setTo(logical[x][y]);
         }
         return cell;
+    }
+
+    /**
+     * Get the cell at one location, in either absolute or clipped
+     * coordinates.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param clip if true, honor clipping/offset
+     *
+     * @return the character + attributes, or null if this position is
+     * outside the clipping/offset region
+     */
+    public Cell getCharXY(final int x, final int y, final boolean clip) {
+        int X = x;
+        int Y = y;
+
+        if (clip) {
+            if ((x < clipLeft)
+                || (x >= clipRight)
+                || (y < clipTop)
+                || (y >= clipBottom)
+            ) {
+                return null;
+            }
+            X += offsetX;
+            Y += offsetY;
+        }
+
+        if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
+            Cell cell = new Cell();
+            cell.setTo(logical[X][Y]);
+            return cell;
+        }
+        return null;
     }
 
     /**
