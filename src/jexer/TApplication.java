@@ -2209,6 +2209,7 @@ public class TApplication implements Runnable {
         pixelY += mouse.getPixelOffsetY();
         customMousePointer.setX(pixelX);
         customMousePointer.setY(pixelY);
+        doRepaint();
     }
 
     // ------------------------------------------------------------------------
@@ -2300,7 +2301,7 @@ public class TApplication implements Runnable {
         }
 
         // I don't think this does anything useful anymore...
-        if (!repaint) {
+        if (!repaint && (customMousePointer == null)) {
             if (debugThreads) {
                 System.err.printf("%d %s drawAll() !repaint\n",
                     System.currentTimeMillis(), Thread.currentThread());

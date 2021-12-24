@@ -288,6 +288,11 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean decPrivateModeFlag = false;
 
     /**
+     * If true, '$' was seen in terminal response.
+     */
+    private boolean decDollarModeFlag = false;
+
+    /**
      * If true, we are waiting on the XTVERSION response.  (Which might never
      * come if this terminal doesn't support it.  Blech.)
      */
@@ -308,6 +313,11 @@ public class ECMA48Terminal extends LogicalScreen
      * If true, report mouse events per-pixel rather than per-text-cell.
      */
     private boolean pixelMouse = false;
+
+    /**
+     * If true, this terminal supports SGR-Pixel mouse mode (1016).
+     */
+    private boolean hasPixelMouse = false;
 
     /**
      * The terminal's input.  If an InputStream is not specified in the
@@ -1242,6 +1252,9 @@ public class ECMA48Terminal extends LogicalScreen
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
 
+        // Request xterm report SGR-Pixel mouse support
+        this.output.printf("%s", xtermQueryMode(1016));
+
         this.output.flush();
 
         // Query the screen size
@@ -1348,6 +1361,9 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
+
+        // Request xterm report SGR-Pixel mouse support
+        this.output.printf("%s", xtermQueryMode(1016));
 
         this.output.flush();
 
@@ -2344,16 +2360,9 @@ public class ECMA48Terminal extends LogicalScreen
      * reported
      */
     public void setPixelMouse(final boolean pixelMouse) {
-        /*
-         * TODO: SGR 1016 mode
-         *
-         * 1. DECRQM/DECRPM to check for 1016 support
-         *
-         * 2. If supported, send the sequence to turn it on and then parse
-         *    in MOUSE_SGR as pixels and not cells.
-         */
-        // Disable for now.
-        // this.pixelMouse = pixelMouse;
+        if (hasPixelMouse) {
+            xtermRequestPixelMouse(pixelMouse);
+        }
     }
 
     /**
@@ -2365,6 +2374,7 @@ public class ECMA48Terminal extends LogicalScreen
         params.clear();
         params.add("");
         decPrivateModeFlag = false;
+        decDollarModeFlag = false;
         xtversionResponse.setLength(0);
     }
 
@@ -2630,7 +2640,7 @@ public class ECMA48Terminal extends LogicalScreen
      * @return a MOUSE_MOTION, MOUSE_UP, or MOUSE_DOWN event
      */
     private TInputEvent parseMouseSGR(final boolean release) {
-        // SGR extended coordinates - mode 1006
+        // SGR extended coordinates - mode 1006 or 1016
         if (params.size() < 3) {
             // Invalid position, bail out.
             return null;
@@ -2638,6 +2648,16 @@ public class ECMA48Terminal extends LogicalScreen
         int buttons = Integer.parseInt(params.get(0));
         int x = Integer.parseInt(params.get(1)) - 1;
         int y = Integer.parseInt(params.get(2)) - 1;
+        int offsetX = 0;
+        int offsetY = 0;
+
+        if (pixelMouse) {
+            // x and y are pixels, not text cells.
+            offsetX = x % getTextWidth();
+            offsetY = y % getTextHeight();
+            x = x / getTextWidth();
+            y = y / getTextHeight();
+        }
 
         // Clamp X and Y to the physical screen coordinates.
         if (x >= windowResize.getWidth()) {
@@ -2729,7 +2749,8 @@ public class ECMA48Terminal extends LogicalScreen
             eventCtrl = true;
         }
 
-        return new TMouseEvent(backend, eventType, x, y, x, y,
+        return new TMouseEvent(backend, eventType, x, y,
+            x, y, offsetX, offsetY,
             eventMouse1, eventMouse2, eventMouse3,
             eventMouseWheelUp, eventMouseWheelDown,
             eventAlt, eventCtrl, eventShift);
@@ -3134,6 +3155,15 @@ public class ECMA48Terminal extends LogicalScreen
                 return;
             }
 
+            if (ch == '$') {
+                // This will be the DECRPM response to a DECRQM mode
+                // query.
+                if (decPrivateModeFlag) {
+                    decDollarModeFlag = true;
+                    return;
+                }
+            }
+
             if ((ch >= 0x30) && (ch <= 0x7E)) {
                 switch (ch) {
                 case 'A':
@@ -3365,6 +3395,38 @@ public class ECMA48Terminal extends LogicalScreen
                     }
                     resetParser();
                     return;
+                case 'y':
+                    if ((decPrivateModeFlag == true)
+                        && (decDollarModeFlag == true)
+                    ) {
+                        if (debugToStderr) {
+                            System.err.println("DECRPM: " + params);
+                        }
+                        // DECRPM response
+                        if (params.size() == 2) {
+                            String Pd = params.get(0);
+                            String Ps = params.get(1);
+                            if (Ps.equals("1")          // Set
+                                || Ps.equals("2")       // Reset
+                                || Ps.equals("3")       // Permanently set
+                                || Ps.equals("4")       // Permanently reset
+                            ) {
+                                // This option was recognized, and is in some
+                                // state.
+                                if (Pd.equals("1016")) {
+                                    if (debugToStderr) {
+                                        System.err.println("DECRPM: " +
+                                            "has SGR-Pixel mouse support");
+                                    }
+                                    hasPixelMouse = true;
+                                }
+                            }
+                        }
+                        resetParser();
+                        return;
+                    }
+                    // Unknown
+                    break;
                 default:
                     break;
                 }
@@ -4950,6 +5012,38 @@ public class ECMA48Terminal extends LogicalScreen
             return "\033[?1002;1003;1005;1006h\033[?1049h\033^hideMousePointer\033\\";
         }
         return "\033[?1002;1003;1006;1005l\033[?1049l\033^showMousePointer\033\\";
+    }
+
+    /**
+     * Tell (u)xterm that we want to receive SGR-Pixel mouse events.
+     *
+     * See
+     * http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#Mouse%20Tracking
+     * @param on If true, enable SGR-Pixel mouse reporting
+     */
+    private void xtermRequestPixelMouse(final boolean on) {
+        if (on) {
+            this.output.printf("\033[?1016h");
+            pixelMouse = true;
+        } else {
+            // Turn off SGR-Pixel, and go back to normal mouse.
+            this.output.printf("\033[?1016l\033[?1002;1003;1005;1006h");
+            pixelMouse = false;
+        }
+        this.output.flush();
+    }
+
+    /**
+     * Request (u)xterm report support for a specific mode.
+     *
+     * @param mode the mode to query
+     * @return the string to emit to xterm
+     */
+    private String xtermQueryMode(final int mode) {
+        if (mode > 0) {
+            return String.format("\033[?%d$p", mode);
+        }
+        return "";
     }
 
 }

@@ -83,6 +83,12 @@ public class Tackboard {
      */
     private int lastTextHeight = -1;
 
+    /**
+     * Dirty flag, if true then getImage() needs to generate a rendering
+     * aligned to the text cells.
+     */
+    private boolean dirty = true;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -99,6 +105,13 @@ public class Tackboard {
     // ------------------------------------------------------------------------
 
     /**
+     * Set dirty flag.
+     */
+    public final void setDirty() {
+        dirty = true;
+    }
+
+    /**
      * Add an item to the board.
      *
      * @param item the item to add
@@ -106,6 +119,7 @@ public class Tackboard {
     public void addItem(final TackboardItem item) {
         item.setTackboard(this);
         items.add(item);
+        dirty = true;
     }
 
     /**
@@ -125,6 +139,7 @@ public class Tackboard {
             // Give every item a shot to cleanup if it needs to.
             item.remove();
         }
+        dirty = false;
     }
 
     /**
@@ -138,7 +153,7 @@ public class Tackboard {
         Collections.sort(items);
         int cellWidth = screen.getTextWidth();
         int cellHeight = screen.getTextHeight();
-        boolean redraw = false;
+        boolean redraw = dirty;
 
         if ((lastTextWidth == -1)
             || (lastTextWidth != cellWidth)
@@ -274,6 +289,8 @@ public class Tackboard {
             } // for (int sy = 0; sy < rows; sy++)
 
         } // for (TackboardItem item: items)
+
+        dirty = false;
     }
 
 }
