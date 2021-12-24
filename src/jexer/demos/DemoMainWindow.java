@@ -28,14 +28,12 @@
  */
 package jexer.demos;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import javax.imageio.ImageIO;
 
 import jexer.TAction;
 import jexer.TApplication;

@@ -29,21 +29,18 @@
 package jexer.demos;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 
 import jexer.TAction;
 import jexer.TApplication;
-import jexer.TEditColorThemeWindow;
 import jexer.TEditorWindow;
 import jexer.TLabel;
-import jexer.TProgressBar;
-import jexer.TTableWindow;
 import jexer.TTimer;
 import jexer.TWidget;
 import jexer.TWindow;
@@ -55,8 +52,7 @@ import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
- * This is the main "demo" application window.  It makes use of the TTimer,
- * TProgressBox, TLabel, TButton, and TField widgets.
+ * Pixel-based operations.
  */
 public class DemoPixelsWindow extends TWindow {
 
