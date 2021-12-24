@@ -17,6 +17,14 @@ On Xterm, images are dithered to a common palette:
 
 ![Xterm Snake Image](/screenshots/snake_xterm.png?raw=true "Xterm Snake Image")
 
+Experimental support for pixel-based operations is now present in git
+head.  If the terminal supports mouse mode 1016 (SGR-Pixel), one can
+now get smooth(er) mouse motion with custom bitmap overlaid mouse.
+Below is stock xterm, with a custom mouse icon, and SGR-Pixel mode
+active:
+
+![Xterm SGR-Pixel Mouse](/screenshots/xterm_pixel_mouse.gif?raw=true "Xterm SGR-Pixel Mouse")
+
 
 
 License
@@ -147,12 +155,17 @@ This is most visible in terminal windows with sixel and PNG images.
 ![Hello notcurses! 🤘](/screenshots/for_nick.png?raw=true "Hello notcurses! 🤘🙂")
 
 Performance of transparent images-over-text is still _very_ bad on
-multihead, and crashes lie in wait.  (Also, on the ECMA48 backend the
-internal font is used for rendering because terminals are extremely
+multihead, and crashes lie in wait.  Also, on the ECMA48 backend the
+internal font is used for rendering if
+jexer.ECMA48.imagesOverText=true because terminals are extremely
 finicky when putting text over sixel images and this was the most
-simple way to get something going.)  But hey:
+simple way to get something going.  Here is an example of multihead,
+and the xterm windows on the right is using a rendered font that is
+clearly different from the terminal's font:
 
 ![Trans Heart Multihead](/screenshots/overlapping_multihead.png?raw=true "Trans Heart Multihead")
+
+
 
 Terminal Support
 ----------------
