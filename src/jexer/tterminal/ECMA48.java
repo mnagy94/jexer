@@ -237,7 +237,8 @@ public class ECMA48 implements Runnable {
     private enum MouseEncoding {
         X10,
         UTF8,
-        SGR
+        SGR,
+        SGR_PIXELS
     }
 
     // ------------------------------------------------------------------------
@@ -1967,7 +1968,7 @@ public class ECMA48 implements Runnable {
         /*
         System.err.printf("mouse(): protocol %s encoding %s mouse %s\n",
             mouseProtocol, mouseEncoding, mouse);
-         */
+        */
 
         if (mouseEncoding == MouseEncoding.X10) {
             // We will support X10 but only for (160,94) and smaller.
@@ -2022,7 +2023,9 @@ public class ECMA48 implements Runnable {
 
         // Now encode the event
         StringBuilder sb = new StringBuilder(6);
-        if (mouseEncoding == MouseEncoding.SGR) {
+        if ((mouseEncoding == MouseEncoding.SGR)
+            || (mouseEncoding == MouseEncoding.SGR_PIXELS)
+        ) {
             sb.append((char) 0x1B);
             sb.append("[<");
             int buttons = 0;
@@ -2063,8 +2066,13 @@ public class ECMA48 implements Runnable {
                 buttons |= 0x04;
             }
 
-            sb.append(String.format("%d;%d;%d", buttons, mouse.getX() + 1,
-                    mouse.getY() + 1));
+            int cols = mouse.getX() + 1;
+            int rows = mouse.getY() + 1;
+            if (mouseEncoding == MouseEncoding.SGR_PIXELS) {
+                cols = (mouse.getX() * textWidth) + mouse.getPixelOffsetX() + 1;
+                rows = (mouse.getY() * textHeight) + mouse.getPixelOffsetY() + 1;
+            }
+            sb.append(String.format("%d;%d;%d", buttons, cols, rows));
 
             if (mouse.getType() == TMouseEvent.Type.MOUSE_UP) {
                 sb.append("m");
@@ -3609,6 +3617,26 @@ public class ECMA48 implements Runnable {
                         mouseEncoding = MouseEncoding.SGR;
                     } else {
                         mouseEncoding = MouseEncoding.X10;
+                    }
+                }
+                break;
+
+            case 1016:
+                if ((type == DeviceType.XTERM)
+                    && (decPrivateModeFlag == true)
+                ) {
+                    // Mouse: SGR coordinates in pixels
+                    if (value == true) {
+                        mouseEncoding = MouseEncoding.SGR_PIXELS;
+                        // We need our host widget to report in pixels too.
+                        if (backend != null) {
+                            backend.setPixelMouse(true);
+                        }
+                    } else {
+                        mouseEncoding = MouseEncoding.X10;
+                        if (backend != null) {
+                            backend.setPixelMouse(false);
+                        }
                     }
                 }
                 break;
@@ -5359,6 +5387,37 @@ public class ECMA48 implements Runnable {
     }
 
     /**
+     * DECRQM - Request DEC private mode flags.
+     */
+    private void decrqm() {
+        boolean decPrivateModeFlag = false;
+
+        for (int i = 0; i < collectBuffer.length(); i++) {
+            if (collectBuffer.charAt(i) == '?') {
+                decPrivateModeFlag = true;
+                break;
+            }
+        }
+
+        int i = getCsiParam(0, 0);
+
+        if (decPrivateModeFlag) {
+            switch (i) {
+            case 1016:
+                // Report SGR-Pixels support
+                int Ps = 2;     // Reset
+                if (mouseEncoding == MouseEncoding.SGR_PIXELS) {
+                    Ps = 1;     // Set
+                }
+                writeRemote(String.format("\033[?%d;%d$y", i, Ps));
+                break;
+            default:
+                break;
+            }
+        }
+    }
+
+    /**
      * Run this input character through the ECMA48 state machine.
      *
      * @param ch character from the remote side
@@ -7048,6 +7107,13 @@ public class ECMA48 implements Runnable {
                     ) {
                         // DECSTR - Soft terminal reset
                         decstr();
+                    }
+                    if ((type == DeviceType.XTERM)
+                        && (collectBuffer.length() > 0)
+                        && (collectBuffer.charAt(collectBuffer.length() - 1) == '$')
+                    ) {
+                        // DECRQM - Query DEC private mode flags
+                        decrqm();
                     }
                     break;
                 case 'q':

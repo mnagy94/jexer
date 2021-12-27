@@ -728,9 +728,11 @@ public class SwingTerminal extends LogicalScreen
      * "hand", "text", "move", or "crosshair"
      */
     public void setMouseStyle(final String style) {
-        this.mouseStyle = style;
-        if (swing != null) {
-            swing.setMouseStyle(mouseStyle);
+        if (!style.equals(mouseStyle)) {
+            this.mouseStyle = style;
+            if (swing != null) {
+                swing.setMouseStyle(mouseStyle);
+            }
         }
     }
 

@@ -1553,21 +1553,21 @@ public class TWindow extends TWidget {
 
     /**
      * Returns true if this window does not want the application-wide mouse
-     * cursor drawn over it.
+     * pointer drawn over it.
      *
      * @return true if this window does not want the application-wide mouse
-     * cursor drawn over it
+     * pointer drawn over it
      */
     public boolean hasHiddenMouse() {
         return hideMouse;
     }
 
     /**
-     * Set request to prevent the application-wide mouse cursor from being
+     * Set request to prevent the application-wide mouse pointer from being
      * drawn over this window.
      *
      * @param hideMouse if true, this window does not want the
-     * application-wide mouse cursor drawn over it
+     * application-wide mouse pointer drawn over it
      */
     public final void setHiddenMouse(final boolean hideMouse) {
         this.hideMouse = hideMouse;

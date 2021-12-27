@@ -382,10 +382,10 @@ public class TTerminalWindow extends TScrollableWindow {
 
     /**
      * Returns true if this window does not want the application-wide mouse
-     * cursor drawn over it.
+     * pointer drawn over it.
      *
      * @return true if this window does not want the application-wide mouse
-     * cursor drawn over it
+     * pointer drawn over it
      */
     @Override
     public boolean hasHiddenMouse() {

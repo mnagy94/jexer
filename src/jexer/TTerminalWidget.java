@@ -911,10 +911,17 @@ public class TTerminalWidget extends TScrollableWidget
      * cursor drawn over it
      */
     public boolean hasHiddenMouse() {
-        if (emulator == null) {
-            return false;
+        if (emulator != null) {
+            boolean hiddenMouse = (emulator.hasHiddenMousePointer()
+                || typingHidMouse);
+            if (hiddenMouse) {
+                setMouseStyle("none");
+            } else {
+                setMouseStyle("default");
+            }
+            return hiddenMouse;
         }
-        return (emulator.hasHiddenMousePointer() || typingHidMouse);
+        return false;
     }
 
     /**

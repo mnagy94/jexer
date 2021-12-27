@@ -1438,6 +1438,7 @@ public class TApplication implements Runnable {
                 setCustomMousePointerLocation(mouse);
             }
             setCustomWidgetMousePointerLocation(mouse);
+            setMouseStyle(mouse);
 
             if (mouse.isMouse1() && (mouse.isShift() || mouse.isCtrl())) {
                 // Screen selection.
@@ -1477,6 +1478,7 @@ public class TApplication implements Runnable {
                             TMouseEvent.Type.MOUSE_DOUBLE_CLICK,
                             mouse.getX(), mouse.getY(),
                             mouse.getAbsoluteX(), mouse.getAbsoluteY(),
+                            mouse.getPixelOffsetX(), mouse.getPixelOffsetY(),
                             mouse.isMouse1(), mouse.isMouse2(),
                             mouse.isMouse3(),
                             mouse.isMouseWheelUp(), mouse.isMouseWheelDown(),
@@ -1671,6 +1673,7 @@ public class TApplication implements Runnable {
                 setCustomMousePointerLocation(mouse);
             }
             setCustomWidgetMousePointerLocation(mouse);
+            setMouseStyle(mouse);
 
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
                 mouseX = mouse.getX();
@@ -1688,6 +1691,7 @@ public class TApplication implements Runnable {
                             TMouseEvent.Type.MOUSE_DOUBLE_CLICK,
                             mouse.getX(), mouse.getY(),
                             mouse.getAbsoluteX(), mouse.getAbsoluteY(),
+                            mouse.getPixelOffsetX(), mouse.getPixelOffsetY(),
                             mouse.isMouse1(), mouse.isMouse2(),
                             mouse.isMouse3(),
                             mouse.isMouseWheelUp(), mouse.isMouseWheelDown(),
@@ -2232,6 +2236,46 @@ public class TApplication implements Runnable {
             SwingTerminal terminal = (SwingTerminal) getScreen();
             terminal.setMouseStyle("none");
         }
+    }
+
+    /**
+     * Set the mouse style to the widget under the mouse.
+     *
+     * @param mouse the mouse position
+     */
+    private void setMouseStyle(final TMouseEvent mouse) {
+        if (!(backend instanceof SwingBackend)) {
+            return;
+        }
+        SwingTerminal terminal = (SwingTerminal) getScreen();
+
+        // A bit of a hassle to find the active widget...
+        TWidget activeWidget = null;
+        for (TMenu menu: menus) {
+            if (menu.isActive()) {
+                terminal.setMouseStyle(System.getProperty(
+                    "jexer.Swing.mouseStyle", "default"));
+                return;
+            }
+        }
+        TWindow window = getActiveWindow();
+        if (window == null) {
+            terminal.setMouseStyle(System.getProperty(
+                "jexer.Swing.mouseStyle", "default"));
+            return;
+        }
+
+        for (TWidget widget: window.getChildren()) {
+            if (widget.mouseWouldHit(mouse)) {
+                activeWidget = widget;
+            }
+        }
+        if (activeWidget == null) {
+            terminal.setMouseStyle(System.getProperty(
+                "jexer.Swing.mouseStyle", "default"));
+            return;
+        }
+        terminal.setMouseStyle(activeWidget.getMouseStyle());
     }
 
     /**
