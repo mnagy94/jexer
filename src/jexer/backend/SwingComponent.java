@@ -270,10 +270,10 @@ public class SwingComponent {
     }
 
     /**
-     * Set the mouse cursor style.
+     * Set the mouse pointer (cursor) style.
      *
-     * @param style the cursor style string, one of: "default", "none",
-     * "hand", "text", "move", or "crosshair"
+     * @param style the mouse pointer style string, one of: "default",
+     * "none", "hand", "text", "move", or "crosshair"
      */
     public void setMouseStyle(final String style) {
         assert (style != null);

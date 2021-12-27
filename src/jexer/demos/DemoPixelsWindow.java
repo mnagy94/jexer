@@ -47,6 +47,7 @@ import jexer.TWindow;
 import jexer.event.TCommandEvent;
 import jexer.layout.StretchLayoutManager;
 import jexer.tackboard.Bitmap;
+import jexer.tackboard.MousePointer;
 import jexer.tackboard.TackboardItem;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
@@ -117,10 +118,12 @@ public class DemoPixelsWindow extends TWindow {
                             loader = Thread.currentThread().getContextClassLoader();
                             BufferedImage image;
                             image = ImageIO.read(loader.
-                                getResource("cute_icon.png"));
-                            getApplication().setCustomMousePointer(new Bitmap(0,
-                                    0, 0, image));
-                            getApplication().getBackend().setPixelMouse(true);
+                                getResource("demo/cute_icon.png"));
+                            TApplication app = getApplication();
+                            app.setCustomMousePointer(new MousePointer(0, 0, 0,
+                                    image, image.getWidth() / 2,
+                                    image.getHeight() / 2));
+                            app.getBackend().setPixelMouse(true);
                         } catch (Exception e) {
                             new jexer.TExceptionDialog(getApplication(), e);
                         }
@@ -140,6 +143,22 @@ public class DemoPixelsWindow extends TWindow {
         );
         row += 2;
 
+        addLabel(i18n.getString("textField1"), 1, row);
+        TWidget field = addField(35, row, 15, false, "Field text");
+        try {
+            ClassLoader loader;
+            loader = Thread.currentThread().getContextClassLoader();
+            BufferedImage image;
+            image = ImageIO.read(loader.
+                getResource("demo/ibeam.png"));
+            TApplication app = getApplication();
+            field.setCustomMousePointer(new MousePointer(0, 0, 0,
+                    image, 24, 24));
+        } catch (Exception e) {
+            new jexer.TExceptionDialog(getApplication(), e);
+        }
+        row += 2;
+
         // TODO: more things
 
         // Put some floating hearts on the screen.
@@ -147,7 +166,7 @@ public class DemoPixelsWindow extends TWindow {
             ClassLoader loader;
             loader = Thread.currentThread().getContextClassLoader();
             BufferedImage image;
-            image = ImageIO.read(loader.getResource("trans_icon.png"));
+            image = ImageIO.read(loader.getResource("demo/trans_icon.png"));
             addUnderlay(new Bitmap(17, 33, 0, image));
             addOverlay(new Bitmap(11, 97, 0, image));
 

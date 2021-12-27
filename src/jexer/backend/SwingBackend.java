@@ -193,7 +193,9 @@ public class SwingBackend extends GenericBackend {
      */
     @Override
     public void setPixelMouse(final boolean pixelMouse) {
-        ((SwingTerminal) terminal).setPixelMouse(pixelMouse);
+        if (pixelMouse != ((SwingTerminal) terminal).isPixelMouse()) {
+            ((SwingTerminal) terminal).setPixelMouse(pixelMouse);
+        }
     }
 
 }

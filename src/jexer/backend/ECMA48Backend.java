@@ -219,7 +219,9 @@ public class ECMA48Backend extends GenericBackend {
      */
     @Override
     public void setPixelMouse(final boolean pixelMouse) {
-        ((ECMA48Terminal) terminal).setPixelMouse(pixelMouse);
+        if (pixelMouse != ((ECMA48Terminal) terminal).isPixelMouse()) {
+            ((ECMA48Terminal) terminal).setPixelMouse(pixelMouse);
+        }
     }
 
 }

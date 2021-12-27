@@ -46,6 +46,7 @@ import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
 import jexer.layout.LayoutManager;
 import jexer.menu.TMenu;
+import jexer.tackboard.MousePointer;
 import jexer.tackboard.Tackboard;
 import jexer.ttree.TTreeItem;
 import jexer.ttree.TTreeView;
@@ -149,6 +150,19 @@ public abstract class TWidget implements Comparable<TWidget> {
      * Layout manager.
      */
     private LayoutManager layout = null;
+
+    /**
+     * An optional mouse pointer picture to use when the mouse is over this
+     * widget.
+     */
+    private MousePointer customMousePointer;
+
+    /**
+     * The mouse pointer (cursor) style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair".  Currently this feature only
+     * works on the Swing backend.
+     */
+    private String mouseStyle = "default";
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -1327,6 +1341,65 @@ public abstract class TWidget implements Comparable<TWidget> {
             return parent.getAbsoluteY() + y + 1;
         }
         return parent.getAbsoluteY() + y;
+    }
+
+    /**
+     * Get the mouse pointer (cursor) style.
+     *
+     * @return the pointer style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair"
+     */
+    public final String getMouseStyle() {
+        return mouseStyle;
+    }
+
+    /**
+     * Set the mouse pointer (cursor) style.  Currently this feature only
+     * works on the Swing backend.  By contrast, custom mouse pointers work
+     * on all backends.
+     *
+     * @param mouseStyle the pointer style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair"
+     *
+     * @see #setCustomMousePointer(final MousePointer pointer)
+     */
+    public final void setMouseStyle(final String mouseStyle) {
+        String styleLower = mouseStyle.toLowerCase();
+
+        assert (styleLower.equals("none")
+            || styleLower.equals("default")
+            || styleLower.equals("hand")
+            || styleLower.equals("text")
+            || styleLower.equals("move")
+            || styleLower.equals("crosshair"));
+
+        this.mouseStyle = styleLower;
+    }
+
+    /**
+     * Get the custom mouse pointer.
+     *
+     * @return the custom mouse pointer, or null if it was never set
+     */
+    public final MousePointer getCustomMousePointer() {
+        return customMousePointer;
+    }
+
+    /**
+     * Set a custom mouse pointer.
+     *
+     * @param pointer the new mouse pointer, or null to use the default mouse
+     * pointer.
+     */
+    public final void setCustomMousePointer(final MousePointer pointer) {
+        if (customMousePointer != null) {
+            customMousePointer.remove();
+        }
+        customMousePointer = pointer;
+        if (customMousePointer == null) {
+            // Custom bitmap mouse pointer removed.
+            return;
+        }
     }
 
     /**
