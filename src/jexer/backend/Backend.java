@@ -138,4 +138,12 @@ public interface Backend {
      */
     public void setPixelMouse(final boolean pixelMouse);
 
+    /**
+     * Set the mouse pointer (cursor) style.
+     *
+     * @param mouseStyle the pointer style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair"
+     */
+    public void setMouseStyle(final String mouseStyle);
+
 }

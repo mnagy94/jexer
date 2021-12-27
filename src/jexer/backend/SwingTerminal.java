@@ -722,14 +722,14 @@ public class SwingTerminal extends LogicalScreen
     }
 
     /**
-     * Set the mouse cursor style.
+     * Set the mouse pointer (cursor) style.
      *
-     * @param style the cursor style string, one of: "default", "none",
+     * @param mouseStyle the pointer style string, one of: "default", "none",
      * "hand", "text", "move", or "crosshair"
      */
-    public void setMouseStyle(final String style) {
-        if (!style.equals(mouseStyle)) {
-            this.mouseStyle = style;
+    public void setMouseStyle(final String mouseStyle) {
+        if (!this.mouseStyle.equals(mouseStyle)) {
+            this.mouseStyle = mouseStyle;
             if (swing != null) {
                 swing.setMouseStyle(mouseStyle);
             }

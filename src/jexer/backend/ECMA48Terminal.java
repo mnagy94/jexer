@@ -2366,6 +2366,19 @@ public class ECMA48Terminal extends LogicalScreen
     }
 
     /**
+     * Set the mouse pointer (cursor) style.
+     *
+     * @param mouseStyle the pointer style string, one of: "default", "none",
+     * "hand", "text", "move", or "crosshair"
+     */
+    public void setMouseStyle(final String mouseStyle) {
+        // TODO: For now disregard this.  OSC 22 came out with Xterm 367
+        // which can select X11 cursors/pointers, but mintty implemented it
+        // against Win32 cursors/pointers.  And neither bothered to implement
+        // "really, just hide the damn pointer but still give me events" grr.
+    }
+
+    /**
      * Reset keyboard/mouse input parser.
      */
     private void resetParser() {

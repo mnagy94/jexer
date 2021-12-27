@@ -323,6 +323,11 @@ public class ECMA48 implements Runnable {
     private MouseEncoding mouseEncoding = MouseEncoding.X10;
 
     /**
+     * If true, report mouse events per-pixel rather than per-text-cell.
+     */
+    private boolean pixelMouse = false;
+
+    /**
      * A terminal may request that the mouse pointer be hidden using a
      * Privacy Message containing either "hideMousePointer" or
      * "showMousePointer".  This is currently only used within Jexer by
@@ -3629,14 +3634,10 @@ public class ECMA48 implements Runnable {
                     if (value == true) {
                         mouseEncoding = MouseEncoding.SGR_PIXELS;
                         // We need our host widget to report in pixels too.
-                        if (backend != null) {
-                            backend.setPixelMouse(true);
-                        }
+                        pixelMouse = true;
                     } else {
                         mouseEncoding = MouseEncoding.X10;
-                        if (backend != null) {
-                            backend.setPixelMouse(false);
-                        }
+                        pixelMouse = false;
                     }
                 }
                 break;
@@ -7494,6 +7495,15 @@ public class ECMA48 implements Runnable {
      */
     public final boolean hasHiddenMousePointer() {
         return hideMousePointer;
+    }
+
+    /**
+     * Check if terminal is reporting pixel-based mouse position.
+     *
+     * @return true if single-pixel mouse movements are reported
+     */
+    public final boolean isPixelMouse() {
+        return pixelMouse;
     }
 
     /**

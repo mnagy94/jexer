@@ -1437,8 +1437,7 @@ public class TApplication implements Runnable {
             if (customMousePointer != null) {
                 setCustomMousePointerLocation(mouse);
             }
-            setCustomWidgetMousePointerLocation(mouse);
-            setMouseStyle(mouse);
+            setMouseState(mouse);
 
             if (mouse.isMouse1() && (mouse.isShift() || mouse.isCtrl())) {
                 // Screen selection.
@@ -1672,8 +1671,7 @@ public class TApplication implements Runnable {
             if (customMousePointer != null) {
                 setCustomMousePointerLocation(mouse);
             }
-            setCustomWidgetMousePointerLocation(mouse);
-            setMouseStyle(mouse);
+            setMouseState(mouse);
 
             if ((mouseX != mouse.getX()) || (mouseY != mouse.getY())) {
                 mouseX = mouse.getX();
@@ -2209,7 +2207,7 @@ public class TApplication implements Runnable {
         if (customMousePointer == null) {
             // Custom bitmap mouse pointer removed.
             if (getScreen() instanceof SwingTerminal) {
-                // Restore the Swing pointer to the Jexer default.
+                // Restore the Swing pointer to the application default.
                 SwingTerminal terminal = (SwingTerminal) getScreen();
                 terminal.setMouseStyle(System.getProperty(
                     "jexer.Swing.mouseStyle", "default"));
@@ -2239,116 +2237,90 @@ public class TApplication implements Runnable {
     }
 
     /**
-     * Set the mouse style to the widget under the mouse.
+     * Get the visible widget under the mouse position.
      *
      * @param mouse the mouse position
+     * @return the widget, or null if the mouse is over the menu
      */
-    private void setMouseStyle(final TMouseEvent mouse) {
-        if (!(backend instanceof SwingBackend)) {
-            return;
-        }
-        SwingTerminal terminal = (SwingTerminal) getScreen();
-
-        // A bit of a hassle to find the active widget...
+    private TWidget getWidgetUnderMouse(final TMouseEvent mouse) {
         TWidget activeWidget = null;
         for (TMenu menu: menus) {
             if (menu.isActive()) {
-                terminal.setMouseStyle(System.getProperty(
-                    "jexer.Swing.mouseStyle", "default"));
-                return;
+                return null;
             }
         }
         TWindow window = getActiveWindow();
         if (window == null) {
-            terminal.setMouseStyle(System.getProperty(
-                "jexer.Swing.mouseStyle", "default"));
-            return;
+            return null;
         }
-
+        activeWidget = window;
         for (TWidget widget: window.getChildren()) {
             if (widget.mouseWouldHit(mouse)) {
                 activeWidget = widget;
             }
         }
-        if (activeWidget == null) {
-            terminal.setMouseStyle(System.getProperty(
-                "jexer.Swing.mouseStyle", "default"));
-            return;
-        }
-        terminal.setMouseStyle(activeWidget.getMouseStyle());
+        return activeWidget;
     }
 
     /**
-     * Set the custom mouse pointer for the widget under the mouse.
+     * Set the mouse state to match the style or bitmap requested by the
+     * widget under the mouse.
      *
      * @param mouse the mouse position
      */
-    private void setCustomWidgetMousePointer(final TMouseEvent mouse) {
+    private void setMouseState(final TMouseEvent mouse) {
+        /*
+         * There are three reasons to use pixel-level mouse events:
+         *
+         * 1. A custom bitmap mouse pointer is active over the entire
+         *    application.
+         *
+         * 2. The active widget or window has requested it.
+         *
+         * 3. There is a custom bitmap mouse pointer for the widget
+         *    immediately under the mouse.
+         */
+        boolean pixelMouse = false;
+        String mouseStyle = System.getProperty("jexer.Swing.mouseStyle",
+            "default");
 
-        if (customWidgetMousePointer == null) {
-            // Save the state of pixelMouse.
-            oldPixelMouse = backend.isPixelMouse();
+        if (customMousePointer != null) {
+            pixelMouse = true;
         }
-        customWidgetMousePointer = null;
 
-        // A bit of a hassle to find the active widget...
-        TWidget activeWidget = null;
-        for (TMenu menu: menus) {
-            if (menu.isActive()) {
-                if (backend.isPixelMouse() != oldPixelMouse) {
-                    backend.setPixelMouse(oldPixelMouse);
-                }
-                return;
-            }
-        }
-        TWindow window = getActiveWindow();
-        if (window == null) {
-            if (backend.isPixelMouse() != oldPixelMouse) {
-                backend.setPixelMouse(oldPixelMouse);
-            }
-            return;
-        }
-        for (TWidget widget: window.getChildren()) {
-            if (widget.mouseWouldHit(mouse)) {
-                activeWidget = widget;
-            }
-        }
+        TWidget activeWidget = getWidgetUnderMouse(mouse);
         if (activeWidget == null) {
-            if (backend.isPixelMouse() != oldPixelMouse) {
-                backend.setPixelMouse(oldPixelMouse);
-            }
+            // Reset to default.
+            backend.setPixelMouse(pixelMouse);
+            backend.setMouseStyle(mouseStyle);
             return;
         }
-        customWidgetMousePointer = activeWidget.getCustomMousePointer();
-        if (customWidgetMousePointer != null) {
-            backend.setPixelMouse(true);
+        if (activeWidget.isPixelMouse()) {
+            pixelMouse = true;
+        }
+
+        // We have a widget.
+        backend.setMouseStyle(activeWidget.getMouseStyle());
+        MousePointer newCustomWidgetMousePointer;
+        newCustomWidgetMousePointer = activeWidget.getCustomMousePointer();
+        if (newCustomWidgetMousePointer != null) {
+            pixelMouse = true;
+            int pixelX = mouse.getAbsoluteX() * getScreen().getTextWidth();
+            pixelX += mouse.getPixelOffsetX();
+            pixelX -= newCustomWidgetMousePointer.getHotspotX();
+            int pixelY = mouse.getAbsoluteY() * getScreen().getTextHeight();
+            pixelY += mouse.getPixelOffsetY();
+            pixelY -= newCustomWidgetMousePointer.getHotspotY();
+            newCustomWidgetMousePointer.setX(pixelX);
+            newCustomWidgetMousePointer.setY(pixelY);
+            doRepaint();
         } else {
-            if (backend.isPixelMouse() != oldPixelMouse) {
-                backend.setPixelMouse(oldPixelMouse);
+            if (customWidgetMousePointer != null) {
+                doRepaint();
             }
         }
-    }
-
-    /**
-     * Set the location of the active widget custom mouse pointer.
-     *
-     * @param mouse the mouse position
-     */
-    private void setCustomWidgetMousePointerLocation(final TMouseEvent mouse) {
-        setCustomWidgetMousePointer(mouse);
-        if (customWidgetMousePointer == null) {
-            return;
-        }
-
-        int pixelX = mouse.getAbsoluteX() * getScreen().getTextWidth();
-        pixelX += mouse.getPixelOffsetX();
-        pixelX -= customWidgetMousePointer.getHotspotX();
-        int pixelY = mouse.getAbsoluteY() * getScreen().getTextHeight();
-        pixelY += mouse.getPixelOffsetY();
-        pixelY -= customWidgetMousePointer.getHotspotY();
-        customWidgetMousePointer.setX(pixelX);
-        customWidgetMousePointer.setY(pixelY);
-        doRepaint();
+        backend.setPixelMouse(pixelMouse);
+        customWidgetMousePointer = newCustomWidgetMousePointer;
     }
 
     /**

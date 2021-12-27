@@ -110,7 +110,6 @@ public class DemoPixelsWindow extends TWindow {
                     if (mouse != null) {
                         // Turn it off.
                         getApplication().setCustomMousePointer(null);
-                        getApplication().getBackend().setPixelMouse(false);
                     } else {
                         // Turn it on.
                         try {
@@ -123,7 +122,6 @@ public class DemoPixelsWindow extends TWindow {
                             app.setCustomMousePointer(new MousePointer(0, 0, 0,
                                     image, image.getWidth() / 2,
                                     image.getHeight() / 2));
-                            app.getBackend().setPixelMouse(true);
                         } catch (Exception e) {
                             new jexer.TExceptionDialog(getApplication(), e);
                         }

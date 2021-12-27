@@ -925,6 +925,19 @@ public class TTerminalWidget extends TScrollableWidget
     }
 
     /**
+     * Check if per-pixel mouse events are requested.
+     *
+     * @return true if per-pixel mouse events are requested
+     */
+    @Override
+    public boolean isPixelMouse() {
+        if (emulator != null) {
+            return emulator.isPixelMouse();
+        }
+        return false;
+    }
+
+    /**
      * See if the terminal is still running.
      *
      * @return if true, we are still connected to / reading from the remote
