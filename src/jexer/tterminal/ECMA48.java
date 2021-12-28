@@ -740,9 +740,7 @@ public class ECMA48 implements Runnable {
                 if (utf8) {
                     if (readBufferUTF8.length < n) {
                         // The buffer wasn't big enough, make it huger
-                        int newSizeHalf = Math.max(readBufferUTF8.length,
-                            n);
-
+                        int newSizeHalf = Math.max(readBufferUTF8.length, n);
                         readBufferUTF8 = new char[newSizeHalf * 2];
                     }
                 } else {
