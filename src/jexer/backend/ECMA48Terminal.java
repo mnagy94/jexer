@@ -1684,7 +1684,7 @@ public class ECMA48Terminal extends LogicalScreen
 
             // Default to using JPG Jexer images if terminal supports it.
             String jexerImageStr = System.getProperty("jexer.ECMA48.jexerImages",
-                "jpg").toLowerCase();
+                "png").toLowerCase();
             if (jexerImageStr.equals("false")) {
                 jexerImageOption = JexerImageOption.DISABLED;
             } else if (jexerImageStr.equals("jpg")) {
