@@ -283,7 +283,7 @@ public class ECMA48 implements Runnable {
     /**
      * The maximum number of lines in the scrollback buffer.
      */
-    private int scrollbackMax = 10000;
+    private int scrollbackMax = 2000;
 
     /**
      * The terminal's input.  For type == XTERM, this is an InputStreamReader
