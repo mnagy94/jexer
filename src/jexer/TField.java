@@ -180,6 +180,8 @@ public class TField extends TWidget implements EditMenuUser {
         super(parent, x, y, width, 1);
 
         setCursorVisible(true);
+        setMouseStyle("text");
+
         this.fixed = fixed;
         this.text = text;
         this.enterAction = enterAction;

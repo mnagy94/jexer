@@ -175,6 +175,7 @@ public class TEditorWidget extends TWidget implements EditMenuUser {
         super(parent, x, y, width, height);
 
         setCursorVisible(true);
+        setMouseStyle("text");
 
         defaultColor = getTheme().getColor("teditor");
         document = new Document(text, defaultColor);

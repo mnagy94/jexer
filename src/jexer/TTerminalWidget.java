@@ -239,6 +239,7 @@ public class TTerminalWidget extends TScrollableWidget
 
         super(parent, x, y, width, height);
 
+        setMouseStyle("text");
         this.closeAction = closeAction;
 
         // Save the external command line that can be used to recreate this
@@ -341,6 +342,7 @@ public class TTerminalWidget extends TScrollableWidget
 
         super(parent, x, y, width, height);
 
+        setMouseStyle("text");
         this.closeAction = closeAction;
 
         if (System.getProperty("jexer.TTerminal.shell") != null) {
@@ -917,7 +919,7 @@ public class TTerminalWidget extends TScrollableWidget
             if (hiddenMouse) {
                 setMouseStyle("none");
             } else {
-                setMouseStyle("default");
+                setMouseStyle("text");
             }
             return hiddenMouse;
         }

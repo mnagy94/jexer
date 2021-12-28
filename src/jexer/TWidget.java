@@ -1792,6 +1792,25 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Returns the widget under the mouse.
+     *
+     * @param mouse the mouse position
+     * @return widget that is under the mouse, or null if the mouse is not
+     * over this widget
+     */
+    public TWidget getWidgetUnderMouse(final TMouseEvent mouse) {
+        if (!mouseWouldHit(mouse)) {
+            return null;
+        }
+        for (TWidget widget: children) {
+            if (widget.mouseWouldHit(mouse)) {
+                return widget.getWidgetUnderMouse(mouse);
+            }
+        }
+        return this;
+    }
+
+    /**
      * Insert a vertical split between this widget and parent, and optionally
      * put another widget in the other side of the split.
      *

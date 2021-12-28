@@ -3642,6 +3642,24 @@ public class ECMA48 implements Runnable {
                 }
                 break;
 
+            case 1047:
+                // Fall through...
+            case 1048:
+                // Fall through...
+            case 1049:
+                if (type == DeviceType.XTERM) {
+                    if (decPrivateModeFlag == true) {
+                        // Save cursor, select alternate/normal, and clear
+                        // screen.  We won't switch to a different buffer,
+                        // instead we will just clear the screen.
+                        eraseScreen(0, 0, height - 1, width - 1, false);
+                        scrollRegionTop = 0;
+                        scrollRegionBottom = height - 1;
+                        cursorPosition(0, 0);
+                    }
+                }
+                break;
+
             case 1070:
                 if (type == DeviceType.XTERM) {
                     if (decPrivateModeFlag == true) {

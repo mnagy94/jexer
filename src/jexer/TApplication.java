@@ -2097,7 +2097,7 @@ public class TApplication implements Runnable {
         String version = getClass().getPackage().getImplementationVersion();
         if (version == null) {
             // This is Java 9+, use a hardcoded string here.
-            version = "1.0.0";
+            version = "1.5.0";
         }
         messageBox(i18n.getString("aboutDialogTitle"),
             MessageFormat.format(i18n.getString("aboutDialogText"), version),
@@ -2253,13 +2253,7 @@ public class TApplication implements Runnable {
         if (window == null) {
             return null;
         }
-        activeWidget = window;
-        for (TWidget widget: window.getChildren()) {
-            if (widget.mouseWouldHit(mouse)) {
-                activeWidget = widget;
-            }
-        }
-        return activeWidget;
+        return window.getWidgetUnderMouse(mouse);
     }
 
     /**

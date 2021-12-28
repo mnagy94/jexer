@@ -132,11 +132,21 @@ public class Tackboard {
     }
 
     /**
+     * Get the number of items on this board.
+     *
+     * @return the number of items
+     */
+    public int size() {
+        return items.size();
+    }
+
+    /**
      * Remove everything on this board.
      */
     public void clear() {
-        for (TackboardItem item: items) {
+        while (items.size() > 0) {
             // Give every item a shot to cleanup if it needs to.
+            TackboardItem item = items.get(0);
             item.remove();
         }
         dirty = false;
