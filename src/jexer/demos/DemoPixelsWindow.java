@@ -35,6 +35,9 @@ import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import java.awt.Font;
+import java.awt.FontFormatException;
+import java.io.InputStream;
 import javax.imageio.ImageIO;
 
 import jexer.TAction;
@@ -49,6 +52,7 @@ import jexer.layout.StretchLayoutManager;
 import jexer.tackboard.Bitmap;
 import jexer.tackboard.MousePointer;
 import jexer.tackboard.TackboardItem;
+import jexer.tackboard.Text;
 import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
@@ -80,6 +84,11 @@ public class DemoPixelsWindow extends TWindow {
      * Direction for the bitmaps to move.
      */
     boolean direction = true;
+
+    /**
+     * The floating text.
+     */
+    Text floatingText = null;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -135,7 +144,30 @@ public class DemoPixelsWindow extends TWindow {
         addButton(i18n.getString("floatingTextButton"), 35, row,
             new TAction() {
                 public void DO() {
-                    // TODO
+                    if (floatingText == null) {
+                        int fontSize = 31;
+                        Font fontRoot = null;
+                        Font font = null;
+                        try {
+                            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                            InputStream in = loader.getResourceAsStream("demo/5thgradecursive.ttf");
+                            fontRoot = Font.createFont(Font.TRUETYPE_FONT, in);
+                            font = fontRoot.deriveFont(Font.PLAIN, fontSize);
+                        } catch (FontFormatException e) {
+                            font = new Font(Font.SANS_SERIF, Font.PLAIN,
+                                fontSize);
+                        } catch (IOException e) {
+                            font = new Font(Font.SANS_SERIF, Font.PLAIN,
+                                fontSize);
+                        }
+                        floatingText = new Text(30, 21, 2, "Heat from fire",
+                            font, fontSize,
+                            new java.awt.Color(0xF7, 0xA8, 0xB8));
+                        addOverlay(floatingText);
+                    } else {
+                        floatingText.remove();
+                        floatingText = null;
+                    }
                 }
             }
         );
@@ -181,6 +213,10 @@ public class DemoPixelsWindow extends TWindow {
                         }
                         int i = 0;
                         for (TackboardItem item: items) {
+                            if (item instanceof Text) {
+                                continue;
+                            }
+
                             i++;
                             int x = item.getX();
                             int y = item.getY();
