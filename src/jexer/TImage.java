@@ -424,11 +424,18 @@ public class TImage extends TWidget implements EditMenuUser {
 
                     Cell cell = new Cell();
                     cell.setTo(getWindow().getBackground());
-                    
+
+                    // Render over a full-cell-size image.
+                    BufferedImage newImage = new BufferedImage(textWidth,
+                        textHeight, BufferedImage.TYPE_INT_ARGB);
+                    java.awt.Graphics gr = newImage.getGraphics();
                     BufferedImage subImage = image.getSubimage(x * textWidth,
                         y * textHeight, width, height);
-                    if (!ImageUtils.isFullyTransparent(subImage)) {
-                        cell.setImage(subImage);
+                    gr.drawImage(subImage, 0, 0, null, null);
+                    gr.dispose();
+
+                    if (!ImageUtils.isFullyTransparent(newImage)) {
+                        cell.setImage(newImage);
                         cell.flattenImage(false);
                     }
                     cells[x][y] = cell;

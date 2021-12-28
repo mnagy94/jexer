@@ -259,7 +259,7 @@ public class ECMA48Terminal extends LogicalScreen
      * If not DISABLED, emit image data via Jexer image protocol if the
      * terminal supports it.
      */
-    private JexerImageOption jexerImageOption = JexerImageOption.JPG;
+    private JexerImageOption jexerImageOption = JexerImageOption.PNG;
 
     /**
      * The Jexer post-rendered string cache.
@@ -4260,7 +4260,8 @@ public class ECMA48Terminal extends LogicalScreen
          *
          */
 
-        // File contents can be several image formats.  We will use JPG.
+        /*
+        // Logic for PNG encode is below.  Leaving it in for reference.
         ByteArrayOutputStream jpgOutputStream = new ByteArrayOutputStream(1024);
 
         // Convert from ARGB to RGB, otherwise the JPG encode will fail.
@@ -4285,9 +4286,9 @@ public class ECMA48Terminal extends LogicalScreen
             // We failed to render image, bail out.
             return "";
         }
+         */
 
-        // Logic for PNG encode is below.  Leaving it in for reference.
-        /*
+        // File contents can be several image formats.  We will use PNG.
         ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream(1024);
         try {
             if (!ImageIO.write(image.getSubimage(0, 0, image.getWidth(),
@@ -4301,7 +4302,6 @@ public class ECMA48Terminal extends LogicalScreen
             // We failed to render image, bail out.
             return "";
         }
-        */
 
         sb.append("\033]1337;File=name=");
         sb.append(StringUtils.toBase64("jexer".getBytes()));
@@ -4310,7 +4310,7 @@ public class ECMA48Terminal extends LogicalScreen
                 image.getWidth(), Math.min(image.getHeight(),
                     getTextHeight())));
 
-        String bytes = StringUtils.toBase64(jpgOutputStream.toByteArray());
+        String bytes = StringUtils.toBase64(pngOutputStream.toByteArray());
         sb.append(bytes);
         sb.append("\007");
 
