@@ -1508,9 +1508,7 @@ public class TTerminalWidget extends TScrollableWidget
      * Called by emulator when fresh data has come in.
      */
     public void displayChanged() {
-        synchronized (emulator) {
-            setDirty();
-        }
+        setDirty();
         TApplication app = getApplication();
         if (app != null) {
             app.postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));

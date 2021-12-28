@@ -787,14 +787,13 @@ public class ECMA48 implements Runnable {
                     // This is EOF
                     done = true;
                 } else {
-                    // Don't step on UI events
-                    synchronized (this) {
-                        if (utf8) {
-                            for (int i = 0; i < rc;) {
-                                int ch = Character.codePointAt(readBufferUTF8,
-                                    i);
-                                i += Character.charCount(ch);
+                    if (utf8) {
+                        for (int i = 0; i < rc;) {
+                            int ch = Character.codePointAt(readBufferUTF8, i);
+                            i += Character.charCount(ch);
 
+                            // Don't step on UI events
+                            synchronized (this) {
                                 // Special case for VT10x: 7-bit characters
                                 // only.
                                 if ((type == DeviceType.VT100)
@@ -805,8 +804,11 @@ public class ECMA48 implements Runnable {
                                     consume(ch);
                                 }
                             }
-                        } else {
-                            for (int i = 0; i < rc; i++) {
+                        }
+                    } else {
+                        for (int i = 0; i < rc; i++) {
+                            // Don't step on UI events
+                            synchronized (this) {
                                 // Special case for VT10x: 7-bit characters
                                 // only.
                                 if ((type == DeviceType.VT100)
@@ -3652,6 +3654,10 @@ public class ECMA48 implements Runnable {
                         // Save cursor, select alternate/normal, and clear
                         // screen.  We won't switch to a different buffer,
                         // instead we will just clear the screen.
+                        currentState.attr.setForeColor(Color.WHITE);
+                        currentState.attr.setForeColorRGB(-1);
+                        currentState.attr.setBackColor(Color.BLACK);
+                        currentState.attr.setBackColorRGB(-1);
                         eraseScreen(0, 0, height - 1, width - 1, false);
                         scrollRegionTop = 0;
                         scrollRegionBottom = height - 1;
