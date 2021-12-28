@@ -320,6 +320,13 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean hasPixelMouse = false;
 
     /**
+     * If true, this terminal supports Synchronized Output mode (2026).  See
+     * https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
+     * for details of this mode.
+     */
+    private boolean hasSynchronizedOutput = false;
+
+    /**
      * The terminal's input.  If an InputStream is not specified in the
      * constructor, then this InputStreamReader will be bound to System.in
      * with UTF-8 encoding.
@@ -1252,6 +1259,9 @@ public class ECMA48Terminal extends LogicalScreen
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
 
+        // Request xterm report Synchronized Output support
+        this.output.printf("%s", xtermQueryMode(2026));
+
         // Request xterm report SGR-Pixel mouse support
         this.output.printf("%s", xtermQueryMode(1016));
 
@@ -1362,6 +1372,9 @@ public class ECMA48Terminal extends LogicalScreen
         // Request xterm use the sixel settings we want
         this.output.printf("%s", xtermSetSixelSettings());
 
+        // Request xterm report Synchronized Output support
+        this.output.printf("%s", xtermQueryMode(2026));
+
         // Request xterm report SGR-Pixel mouse support
         this.output.printf("%s", xtermQueryMode(1016));
 
@@ -1449,7 +1462,15 @@ public class ECMA48Terminal extends LogicalScreen
             flushString(sb);
         }
         if (output != null) {
-            output.write(sb.toString());
+            if (hasSynchronizedOutput) {
+                // Begin Synchronized Update (BSU)
+                output.write("\033[?2026h");
+                output.write(sb.toString());
+                // End Synchronized Update (ESU)
+                output.write("\033[?2026l");
+            } else {
+                output.write(sb.toString());
+            }
             flush();
         }
     }
@@ -3433,6 +3454,13 @@ public class ECMA48Terminal extends LogicalScreen
                                     }
                                     hasPixelMouse = true;
                                 }
+                                if (Pd.equals("2026")) {
+                                    if (debugToStderr) {
+                                        System.err.println("DECRPM: " +
+                                            "has Synchronized Output support");
+                                    }
+                                    hasSynchronizedOutput = true;
+                                }
                             }
                         }
                         resetParser();
@@ -5054,7 +5082,11 @@ public class ECMA48Terminal extends LogicalScreen
      */
     private String xtermQueryMode(final int mode) {
         if (mode > 0) {
-            return String.format("\033[?%d$p", mode);
+            String str = String.format("\033[?%d$p", mode);
+            if (debugToStderr) {
+                System.err.printf("Sending DECRQM: %s\n", str);
+            }
+            return str;
         }
         return "";
     }
