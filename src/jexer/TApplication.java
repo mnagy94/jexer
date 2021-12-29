@@ -2295,6 +2295,8 @@ public class TApplication implements Runnable {
         }
         if (customMousePointer == null) {
             mouseStyle = activeWidget.getMouseStyle();
+        } else {
+            activeWidget.getWindow().setTackboardsDirty();
         }
         MousePointer newCustomWidgetMousePointer;
         newCustomWidgetMousePointer = activeWidget.getCustomMousePointer();
@@ -2309,9 +2311,11 @@ public class TApplication implements Runnable {
             pixelY -= newCustomWidgetMousePointer.getHotspotY();
             newCustomWidgetMousePointer.setX(pixelX);
             newCustomWidgetMousePointer.setY(pixelY);
+            activeWidget.getWindow().setTackboardsDirty();
             doRepaint();
         } else {
             if (customWidgetMousePointer != null) {
+                activeWidget.getWindow().setTackboardsDirty();
                 doRepaint();
             }
         }

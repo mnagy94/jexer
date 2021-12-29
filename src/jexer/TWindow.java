@@ -1619,4 +1619,16 @@ public class TWindow extends TWidget {
         overlay.addItem(item);
     }
 
+    /**
+     * Mark the underlay and overlay dirty.
+     */
+    public void setTackboardsDirty() {
+        if (underlay != null) {
+            underlay.setDirty();
+        }
+        if (overlay != null) {
+            overlay.setDirty();
+        }
+    }
+
 }
