@@ -1468,6 +1468,10 @@ public class ECMA48Terminal extends LogicalScreen
                 output.write(sb.toString());
                 // End Synchronized Update (ESU)
                 output.write("\033[?2026l");
+                if (debugToStderr) {
+                    System.err.printf("flushPhysical() \033[?2026h%s\033[?2026l\n",
+                        sb.toString());
+                }
             } else {
                 output.write(sb.toString());
             }
@@ -2349,7 +2353,7 @@ public class ECMA48Terminal extends LogicalScreen
         reallyCleared = false;
 
         String result = sb.toString();
-        if (debugToStderr) {
+        if (debugToStderr && !hasSynchronizedOutput) {
             System.err.printf("flushString(): %s\n", result);
         }
         return result;

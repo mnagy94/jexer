@@ -328,6 +328,21 @@ public class ECMA48 implements Runnable {
     private boolean pixelMouse = false;
 
     /**
+     * If true, the remote side has requested a synchronized update.
+     */
+    private volatile boolean withinSynchronizedUpdate = false;
+
+    /**
+     * The last display returned from getVisibleDisplay().
+     */
+    private volatile List<DisplayLine> lastVisibleDisplay;
+
+    /**
+     * The last time we returned lastVisibleDisplay.
+     */
+    private volatile long lastVisibleUpdateTime;
+
+    /**
      * A terminal may request that the mouse pointer be hidden using a
      * Privacy Message containing either "hideMousePointer" or
      * "showMousePointer".  This is currently only used within Jexer by
@@ -1182,6 +1197,18 @@ public class ECMA48 implements Runnable {
 
         assert (visibleHeight >= 0);
         assert (scrollBottom >= 0);
+
+        long now = System.currentTimeMillis();
+
+        if (withinSynchronizedUpdate
+            && (lastVisibleDisplay != null)
+            && (lastVisibleDisplay.size() == visibleHeight)
+            && ((now - lastVisibleUpdateTime) < 125)
+        ) {
+            // More data is being received, and we have a usable screen from
+            // before.  Use it.
+            return lastVisibleDisplay;
+        }
 
         int visibleBottom = scrollback.size() + display.size() - scrollBottom;
 
@@ -3680,6 +3707,40 @@ public class ECMA48 implements Runnable {
                 }
                 break;
 
+            case 2026:
+                if ((type == DeviceType.XTERM)
+                    && (decPrivateModeFlag == true)
+                ) {
+
+                    /*
+                    System.err.printf("Synchronized output: %s\n",
+                        (value ? "set" : "reset"));
+                     */
+
+                    /*
+                     * Request Synchronized Output mode (2026).  See
+                     * https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
+                     * for details of this mode.
+                     */
+
+                    // Hang onto the visible screen.  If we immediately go
+                    // back into sync then this screen will be returned.
+                    lastVisibleDisplay = getVisibleDisplay(height, 0);
+                    lastVisibleUpdateTime = System.currentTimeMillis();
+                    if (value == true) {
+                        withinSynchronizedUpdate = true;
+                    } else {
+                        if (withinSynchronizedUpdate) {
+                            withinSynchronizedUpdate = false;
+                            // Permit my enclosing UI to know that I updated.
+                            if (displayListener != null) {
+                                displayListener.displayChanged();
+                            }
+                        }
+                    }
+                }
+                break;
+
             default:
                 break;
 
@@ -5425,11 +5486,20 @@ public class ECMA48 implements Runnable {
         int i = getCsiParam(0, 0);
 
         if (decPrivateModeFlag) {
+            // System.err.printf("DECRQM: %d\n", i);
+
+            int Ps = 2;         // Reset
             switch (i) {
             case 1016:
                 // Report SGR-Pixels support
-                int Ps = 2;     // Reset
                 if (mouseEncoding == MouseEncoding.SGR_PIXELS) {
+                    Ps = 1;     // Set
+                }
+                writeRemote(String.format("\033[?%d;%d$y", i, Ps));
+                break;
+            case 2026:
+                // Report Synchronized Updates support
+                if (withinSynchronizedUpdate) {
                     Ps = 1;     // Set
                 }
                 writeRemote(String.format("\033[?%d;%d$y", i, Ps));
