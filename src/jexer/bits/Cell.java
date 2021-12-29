@@ -629,14 +629,6 @@ public class Cell extends CellAttributes {
      */
     @Override
     public void setTo(final Object rhs) {
-        // Let this throw a ClassCastException
-        CellAttributes thatAttr = (CellAttributes) rhs;
-        this.image = null;
-        this.imageHashCode = 0;
-        this.backgroundHashCode = 0;
-        this.width = Width.SINGLE;
-        super.setTo(thatAttr);
-
         if (rhs instanceof Cell) {
             Cell that = (Cell) rhs;
             this.ch = that.ch;
@@ -647,7 +639,15 @@ public class Cell extends CellAttributes {
             this.imageHashCode = that.imageHashCode;
             this.backgroundHashCode = that.backgroundHashCode;
             this.hasTransparentPixels = that.hasTransparentPixels;
+        } else {
+            this.image = null;
+            this.imageHashCode = 0;
+            this.backgroundHashCode = 0;
+            this.width = Width.SINGLE;
         }
+        // Let this throw a ClassCastException
+        CellAttributes thatAttr = (CellAttributes) rhs;
+        super.setTo(thatAttr);
     }
 
     /**

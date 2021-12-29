@@ -846,7 +846,9 @@ public class TTerminalWidget extends TScrollableWidget
      */
     public void setDirty() {
         synchronized (dirtyQueue) {
-            dirtyQueue.add("dirty");
+            if (dirtyQueue.size() == 0) {
+                dirtyQueue.add("dirty");
+            }
         }
     }
 
@@ -1508,10 +1510,14 @@ public class TTerminalWidget extends TScrollableWidget
      * Called by emulator when fresh data has come in.
      */
     public void displayChanged() {
-        setDirty();
-        TApplication app = getApplication();
-        if (app != null) {
-            app.postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));
+        synchronized (dirtyQueue) {
+            if (dirtyQueue.size() == 0) {
+                dirtyQueue.add("dirty");
+                TApplication app = getApplication();
+                if (app != null) {
+                    app.postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));
+                }
+            }
         }
     }
 

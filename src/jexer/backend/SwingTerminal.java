@@ -314,10 +314,11 @@ public class SwingTerminal extends LogicalScreen
     private boolean mouse3 = false;
 
     /**
-     * If true, draw text glyphs underneath images on cells.  This is
-     * expensive.
+     * If true, draw text glyphs underneath images on cells.  This can be
+     * expensive, but if the images are trimmed to minimize transparent
+     * pixels (as ECMA48 and Bitmap do) then it isn't bad.
      */
-    private boolean imagesOverText = false;
+    private boolean imagesOverText = true;
 
     /**
      * If true, report mouse events per-pixel rather than per-text-cell.
@@ -689,10 +690,10 @@ public class SwingTerminal extends LogicalScreen
         setMouseStyle(System.getProperty("jexer.Swing.mouseStyle", "default"));
 
         if (System.getProperty("jexer.Swing.imagesOverText",
-                "false").equals("true")) {
-            imagesOverText = true;
-        } else {
+                "true").equals("false")) {
             imagesOverText = false;
+        } else {
+            imagesOverText = true;
         }
 
         // Set custom colors

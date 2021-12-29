@@ -150,6 +150,7 @@ public class ECMA48 implements Runnable {
         DCS_PASSTHROUGH,
         DCS_IGNORE,
         DCS_SIXEL,
+        DCS_XTGETTCAP,
         SOSPMAPC_STRING,
         OSC_STRING,
         VT52_DIRECT_CURSOR_ADDRESS
@@ -240,6 +241,11 @@ public class ECMA48 implements Runnable {
         SGR,
         SGR_PIXELS
     }
+
+    /**
+     * The version of the terminal to report in XTVERSION.
+     */
+    private final String VERSION = "1.5.0";
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -507,6 +513,11 @@ public class ECMA48 implements Runnable {
      * Sixel shared palette.
      */
     private HashMap<Integer, java.awt.Color> sixelPalette;
+
+    /**
+     * XTGETTCAP collection buffer.
+     */
+    private StringBuilder xtgettcapBuffer = new StringBuilder();
 
     /**
      * The width of a character cell in pixels.
@@ -4886,9 +4897,9 @@ public class ECMA48 implements Runnable {
             if (i == 0) {
                 // DCS > | {text} ST
                 if (s8c1t == true) {
-                    writeRemote("\u0090>|jexer\u009c");
+                    writeRemote("\u0090>|jexer(" + VERSION + ")\u009c");
                 } else {
-                    writeRemote("\033P>|jexer\033\\");
+                    writeRemote("\033P>|jexer(" + VERSION + ")\033\\");
                 }
             }
         }
@@ -5537,6 +5548,7 @@ public class ECMA48 implements Runnable {
             if ((type == DeviceType.XTERM)
                 && ((scanState == ScanState.OSC_STRING)
                     || (scanState == ScanState.DCS_SIXEL)
+                    || (scanState == ScanState.DCS_XTGETTCAP)
                     || (scanState == ScanState.SOSPMAPC_STRING))
             ) {
                 // Xterm can pass ESCAPE to its OSC sequence.
@@ -7273,7 +7285,6 @@ public class ECMA48 implements Runnable {
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
-                    && (collectBuffer.length() > 0)
                     && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
                 ) {
                     toGround();
@@ -7332,7 +7343,6 @@ public class ECMA48 implements Runnable {
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
-                    && (collectBuffer.length() > 0)
                     && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
                 ) {
                     toGround();
@@ -7344,8 +7354,16 @@ public class ECMA48 implements Runnable {
                 scanState = ScanState.DCS_IGNORE;
             }
 
-            // 0x40-7E goes to DCS_PASSTHROUGH
-            if ((ch >= 0x40) && (ch <= 0x7E)) {
+            if (ch == 0x71) {
+                if ((collectBuffer.length() > 0)
+                    && (collectBuffer.charAt(collectBuffer.length() - 1) == '+')
+                ) {
+                    // DCS + q --> XTGETTCAP
+                    xtgettcapBuffer.setLength(0);
+                    scanState = ScanState.DCS_XTGETTCAP;
+                }
+            } else if ((ch >= 0x40) && (ch <= 0x7E)) {
+                // 0x40-7E goes to DCS_PASSTHROUGH
                 scanState = ScanState.DCS_PASSTHROUGH;
             }
 
@@ -7365,7 +7383,6 @@ public class ECMA48 implements Runnable {
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
-                    && (collectBuffer.length() > 0)
                     && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
                 ) {
                     toGround();
@@ -7428,7 +7445,6 @@ public class ECMA48 implements Runnable {
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
-                    && (collectBuffer.length() > 0)
                     && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
                 ) {
                     toGround();
@@ -7482,7 +7498,6 @@ public class ECMA48 implements Runnable {
             }
             if (ch == 0x5C) {
                 if ((collectBuffer.length() > 0)
-                    && (collectBuffer.length() > 0)
                     && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
                 ) {
                     parseSixel();
@@ -7498,6 +7513,41 @@ public class ECMA48 implements Runnable {
                 || ((ch >= 0x20) && (ch <= 0x7E))
             ) {
                 sixelParseBuffer.append((char) ch);
+            }
+
+            // 7F                        --> ignore
+            return;
+
+        case DCS_XTGETTCAP:
+            // 0x9C goes to GROUND
+            if (ch == 0x9C) {
+                parseXtgettcap();
+                toGround();
+                return;
+            }
+
+            // 0x1B 0x5C goes to GROUND
+            if (ch == 0x1B) {
+                collect((char) ch);
+                return;
+            }
+            if (ch == 0x5C) {
+                if ((collectBuffer.length() > 0)
+                    && (collectBuffer.charAt(collectBuffer.length() - 1) == 0x1B)
+                ) {
+                    parseXtgettcap();
+                    toGround();
+                    return;
+                }
+            }
+
+            // 00-17, 19, 1C-1F, 20-7E   --> put
+            if ((ch <= 0x17)
+                || (ch == 0x19)
+                || ((ch >= 0x1C) && (ch <= 0x1F))
+                || ((ch >= 0x20) && (ch <= 0x7E))
+            ) {
+                xtgettcapBuffer.append((char) ch);
             }
 
             // 7F                        --> ignore
@@ -7661,6 +7711,68 @@ public class ECMA48 implements Runnable {
      */
     public void setTextHeight(final int textHeight) {
         this.textHeight = textHeight;
+    }
+
+    /**
+     * Parse a XTGETTCAP request.
+     */
+    private void parseXtgettcap() {
+        // System.err.println("XTGETTCAP: '" + xtgettcapBuffer.toString() + "'");
+
+        String [] namesHex = xtgettcapBuffer.toString().split(";");
+        StringBuilder name = new StringBuilder();
+        for (int i = 0; i < namesHex.length; i++) {
+            // System.err.println("XTGETTCAP: hex " + namesHex[i]);
+            if ((namesHex[i].length() % 2) != 0) {
+                // Incorrect format of name, bail out.
+                return;
+            }
+            name.setLength(0);
+            String nameHex = namesHex[i].toUpperCase();
+            try {
+                for (int j = 0; j < nameHex.length(); j += 2) {
+                    String ch = nameHex.substring(j, j + 2);
+                    name.append((char) Integer.parseInt(ch, 16));
+                }
+            } catch (NumberFormatException e) {
+                // Incorrect format of name, bail out.
+                return;
+            }
+            // System.err.println("XTGETTCAP: '" + name + "'");
+
+            if (name.toString().equals("TN")) {
+                writeXtgettcapResponse(name.toString(), "xterm-256color");
+            }
+            if (name.toString().equals("RGB")) {
+                /*
+                 * See
+                 * https://gist.github.com/XVilka/8346728#true-color-detection
+                 *
+                 * We can pick either "truecolor" or "24bit".
+                 */
+                writeXtgettcapResponse(name.toString(), "truecolor");
+            }
+        }
+    }
+
+    /**
+     * Emit the valid response to a XTGETTCAP query.
+     *
+     * @param name the name
+     * @param value the value
+     */
+    private void writeXtgettcapResponse(final String name, final String value) {
+        StringBuilder response = new StringBuilder(16);
+        response.append("\033P1+r");
+        for (int i = 0; i < name.length(); i++) {
+            response.append(Integer.toHexString(name.charAt(i)));
+        }
+        response.append("=");
+        for (int i = 0; i < value.length(); i++) {
+            response.append(Integer.toHexString(value.charAt(i)));
+        }
+        response.append("\033\\");
+        writeRemote(response.toString());
     }
 
     /**
