@@ -106,8 +106,7 @@ public class SwingTerminal extends LogicalScreen
      * request for an initial burst of frames.  If Toolkit.sync() is called
      * too frequently, the window system and/or video driver can crash.
      *
-     * A value of 2 or less is very responsive, while 25 or more feels
-     * sluggish for input but is sustainable for the windowing system.
+     * A value of 2 or less is very responsive for user input.
      */
     private static final long SYNC_MIN_MILLIS_BURST = 2;
 
@@ -117,10 +116,10 @@ public class SwingTerminal extends LogicalScreen
      * Toolkit.sync() is called too frequently, the window system and/or
      * video driver can crash.
      *
-     * A value of 2 or less is very responsive, while 25 or more feels
-     * sluggish for input but is sustainable for the windowing system.
+     * A value of 30 or more feels sluggish for input, but is sustainable for
+     * the windowing system.
      */
-    private static final long SYNC_MIN_MILLIS_SUSTAIN = 25;
+    private static final long SYNC_MIN_MILLIS_SUSTAIN = 50;
 
     /**
      * The number of frames that can be emitted quickly (at
@@ -645,11 +644,12 @@ public class SwingTerminal extends LogicalScreen
      */
     @Override
     public void flushPhysical() {
-        if (frameRequests > SYNC_BURST_COUNT) {
+        if ((syncMinMillis == SYNC_MIN_MILLIS_BURST)
+            && (frameRequests > SYNC_BURST_COUNT)
+        ) {
             // System.err.println("Auto - Switch to sustain");
             // Switch to throttled frames.
             syncMinMillis = SYNC_MIN_MILLIS_SUSTAIN;
-            frameRequests = 0;
         }
 
         // See if it is time to flip the blink time.
@@ -679,9 +679,6 @@ public class SwingTerminal extends LogicalScreen
      * Display the Swing triple-buffer buffer on the screen.
      */
     private void syncSwingBuffer() {
-        if (syncMinMillis == SYNC_MIN_MILLIS_BURST) {
-            frameRequests++;
-        }
         long now = System.currentTimeMillis();
         while (now - lastSyncTime < syncMinMillis) {
             try {
@@ -698,6 +695,8 @@ public class SwingTerminal extends LogicalScreen
             // System.err.println("Auto - Allow bursts");
             syncMinMillis = SYNC_MIN_MILLIS_BURST;
             frameRequests = 0;
+        } else if (syncMinMillis == SYNC_MIN_MILLIS_BURST) {
+            frameRequests++;
         }
         lastSyncTime = now;
 
