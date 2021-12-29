@@ -119,7 +119,7 @@ public class SwingTerminal extends LogicalScreen
      * A value of 30 or more feels sluggish for input, but is sustainable for
      * the windowing system.
      */
-    private static final long SYNC_MIN_MILLIS_SUSTAIN = 50;
+    private static final long SYNC_MIN_MILLIS_SUSTAIN = 30;
 
     /**
      * The number of frames that can be emitted quickly (at
@@ -1530,11 +1530,13 @@ public class SwingTerminal extends LogicalScreen
             if (!cell.isImage()) {
                 // We need a new key that will not be mutated by
                 // invertCell().
-                Cell key = new Cell(cell);
-                if (cell.isBlink() && !cursorBlinkVisible) {
-                    glyphCacheBlink.put(key, image);
-                } else {
-                    glyphCache.put(key, image);
+                if (cell.isCacheable()) {
+                    Cell key = new Cell(cell);
+                    if (cell.isBlink() && !cursorBlinkVisible) {
+                        glyphCacheBlink.put(key, image);
+                    } else {
+                        glyphCache.put(key, image);
+                    }
                 }
             }
 

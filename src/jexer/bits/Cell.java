@@ -542,6 +542,32 @@ public class Cell extends CellAttributes {
     }
 
     /**
+     * If true, this cell can be placed in a glyph cache somewhere so that it
+     * does not have to be re-rendered many times.
+     *
+     * @return true if this cell can be placed in a cache
+     */
+    public boolean isCacheable() {
+        /*
+         * Heuristics, omit cells that:
+         *
+         *   - Are text only and have 24-bit RGB color.
+         *
+         *   - Are image over a glyph.
+         */
+        if ((image == null)
+            && (getForeColorRGB() != -1)
+            && (getBackColorRGB() != -1)
+        ) {
+            return false;
+        }
+        if ((image != null) && (ch != ' ')) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Comparison check.  All fields must match to return true.
      *
      * @param rhs another Cell instance
