@@ -588,7 +588,7 @@ public class TApplication implements Runnable {
         /**
          * The dirty flag.
          */
-        private boolean dirty = false;
+        private ArrayList<String> dirtyQueue = new ArrayList<String>();
 
         /**
          * Public constructor.
@@ -624,15 +624,17 @@ public class TApplication implements Runnable {
 
                 // Wait until application notifies me
                 while (!application.quit) {
+                    synchronized (dirtyQueue) {
+                        if (dirtyQueue.size() > 0) {
+                            dirtyQueue.remove(dirtyQueue.size() - 1);
+                            break;
+                        }
+                    }
                     try {
                         synchronized (this) {
-                            if (dirty) {
-                                dirty = false;
-                                break;
-                            }
-
-                            // Always check within 50 milliseconds.
-                            this.wait(50);
+                            // Always check once a second, but this is
+                            // redundant.
+                            this.wait(1000);
                         }
                     } catch (InterruptedException e) {
                         // SQUASH
@@ -657,8 +659,13 @@ public class TApplication implements Runnable {
          * Set the dirty flag.
          */
         public void setDirty() {
-            synchronized (this) {
-                dirty = true;
+            synchronized (dirtyQueue) {
+                if (dirtyQueue.size() == 0) {
+                    dirtyQueue.add("dirty");
+                    synchronized (this) {
+                        notify();
+                    }
+                }
             }
         }
 
@@ -2749,6 +2756,9 @@ public class TApplication implements Runnable {
         quit = true;
         synchronized (this) {
             this.notify();
+        }
+        if (screenHandler != null) {
+            screenHandler.setDirty();
         }
     }
 

@@ -103,10 +103,30 @@ public class SwingTerminal extends LogicalScreen
 
     /**
      * The minimum number of milliseconds between a triple-buffer frame sync
-     * request.  If Toolkit.sync() is called too frequently, the window
-     * system and/or video driver can crash.
+     * request for an initial burst of frames.  If Toolkit.sync() is called
+     * too frequently, the window system and/or video driver can crash.
+     *
+     * A value of 2 or less is very responsive, while 25 or more feels
+     * sluggish for input but is sustainable for the windowing system.
      */
-    private static final long SYNC_MIN_MILLIS = 10;
+    private static final long SYNC_MIN_MILLIS_BURST = 2;
+
+    /**
+     * The minimum number of milliseconds between a triple-buffer frame sync
+     * request for an extended (several seconds or more) rate.  If
+     * Toolkit.sync() is called too frequently, the window system and/or
+     * video driver can crash.
+     *
+     * A value of 2 or less is very responsive, while 25 or more feels
+     * sluggish for input but is sustainable for the windowing system.
+     */
+    private static final long SYNC_MIN_MILLIS_SUSTAIN = 25;
+
+    /**
+     * The number of frames that can be emitted quickly (at
+     * SYNC_MIN_MILLIS_BURST) before slowing down.
+     */
+    private static final long SYNC_BURST_COUNT = 20;
 
     /**
      * Cursor style to draw.
@@ -159,6 +179,22 @@ public class SwingTerminal extends LogicalScreen
      * When true, all the MYBLACK, MYRED, etc. colors are set.
      */
     private static boolean dosColors = false;
+
+    /**
+     * The minimum number of milliseconds between a triple-buffer frame sync
+     * request.  If Toolkit.sync() is called too frequently, the window
+     * system and/or video driver can crash.
+     *
+     * A value of 2 or less is very responsive, while 25 or more feels
+     * sluggish for input but is sustainable for the windowing system.
+     */
+    private long syncMinMillis = SYNC_MIN_MILLIS_BURST;
+
+    /**
+     * The number of frames that have been rendered in a row at
+     * SYNC_MIN_MILLIS_BURST.
+     */
+    private int frameRequests = 0;
 
     /**
      * The time that Toolkit.getDefaultToolkit().sync() was last called.
@@ -609,6 +645,13 @@ public class SwingTerminal extends LogicalScreen
      */
     @Override
     public void flushPhysical() {
+        if (frameRequests > SYNC_BURST_COUNT) {
+            // System.err.println("Auto - Switch to sustain");
+            // Switch to throttled frames.
+            syncMinMillis = SYNC_MIN_MILLIS_SUSTAIN;
+            frameRequests = 0;
+        }
+
         // See if it is time to flip the blink time.
         long nowTime = System.currentTimeMillis();
         if (nowTime >= blinkMillis + lastBlinkTime) {
@@ -636,18 +679,28 @@ public class SwingTerminal extends LogicalScreen
      * Display the Swing triple-buffer buffer on the screen.
      */
     private void syncSwingBuffer() {
-        if (SYNC_MIN_MILLIS > 0) {
-            long now = System.currentTimeMillis();
-            while (now - lastSyncTime < SYNC_MIN_MILLIS) {
-                try {
-                    Thread.sleep(now - lastSyncTime);
-                } catch (InterruptedException e) {
-                    // SQUASH
-                }
-                now = System.currentTimeMillis();
-            }
-            lastSyncTime = now;
+        if (syncMinMillis == SYNC_MIN_MILLIS_BURST) {
+            frameRequests++;
         }
+        long now = System.currentTimeMillis();
+        while (now - lastSyncTime < syncMinMillis) {
+            try {
+                Thread.sleep(now - lastSyncTime);
+            } catch (InterruptedException e) {
+                // SQUASH
+            }
+            now = System.currentTimeMillis();
+        }
+        if ((syncMinMillis == SYNC_MIN_MILLIS_SUSTAIN)
+            && (now - lastSyncTime > SYNC_MIN_MILLIS_SUSTAIN * 5)
+        ) {
+            // It's quiet, we can let latency improve again.
+            // System.err.println("Auto - Allow bursts");
+            syncMinMillis = SYNC_MIN_MILLIS_BURST;
+            frameRequests = 0;
+        }
+        lastSyncTime = now;
+
         swing.getBufferStrategy().show();
         Toolkit.getDefaultToolkit().sync();
     }
@@ -679,6 +732,11 @@ public class SwingTerminal extends LogicalScreen
                     queue.addAll(eventQueue);
                 }
                 eventQueue.clear();
+
+                // Allow bursts with user input.
+                // System.err.println("User input - allow bursts");
+                syncMinMillis = SYNC_MIN_MILLIS_BURST;
+                frameRequests = 0;
             }
         }
     }
