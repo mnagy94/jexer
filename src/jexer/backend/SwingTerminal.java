@@ -102,6 +102,13 @@ public class SwingTerminal extends LogicalScreen
     public static final String FONTFILE = "terminus-ttf-4.49.1/TerminusTTF-Bold-4.49.1.ttf";
 
     /**
+     * The minimum number of milliseconds between a triple-buffer frame sync
+     * request.  If Toolkit.sync() is called too frequently, the window
+     * system and/or video driver can crash.
+     */
+    private static final long SYNC_MIN_MILLIS = 10;
+
+    /**
      * Cursor style to draw.
      */
     public enum CursorStyle {
@@ -152,6 +159,11 @@ public class SwingTerminal extends LogicalScreen
      * When true, all the MYBLACK, MYRED, etc. colors are set.
      */
     private static boolean dosColors = false;
+
+    /**
+     * The time that Toolkit.getDefaultToolkit().sync() was last called.
+     */
+    private long lastSyncTime = 0;
 
     /**
      * The backend that is reading from this terminal.
@@ -612,14 +624,32 @@ public class SwingTerminal extends LogicalScreen
                 do {
                     drawToSwing();
                 } while (swing.getBufferStrategy().contentsRestored());
-
-                swing.getBufferStrategy().show();
-                Toolkit.getDefaultToolkit().sync();
+                syncSwingBuffer();
             } while (swing.getBufferStrategy().contentsLost());
         } else {
             // Non-triple-buffered, call drawToSwing() once
             drawToSwing();
         }
+    }
+
+    /**
+     * Display the Swing triple-buffer buffer on the screen.
+     */
+    private void syncSwingBuffer() {
+        if (SYNC_MIN_MILLIS > 0) {
+            long now = System.currentTimeMillis();
+            while (now - lastSyncTime < SYNC_MIN_MILLIS) {
+                try {
+                    Thread.sleep(now - lastSyncTime);
+                } catch (InterruptedException e) {
+                    // SQUASH
+                }
+                now = System.currentTimeMillis();
+            }
+            lastSyncTime = now;
+        }
+        swing.getBufferStrategy().show();
+        Toolkit.getDefaultToolkit().sync();
     }
 
     // ------------------------------------------------------------------------
@@ -1650,8 +1680,7 @@ public class SwingTerminal extends LogicalScreen
             Graphics gr = swing.getBufferStrategy().getDrawGraphics();
             swing.paint(gr);
             gr.dispose();
-            swing.getBufferStrategy().show();
-            Toolkit.getDefaultToolkit().sync();
+            syncSwingBuffer();
             return;
         } else if (((swing.getFrame() != null)
                 && (swing.getBufferStrategy() == null))
@@ -1700,8 +1729,7 @@ public class SwingTerminal extends LogicalScreen
             } // synchronized (this)
 
             gr.dispose();
-            swing.getBufferStrategy().show();
-            Toolkit.getDefaultToolkit().sync();
+            syncSwingBuffer();
             return;
         }
 
@@ -1767,8 +1795,7 @@ public class SwingTerminal extends LogicalScreen
             gr.setClip(bounds);
             swing.paint(gr);
             gr.dispose();
-            swing.getBufferStrategy().show();
-            Toolkit.getDefaultToolkit().sync();
+            syncSwingBuffer();
         } else {
             // Repaint on the Swing thread.
             swing.repaint(xMin, yMin, xMax - xMin, yMax - yMin);
