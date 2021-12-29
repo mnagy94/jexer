@@ -2280,6 +2280,7 @@ public class TApplication implements Runnable {
 
         if (customMousePointer != null) {
             pixelMouse = true;
+            mouseStyle = "none";
         }
 
         TWidget activeWidget = getWidgetUnderMouse(mouse);
@@ -2292,13 +2293,14 @@ public class TApplication implements Runnable {
         if (activeWidget.isPixelMouse()) {
             pixelMouse = true;
         }
-
-        // We have a widget.
-        backend.setMouseStyle(activeWidget.getMouseStyle());
+        if (customMousePointer == null) {
+            mouseStyle = activeWidget.getMouseStyle();
+        }
         MousePointer newCustomWidgetMousePointer;
         newCustomWidgetMousePointer = activeWidget.getCustomMousePointer();
         if (newCustomWidgetMousePointer != null) {
             pixelMouse = true;
+            mouseStyle = "none";
             int pixelX = mouse.getAbsoluteX() * getScreen().getTextWidth();
             pixelX += mouse.getPixelOffsetX();
             pixelX -= newCustomWidgetMousePointer.getHotspotX();
@@ -2314,6 +2316,7 @@ public class TApplication implements Runnable {
             }
         }
         backend.setPixelMouse(pixelMouse);
+        backend.setMouseStyle(mouseStyle);
         customWidgetMousePointer = newCustomWidgetMousePointer;
     }
 
