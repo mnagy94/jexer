@@ -144,21 +144,17 @@ The color wheel with that palette is shown below:
 
 ![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
 
-There is experimental support for rendering the text underneath images
+There is now support for rendering the text underneath images
 (jexer.ECMA48.imagesOverText and jexer.Swing.imagesOverText).  This is
-currently poorly optimized -- cells must check for transparency
-frequently -- but it is very cool looking.  (And if you like this,
-then you need to go check out
+readily visible in terminal windows with sixel and PNG images.  (If
+you like this, then you need to go check out
 [notcurses](https://github.com/dankamongmen/notcurses) poste haste.)
-This is most visible in terminal windows with sixel and PNG images.
 
-![Hello notcurses! 🤘](/screenshots/for_nick.png?raw=true "Hello notcurses! 🤘🙂")
+![PNG with transparency over text](/screenshots/for_nick.png?raw=true "PNG with transparency over text")
 
-Performance of transparent images-over-text is still _very_ bad on
-multihead, and crashes lie in wait.  Also, on the ECMA48 backend the
-internal font is used for rendering if
+On the ECMA48 backend the internal font is used for rendering if
 jexer.ECMA48.imagesOverText=true because terminals are extremely
-finicky when putting text over sixel images and this was the most
+finicky when putting text over sixel images, and this was the most
 simple way to get something going.  Here is an example of multihead,
 and the xterm windows on the right is using a rendered font that is
 clearly different from the terminal's font:
