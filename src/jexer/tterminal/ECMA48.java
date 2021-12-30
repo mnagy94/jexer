@@ -263,6 +263,11 @@ public class ECMA48 implements Runnable {
     private DisplayListener displayListener;
 
     /**
+     * When true, an operation modified the visible display.
+     */
+    private boolean screenIsDirty = true;
+
+    /**
      * When true, the reader thread is expected to exit.
      */
     private volatile boolean stopReaderThread = false;
@@ -848,7 +853,13 @@ public class ECMA48 implements Runnable {
                     }
                     // Permit my enclosing UI to know that I updated.
                     if (displayListener != null) {
-                        displayListener.displayChanged();
+                        // Don't step on UI events
+                        synchronized (this) {
+                            if (screenIsDirty) {
+                                displayListener.displayChanged();
+                                screenIsDirty = false;
+                            }
+                        }
                     }
                 }
                 // System.err.println("end while loop"); System.err.flush();
@@ -1281,6 +1292,11 @@ public class ECMA48 implements Runnable {
      * @param width the new width
      */
     public final synchronized void setWidth(final int width) {
+        if (width == this.width) {
+            return;
+        }
+
+        screenIsDirty = true;
         this.width = width;
         rightMargin = width - 1;
         if (currentState.cursorX >= width) {
@@ -1306,6 +1322,11 @@ public class ECMA48 implements Runnable {
      * @param height the new height
      */
     public final synchronized void setHeight(final int height) {
+        if (height == this.height) {
+            return;
+        }
+
+        screenIsDirty = true;
         int delta = height - this.height;
         this.height = height;
         scrollRegionBottom += delta;
@@ -1749,6 +1770,7 @@ public class ECMA48 implements Runnable {
      * Reset the emulation state.
      */
     private void reset() {
+        screenIsDirty           = true;
 
         currentState            = new SaveableState();
         savedState              = new SaveableState();
@@ -1824,6 +1846,7 @@ public class ECMA48 implements Runnable {
         DisplayLine line = new DisplayLine(currentState.attr);
         line.setReverseColor(reverseVideo);
         display.add(line);
+        screenIsDirty = true;
     }
 
     /**
@@ -1854,6 +1877,7 @@ public class ECMA48 implements Runnable {
         for (DisplayLine line: display) {
             line.setReverseColor(!line.isReverseColor());
         }
+        screenIsDirty = true;
     }
 
     /**
@@ -1900,6 +1924,8 @@ public class ECMA48 implements Runnable {
      * @param ch character to display
      */
     private void printCharacter(final int ch) {
+        screenIsDirty = true;
+
         int rightMargin = this.rightMargin;
 
         if (StringUtils.width(ch) == 2) {
@@ -2249,6 +2275,7 @@ public class ECMA48 implements Runnable {
             }
             if (displayListener != null) {
                 displayListener.displayChanged();
+                screenIsDirty = false;
             }
         }
 
@@ -3049,6 +3076,8 @@ public class ECMA48 implements Runnable {
             return;
         }
 
+        screenIsDirty = true;
+
         // Sanity check: see if there will be any characters left after the
         // scroll
         if (regionBottom + 1 - regionTop <= n) {
@@ -3089,6 +3118,8 @@ public class ECMA48 implements Runnable {
         if (regionTop >= regionBottom) {
             return;
         }
+
+        screenIsDirty = true;
 
         // Sanity check: see if there will be any characters left after the
         // scroll
@@ -3739,6 +3770,7 @@ public class ECMA48 implements Runnable {
                     // back into sync then this screen will be returned.
                     lastVisibleDisplay = getVisibleDisplay(height, 0);
                     lastVisibleUpdateTime = System.currentTimeMillis();
+                    screenIsDirty = false;
                     if (value == true) {
                         withinSynchronizedUpdate = true;
                     } else {
@@ -3772,6 +3804,7 @@ public class ECMA48 implements Runnable {
      */
     private void decrc() {
         currentState.setTo(savedState);
+        screenIsDirty = true;
     }
 
     /**
@@ -4035,6 +4068,7 @@ public class ECMA48 implements Runnable {
      * DECSWL - Single-width line.
      */
     private void decswl() {
+        screenIsDirty = true;
         display.get(currentState.cursorY).setDoubleWidth(false);
         display.get(currentState.cursorY).setDoubleHeight(0);
     }
@@ -4043,6 +4077,7 @@ public class ECMA48 implements Runnable {
      * DECDWL - Double-width line.
      */
     private void decdwl() {
+        screenIsDirty = true;
         display.get(currentState.cursorY).setDoubleWidth(true);
         display.get(currentState.cursorY).setDoubleHeight(0);
     }
@@ -4054,6 +4089,7 @@ public class ECMA48 implements Runnable {
      * double-height row
      */
     private void dechdl(final boolean topHalf) {
+        screenIsDirty = true;
         display.get(currentState.cursorY).setDoubleWidth(true);
         if (topHalf == true) {
             display.get(currentState.cursorY).setDoubleHeight(1);
@@ -4066,6 +4102,7 @@ public class ECMA48 implements Runnable {
      * DECALN - Screen alignment display.
      */
     private void decaln() {
+        screenIsDirty = true;
         Cell newCell = new Cell('E');
         for (DisplayLine line: display) {
             for (int i = 0; i < line.length(); i++) {
@@ -4270,6 +4307,7 @@ public class ECMA48 implements Runnable {
      * DCH - Delete char.
      */
     private void dch() {
+        screenIsDirty = true;
         int n = getCsiParam(0, 1);
         DisplayLine line = display.get(currentState.cursorY);
         Cell blank = new Cell();
@@ -4282,6 +4320,7 @@ public class ECMA48 implements Runnable {
      * ICH - Insert blank char at cursor.
      */
     private void ich() {
+        screenIsDirty = true;
         int n = getCsiParam(0, 1);
         DisplayLine line = display.get(currentState.cursorY);
         Cell blank = new Cell();
@@ -5138,6 +5177,9 @@ public class ECMA48 implements Runnable {
         if (start > end) {
             return;
         }
+
+        screenIsDirty = true;
+
         if (end > width - 1) {
             end = width - 1;
         }
@@ -5200,6 +5242,8 @@ public class ECMA48 implements Runnable {
         ) {
             return;
         }
+
+        screenIsDirty = true;
 
         oldCursorY = currentState.cursorY;
         for (int i = startRow; i <= endRow; i++) {
@@ -7672,6 +7716,8 @@ public class ECMA48 implements Runnable {
 
         // System.err.println("drawHalves(): " + Integer.toHexString(ch));
 
+        screenIsDirty = true;
+
         if (lastTextHeight != textHeight) {
             glyphMaker = GlyphMaker.getInstance(textHeight);
             lastTextHeight = textHeight;
@@ -7983,6 +8029,8 @@ public class ECMA48 implements Runnable {
         final boolean maybeTransparent) {
 
         assert (image != null);
+
+        screenIsDirty = true;
 
         /*
          * Procedure:

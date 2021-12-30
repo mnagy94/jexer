@@ -221,8 +221,15 @@ public class SixelDecoder {
      * @return the sixel data as an image.
      */
     public BufferedImage getImage() {
+
+        // DEBUG
+        if (false) {
+            return null;
+        }
+
         if (buffer != null) {
-            for (int i = 0; (i < buffer.length()) && (abort == false); i++) {
+            int bufferLength = buffer.length();
+            for (int i = 0; (i < bufferLength) && (abort == false); i++) {
                 consume(buffer.charAt(i));
             }
             buffer = null;
