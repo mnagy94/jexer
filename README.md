@@ -17,11 +17,10 @@ On Xterm, images are dithered to a common palette:
 
 ![Xterm Snake Image](/screenshots/snake_xterm.png?raw=true "Xterm Snake Image")
 
-Experimental support for pixel-based operations is now present in git
-head.  If the terminal supports mouse mode 1016 (SGR-Pixel), one can
-now get smooth(er) mouse motion with custom bitmap overlaid mouse.
-Below is stock xterm, with a custom mouse icon, and SGR-Pixel mode
-active:
+Support for pixel-based operations was introduced in version 1.5.0.
+If the terminal supports mouse mode 1016 (SGR-Pixel), one can now get
+smooth(er) mouse motion with custom bitmap overlaid mouse.  Below is
+stock xterm, with a custom mouse icon, and SGR-Pixel mode active:
 
 ![Xterm SGR-Pixel Mouse](/screenshots/xterm_pixel_mouse.gif?raw=true "Xterm SGR-Pixel Mouse")
 
@@ -44,7 +43,7 @@ Jexer is available on Maven Central:
 <dependency>
   <groupId>com.gitlab.klamonte</groupId>
   <artifactId>jexer</artifactId>
-  <version>1.0.0</version>
+  <version>1.5.0</version>
 </dependency>
 ```
 
