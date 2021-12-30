@@ -350,8 +350,8 @@ public class TImage extends TWidget implements EditMenuUser {
     public void draw() {
         sizeToImage(false);
 
-        // We have already broken the image up, just draw the last set of
-        // cells.
+        // We have already broken the image up, just draw the previously
+        // created set of cells.
         for (int x = 0; (x < getWidth()) && (x + left < cellColumns); x++) {
             if ((left + x) * lastTextWidth > image.getWidth()) {
                 continue;
@@ -364,10 +364,9 @@ public class TImage extends TWidget implements EditMenuUser {
                 assert (x + left < cellColumns);
                 assert (y + top < cellRows);
 
-                getWindow().putCharXY(x, y, cells[x + left][y + top]);
+                putCharXY(x, y, cells[x + left][y + top]);
             }
         }
-
     }
 
     // ------------------------------------------------------------------------

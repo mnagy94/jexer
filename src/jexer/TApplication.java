@@ -2728,6 +2728,7 @@ public class TApplication implements Runnable {
                 overlay.getItems().add(customMousePointer);
             }
         } else {
+            overlay.setDirty();
             overlay.draw(getScreen(), getBackend().isImagesOverText());
         }
         if ((textMouse == true) && (typingHidMouse == false)

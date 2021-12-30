@@ -252,8 +252,7 @@ public class Tackboard {
                         continue;
                     }
 
-                    BufferedImage newImage;
-                    newImage = image.getSubimage(sx * cellWidth,
+                    BufferedImage newImage = image.getSubimage(sx * cellWidth,
                         sy * cellHeight, cellWidth, cellHeight);
 
                     if (ImageUtils.isFullyTransparent(newImage)) {
@@ -266,7 +265,7 @@ public class Tackboard {
 
                     if (oldCell.isImage()) {
                         // Blit this image over that one.
-                        BufferedImage oldImage = oldCell.getImage();
+                        BufferedImage oldImage = oldCell.getImage(true);
                         java.awt.Graphics gr = oldImage.getGraphics();
                         gr.setColor(jexer.backend.SwingTerminal.
                             attrToBackgroundColor(oldCell));

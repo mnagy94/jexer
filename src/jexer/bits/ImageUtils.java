@@ -39,7 +39,7 @@ import java.awt.image.BufferedImage;
 public class ImageUtils {
 
     /**
-     * Check if any pixels in an image have not-100% alpha value.
+     * Check if any pixels in an image have not-0% alpha value.
      *
      * @return true if every pixel is fully transparent
      */
@@ -62,6 +62,33 @@ public class ImageUtils {
             }
         }
         // Every pixel was transparent.
+        return true;
+    }
+
+    /**
+     * Check if any pixels in an image have not-100% alpha value.
+     *
+     * @return true if every pixel is fully transparent
+     */
+    public static boolean isFullyOpaque(final BufferedImage image) {
+        assert (image != null);
+
+        int [] rgbArray = image.getRGB(0, 0,
+            image.getWidth(), image.getHeight(), null, 0, image.getWidth());
+
+        if (rgbArray.length == 0) {
+            // No image data, fully transparent.
+            return true;
+        }
+
+        for (int i = 0; i < rgbArray.length; i++) {
+            int alpha = (rgbArray[i] >>> 24) & 0xFF;
+            if (alpha != 0xFF) {
+                // A partially transparent pixel is found.
+                return false;
+            }
+        }
+        // Every pixel was opaque.
         return true;
     }
 

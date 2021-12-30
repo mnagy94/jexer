@@ -200,6 +200,35 @@ public class Cell extends CellAttributes {
     }
 
     /**
+     * Get the image data for this cell.
+     *
+     * @param copy if true, return a copy of the image
+     * @return the image for this cell
+     */
+    public BufferedImage getImage(final boolean copy) {
+        if (!copy) {
+            return getImage();
+        }
+        if (image == null) {
+            return null;
+        }
+
+        int textWidth = image.getWidth();
+        int textHeight = image.getHeight();
+        BufferedImage newImage = new BufferedImage(textWidth,
+            textHeight, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics gr = newImage.getGraphics();
+        if (invertedImage != null) {
+            assert (image != null);
+            gr.drawImage(invertedImage, 0, 0, null, null);
+        } else {
+            gr.drawImage(image, 0, 0, null, null);
+        }
+        gr.dispose();
+        return newImage;
+    }
+
+    /**
      * Flatten the image on this cell by rendering it either onto the
      * background color, or generating the glyph and rendering over that.
      *
@@ -669,6 +698,7 @@ public class Cell extends CellAttributes {
             this.image = null;
             this.imageHashCode = 0;
             this.backgroundHashCode = 0;
+            this.hasTransparentPixels = -1;
             this.width = Width.SINGLE;
         }
         // Let this throw a ClassCastException
