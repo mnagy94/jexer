@@ -1383,18 +1383,19 @@ public class TApplication implements Runnable {
                     }
                     mouseX = 0;
                     mouseY = 0;
-                }
-                if (desktop != null) {
-                    desktop.setDimensions(0, desktopTop, resize.getWidth(),
-                        (desktopBottom - desktopTop));
-                    desktop.onResize(resize);
-                }
-                for (TWindow window: windows) {
-                    window.onResize(resize);
-                }
 
-                // Change menu edges if needed.
-                recomputeMenuX();
+                    if (desktop != null) {
+                        desktop.setDimensions(0, desktopTop, resize.getWidth(),
+                            (desktopBottom - desktopTop));
+                        desktop.onResize(resize);
+                    }
+                    for (TWindow window: windows) {
+                        window.onResize(resize);
+                    }
+
+                    // Change menu edges if needed.
+                    recomputeMenuX();
+                }
 
                 // We are dirty, redraw the screen.
                 doRepaint();
