@@ -64,7 +64,7 @@
          basedir="${classes.dir}">
 
       <fileset dir="${resources.dir}">
-        <exclude name="**/*TTF-4.39.ttf" />
+        <exclude name="**/*TTF-4.49.1.ttf" />
         <exclude name="**/*Italic*.ttf" />
       </fileset>
 
