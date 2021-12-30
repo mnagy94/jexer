@@ -103,8 +103,8 @@ public class SwingTerminal extends LogicalScreen
 
     /**
      * The minimum number of milliseconds between a triple-buffer frame sync
-     * request for an initial burst of frames.  If Toolkit.sync() is called
-     * too frequently, the window system and/or video driver can crash.
+     * request for an initial burst of frames.  Too much memory pressure can
+     * cause the window system to crash.
      *
      * A value of 2 or less is very responsive for user input.
      */
@@ -112,14 +112,13 @@ public class SwingTerminal extends LogicalScreen
 
     /**
      * The minimum number of milliseconds between a triple-buffer frame sync
-     * request for an extended (several seconds or more) rate.  If
-     * Toolkit.sync() is called too frequently, the window system and/or
-     * video driver can crash.
+     * request for an extended (several seconds or more) rate.  Too much
+     * memory pressure can cause the window system to crash.
      *
-     * A value of 30 or more feels sluggish for input, but is sustainable for
-     * the windowing system.
+     * A value of 25 or more feels sluggish for input, but is sustainable for
+     * the garbage collector.
      */
-    private static final long SYNC_MIN_MILLIS_SUSTAIN = 30;
+    private static final long SYNC_MIN_MILLIS_SUSTAIN = 20;
 
     /**
      * The number of frames that can be emitted quickly (at
@@ -185,7 +184,7 @@ public class SwingTerminal extends LogicalScreen
      * system and/or video driver can crash.
      *
      * A value of 2 or less is very responsive, while 25 or more feels
-     * sluggish for input but is sustainable for the windowing system.
+     * sluggish for input but is sustainable for the garbage collector.
      */
     private long syncMinMillis = SYNC_MIN_MILLIS_BURST;
 
