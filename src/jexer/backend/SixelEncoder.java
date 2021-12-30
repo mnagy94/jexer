@@ -29,10 +29,12 @@
 package jexer.backend;
 
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import javax.imageio.ImageIO;
 
 /**
  * SixelEncoder turns a BufferedImage into String of sixel image data.
@@ -976,6 +978,50 @@ public class SixelEncoder {
      */
     public void clearPalette() {
         palette = null;
+    }
+
+    /**
+     * Convert all filenames to sixel.
+     *
+     * @param args[] the filenames to read
+     */
+    public static void main(final String [] args) {
+        if (args.length == 0) {
+            System.err.println("USAGE: java jexer.backend.SixelEncoder { file1 [ file2 ... ] }");
+            System.exit(-1);
+        }
+
+        SixelEncoder encoder = new SixelEncoder();
+        int successCount = 0;
+        if (encoder.hasSharedPalette()) {
+            System.out.print("\033[?1070l");
+        } else {
+            System.out.print("\033[?1070h");
+        }
+        System.out.flush();
+        for (int i = 0; i < args.length; i++) {
+            try {
+                BufferedImage image = ImageIO.read(new FileInputStream(args[i]));
+                StringBuilder sb = new StringBuilder();
+                sb.append("\033Pq");
+                encoder.emitPalette(sb);
+                sb.append(encoder.toSixel(image));
+                sb.append("\033\\");
+                System.out.print(sb.toString());
+                System.out.flush();
+            } catch (Exception e) {
+                System.err.println("Error reading file:");
+                e.printStackTrace();
+            }
+
+        }
+        System.out.print("\033[?1070h");
+        System.out.flush();
+        if (successCount == args.length) {
+            System.exit(0);
+        } else {
+            System.exit(successCount);
+        }
     }
 
 }
