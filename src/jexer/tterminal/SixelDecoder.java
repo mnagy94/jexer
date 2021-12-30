@@ -34,9 +34,9 @@ import java.awt.image.BufferedImage;
 import java.util.HashMap;
 
 /**
- * Sixel parses a buffer of sixel image data into a BufferedImage.
+ * SixelDecoder parses a buffer of sixel image data into a BufferedImage.
  */
-public class Sixel {
+public class SixelDecoder {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -188,8 +188,9 @@ public class Sixel {
      * @param maybeTransparent if true, transparency in the image will be
      * honored
      */
-    public Sixel(final String buffer, final HashMap<Integer, Color> palette,
-        final Color background, final boolean maybeTransparent) {
+    public SixelDecoder(final String buffer,
+        final HashMap<Integer, Color> palette, final Color background,
+        final boolean maybeTransparent) {
 
         this.buffer = buffer;
         if (palette == null) {
@@ -202,7 +203,7 @@ public class Sixel {
     }
 
     // ------------------------------------------------------------------------
-    // Sixel ------------------------------------------------------------------
+    // SixelDecoder -----------------------------------------------------------
     // ------------------------------------------------------------------------
 
     /**
@@ -525,7 +526,10 @@ public class Sixel {
     private void consume(char ch) {
 
         // DEBUG
-        // System.err.printf("Sixel.consume() %c STATE = %s\n", ch, scanState);
+        /*
+        System.err.printf("SixelDecoder.consume() %c STATE = %s\n", ch,
+            scanState);
+         */
 
         if ((ch == 'q') && (scanState == ScanState.INIT)) {
             // This is the normal happy path with the introducer string.

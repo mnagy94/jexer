@@ -53,6 +53,7 @@ import javax.imageio.ImageIO;
 import jexer.TKeypress;
 import jexer.backend.Backend;
 import jexer.backend.GlyphMaker;
+import jexer.backend.SwingTerminal;
 import jexer.bits.Color;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
@@ -5327,7 +5328,7 @@ public class ECMA48 implements Runnable {
                 if (p[0].equals("10")) {
                     if (p[1].equals("?")) {
                         // Respond with foreground color.
-                        java.awt.Color color = jexer.backend.SwingTerminal.attrToForegroundColor(currentState.attr);
+                        java.awt.Color color = SwingTerminal.attrToForegroundColor(currentState.attr);
 
                         writeRemote(String.format(
                             "\033]10;rgb:%04x/%04x/%04x\033\\",
@@ -5340,7 +5341,7 @@ public class ECMA48 implements Runnable {
                 if (p[0].equals("11")) {
                     if (p[1].equals("?")) {
                         // Respond with background color.
-                        java.awt.Color color = jexer.backend.SwingTerminal.attrToBackgroundColor(currentState.attr);
+                        java.awt.Color color = SwingTerminal.attrToBackgroundColor(currentState.attr);
 
                         writeRemote(String.format(
                             "\033]11;rgb:%04x/%04x/%04x\033\\",
@@ -7795,8 +7796,9 @@ public class ECMA48 implements Runnable {
         if (true || ((backend != null) && backend.isImagesOverText())) {
             maybeTransparent = true;
         }
-        Sixel sixel = new Sixel(sixelParseBuffer.toString(), sixelPalette,
-            jexer.backend.SwingTerminal.attrToBackgroundColor(currentState.attr),
+        SixelDecoder sixel = new SixelDecoder(sixelParseBuffer.toString(),
+            sixelPalette,
+            SwingTerminal.attrToBackgroundColor(currentState.attr),
             maybeTransparent);
         BufferedImage image = sixel.getImage();
 
