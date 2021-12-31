@@ -154,9 +154,12 @@ you like this, then you need to go check out
 On the ECMA48 backend the internal font is used for rendering if
 jexer.ECMA48.imagesOverText=true because terminals are extremely
 finicky when putting text over sixel images, and this was the most
-simple way to get something going.  Here is an example of multihead,
-and the xterm windows on the right is using a rendered font that is
-clearly different from the terminal's font:
+simple way to get something going.  The default is
+jexer.ECMA48.imagesOverText=false; in this mode images that would
+overlap text in the same cell are rendered against the (assumed)
+background color, omitting the text glyph.  Here is an example of
+multihead, and the xterm windows on the right is covering up
+partially-obscured text cells, and it is still quite usable:
 
 ![Trans Heart Multihead](/screenshots/overlapping_multihead.png?raw=true "Trans Heart Multihead")
 
