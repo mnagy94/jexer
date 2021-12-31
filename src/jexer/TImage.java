@@ -379,6 +379,8 @@ public class TImage extends TWidget implements EditMenuUser {
      * @param always if true, always resize the cells
      */
     private void sizeToImage(final boolean always) {
+        scaleBackColor = jexer.backend.SwingTerminal.attrToBackgroundColor(getWindow().getBackground());
+
         int textWidth = getScreen().getTextWidth();
         int textHeight = getScreen().getTextHeight();
 
@@ -648,7 +650,7 @@ public class TImage extends TWidget implements EditMenuUser {
     }
 
     /**
-     * Scale an image by to be scaleFactor size.
+     * Scale an image to be scaleFactor size, OR stretch it.
      *
      * @param image the image to scale
      * @param factor the scale to make the new image

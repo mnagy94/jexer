@@ -5407,6 +5407,10 @@ public class ECMA48 implements Runnable {
                         parseJexerImageFile(2, p[2], p[3]);
                     }
                 }
+
+                if (p[0].equals("1337")) {
+                    parseIterm2Image(p);
+                }
             }
 
             // Go to SCAN_GROUND state
@@ -8015,6 +8019,239 @@ public class ECMA48 implements Runnable {
         }
 
         imageToCells(image, scroll, maybeTransparent);
+    }
+
+    /**
+     * Parse a iTerm2 image string into a bitmap image, and overlay that
+     * image onto the text cells.  See reference at:
+     * https://iterm2.com/documentation-images.html
+     *
+     * @param args the arguments of the OSC 1337 sequence.  args[0] will be
+     * "1337".
+     */
+    private void parseIterm2Image(final String [] args) {
+        // If the file data is opaque, pass that to imageToCells().
+        boolean maybeTransparent = true;
+
+        // See: https://github.com/wez/wezterm/issues/1424
+        boolean doNotMoveCursor = false;
+
+        // We MUST see "inline=1".  This terminal does NOT EVER write to the
+        // filesystem.  Ever.
+        boolean sawInline = false;
+
+        boolean preserveAspectRatio = false;
+
+        // Image dimension options.
+        String iTerm2Width = "auto";
+        String iTerm2Height = "auto";
+
+        // File size.  This is optional to most terminals.  If it is
+        // specified, then we will limit to 4MB.
+        boolean gotSize = false;
+        int size = -1;
+
+        if ((args.length < 2) || !args[0].equals("1337")
+            || !args[1].startsWith("File=")
+        ) {
+            return;
+        }
+
+        // Separate the arguments into key/values, and the base64-encoded
+        // data payload.
+
+        // Remove the "File=" from the first argument.
+        args[1] = args[1].substring(5);
+        // System.err.println("args[1]: '" + args[1] + "'");
+
+        // Separate the last argument from the ":{base64}" part.
+        String lastArg = args[args.length - 1];
+        if (!lastArg.contains(":")) {
+            return;
+        }
+        String data = lastArg.substring(lastArg.indexOf(':') + 1);
+        if (data.length() == 0) {
+            return;
+        }
+
+        lastArg = lastArg.substring(0, lastArg.length() - data.length() - 1);
+        // System.err.println("lastArg: '" + lastArg + "'");
+        HashMap<String, String> pairs = new HashMap<String, String>();
+        for (int i = 1; i < args.length - 1; i++) {
+            String [] pair = args[i].split("=");
+            if (pair.length != 2) {
+                return;
+            }
+            pairs.put(pair[0], pair[1]);
+        }
+        String [] pair = lastArg.split("=");
+        if (pair.length != 2) {
+            return;
+        }
+        pairs.put(pair[0], pair[1]);
+
+        // Now check the arguments
+        for (String name: pairs.keySet()) {
+            String value = pairs.get(name);
+
+            // System.err.println("name='" + name + "' value='" + value + "'");
+
+            if (name.equals("size")) {
+                try {
+                    size = Integer.parseInt(value);
+                    gotSize = true;
+                } catch (NumberFormatException e) {
+                    // SQUASH
+                }
+            }
+            if (name.equals("inline") && value.equals("1")) {
+                sawInline = true;
+            }
+            if (name.equals("width")) {
+                iTerm2Width = value;
+            }
+            if (name.equals("height")) {
+                iTerm2Height = value;
+            }
+            if (name.equals("preserveAspectRatio") && value.equals("1")) {
+                preserveAspectRatio = true;
+            }
+            if (name.equals("doNotMoveCursor") && value.equals("1")) {
+                doNotMoveCursor = true;
+            }
+        }
+        if (!sawInline) {
+            return;
+        }
+        if (gotSize) {
+            if ((size < 1) || (size > 16777216)) {
+                return;
+            }
+        }
+
+        // We have the options and image data, and it will be displayed.  Now
+        // try to decode it into a bitmap.  We go blindly into the night as
+        // far as image format is concerned.
+        BufferedImage image = null;
+        byte [] bytes = StringUtils.fromBase64(data.getBytes());
+        if (bytes == null) {
+            return;
+        }
+        try {
+            image = ImageIO.read(new ByteArrayInputStream(bytes));
+        } catch (IOException e) {
+            // SQUASH
+            return;
+        }
+        assert (image != null);
+        int fileImageWidth = image.getWidth();
+        int fileImageHeight = image.getHeight();
+        if ((fileImageWidth < 1)
+            || (fileImageWidth > 10000)
+            || (fileImageHeight < 1)
+            || (fileImageHeight > 10000)
+        ) {
+            return;
+        }
+        if (maybeTransparent) {
+            if (image.getTransparency() == java.awt.Transparency.OPAQUE) {
+                maybeTransparent = false;
+            }
+        }
+
+        // Scale the image according to the width/height arguments.
+        int displayWidth = fileImageWidth;
+        int displayHeight = fileImageHeight;
+        try {
+            if (iTerm2Width.equals("auto")) {
+                // NOP
+            } else if (iTerm2Width.endsWith("%")) {
+                // Percent of screen
+                iTerm2Width = iTerm2Width.substring(0, iTerm2Width.length() - 1);
+                int n = Integer.parseInt(iTerm2Width);
+                if ((n < 0) || (n > 100)) {
+                    return;
+                }
+                displayWidth = (n * textWidth * width) / 100;
+            } else if (iTerm2Width.endsWith("px")) {
+                // Pixels
+                iTerm2Width = iTerm2Width.substring(0, iTerm2Width.length() - 2);
+                int n = Integer.parseInt(iTerm2Width);
+                if (n < 0) {
+                    return;
+                }
+                displayWidth = n;
+            } else {
+                // Number of text cells
+                int n = Integer.parseInt(iTerm2Width);
+                if (n < 0) {
+                    return;
+                }
+                displayWidth = n * textWidth;
+            }
+            // Truncate images to fit the screen.
+            displayWidth = Math.min(width * textWidth, displayWidth);
+
+            if (iTerm2Height.equals("auto")) {
+                // NOP
+            } else if (iTerm2Height.endsWith("%")) {
+                // Percent of screen
+                iTerm2Height = iTerm2Height.substring(0, iTerm2Height.length() - 1);
+                int n = Integer.parseInt(iTerm2Height);
+                if ((n < 0) || (n > 100)) {
+                    return;
+                }
+                displayHeight = (n * textHeight * height) / 100;
+            } else if (iTerm2Height.endsWith("px")) {
+                // Pixels
+                iTerm2Height = iTerm2Height.substring(0, iTerm2Height.length() - 2);
+                int n = Integer.parseInt(iTerm2Height);
+                if (n < 0) {
+                    return;
+                }
+                displayHeight = n;
+            } else {
+                // Number of text cells
+                int n = Integer.parseInt(iTerm2Height);
+                if (n < 0) {
+                    return;
+                }
+                displayHeight = n * textHeight;
+            }
+        } catch (NumberFormatException e) {
+            // Invalid number, done.
+            return;
+        }
+
+        /*
+        System.err.println("File dims " + fileImageWidth + "x" +
+            fileImageHeight +
+            "Disp dims " + displayWidth + "x" + displayHeight);
+        */
+
+        if (doNotMoveCursor) {
+            // Truncate image height to fit the screen.
+            displayHeight = Math.min(height * textHeight, displayHeight);
+        }
+
+        if (preserveAspectRatio
+            && ((displayWidth != fileImageWidth)
+                || (displayHeight != fileImageHeight))
+        ) {
+            // Scale the image to fit the requested dimensions.
+            image = ImageUtils.scaleImage(image, displayWidth, displayHeight,
+                ImageUtils.Scale.SCALE,
+                SwingTerminal.attrToBackgroundColor(currentState.attr));
+        } else if ((displayWidth != fileImageWidth)
+            || (displayHeight != fileImageHeight)
+        ) {
+            // Scale the image to fit the requested dimensions.
+            image = ImageUtils.scaleImage(image, displayWidth, displayHeight,
+                ImageUtils.Scale.STRETCH,
+                SwingTerminal.attrToBackgroundColor(currentState.attr));
+        }
+
+        imageToCells(image, !doNotMoveCursor, maybeTransparent);
     }
 
     /**

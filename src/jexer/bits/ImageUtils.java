@@ -35,8 +35,36 @@ import java.awt.image.BufferedImage;
  *
  *    - Check if an image is fully transparent.
  *
+ *    - Scale an image and preserve aspect ratio.
  */
 public class ImageUtils {
+
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Selections for fitting the image to the text cells.
+     */
+    public enum Scale {
+        /**
+         * Stretch/shrink the image in both directions to fully fill the text
+         * area width/height.
+         */
+        STRETCH,
+
+        /**
+         * Scale the image, preserving aspect ratio, to fill the text area
+         * width/height (like letterbox).  The background color for the
+         * letterboxed area is specified in the backColor argument to
+         * scaleImage().
+         */
+        SCALE,
+    }
+
+    // ------------------------------------------------------------------------
+    // ImageUtils -------------------------------------------------------------
+    // ------------------------------------------------------------------------
 
     /**
      * Check if any pixels in an image have not-0% alpha value.
@@ -90,6 +118,64 @@ public class ImageUtils {
         }
         // Every pixel was opaque.
         return true;
+    }
+
+    /**
+     * Scale an image to be scaleFactor size and/or stretch it to fit a
+     * target box.
+     *
+     * @param image the image to scale
+     * @param width the width in pixels for the destination image
+     * @param height the height in pixels for the destination image
+     * @param scale the scaling type
+     * @param backColor the background color to use for Scale.SCALE
+     */
+    public static BufferedImage scaleImage(final BufferedImage image,
+        final int width, final int height,
+        final Scale scale, final java.awt.Color backColor) {
+
+        BufferedImage newImage = new BufferedImage(width, height,
+            BufferedImage.TYPE_INT_ARGB);
+
+        int x = 0;
+        int y = 0;
+        int destWidth = width;
+        int destHeight = height;
+        switch (scale) {
+        case STRETCH:
+            break;
+        case SCALE:
+            double a = (double) image.getWidth() / image.getHeight();
+            double b = (double) width / height;
+            double h = (double) height / image.getHeight();
+            double w = (double) width / image.getWidth();
+            assert (a > 0);
+            assert (b > 0);
+
+            if (a > b) {
+                // Horizontal letterbox
+                destHeight = (int) (image.getWidth() / a * w);
+                destWidth = (int) (image.getWidth() * w);
+                y = (height - destHeight) / 2;
+                assert (y >= 0);
+            } else {
+                // Vertical letterbox
+                destHeight = (int) (image.getHeight() * h);
+                destWidth = (int) (image.getHeight() * a * h);
+                x = (width - destWidth) / 2;
+                assert (x >= 0);
+            }
+            break;
+        }
+
+        java.awt.Graphics gr = newImage.createGraphics();
+        if (scale == Scale.SCALE) {
+            gr.setColor(backColor);
+            gr.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+        }
+        gr.drawImage(image, x, y, destWidth, destHeight, null);
+        gr.dispose();
+        return newImage;
     }
 
 }
