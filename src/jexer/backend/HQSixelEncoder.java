@@ -318,28 +318,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
             // Map the pre-existing image palette into sixelImage and
             // sixelColors.
-
             noDither = true;
-            int [] rgba = null;
-            for (int i = 0; i < index.getMapSize(); i++) {
-                rgba = index.getComponents(i, rgba, 0);
-                /*
-                System.err.printf("%d %02x %02x %02x %02x %d\n", i,
-                    rgba[0], rgba[1], rgba[2], rgba[3], rgba.length);
-                 */
-                int red   = (rgba[0] & 0xFF) * 100 / 255;
-                int green = (rgba[1] & 0xFF) * 100 / 255;
-                int blue  = (rgba[2] & 0xFF) * 100 / 255;
-                int sixelRGB = (red << 16) | (green << 8) | blue;
-                sixelColors.add(sixelRGB);
-            }
-            if (verbosity >= 5) {
-                System.err.printf("COLOR MAP:\n");
-                for (int i = 0; i < sixelColors.size(); i++) {
-                    System.err.printf("   %03d %08x\n", i,
-                        sixelColors.get(i));
-                }
-            }
 
             Raster raster = image.getRaster();
             Object pixel = null;
@@ -347,6 +326,7 @@ public class HQSixelEncoder implements SixelEncoder {
             // System.err.println("transferType " + transferType);
 
             int transparentPixel = index.getTransparentPixel();
+            int maxColorIdx = -1;
             pixel = raster.getDataElements(0, 0, pixel);
             if (transferType != DataBuffer.TYPE_BYTE) {
                 // TODO: other kinds of transfer types
@@ -357,15 +337,41 @@ public class HQSixelEncoder implements SixelEncoder {
                 for (int x = 0; x < width; x++) {
                     pixel = raster.getDataElements(x, y, pixel);
                     byte [] indexedPixel = (byte []) pixel;
-                    int idx = indexedPixel[0];
+                    int idx = indexedPixel[0] & 0xFF;
+                    if (idx < 0) {
+                        idx += 128;
+                    }
                     if (idx == transparentPixel) {
                         sixelImage.setRGB(x, y, -1);
                     } else {
                         // System.err.printf("(%d, %d) --> %d\n", x, y, idx);
                         sixelImage.setRGB(x, y, idx);
+                        maxColorIdx = Math.max(idx, maxColorIdx);
                     }
                 }
             }
+
+            int [] rgbs = new int[index.getMapSize()];
+            index.getRGBs(rgbs);
+            assert (sixelColors.size() == 0);
+            for (int i = 0; i < rgbs.length && i <= maxColorIdx; i++) {
+                int red   = ((rgbs[i] >>> 16) & 0xFF) * 100 / 255;
+                int green = ((rgbs[i] >>>  8) & 0xFF) * 100 / 255;
+                int blue  = ((rgbs[i]       ) & 0xFF) * 100 / 255;
+                int sixelRGB = (red << 16) | (green << 8) | blue;
+                sixelColors.add(sixelRGB);
+            }
+            assert (sixelColors.size() == maxColorIdx + 1);
+
+            if (verbosity >= 5) {
+                System.err.printf("COLOR MAP: %d entries\n",
+                    sixelColors.size());
+                for (int i = 0; i < sixelColors.size(); i++) {
+                    System.err.printf("   %03d %08x\n", i,
+                        sixelColors.get(i));
+                }
+            }
+
         }
 
         /**
