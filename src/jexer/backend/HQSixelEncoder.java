@@ -31,7 +31,9 @@ package jexer.backend;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
 import java.awt.image.IndexColorModel;
+import java.awt.image.Raster;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -161,6 +163,12 @@ public class HQSixelEncoder implements SixelEncoder {
         private boolean transparent = false;
 
         /**
+         * If true, sixelImage is already indexed and does not require
+         * dithering.
+         */
+        private boolean noDither = false;
+
+        /**
          * Public constructor.
          *
          * @param size number of colors available for this palette
@@ -180,8 +188,17 @@ public class HQSixelEncoder implements SixelEncoder {
                 // pixel color.
                 ColorModel colorModel = image.getColorModel();
                 if (colorModel instanceof IndexColorModel) {
-                    if (((IndexColorModel) colorModel).getTransparentPixel() != -1) {
+                    IndexColorModel indexModel = (IndexColorModel) colorModel;
+                    if (indexModel.getTransparentPixel() != -1) {
                         transparent = true;
+                    }
+                    if (indexModel.getMapSize() <= paletteSize) {
+                        if (verbosity >= 1) {
+                            System.err.printf("Indexed: %d colors -> direct\n",
+                                indexModel.getMapSize());
+                        }
+                        directIndexed(image, indexModel);
+                        return;
                     }
                 }
             }
@@ -273,10 +290,82 @@ public class HQSixelEncoder implements SixelEncoder {
          * @return the sixel color
          */
         public int toSixelColor(final int rawColor) {
-            int red     = ((rawColor >>> 16) & 0xFF) * 100 / 256;
-            int green   = ((rawColor >>>  8) & 0xFF) * 100 / 256;
-            int blue    = ( rawColor         & 0xFF) * 100 / 256;
+            int red     = ((rawColor >>> 16) & 0xFF) * 100 / 255;
+            int green   = ((rawColor >>>  8) & 0xFF) * 100 / 255;
+            int blue    = ( rawColor         & 0xFF) * 100 / 255;
             return (0xFF << 24) | (red << 16) | (green << 8) | blue;
+        }
+
+        /**
+         * Use the pre-existing indexed palette of the image.
+         *
+         * @param image a bitmap image
+         * @param index the indexed palette
+         */
+        private void directIndexed(final BufferedImage image,
+            final IndexColorModel index) {
+
+            int width = image.getWidth();
+            int height = image.getHeight();
+            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
+                 BufferedImage.TYPE_INT_ARGB);
+
+            if (verbosity >= 1) {
+                System.err.printf("Image is %dx%d, bpp %d transparent %s\n",
+                    width, height, index.getPixelSize(), transparent
+                );
+            }
+
+            // Map the pre-existing image palette into sixelImage and
+            // sixelColors.
+
+            noDither = true;
+            int [] rgba = null;
+            for (int i = 0; i < index.getMapSize(); i++) {
+                rgba = index.getComponents(i, rgba, 0);
+                /*
+                System.err.printf("%d %02x %02x %02x %02x %d\n", i,
+                    rgba[0], rgba[1], rgba[2], rgba[3], rgba.length);
+                 */
+                int red   = (rgba[0] & 0xFF) * 100 / 255;
+                int green = (rgba[1] & 0xFF) * 100 / 255;
+                int blue  = (rgba[2] & 0xFF) * 100 / 255;
+                int sixelRGB = (red << 16) | (green << 8) | blue;
+                sixelColors.add(sixelRGB);
+            }
+            if (verbosity >= 5) {
+                System.err.printf("COLOR MAP:\n");
+                for (int i = 0; i < sixelColors.size(); i++) {
+                    System.err.printf("   %03d %08x\n", i,
+                        sixelColors.get(i));
+                }
+            }
+
+            Raster raster = image.getRaster();
+            Object pixel = null;
+            int transferType = raster.getTransferType();
+            // System.err.println("transferType " + transferType);
+
+            int transparentPixel = index.getTransparentPixel();
+            pixel = raster.getDataElements(0, 0, pixel);
+            if (transferType != DataBuffer.TYPE_BYTE) {
+                // TODO: other kinds of transfer types
+                throw new RuntimeException("Transfer type " +
+                    transferType + " unsupported");
+            }
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    pixel = raster.getDataElements(x, y, pixel);
+                    byte [] indexedPixel = (byte []) pixel;
+                    int idx = indexedPixel[0];
+                    if (idx == transparentPixel) {
+                        sixelImage.setRGB(x, y, -1);
+                    } else {
+                        // System.err.printf("(%d, %d) --> %d\n", x, y, idx);
+                        sixelImage.setRGB(x, y, idx);
+                    }
+                }
+            }
         }
 
         /**
@@ -387,6 +476,9 @@ public class HQSixelEncoder implements SixelEncoder {
          * palette.
          */
         public BufferedImage ditherImage() {
+            if (noDither) {
+                return sixelImage;
+            }
 
             if (quantizationType == 1) {
                 // TODO: support median cut
@@ -631,14 +723,28 @@ public class HQSixelEncoder implements SixelEncoder {
                         sixels[imageX][imageY] = colorIdx;
                         continue;
                     }
-                    assert (colorIdx >= 0);
-                    assert (colorIdx < paletteSize);
+                    if (!lastPalette.noDither) {
+                        assert (colorIdx >= 0);
+                        assert (colorIdx < lastPalette.sixelColors.size());
+                    }
 
                     sixels[imageX][imageY] = colorIdx;
                 }
             }
 
-            for (int i = 0; i < paletteSize; i++) {
+            for (int i = 0; i < lastPalette.sixelColors.size(); i++) {
+                boolean isUsed = false;
+                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+                    for (int j = 0; j < 6; j++) {
+                        if (sixels[imageX][j] == i) {
+                            isUsed = true;
+                        }
+                    }
+                }
+                if (isUsed == false) {
+                    continue;
+                }
+
                 // Set to the beginning of scan line for the next set of
                 // colored pixels, and select the color.
                 sb.append(String.format("$#%d", i));
@@ -706,7 +812,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     sb.append((char) oldData);
                 }
 
-            } // for (int i = 0; i < paletteSize; i++)
+            } // for (int i = 0; i < lastPalette.sixelColors.size(); i++)
 
             // Advance to the next scan line.
             sb.append("-");
