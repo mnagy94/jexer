@@ -46,10 +46,10 @@ public class SixelEncoder {
     // ------------------------------------------------------------------------
 
     /**
-     * SixelPalette is used to manage the conversion of images between 24-bit
-     * RGB color and a palette of paletteSize colors.
+     * Palette is used to manage the conversion of images between 24-bit RGB
+     * color and a palette of paletteSize colors.
      */
-    private class SixelPalette {
+    private class Palette {
 
         /**
          * Color palette for sixel output, sorted low to high.
@@ -127,7 +127,7 @@ public class SixelEncoder {
         /**
          * Public constructor.
          */
-        public SixelPalette() {
+        public Palette() {
             makePalette();
         }
 
@@ -687,7 +687,7 @@ public class SixelEncoder {
     /**
      * The sixel palette handler.
      */
-    private SixelPalette palette = null;
+    private Palette palette = null;
 
     /**
      * Number of colors in the sixel palette.  Xterm 335 defines the max as
@@ -761,7 +761,7 @@ public class SixelEncoder {
 
         // Dither the image.  It is ok to lose the original here.
         if (palette == null) {
-            palette = new SixelPalette();
+            palette = new Palette();
             if (sharedPalette == true) {
                 palette.emitPalette(sb, null);
             }
@@ -909,7 +909,7 @@ public class SixelEncoder {
      */
     public void emitPalette(final StringBuilder sb) {
         if (palette == null) {
-            palette = new SixelPalette();
+            palette = new Palette();
             if (sharedPalette == true) {
                 palette.emitPalette(sb, null);
             }
