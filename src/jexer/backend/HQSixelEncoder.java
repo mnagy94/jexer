@@ -44,7 +44,7 @@ import javax.imageio.ImageIO;
  * using several strategies to produce a reasonably high quality image within
  * sixel's ~19.97 bit (101^3) color depth.
  */
-public class HQSixelEncoder {
+public class HQSixelEncoder implements SixelEncoder {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------

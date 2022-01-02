@@ -221,7 +221,7 @@ public class ECMA48Terminal extends LogicalScreen
     /**
      * The sixel encoder.
      */
-    private SixelEncoder sixelEncoder = new SixelEncoder();
+    private SixelEncoder sixelEncoder = null;
 
     /**
      * The sixel post-rendered string cache.
@@ -614,9 +614,6 @@ public class ECMA48Terminal extends LogicalScreen
         // Enable mouse reporting and metaSendsEscape
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
 
-        // Request xterm use the sixel settings we want
-        this.output.printf("%s", xtermSetSixelSettings());
-
         // Request xterm report Synchronized Output support
         this.output.printf("%s", xtermQueryMode(2026));
 
@@ -726,9 +723,6 @@ public class ECMA48Terminal extends LogicalScreen
 
         // Enable mouse reporting and metaSendsEscape
         this.output.printf("%s%s", mouse(true), xtermMetaSendsEscape(true));
-
-        // Request xterm use the sixel settings we want
-        this.output.printf("%s", xtermSetSixelSettings());
 
         // Request xterm report Synchronized Output support
         this.output.printf("%s", xtermQueryMode(2026));
@@ -992,7 +986,17 @@ public class ECMA48Terminal extends LogicalScreen
         } else {
             sixel = true;
         }
+        // Default to legacy uniform quantizer.
+        if (System.getProperty("jexer.ECMA48.sixelEncoder",
+                "legacy").equals("hq")) {
+            sixelEncoder = new HQSixelEncoder();
+        } else {
+            sixelEncoder = new LegacySixelEncoder();
+        }
         sixelEncoder.reloadOptions();
+
+        // Request xterm use the sixel settings we want
+        this.output.printf("%s", xtermSetSixelSettings());
 
         // Default to using images for full-width characters.
         if (System.getProperty("jexer.ECMA48.wideCharImages",
