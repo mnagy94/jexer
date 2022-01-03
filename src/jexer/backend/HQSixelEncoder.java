@@ -37,6 +37,7 @@ import java.awt.image.Raster;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -62,6 +63,37 @@ public class HQSixelEncoder implements SixelEncoder {
      * color and a palette of paletteSize colors.
      */
     private class Palette {
+
+        /**
+         * Timings records time points in the image generation cycle.
+         */
+        private class Timings {
+            /**
+             * Nanotime when the timings were begun.
+             */
+            public long startTime;
+
+            /**
+             * Nanotime after the image was scanned for color analysis.
+             */
+            public long scanImageTime;
+
+            /**
+             * Nanotime after the color map was produced.
+             */
+            public long buildColorMapTime;
+
+            /**
+             * Nanotime after which the RGB image was dithered into an
+             * indexed image.
+             */
+            public long ditherImageTime;
+
+            /**
+             * Nanotime when the timings were finished.
+             */
+            public long endTime;
+        }
 
         /**
          * ColorIdx records a RGB color and its palette index.
@@ -169,6 +201,11 @@ public class HQSixelEncoder implements SixelEncoder {
         private boolean noDither = false;
 
         /**
+         * Timings.
+         */
+        private Timings timings;
+
+        /**
          * Public constructor.
          *
          * @param size number of colors available for this palette
@@ -176,6 +213,11 @@ public class HQSixelEncoder implements SixelEncoder {
          */
         public Palette(final int size, final BufferedImage image) {
             assert (size > 2);
+
+            if (doTimings) {
+                timings = new Timings();
+                timings.startTime = System.nanoTime();
+            }
 
             paletteSize = size;
             sixelColors = new ArrayList<Integer>(size);
@@ -196,6 +238,9 @@ public class HQSixelEncoder implements SixelEncoder {
                         if (verbosity >= 1) {
                             System.err.printf("Indexed: %d colors -> direct\n",
                                 indexModel.getMapSize());
+                        }
+                        if (timings != null) {
+                            timings.scanImageTime = System.nanoTime();
                         }
                         directIndexed(image, indexModel);
                         return;
@@ -257,6 +302,10 @@ public class HQSixelEncoder implements SixelEncoder {
             }
             if (transparent_count == 0) {
                 transparent = false;
+            }
+
+            if (timings != null) {
+                timings.scanImageTime = System.nanoTime();
             }
 
             /*
@@ -372,6 +421,10 @@ public class HQSixelEncoder implements SixelEncoder {
                 }
             }
 
+            if (timings != null) {
+                timings.buildColorMapTime = System.nanoTime();
+            }
+
         }
 
         /**
@@ -390,8 +443,8 @@ public class HQSixelEncoder implements SixelEncoder {
             // don't _need_ an ordering, but it does make it nicer to look at
             // the generated output and understand what's going on.
             sixelColors = new ArrayList<Integer>(colorMap.size());
-            for (Integer key: colorMap.keySet()) {
-                sixelColors.add(colorMap.get(key).color);
+            for (ColorIdx color: colorMap.values()) {
+                sixelColors.add(color.color);
             }
             Collections.sort(sixelColors);
             assert (sixelColors.size() == colorMap.size());
@@ -410,14 +463,231 @@ public class HQSixelEncoder implements SixelEncoder {
                     }
                 }
             }
+            if (timings != null) {
+                timings.buildColorMapTime = System.nanoTime();
+            }
         }
+
+        /**
+         * A bucket contains colors that will all be mapped to the same
+         * weighted average color value.
+         */
+        private class Bucket {
+            /**
+             * The colors in this bucket.
+             */
+            private ArrayList<ColorIdx> colors;
+
+            // The minimum and maximum, and "total" component values in this
+            // bucket.
+            private int minRed   = 0xFF;
+            private int maxRed   = 0;
+            private int minGreen = 0xFF;
+            private int maxGreen = 0;
+            private int minBlue  = 0xFF;
+            private int maxBlue  = 0;
+
+            /**
+             * Public constructor.
+             *
+             * @param n the expected number of colors that will be in this
+             * bucket
+             */
+            public Bucket(final int n) {
+                reset(n);
+            }
+
+            /**
+             * Reset the stats.
+             *
+             * @param n the expected number of colors that will be in this
+             * bucket
+             */
+            private void reset(final int n) {
+                colors     = new ArrayList<ColorIdx>(n);
+                minRed     = 0xFF;
+                maxRed     = 0;
+                minGreen   = 0xFF;
+                maxGreen   = 0;
+                minBlue    = 0xFF;
+                maxBlue    = 0;
+            }
+
+            /**
+             * Add a color to the bucket.
+             *
+             * @param color the color to add
+             */
+            public void add(final ColorIdx color) {
+                colors.add(color);
+
+                int rgb   = color.color;
+                int red   = (rgb >>> 16) & 0xFF;
+                int green = (rgb >>>  8) & 0xFF;
+                int blue  =  rgb         & 0xFF;
+                if (red > maxRed) {
+                    maxRed = red;
+                }
+                if (red < minRed) {
+                    minRed = red;
+                }
+                if (green > maxGreen) {
+                    maxGreen = green;
+                }
+                if (green < minGreen) {
+                    minGreen = green;
+                }
+                if (blue > maxBlue) {
+                    maxBlue = blue;
+                }
+                if (blue < minBlue) {
+                    minBlue = blue;
+                }
+            }
+
+            /**
+             * Partition this bucket into two buckets, split along the color
+             * with the maximum range.
+             *
+             * @return the other bucket
+             */
+            public Bucket partition() {
+                int redDiff = Math.max(0, (maxRed - minRed));
+                int greenDiff = Math.max(0, (maxGreen - minGreen));
+                int blueDiff = Math.max(0, (maxBlue - minBlue));
+                if (verbosity >= 5) {
+                    System.err.printf("partn colors %d Δr %d Δg %d Δb %d\n",
+                        colors.size(), redDiff, greenDiff, blueDiff);
+                }
+
+                if ((redDiff > greenDiff) && (redDiff > blueDiff)) {
+                    // Partition on red.
+                    if (verbosity >= 5) {
+                        System.err.println("    RED");
+                    }
+                    Collections.sort(colors, new Comparator<ColorIdx>() {
+                        public int compare(ColorIdx c1, ColorIdx c2) {
+                            int red1 = (c1.color >>> 16) & 0xFF;
+                            int red2 = (c2.color >>> 16) & 0xFF;
+                            return red1 - red2;
+                        }
+                    });
+                } else if ((greenDiff > blueDiff) && (greenDiff > redDiff)) {
+                    // Partition on green.
+                    if (verbosity >= 5) {
+                        System.err.println("    GREEN");
+                    }
+                    Collections.sort(colors, new Comparator<ColorIdx>() {
+                        public int compare(ColorIdx c1, ColorIdx c2) {
+                            int green1 = (c1.color >>> 8) & 0xFF;
+                            int green2 = (c2.color >>> 8) & 0xFF;
+                            return green1 - green2;
+                        }
+                    });
+                } else {
+                    // Partition on blue.
+                    if (verbosity >= 5) {
+                        System.err.println("    BLUE");
+                    }
+                    Collections.sort(colors, new Comparator<ColorIdx>() {
+                        public int compare(ColorIdx c1, ColorIdx c2) {
+                            int blue1 = c1.color & 0xFF;
+                            int blue2 = c2.color & 0xFF;
+                            return blue1 - blue2;
+                        }
+                    });
+                }
+
+                int oldN = colors.size();
+
+                List<ColorIdx> newBucketColors;
+                newBucketColors = colors.subList(oldN / 2, oldN);
+                Bucket newBucket = new Bucket(newBucketColors.size());
+                for (ColorIdx color: newBucketColors) {
+                    newBucket.add(color);
+                }
+
+                List<ColorIdx> newColors;
+                newColors = colors.subList(0, oldN - newBucketColors.size());
+                reset(newColors.size());
+                for (ColorIdx color: newColors) {
+                    add(color);
+                }
+                assert (newBucketColors.size() + newColors.size() == oldN);
+                return newBucket;
+            }
+
+            /**
+             * Average the colors in this bucket.
+             *
+             * @return an averaged RGB value
+             */
+            public int average() {
+                long totalRed = 0;
+                long totalGreen = 0;
+                long totalBlue = 0;
+                long count = 0;
+                for (ColorIdx color: colors) {
+                    int rgb = color.color;
+                    int red   = (rgb >>> 16) & 0xFF;
+                    int green = (rgb >>>  8) & 0xFF;
+                    int blue  =  rgb         & 0xFF;
+                    totalRed   += color.count * red;
+                    totalGreen += color.count * green;
+                    totalBlue  += color.count * blue;
+                    count += color.count;
+                }
+                totalRed   = clampSixel((int) (totalRed   / count));
+                totalGreen = clampSixel((int) (totalGreen / count));
+                totalBlue  = clampSixel((int) (totalBlue  / count));
+
+                return (int) ((0xFF << 24) | (totalRed   << 16)
+                                           | (totalGreen <<  8)
+                                           |  totalBlue);
+            }
+
+        };
 
         /**
          * Perform median cut algorithm to generate a palette that fits
          * within the palette size.
          */
         public void medianCut() {
-            // TODO
+            // Populate the "total" bucket.
+            Bucket bucket = new Bucket(colorMap.size());
+            for (ColorIdx color: colorMap.values()) {
+                bucket.add(color);
+            }
+            // Find the number of buckets we can have based on the palette
+            // size.
+            int log2 = 31 - Integer.numberOfLeadingZeros(paletteSize);
+            int totalBuckets = 1 << log2;
+            if (verbosity >= 1) {
+                System.err.println("Total buckets possible: " + totalBuckets);
+            }
+
+            ArrayList<Bucket> buckets = new ArrayList<Bucket>(totalBuckets);
+            buckets.add(bucket);
+            while (buckets.size() < totalBuckets) {
+                int n = buckets.size();
+                for (int i = 0; i < n; i++) {
+                    buckets.add(buckets.get(i).partition());
+                }
+            }
+
+            // Buckets are partitioned.  Now assign the colors in each to a
+            // sixelColor index.
+            int idx = 0;
+            for (Bucket b: buckets) {
+                for (ColorIdx color: b.colors) {
+                    color.index = idx;
+                }
+                sixelColors.add(b.average());
+                idx++;
+            }
+            if (timings != null) {
+                timings.buildColorMapTime = System.nanoTime();
+            }
         }
 
         /**
@@ -465,8 +735,12 @@ public class HQSixelEncoder implements SixelEncoder {
                 }
                 return colorIdx.index;
             } else if (quantizationType == 1) {
-                // TODO: median cut
-                return 0;
+                ColorIdx colorIdx = colorMap.get(color);
+                if (verbosity >= 10) {
+                    System.err.printf("matchColor(): %08x %d colorIdx %s\n",
+                        color, color, colorIdx);
+                }
+                return colorIdx.index;
             } else {
                 // TODO: octree
                 return 0;
@@ -486,10 +760,6 @@ public class HQSixelEncoder implements SixelEncoder {
                 return sixelImage;
             }
 
-            if (quantizationType == 1) {
-                // TODO: support median cut
-                return null;
-            }
             if (quantizationType == 2) {
                 // TODO: support octree
                 return null;
@@ -642,6 +912,11 @@ public class HQSixelEncoder implements SixelEncoder {
      */
     private Palette lastPalette;
 
+    /**
+     * If true, record timings for the image.
+     */
+    private boolean doTimings = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -703,7 +978,14 @@ public class HQSixelEncoder implements SixelEncoder {
         // Dither the image
         BufferedImage image = lastPalette.ditherImage();
 
+        if (lastPalette.timings != null) {
+            lastPalette.timings.ditherImageTime = System.nanoTime();
+        }
+
         if (image == null) {
+            if (lastPalette.timings != null) {
+                lastPalette.timings.endTime = System.nanoTime();
+            }
             return "";
         }
 
@@ -831,6 +1113,9 @@ public class HQSixelEncoder implements SixelEncoder {
         // Add the raster information
         sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
 
+        if (lastPalette.timings != null) {
+            lastPalette.timings.endTime = System.nanoTime();
+        }
         return sb.toString();
     }
 
@@ -927,8 +1212,9 @@ public class HQSixelEncoder implements SixelEncoder {
         if ((args.length == 0)
             || ((args.length == 1) && args[0].equals("-v"))
             || ((args.length == 1) && args[0].equals("-vv"))
+            || ((args.length == 1) && args[0].equals("-t"))
         ) {
-            System.err.println("USAGE: java jexer.backend.HQSixelEncoder [ -v | -vv ] { file1 [ file2 ... ] }");
+            System.err.println("USAGE: java jexer.backend.HQSixelEncoder [ -t | -v | -vv ] { file1 [ file2 ... ] }");
             System.exit(-1);
         }
 
@@ -943,10 +1229,16 @@ public class HQSixelEncoder implements SixelEncoder {
         for (int i = 0; i < args.length; i++) {
             if ((i == 0) && args[i].equals("-v")) {
                 encoder.verbosity = 1;
+                encoder.doTimings = true;
                 continue;
             }
             if ((i == 0) && args[i].equals("-vv")) {
                 encoder.verbosity = 10;
+                encoder.doTimings = true;
+                continue;
+            }
+            if ((i == 0) && args[i].equals("-t")) {
+                encoder.doTimings = true;
                 continue;
             }
             try {
@@ -966,6 +1258,20 @@ public class HQSixelEncoder implements SixelEncoder {
                 System.out.print(header);
                 System.out.print(sb.toString());
                 System.out.flush();
+
+
+                if (encoder.doTimings) {
+                    Palette.Timings timings = encoder.lastPalette.timings;
+                    double scanTime = (double) (timings.scanImageTime - timings.startTime) / 1.0e9;
+                    double mapTime = (double) (timings.buildColorMapTime - timings.scanImageTime) / 1.0e9;
+                    double ditherTime = (double) (timings.ditherImageTime - timings.buildColorMapTime) / 1.0e9;
+                    double totalTime = (double) (timings.endTime - timings.startTime) / 1.0e9;
+
+                    System.err.println("Timings:");
+                    System.err.printf(" scan %6.4fs map %6.4fs dither %6.4fs\n",
+                        scanTime, mapTime, ditherTime);
+                    System.err.printf(" total %6.4fs\n", totalTime);
+                }
             } catch (Exception e) {
                 System.err.println("Error reading file:");
                 e.printStackTrace();
