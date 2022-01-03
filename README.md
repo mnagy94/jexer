@@ -24,6 +24,10 @@ stock xterm, with a custom mouse icon, and SGR-Pixel mode active:
 
 ![Xterm SGR-Pixel Mouse](/screenshots/xterm_pixel_mouse.gif?raw=true "Xterm SGR-Pixel Mouse")
 
+A new sixel encoder is in the works for Xterm, which should look a lot
+better:
+
+![Xterm Snake Image](/screenshots/snake_xterm_hq.png?raw=true "Xterm Snake Image - HQ Encoder")
 
 
 License
