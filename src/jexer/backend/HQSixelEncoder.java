@@ -485,6 +485,7 @@ public class HQSixelEncoder implements SixelEncoder {
             int [] rgbArray = image.getRGB(0, 0, width, height, null, 0, width);
             colorMap = new HashMap<Integer, ColorIdx>(width * height);
             int transparent_count = 0;
+
             for (int i = 0; i < rgbArray.length; i++) {
                 int colorRGB = rgbArray[i];
                 if (transparent) {
@@ -494,10 +495,10 @@ public class HQSixelEncoder implements SixelEncoder {
                         transparent_count++;
                         if (allowTransparent) {
                             rgbArray[i] = 0x00f7a8b8;
+                            continue;
                         } else {
                             rgbArray[i] = 0xFF000000;
                         }
-                        continue;
                     }
                 } else if ((colorRGB & 0xFF000000) != 0xFF000000) {
                     if (verbosity >= 10) {
@@ -509,7 +510,8 @@ public class HQSixelEncoder implements SixelEncoder {
 
                 // Pull the 8-bit colors, and reduce them to 0-100 as per
                 // sixel.
-                int sixelRGB = toSixelColor(colorRGB, true);
+                int sixelRGB = toSixelColor(colorRGB,
+                    (quantizationType == 0 ? false : true));
                 rgbArray[i] = sixelRGB;
                 ColorIdx color = colorMap.get(sixelRGB & 0x00FFFFFF);
                 if (color == null) {
@@ -534,6 +536,8 @@ public class HQSixelEncoder implements SixelEncoder {
             if ((transparent_count == 0) || !allowTransparent) {
                 transparent = false;
             }
+
+            assert (colorMap.size() > 0);
 
             if (timings != null) {
                 timings.scanImageTime = System.nanoTime();
@@ -585,9 +589,18 @@ public class HQSixelEncoder implements SixelEncoder {
          * @return the sixel color
          */
         public int toSixelColor(final int rawColor, boolean checkBlackWhite) {
+
+            if (quantizationType == 0) {
+                assert (checkBlackWhite == false);
+            }
+
             int red     = ((rawColor >>> 16) & 0xFF) * 100 / 255;
             int green   = ((rawColor >>>  8) & 0xFF) * 100 / 255;
             int blue    = ( rawColor         & 0xFF) * 100 / 255;
+
+            if (quantizationType == 0) {
+                return (0xFF << 24) | (red << 16) | (green << 8) | blue;
+            }
 
             // These values are arbitrary.  Too low and you can get "static"
             // on images that have a very wide color range compared to
@@ -876,6 +889,19 @@ public class HQSixelEncoder implements SixelEncoder {
                 if (verbosity >= 10) {
                     System.err.printf("matchColor(): %08x %d colorIdx %s\n",
                         color, color, colorIdx);
+                }
+                if (colorIdx == null) {
+                    if (verbosity >= 5) {
+                        // This should not be possible.  What happened?
+                        System.err.println("FAILED TO MATCH ON DIRECT?!");
+                        System.err.printf("   Color: %08x\n", color);
+                        System.err.printf("COLOR MAP: %d entries\n",
+                            sixelColors.size());
+                        for (int i = 0; i < sixelColors.size(); i++) {
+                            System.err.printf("   %03d %08x\n", i,
+                                sixelColors.get(i));
+                        }
+                    }
                 }
                 return colorIdx.index;
             } else if (quantizationType == 1) {
