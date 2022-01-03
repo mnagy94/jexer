@@ -3125,7 +3125,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (sixelCache == null) {
-            sixelCache = new ImageCache(height * 10);
+            sixelCache = new ImageCache(height * width / 2);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3367,7 +3367,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (iterm2Cache == null) {
-            iterm2Cache = new ImageCache(height * 10);
+            iterm2Cache = new ImageCache(height * width / 2);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3545,7 +3545,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (jexerCache == null) {
-            jexerCache = new ImageCache(height * 10);
+            jexerCache = new ImageCache(height * width / 2);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted

@@ -162,318 +162,6 @@ public class HQSixelEncoder implements SixelEncoder {
         }
 
         /**
-         * Number of colors in this palette.
-         */
-        private int paletteSize = 0;
-
-        /**
-         * Color palette for sixel output, sorted low to high.
-         */
-        private List<Integer> sixelColors = null;
-
-        /**
-         * Map of colors used in the image by RGB.
-         */
-        private HashMap<Integer, ColorIdx> colorMap = null;
-
-        /**
-         * Type of color quantization used.
-         *
-         * 0 = direct map; 1 = median cut; 2 = octree.
-         */
-        private int quantizationType = -1;
-
-        /**
-         * The image from the constructor, mapped to sixel color space with
-         * transparent pixels removed.
-         */
-        private BufferedImage sixelImage;
-
-        /**
-         * If true, some pixels of the image are transparent.
-         */
-        private boolean transparent = false;
-
-        /**
-         * If true, sixelImage is already indexed and does not require
-         * dithering.
-         */
-        private boolean noDither = false;
-
-        /**
-         * The buckets produced by median cut.
-         */
-        ArrayList<Bucket> buckets;
-
-        /**
-         * Timings.
-         */
-        private Timings timings;
-
-        /**
-         * Public constructor.
-         *
-         * @param size number of colors available for this palette
-         * @param image a bitmap image
-         */
-        public Palette(final int size, final BufferedImage image) {
-            assert (size > 2);
-
-            if (doTimings) {
-                timings = new Timings();
-                timings.startTime = System.nanoTime();
-            }
-
-            paletteSize = size;
-            sixelColors = new ArrayList<Integer>(size);
-
-            if (image.getTransparency() == Transparency.TRANSLUCENT) {
-                // PNG like images where transparency is carried in alpha.
-                transparent = true;
-            } else {
-                // Indexed images where transparency is denoted by a specific
-                // pixel color.
-                ColorModel colorModel = image.getColorModel();
-                if (colorModel instanceof IndexColorModel) {
-                    IndexColorModel indexModel = (IndexColorModel) colorModel;
-                    if (indexModel.getTransparentPixel() != -1) {
-                        transparent = true;
-                    }
-                    if (indexModel.getMapSize() <= paletteSize) {
-                        if (verbosity >= 1) {
-                            System.err.printf("Indexed: %d colors -> direct\n",
-                                indexModel.getMapSize());
-                        }
-                        if (timings != null) {
-                            timings.scanImageTime = System.nanoTime();
-                        }
-                        directIndexed(image, indexModel);
-                        return;
-                    }
-                }
-            }
-
-            int width = image.getWidth();
-            int height = image.getHeight();
-            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                 BufferedImage.TYPE_INT_ARGB);
-
-            if (verbosity >= 1) {
-                System.err.printf("Palette() image is %dx%d, bpp %d transparent %s\n",
-                    width, height, image.getColorModel().getPixelSize(),
-                    transparent
-                );
-            }
-
-            // Perform population count on colors.
-            int [] rgbArray = image.getRGB(0, 0, width, height, null, 0, width);
-            colorMap = new HashMap<Integer, ColorIdx>(width * height);
-            int transparent_count = 0;
-            for (int i = 0; i < rgbArray.length; i++) {
-                int colorRGB = rgbArray[i];
-                if (transparent) {
-                    int alpha = ((colorRGB >>> 24) & 0xFF);
-                    if (alpha < ALPHA_OPAQUE) {
-                        // This pixel is almost transparent, omit it.
-                        transparent_count++;
-                        rgbArray[i] = 0x00f7a8b8;
-                        continue;
-                    }
-                }
-
-                // Pull the 8-bit colors, and reduce them to 0-100 as per
-                // sixel.
-                int sixelRGB = toSixelColor(colorRGB);
-                rgbArray[i] = sixelRGB;
-                ColorIdx color = colorMap.get(sixelRGB & 0x00FFFFFF);
-                if (color == null) {
-                    color = new ColorIdx(sixelRGB & 0x00FFFFFF);
-                    colorMap.put(sixelRGB & 0x00FFFFFF, color);
-                } else {
-                    color.count++;
-                }
-            }
-            // Save the image data mapped to the 101^3 sixel color space.
-            // This also sets any pixels with partial transparency below
-            // ALPHA_OPAQUE to fully transparent (and pink).
-            sixelImage.setRGB(0, 0, width, height, rgbArray, 0, width);
-
-            if (verbosity >= 1) {
-                System.err.printf("# colors in image: %d palette size %d\n",
-                    colorMap.size(), paletteSize);
-                System.err.printf("# transparent pixels: %d (%3.1f%%)\n",
-                    transparent_count,
-                    (double) transparent_count * 100.0 / (width * height));
-            }
-            if (transparent_count == 0) {
-                transparent = false;
-            }
-
-            if (timings != null) {
-                timings.scanImageTime = System.nanoTime();
-            }
-
-            /*
-             * Here we choose between several options:
-             *
-             * - If the palette size is big enough for the number of colors,
-             *   then just do a straight 1-1 mapping.
-             *
-             * - If the (number of colors:palette size) ratio is below 10,
-             *   use median cut.
-             *
-             * - Otherwise use octree.
-             */
-            if (paletteSize >= colorMap.size()) {
-                quantizationType = 0;
-                directMap();
-            } else if ((colorMap.size() <= paletteSize * 10) || true) {
-                // For now, direct map and median cut are all we get.
-                quantizationType = 1;
-                medianCut();
-            } else {
-                quantizationType = 2;
-                octree();
-            }
-        }
-
-        /**
-         * Convert a 24-bit color to a 19.97-bit sixel color.
-         *
-         * @param rawColor the 24-bit color
-         * @return the sixel color
-         */
-        public int toSixelColor(final int rawColor) {
-            int red     = ((rawColor >>> 16) & 0xFF) * 100 / 255;
-            int green   = ((rawColor >>>  8) & 0xFF) * 100 / 255;
-            int blue    = ( rawColor         & 0xFF) * 100 / 255;
-            return (0xFF << 24) | (red << 16) | (green << 8) | blue;
-        }
-
-        /**
-         * Use the pre-existing indexed palette of the image.
-         *
-         * @param image a bitmap image
-         * @param index the indexed palette
-         */
-        private void directIndexed(final BufferedImage image,
-            final IndexColorModel index) {
-
-            int width = image.getWidth();
-            int height = image.getHeight();
-            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                 BufferedImage.TYPE_INT_ARGB);
-
-            if (verbosity >= 1) {
-                System.err.printf("Image is %dx%d, bpp %d transparent %s\n",
-                    width, height, index.getPixelSize(), transparent
-                );
-            }
-
-            // Map the pre-existing image palette into sixelImage and
-            // sixelColors.
-            noDither = true;
-
-            Raster raster = image.getRaster();
-            Object pixel = null;
-            int transferType = raster.getTransferType();
-            // System.err.println("transferType " + transferType);
-
-            int transparentPixel = index.getTransparentPixel();
-            int maxColorIdx = -1;
-            pixel = raster.getDataElements(0, 0, pixel);
-            if (transferType != DataBuffer.TYPE_BYTE) {
-                // TODO: other kinds of transfer types
-                throw new RuntimeException("Transfer type " +
-                    transferType + " unsupported");
-            }
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    pixel = raster.getDataElements(x, y, pixel);
-                    byte [] indexedPixel = (byte []) pixel;
-                    int idx = indexedPixel[0] & 0xFF;
-                    if (idx < 0) {
-                        idx += 128;
-                    }
-                    if (idx == transparentPixel) {
-                        sixelImage.setRGB(x, y, -1);
-                    } else {
-                        // System.err.printf("(%d, %d) --> %d\n", x, y, idx);
-                        sixelImage.setRGB(x, y, idx);
-                        maxColorIdx = Math.max(idx, maxColorIdx);
-                    }
-                }
-            }
-
-            int [] rgbs = new int[index.getMapSize()];
-            index.getRGBs(rgbs);
-            assert (sixelColors.size() == 0);
-            for (int i = 0; i < rgbs.length && i <= maxColorIdx; i++) {
-                int red   = ((rgbs[i] >>> 16) & 0xFF) * 100 / 255;
-                int green = ((rgbs[i] >>>  8) & 0xFF) * 100 / 255;
-                int blue  = ((rgbs[i]       ) & 0xFF) * 100 / 255;
-                int sixelRGB = (red << 16) | (green << 8) | blue;
-                sixelColors.add(sixelRGB);
-            }
-            assert (sixelColors.size() == maxColorIdx + 1);
-
-            if (verbosity >= 5) {
-                System.err.printf("COLOR MAP: %d entries\n",
-                    sixelColors.size());
-                for (int i = 0; i < sixelColors.size(); i++) {
-                    System.err.printf("   %03d %08x\n", i,
-                        sixelColors.get(i));
-                }
-            }
-
-            if (timings != null) {
-                timings.buildColorMapTime = System.nanoTime();
-            }
-
-        }
-
-        /**
-         * Assign palette entries to the image colors.  This requires at
-         * least as many palette colors as number of colors used in the
-         * image.
-         */
-        public void directMap() {
-            assert (paletteSize >= colorMap.size());
-
-            if (verbosity >= 1) {
-                System.err.println("Direct-map colors");
-            }
-
-            // The simplest thing: just put the used colors in RGB order.  We
-            // don't _need_ an ordering, but it does make it nicer to look at
-            // the generated output and understand what's going on.
-            sixelColors = new ArrayList<Integer>(colorMap.size());
-            for (ColorIdx color: colorMap.values()) {
-                sixelColors.add(color.color);
-            }
-            Collections.sort(sixelColors);
-            assert (sixelColors.size() == colorMap.size());
-            for (int i = 0; i < sixelColors.size(); i++) {
-                colorMap.get(sixelColors.get(i)).index = i;
-            }
-
-            if (verbosity >= 1) {
-                System.err.printf("colorMap size %d sixelColors size %d\n",
-                    colorMap.size(), sixelColors.size());
-                if (verbosity >= 5) {
-                    System.err.printf("COLOR MAP:\n");
-                    for (int i = 0; i < sixelColors.size(); i++) {
-                        System.err.printf("   %03d %s\n", i,
-                            colorMap.get(sixelColors.get(i)));
-                    }
-                }
-            }
-            if (timings != null) {
-                timings.buildColorMapTime = System.nanoTime();
-            }
-        }
-
-        /**
          * A bucket contains colors that will all be mapped to the same
          * weighted average color value.
          */
@@ -491,7 +179,6 @@ public class HQSixelEncoder implements SixelEncoder {
             private int maxGreen = 0;
             private int minBlue  = 0xFF;
             private int maxBlue  = 0;
-
 
             // The last computed average() value.
             private int lastAverage = -1;
@@ -513,13 +200,13 @@ public class HQSixelEncoder implements SixelEncoder {
              * bucket
              */
             private void reset(final int n) {
-                colors     = new ArrayList<ColorIdx>(n);
-                minRed     = 0xFF;
-                maxRed     = 0;
-                minGreen   = 0xFF;
-                maxGreen   = 0;
-                minBlue    = 0xFF;
-                maxBlue    = 0;
+                colors      = new ArrayList<ColorIdx>(n);
+                minRed      = 0xFF;
+                maxRed      = 0;
+                minGreen    = 0xFF;
+                maxGreen    = 0;
+                minBlue     = 0xFF;
+                maxBlue     = 0;
                 lastAverage = -1;
             }
 
@@ -643,6 +330,15 @@ public class HQSixelEncoder implements SixelEncoder {
              * @return an averaged RGB value
              */
             public int average() {
+                if (quantizationDone) {
+                    int sixelColor = sixelColors.get(colors.get(0).index);
+                    if ((sixelColor == 0xFF000000)
+                        || (sixelColor == 0xFF646464)
+                    ) {
+                        // This bucket is mapped to black or white.
+                        lastAverage = sixelColor;
+                    }
+                }
                 if (lastAverage != -1) {
                     return lastAverage;
                 }
@@ -674,10 +370,365 @@ public class HQSixelEncoder implements SixelEncoder {
         };
 
         /**
+         * Number of colors in this palette.
+         */
+        private int paletteSize = 0;
+
+        /**
+         * Color palette for sixel output, sorted low to high.
+         */
+        private List<Integer> sixelColors = null;
+
+        /**
+         * Map of colors used in the image by RGB.
+         */
+        private HashMap<Integer, ColorIdx> colorMap = null;
+
+        /**
+         * Type of color quantization used.
+         *
+         * -1 = direct map indexed; 0 = direct map; 1 = median cut; 2 = octree.
+         */
+        private int quantizationType = -1;
+
+        /**
+         * The image from the constructor, mapped to sixel color space with
+         * transparent pixels removed.
+         */
+        private BufferedImage sixelImage;
+
+        /**
+         * If true, some pixels of the image are transparent.
+         */
+        private boolean transparent = false;
+
+        /**
+         * If true, sixelImage is already indexed and does not require
+         * dithering.
+         */
+        private boolean noDither = false;
+
+        /**
+         * The buckets produced by median cut.
+         */
+        private ArrayList<Bucket> buckets;
+
+        /**
+         * If true, quantization is done.
+         */
+        private boolean quantizationDone = false;
+
+        /**
+         * Timings.
+         */
+        private Timings timings;
+
+        /**
+         * Public constructor.
+         *
+         * @param size number of colors available for this palette
+         * @param image a bitmap image
+         */
+        public Palette(final int size, final BufferedImage image) {
+            assert (size >= 2);
+
+            if (doTimings) {
+                timings = new Timings();
+                timings.startTime = System.nanoTime();
+            }
+
+            paletteSize = size;
+            sixelColors = new ArrayList<Integer>(size);
+
+            if (image.getTransparency() == Transparency.TRANSLUCENT) {
+                // PNG like images where transparency is carried in alpha.
+                transparent = true;
+            } else {
+                // Indexed images where transparency is denoted by a specific
+                // pixel color.
+                ColorModel colorModel = image.getColorModel();
+                if (colorModel instanceof IndexColorModel) {
+                    IndexColorModel indexModel = (IndexColorModel) colorModel;
+                    if (indexModel.getTransparentPixel() != -1) {
+                        transparent = true;
+                    }
+                    if (indexModel.getMapSize() <= paletteSize) {
+                        if (verbosity >= 1) {
+                            System.err.printf("Indexed: %d colors -> direct\n",
+                                indexModel.getMapSize());
+                        }
+                        if (timings != null) {
+                            timings.scanImageTime = System.nanoTime();
+                        }
+                        directIndexed(image, indexModel);
+                        return;
+                    }
+                }
+            }
+
+            int width = image.getWidth();
+            int height = image.getHeight();
+            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
+                 BufferedImage.TYPE_INT_ARGB);
+
+            if (verbosity >= 1) {
+                System.err.printf("Palette() image is %dx%d, bpp %d transparent %s\n",
+                    width, height, image.getColorModel().getPixelSize(),
+                    transparent
+                );
+            }
+
+            // Perform population count on colors.
+            int [] rgbArray = image.getRGB(0, 0, width, height, null, 0, width);
+            colorMap = new HashMap<Integer, ColorIdx>(width * height);
+            int transparent_count = 0;
+            for (int i = 0; i < rgbArray.length; i++) {
+                int colorRGB = rgbArray[i];
+                if (transparent) {
+                    int alpha = ((colorRGB >>> 24) & 0xFF);
+                    if (alpha < ALPHA_OPAQUE) {
+                        // This pixel is almost transparent, omit it.
+                        transparent_count++;
+                        rgbArray[i] = 0x00f7a8b8;
+                        continue;
+                    }
+                }
+
+                // Pull the 8-bit colors, and reduce them to 0-100 as per
+                // sixel.
+                int sixelRGB = toSixelColor(colorRGB, true);
+                rgbArray[i] = sixelRGB;
+                ColorIdx color = colorMap.get(sixelRGB & 0x00FFFFFF);
+                if (color == null) {
+                    color = new ColorIdx(sixelRGB & 0x00FFFFFF);
+                    colorMap.put(sixelRGB & 0x00FFFFFF, color);
+                } else {
+                    color.count++;
+                }
+            }
+            // Save the image data mapped to the 101^3 sixel color space.
+            // This also sets any pixels with partial transparency below
+            // ALPHA_OPAQUE to fully transparent (and pink).
+            sixelImage.setRGB(0, 0, width, height, rgbArray, 0, width);
+
+            if (verbosity >= 1) {
+                System.err.printf("# colors in image: %d palette size %d\n",
+                    colorMap.size(), paletteSize);
+                System.err.printf("# transparent pixels: %d (%3.1f%%)\n",
+                    transparent_count,
+                    (double) transparent_count * 100.0 / (width * height));
+            }
+            if (transparent_count == 0) {
+                transparent = false;
+            }
+
+            if (timings != null) {
+                timings.scanImageTime = System.nanoTime();
+            }
+
+            /*
+             * Here we choose between several options:
+             *
+             * - If the palette size is big enough for the number of colors,
+             *   then just do a straight 1-1 mapping.
+             *
+             * - If the (number of colors:palette size) ratio is below 10,
+             *   use median cut.
+             *
+             * - Otherwise use octree.
+             */
+            if (paletteSize >= colorMap.size()) {
+                quantizationType = 0;
+                directMap();
+            } else if ((colorMap.size() <= paletteSize * 10) || true) {
+                // For now, direct map and median cut are all we get.
+                quantizationType = 1;
+                medianCut();
+            } else {
+                quantizationType = 2;
+                octree();
+            }
+        }
+
+        /**
+         * Convert a 24-bit color to a 19.97-bit sixel color.
+         *
+         * @param rawColor the 24-bit color
+         * @return the sixel color
+         */
+        public int toSixelColor(final int rawColor) {
+            int red     = ((rawColor >>> 16) & 0xFF) * 100 / 255;
+            int green   = ((rawColor >>>  8) & 0xFF) * 100 / 255;
+            int blue    = ( rawColor         & 0xFF) * 100 / 255;
+            return (0xFF << 24) | (red << 16) | (green << 8) | blue;
+        }
+
+        /**
+         * Convert a 24-bit color to a 19.97-bit sixel color.
+         *
+         * @param rawColor the 24-bit color
+         * @param checkBlackWhite if true, return pure black or pure white
+         * for colors that are close to those
+         * @return the sixel color
+         */
+        public int toSixelColor(final int rawColor, boolean checkBlackWhite) {
+            int red     = ((rawColor >>> 16) & 0xFF) * 100 / 255;
+            int green   = ((rawColor >>>  8) & 0xFF) * 100 / 255;
+            int blue    = ( rawColor         & 0xFF) * 100 / 255;
+
+            // This value is arbitrary.  Too low and you can get "static" on
+            // images that have a very wide color range compared to palette
+            // entries.  Too high and you lose a lot of detail on otherwise
+            // great images.
+            final int diff = 50;
+            if (((red * red) + (green * green) + (blue * blue)) < diff) {
+                // Black is a closer match.
+                return 0xFF000000;
+            } else if ((((100 - red) * (100 - red)) +
+                    ((100 - green) * (100 - green)) +
+                    ((100 - blue) * (100 - blue))) < diff) {
+
+                // White is a closer match.
+                return 0xFFFFFFFF;
+            }
+            return (0xFF << 24) | (red << 16) | (green << 8) | blue;
+        }
+
+        /**
+         * Use the pre-existing indexed palette of the image.
+         *
+         * @param image a bitmap image
+         * @param index the indexed palette
+         */
+        private void directIndexed(final BufferedImage image,
+            final IndexColorModel index) {
+
+            assert (quantizationType == -1);
+
+            int width = image.getWidth();
+            int height = image.getHeight();
+            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
+                 BufferedImage.TYPE_INT_ARGB);
+
+            if (verbosity >= 1) {
+                System.err.printf("Image is %dx%d, bpp %d transparent %s\n",
+                    width, height, index.getPixelSize(), transparent
+                );
+            }
+
+            // Map the pre-existing image palette into sixelImage and
+            // sixelColors.
+            noDither = true;
+
+            Raster raster = image.getRaster();
+            Object pixel = null;
+            int transferType = raster.getTransferType();
+            // System.err.println("transferType " + transferType);
+
+            int transparentPixel = index.getTransparentPixel();
+            int maxColorIdx = -1;
+            pixel = raster.getDataElements(0, 0, pixel);
+            if (transferType != DataBuffer.TYPE_BYTE) {
+                // TODO: other kinds of transfer types
+                throw new RuntimeException("Transfer type " +
+                    transferType + " unsupported");
+            }
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    pixel = raster.getDataElements(x, y, pixel);
+                    byte [] indexedPixel = (byte []) pixel;
+                    int idx = indexedPixel[0] & 0xFF;
+                    if (idx < 0) {
+                        idx += 128;
+                    }
+                    if (idx == transparentPixel) {
+                        sixelImage.setRGB(x, y, -1);
+                    } else {
+                        // System.err.printf("(%d, %d) --> %d\n", x, y, idx);
+                        sixelImage.setRGB(x, y, idx);
+                        maxColorIdx = Math.max(idx, maxColorIdx);
+                    }
+                }
+            }
+
+            int [] rgbs = new int[index.getMapSize()];
+            index.getRGBs(rgbs);
+            assert (sixelColors.size() == 0);
+            for (int i = 0; i < rgbs.length && i <= maxColorIdx; i++) {
+                int red   = ((rgbs[i] >>> 16) & 0xFF) * 100 / 255;
+                int green = ((rgbs[i] >>>  8) & 0xFF) * 100 / 255;
+                int blue  = ((rgbs[i]       ) & 0xFF) * 100 / 255;
+                int sixelRGB = (red << 16) | (green << 8) | blue;
+                sixelColors.add(sixelRGB);
+            }
+            assert (sixelColors.size() == maxColorIdx + 1);
+
+            quantizationDone = true;
+            if (verbosity >= 5) {
+                System.err.printf("COLOR MAP: %d entries\n",
+                    sixelColors.size());
+                for (int i = 0; i < sixelColors.size(); i++) {
+                    System.err.printf("   %03d %08x\n", i,
+                        sixelColors.get(i));
+                }
+            }
+
+            if (timings != null) {
+                timings.buildColorMapTime = System.nanoTime();
+            }
+
+        }
+
+        /**
+         * Assign palette entries to the image colors.  This requires at
+         * least as many palette colors as number of colors used in the
+         * image.
+         */
+        public void directMap() {
+            assert (quantizationType == 0);
+            assert (paletteSize >= colorMap.size());
+
+            if (verbosity >= 1) {
+                System.err.println("Direct-map colors");
+            }
+
+            // The simplest thing: just put the used colors in RGB order.  We
+            // don't _need_ an ordering, but it does make it nicer to look at
+            // the generated output and understand what's going on.
+            sixelColors = new ArrayList<Integer>(colorMap.size());
+            for (ColorIdx color: colorMap.values()) {
+                sixelColors.add(color.color);
+            }
+            Collections.sort(sixelColors);
+            assert (sixelColors.size() == colorMap.size());
+            for (int i = 0; i < sixelColors.size(); i++) {
+                colorMap.get(sixelColors.get(i)).index = i;
+            }
+
+            quantizationDone = true;
+            if (verbosity >= 1) {
+                System.err.printf("colorMap size %d sixelColors size %d\n",
+                    colorMap.size(), sixelColors.size());
+                if (verbosity >= 5) {
+                    System.err.printf("COLOR MAP:\n");
+                    for (int i = 0; i < sixelColors.size(); i++) {
+                        System.err.printf("   %03d %s\n", i,
+                            colorMap.get(sixelColors.get(i)));
+                    }
+                }
+            }
+            if (timings != null) {
+                timings.buildColorMapTime = System.nanoTime();
+            }
+        }
+
+        /**
          * Perform median cut algorithm to generate a palette that fits
          * within the palette size.
          */
         public void medianCut() {
+            assert (quantizationType == 1);
+
             // Populate the "total" bucket.
             Bucket bucket = new Bucket(colorMap.size());
             for (ColorIdx color: colorMap.values()) {
@@ -699,17 +750,63 @@ public class HQSixelEncoder implements SixelEncoder {
                     buckets.add(buckets.get(i).partition());
                 }
             }
+            assert (buckets.size() == totalBuckets);
 
             // Buckets are partitioned.  Now assign the colors in each to a
-            // sixelColor index.
+            // sixelColor index.  The darkest and lightest colors are
+            // assigned to black and white, respectively.
             int idx = 0;
+            int darkest = Integer.MAX_VALUE;
+            int lightest = 0;
+            int darkestIdx = -1;
+            int lightestIdx = -1;
+            final int diff = 1000;
             for (Bucket b: buckets) {
                 for (ColorIdx color: b.colors) {
                     color.index = idx;
+
+                    int rgb = color.color;
+                    int red   = (rgb >>> 16) & 0xFF;
+                    int green = (rgb >>>  8) & 0xFF;
+                    int blue  =  rgb         & 0xFF;
+                    int color2 = (red * red) + (green * green) + (blue * blue);
+                    if (((red * red) + (green * green) + (blue * blue)) < diff) {
+                        // Black is a close match.
+                        if (color2 < darkest) {
+                            darkest = color2;
+                            darkestIdx = idx;
+                        }
+                    } else if ((((100 - red) * (100 - red)) +
+                            ((100 - green) * (100 - green)) +
+                            ((100 - blue) * (100 - blue))) < diff) {
+
+                        // White is a close match.
+                        if (color2 > lightest) {
+                            lightest = color2;
+                            lightestIdx = idx;
+                        }
+                    }
                 }
                 sixelColors.add(b.average());
                 idx++;
             }
+            if (darkestIdx != -1) {
+                sixelColors.set(darkestIdx, 0xFF000000);
+            }
+            if (lightestIdx != -1) {
+                sixelColors.set(lightestIdx, 0xFF646464);
+            }
+
+            quantizationDone = true;
+            if (verbosity >= 5) {
+                System.err.printf("COLOR MAP: %d entries\n",
+                    sixelColors.size());
+                for (int i = 0; i < sixelColors.size(); i++) {
+                    System.err.printf("   %03d %08x\n", i,
+                        sixelColors.get(i));
+                }
+            }
+
             if (timings != null) {
                 timings.buildColorMapTime = System.nanoTime();
             }
@@ -719,7 +816,8 @@ public class HQSixelEncoder implements SixelEncoder {
          * Perform octree-based color quantization.
          */
         public void octree() {
-            // TODO
+            // TODO: octree
+            assert (quantizationType == 2);
         }
 
         /**
@@ -814,7 +912,7 @@ public class HQSixelEncoder implements SixelEncoder {
             }
 
             if (quantizationType == 2) {
-                // TODO: support octree
+                // TODO: octree
                 return null;
             }
 
@@ -849,6 +947,13 @@ public class HQSixelEncoder implements SixelEncoder {
                     int newPixel = sixelColors.get(colorIdx);
                     ditheredImage.setRGB(imageX, imageY, colorIdx);
 
+                    if (quantizationType == 0) {
+                        // For direct map, every possible color is already in
+                        // the color map.  There should be no color error to
+                        // dither out.
+                        continue;
+                    }
+
                     int oldRed   = (oldPixel >>> 16) & 0xFF;
                     int oldGreen = (oldPixel >>>  8) & 0xFF;
                     int oldBlue  =  oldPixel         & 0xFF;
@@ -874,6 +979,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             pXpY = (0xFF << 24) | ((red & 0xFF) << 16);
                             pXpY |= ((green & 0xFF) << 8) | (blue & 0xFF);
                             ditheredImage.setRGB(imageX + 1, imageY, pXpY);
+                        } else {
+                            ditheredImage.setRGB(imageX + 1, imageY, -1);
                         }
                         if (imageY < sixelImage.getHeight() - 1) {
                             int pXpYp = ditheredImage.getRGB(imageX + 1,
@@ -889,6 +996,9 @@ public class HQSixelEncoder implements SixelEncoder {
                                 pXpYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
                                 ditheredImage.setRGB(imageX + 1, imageY + 1,
                                     pXpYp);
+                            } else {
+                                ditheredImage.setRGB(imageX + 1, imageY + 1,
+                                    -1);
                             }
                         }
                     } else if (imageY < sixelImage.getHeight() - 1) {
@@ -907,6 +1017,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             pXmYp = ((red & 0xFF) << 16);
                             pXmYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
                             ditheredImage.setRGB(imageX - 1, imageY + 1, pXmYp);
+                        } else {
+                            ditheredImage.setRGB(imageX - 1, imageY + 1, -1);
                         }
 
                         if ((pXYp & 0xFF000000) == 0xFF000000) {
@@ -919,6 +1031,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             pXYp = (0xFF << 24) | ((red & 0xFF) << 16);
                             pXYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
                             ditheredImage.setRGB(imageX,     imageY + 1, pXYp);
+                        } else {
+                            ditheredImage.setRGB(imageX,     imageY + 1, -1);
                         }
                     }
                 } // for (int imageY = 0; imageY < image.getHeight(); imageY++)
@@ -956,9 +1070,9 @@ public class HQSixelEncoder implements SixelEncoder {
 
     /**
      * Number of colors in the sixel palette.  Xterm 335 defines the max as
-     * 1024.
+     * 1024.  For HQ encoder the default is 256.
      */
-    private int paletteSize = 1024;
+    private int paletteSize = 256;
 
     /**
      * The palette used in the last image.
@@ -990,12 +1104,18 @@ public class HQSixelEncoder implements SixelEncoder {
      */
     public void reloadOptions() {
         // Palette size
-        int paletteSize = 1024;
+        int paletteSize = 256;
         try {
             paletteSize = Integer.parseInt(System.getProperty(
-                "jexer.ECMA48.sixelPaletteSize", "1024"));
+                "jexer.ECMA48.sixelPaletteSize", "256"));
             switch (paletteSize) {
             case 2:
+            case 4:
+            case 8:
+            case 16:
+            case 32:
+            case 64:
+            case 128:
             case 256:
             case 512:
             case 1024:
@@ -1068,7 +1188,6 @@ public class HQSixelEncoder implements SixelEncoder {
                         assert (colorIdx >= 0);
                         assert (colorIdx < lastPalette.sixelColors.size());
                     }
-
                     sixels[imageX][imageY] = colorIdx;
                 }
             }
@@ -1163,8 +1282,12 @@ public class HQSixelEncoder implements SixelEncoder {
         // Kill the very last "-", because it is unnecessary.
         sb.deleteCharAt(sb.length() - 1);
 
-        // Add the raster information
-        sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
+        // Add the raster information, but only if the image has no
+        // transparency.
+        if (!lastPalette.transparent) {
+            sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth,
+                    rasterHeight));
+        }
 
         if (lastPalette.timings != null) {
             lastPalette.timings.endTime = System.nanoTime();
@@ -1223,6 +1346,12 @@ public class HQSixelEncoder implements SixelEncoder {
 
         switch (paletteSize) {
         case 2:
+        case 4:
+        case 8:
+        case 16:
+        case 32:
+        case 64:
+        case 128:
         case 256:
         case 512:
         case 1024:
