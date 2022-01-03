@@ -856,7 +856,10 @@ public class ECMA48 implements Runnable {
                         // Don't step on UI events
                         synchronized (this) {
                             if (screenIsDirty) {
-                                displayListener.displayChanged();
+                                displayListener.displayChanged(false);
+                                screenIsDirty = false;
+                            } else {
+                                displayListener.displayChanged(true);
                                 screenIsDirty = false;
                             }
                         }
@@ -911,7 +914,7 @@ public class ECMA48 implements Runnable {
 
         // Permit my enclosing UI to know that I updated.
         if (displayListener != null) {
-            displayListener.displayChanged();
+            displayListener.displayChanged(false);
         }
 
         // System.err.println("*** run() exiting..."); System.err.flush();
@@ -2274,7 +2277,7 @@ public class ECMA48 implements Runnable {
                 printCharacter(keypress.getChar());
             }
             if (displayListener != null) {
-                displayListener.displayChanged();
+                displayListener.displayChanged(false);
                 screenIsDirty = false;
             }
         }
@@ -3778,7 +3781,7 @@ public class ECMA48 implements Runnable {
                             withinSynchronizedUpdate = false;
                             // Permit my enclosing UI to know that I updated.
                             if (displayListener != null) {
-                                displayListener.displayChanged();
+                                displayListener.displayChanged(false);
                             }
                         }
                     }

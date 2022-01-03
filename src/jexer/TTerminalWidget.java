@@ -1508,8 +1508,19 @@ public class TTerminalWidget extends TScrollableWidget
 
     /**
      * Called by emulator when fresh data has come in.
+     *
+     * @param cursorOnly if true, the screen has not changed but the cursor
+     * may be on a different location.
      */
-    public void displayChanged() {
+    public void displayChanged(final boolean cursorOnly) {
+        if (cursorOnly) {
+            TApplication app = getApplication();
+            if (app != null) {
+                app.postEvent(new TMenuEvent(null, TMenu.MID_REPAINT));
+            }
+            return;
+        }
+
         synchronized (dirtyQueue) {
             if (dirtyQueue.size() == 0) {
                 dirtyQueue.add("dirty");

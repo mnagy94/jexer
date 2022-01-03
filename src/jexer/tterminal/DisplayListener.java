@@ -36,8 +36,11 @@ public interface DisplayListener {
 
     /**
      * Function to call when the display needs to be updated.
+     *
+     * @param cursorOnly if true, the screen has not changed but the cursor
+     * may be on a different location.
      */
-    public void displayChanged();
+    public void displayChanged(final boolean cursorOnly);
 
     /**
      * Function to call to obtain the display width.

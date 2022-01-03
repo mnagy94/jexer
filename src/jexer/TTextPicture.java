@@ -279,8 +279,11 @@ public class TTextPicture extends TScrollableWidget
 
     /**
      * Called by emulator when fresh data has come in.
+     *
+     * @param cursorOnly if true, the screen has not changed but the cursor
+     * may be on a different location.
      */
-    public void displayChanged() {
+    public void displayChanged(final boolean cursorOnly) {
         // Do nothing
     }
 
