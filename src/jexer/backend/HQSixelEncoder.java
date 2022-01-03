@@ -201,6 +201,11 @@ public class HQSixelEncoder implements SixelEncoder {
         private boolean noDither = false;
 
         /**
+         * The buckets produced by median cut.
+         */
+        ArrayList<Bucket> buckets;
+
+        /**
          * Timings.
          */
         private Timings timings;
@@ -487,6 +492,10 @@ public class HQSixelEncoder implements SixelEncoder {
             private int minBlue  = 0xFF;
             private int maxBlue  = 0;
 
+
+            // The last computed average() value.
+            private int lastAverage = -1;
+
             /**
              * Public constructor.
              *
@@ -511,6 +520,17 @@ public class HQSixelEncoder implements SixelEncoder {
                 maxGreen   = 0;
                 minBlue    = 0xFF;
                 maxBlue    = 0;
+                lastAverage = -1;
+            }
+
+            /**
+             * Get the index associated with all of the colors in this
+             * bucket.
+             *
+             * @return the index
+             */
+            public int getIndex() {
+                return colors.get(0).index;
             }
 
             /**
@@ -623,6 +643,10 @@ public class HQSixelEncoder implements SixelEncoder {
              * @return an averaged RGB value
              */
             public int average() {
+                if (lastAverage != -1) {
+                    return lastAverage;
+                }
+
                 long totalRed = 0;
                 long totalGreen = 0;
                 long totalBlue = 0;
@@ -641,9 +665,10 @@ public class HQSixelEncoder implements SixelEncoder {
                 totalGreen = clampSixel((int) (totalGreen / count));
                 totalBlue  = clampSixel((int) (totalBlue  / count));
 
-                return (int) ((0xFF << 24) | (totalRed   << 16)
-                                           | (totalGreen <<  8)
-                                           |  totalBlue);
+                lastAverage = (int) ((0xFF << 24) | (totalRed   << 16)
+                                                  | (totalGreen <<  8)
+                                                  |  totalBlue);
+                return lastAverage;
             }
 
         };
@@ -666,7 +691,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 System.err.println("Total buckets possible: " + totalBuckets);
             }
 
-            ArrayList<Bucket> buckets = new ArrayList<Bucket>(totalBuckets);
+            buckets = new ArrayList<Bucket>(totalBuckets);
             buckets.add(bucket);
             while (buckets.size() < totalBuckets) {
                 int n = buckets.size();
@@ -740,7 +765,35 @@ public class HQSixelEncoder implements SixelEncoder {
                     System.err.printf("matchColor(): %08x %d colorIdx %s\n",
                         color, color, colorIdx);
                 }
-                return colorIdx.index;
+                if (colorIdx != null) {
+                    return colorIdx.index;
+                }
+
+                // Due to dithering, we are close but not quite on a color in
+                // the index.  Do a search in the buckets to find the one
+                // that is closest to this color.
+                int red   = (color >>> 16) & 0xFF;
+                int green = (color >>>  8) & 0xFF;
+                int blue  =  color         & 0xFF;
+                double diff = Double.MAX_VALUE;
+                int idx = -1;
+                int i = 0;
+                for (Bucket b: buckets) {
+                    int rgbColor = b.average();
+                    double newDiff = 0;
+                    int red2   = (rgbColor >>> 16) & 0xFF;
+                    int green2 = (rgbColor >>>  8) & 0xFF;
+                    int blue2  =  rgbColor         & 0xFF;
+                    newDiff += Math.pow(red2 - red, 2);
+                    newDiff += Math.pow(green2 - green, 2);
+                    newDiff += Math.pow(blue2 - blue, 2);
+                    if (newDiff < diff) {
+                        idx = b.getIndex();
+                        diff = newDiff;
+                    }
+                }
+                assert (idx != -1);
+                return idx;
             } else {
                 // TODO: octree
                 return 0;
