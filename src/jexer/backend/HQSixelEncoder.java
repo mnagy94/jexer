@@ -1235,7 +1235,8 @@ public class HQSixelEncoder implements SixelEncoder {
     public String toSixel(final BufferedImage bitmap,
         final boolean allowTransparent) {
 
-        StringBuilder sb = new StringBuilder();
+        // Start with 16k potential total output.
+        StringBuilder sb = new StringBuilder(16384);
 
         assert (bitmap != null);
 
@@ -1291,6 +1292,11 @@ public class HQSixelEncoder implements SixelEncoder {
         // Render the entire row of cells.
         int width = image.getWidth();
         int [][] sixels = new int[width][6];
+
+        // There is a small performance gain reading the array all at once.
+        int [] rgbArray = image.getRGB(0, 0, width, image.getHeight(),
+            null, 0, width);
+
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
 
             // See which colors are actually used in this band of sixels.
@@ -1299,7 +1305,12 @@ public class HQSixelEncoder implements SixelEncoder {
                      (imageY < 6) && (imageY + currentRow < fullHeight);
                      imageY++) {
 
-                    int colorIdx = image.getRGB(imageX, imageY + currentRow);
+                    // There is a small performance gain reading the array
+                    // all at once.
+                    // int colorIdx = image.getRGB(imageX, imageY + currentRow);
+                    int colorIdx = rgbArray[imageX +
+                        (width * (imageY + currentRow))];
+
                     if (allowTransparent && (colorIdx == -1)) {
                         sixels[imageX][imageY] = colorIdx;
                         continue;
@@ -1328,12 +1339,10 @@ public class HQSixelEncoder implements SixelEncoder {
                     continue;
                 }
 
-                // DEBUG
-                // System.err.println("Color " + i + " is used");
-
                 // Set to the beginning of scan line for the next set of
                 // colored pixels, and select the color.
-                sb.append(String.format("$#%d", i));
+                sb.append("$#");
+                sb.append(Integer.toString(i));
 
                 int oldData = -1;
                 int oldDataCount = 0;
@@ -1390,7 +1399,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             assert (oldData != -1);
                             sb.append((char) oldData);
                         } else if (oldDataCount > 1) {
-                            sb.append(String.format("!%d", oldDataCount));
+                            sb.append("!");
+                            sb.append(Integer.toString(oldDataCount));
                             assert (oldData != -1);
                             sb.append((char) oldData);
                         }
@@ -1406,7 +1416,8 @@ public class HQSixelEncoder implements SixelEncoder {
                     sb.append((char) oldData);
                 } else if (oldDataCount > 1) {
                     assert (oldData != -1);
-                    sb.append(String.format("!%d", oldDataCount));
+                    sb.append("!");
+                    sb.append(Integer.toString(oldDataCount));
                     sb.append((char) oldData);
                 }
 
