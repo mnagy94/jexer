@@ -77,6 +77,7 @@ public class MultiBackend implements Backend {
         } else {
             multiScreen = new MultiScreen(backend.getScreen());
         }
+        multiScreen.setBackend(this);
         if (backend instanceof GenericBackend) {
             ((GenericBackend) backend).abortOnDisconnect = false;
         }
