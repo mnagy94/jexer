@@ -45,6 +45,11 @@ public class MultiScreen implements Screen {
     // ------------------------------------------------------------------------
 
     /**
+     * The backend associated with this screen.
+     */
+    private Backend backend;
+
+    /**
      * The list of screens to use.
      */
     private List<Screen> screens = new ArrayList<Screen>();
@@ -945,6 +950,24 @@ public class MultiScreen implements Screen {
             other.setDimensions(width, height);
             return other;
         }
+    }
+
+    /**
+     * Set the backend to associated with this screen.
+     *
+     * @param backend the backend
+     */
+    public final void setBackend(final Backend backend) {
+        this.backend = backend;
+    }
+
+    /**
+     * Get the backend that instantiated this screen.
+     *
+     * @return the backend
+     */
+    public final Backend getBackend() {
+        return backend;
     }
 
 }

@@ -31,6 +31,7 @@ package jexer.backend;
 import java.util.ArrayList;
 import java.util.List;
 
+import jexer.bits.CellAttributes;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import static jexer.TCommand.*;
@@ -371,6 +372,28 @@ public class MultiBackend implements Backend {
         for (Backend backend: backends) {
             backend.setMouseStyle(mouseStyle);
         }
+    }
+
+    /**
+     * Convert a CellAttributes foreground color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToForegroundColor(final CellAttributes attr) {
+        // Use Swing colors.
+        return SwingTerminal.attrToForegroundColor(attr);
+    }
+
+    /**
+     * Convert a CellAttributes background color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToBackgroundColor(final CellAttributes attr) {
+        // Use Swing colors.
+        return SwingTerminal.attrToBackgroundColor(attr);
     }
 
 }

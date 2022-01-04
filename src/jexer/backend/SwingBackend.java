@@ -31,6 +31,8 @@ package jexer.backend;
 import java.awt.Font;
 import javax.swing.JComponent;
 
+import jexer.bits.CellAttributes;
+
 /**
  * This class uses standard Swing calls to handle screen, keyboard, and mouse
  * I/O.
@@ -98,6 +100,7 @@ public class SwingBackend extends GenericBackend {
         // Create a Swing backend using a JFrame
         terminal = new SwingTerminal(this, windowWidth, windowHeight, fontSize,
             listener);
+        ((SwingTerminal) terminal).setBackend(this);
 
         // Hang onto the session info
         this.sessionInfo = ((SwingTerminal) terminal).getSessionInfo();
@@ -123,6 +126,7 @@ public class SwingBackend extends GenericBackend {
         // Create a Swing backend using a JComponent
         terminal = new SwingTerminal(this, component, windowWidth, windowHeight,
             fontSize, listener);
+        ((SwingTerminal) terminal).setBackend(this);
 
         // Hang onto the session info
         this.sessionInfo = ((SwingTerminal) terminal).getSessionInfo();
@@ -207,6 +211,28 @@ public class SwingBackend extends GenericBackend {
     @Override
     public void setMouseStyle(final String mouseStyle) {
         ((SwingTerminal) terminal).setMouseStyle(mouseStyle);
+    }
+
+    /**
+     * Convert a CellAttributes foreground color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToForegroundColor(final CellAttributes attr) {
+        // Use Swing colors.
+        return SwingTerminal.attrToForegroundColor(attr);
+    }
+
+    /**
+     * Convert a CellAttributes background color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToBackgroundColor(final CellAttributes attr) {
+        // Use Swing colors.
+        return SwingTerminal.attrToBackgroundColor(attr);
     }
 
 }

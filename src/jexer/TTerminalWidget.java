@@ -1335,10 +1335,10 @@ public class TTerminalWidget extends TScrollableWidget
             Cell newCell = new Cell(cell);
             newCell.setUnderline(false);
             image = doubleFont.getImage(newCell, textWidth * 2, textHeight * 2,
-                cursorBlinkVisible);
+                getApplication().getBackend(), cursorBlinkVisible);
         } else {
             image = doubleFont.getImage(cell,  textWidth * 2, textHeight * 2,
-                cursorBlinkVisible);
+                getApplication().getBackend(), cursorBlinkVisible);
         }
 
         // Now that we have the double-wide glyph drawn, copy the right

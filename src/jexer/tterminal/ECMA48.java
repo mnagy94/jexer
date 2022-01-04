@@ -5362,12 +5362,17 @@ public class ECMA48 implements Runnable {
                 }
 
                 if (p[0].equals("4")) {
-                    for (int i = 1; i + 1 < p.length; i += 2) {
-                        // Set a color index value
-                        try {
-                            set88Color(Integer.parseInt(p[i]), p[i + 1]);
-                        } catch (NumberFormatException e) {
-                            // SQUASH
+                    if (p[1].equals("?")) {
+                        // Query a color index value
+                        // TODO AZL
+                    } else {
+                        for (int i = 1; i + 1 < p.length; i += 2) {
+                            // Set a color index value
+                            try {
+                                set88Color(Integer.parseInt(p[i]), p[i + 1]);
+                            } catch (NumberFormatException e) {
+                                // SQUASH
+                            }
                         }
                     }
                 }
@@ -5375,8 +5380,9 @@ public class ECMA48 implements Runnable {
                 if (p[0].equals("10")) {
                     if (p[1].equals("?")) {
                         // Respond with foreground color.
-                        java.awt.Color color = SwingTerminal.attrToForegroundColor(currentState.attr);
-
+                        java.awt.Color color = (backend != null ?
+                            backend.attrToForegroundColor(currentState.attr) :
+                            SwingTerminal.attrToForegroundColor(currentState.attr));
                         writeRemote(String.format(
                             "\033]10;rgb:%04x/%04x/%04x\033\\",
                                 color.getRed() << 8,
@@ -5388,8 +5394,9 @@ public class ECMA48 implements Runnable {
                 if (p[0].equals("11")) {
                     if (p[1].equals("?")) {
                         // Respond with background color.
-                        java.awt.Color color = SwingTerminal.attrToBackgroundColor(currentState.attr);
-
+                        java.awt.Color color = (backend != null ?
+                            backend.attrToBackgroundColor(currentState.attr) :
+                            SwingTerminal.attrToBackgroundColor(currentState.attr));
                         writeRemote(String.format(
                             "\033]11;rgb:%04x/%04x/%04x\033\\",
                                 color.getRed() << 8,
@@ -7732,7 +7739,7 @@ public class ECMA48 implements Runnable {
 
         Cell cell = new Cell(ch, currentState.attr);
         BufferedImage image = glyphMaker.getImage(cell, textWidth * 2,
-            textHeight);
+            textHeight, backend);
         BufferedImage leftImage = image.getSubimage(0, 0, textWidth,
             textHeight);
         BufferedImage rightImage = image.getSubimage(textWidth, 0, textWidth,
@@ -7851,7 +7858,9 @@ public class ECMA48 implements Runnable {
         }
         SixelDecoder sixel = new SixelDecoder(sixelParseBuffer.toString(),
             sixelPalette,
-            SwingTerminal.attrToBackgroundColor(currentState.attr),
+            (backend != null ?
+                backend.attrToBackgroundColor(currentState.attr) :
+                SwingTerminal.attrToBackgroundColor(currentState.attr)),
             maybeTransparent);
         BufferedImage image = sixel.getImage();
 
@@ -8244,14 +8253,18 @@ public class ECMA48 implements Runnable {
             // Scale the image to fit the requested dimensions.
             image = ImageUtils.scaleImage(image, displayWidth, displayHeight,
                 ImageUtils.Scale.SCALE,
-                SwingTerminal.attrToBackgroundColor(currentState.attr));
+                (backend != null ?
+                    backend.attrToBackgroundColor(currentState.attr) :
+                    SwingTerminal.attrToBackgroundColor(currentState.attr)));
         } else if ((displayWidth != fileImageWidth)
             || (displayHeight != fileImageHeight)
         ) {
             // Scale the image to fit the requested dimensions.
             image = ImageUtils.scaleImage(image, displayWidth, displayHeight,
                 ImageUtils.Scale.STRETCH,
-                SwingTerminal.attrToBackgroundColor(currentState.attr));
+                (backend != null ?
+                    backend.attrToBackgroundColor(currentState.attr) :
+                    SwingTerminal.attrToBackgroundColor(currentState.attr)));
         }
 
         imageToCells(image, !doNotMoveCursor, maybeTransparent);
@@ -8436,7 +8449,7 @@ public class ECMA48 implements Runnable {
                             textHeight, BufferedImage.TYPE_INT_ARGB);
 
                         BufferedImage textImage = glyphMaker.getImage(oldCell,
-                            textWidth, textHeight);
+                            textWidth, textHeight, backend);
 
                         java.awt.Graphics gr = newImage.getGraphics();
                         gr.setColor(java.awt.Color.BLACK);

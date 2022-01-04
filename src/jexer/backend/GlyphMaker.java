@@ -172,12 +172,14 @@ class GlyphMakerFont {
      * @param cell the character to draw
      * @param cellWidth the width of the text cell to draw into
      * @param cellHeight the height of the text cell to draw into
+     * @param backend the backend that can obtain the correct background
+     * color
      * @return the glyph as an image
      */
     public BufferedImage getImage(final Cell cell, final int cellWidth,
-        final int cellHeight) {
+        final int cellHeight, final Backend backend) {
 
-        return getImage(cell, cellWidth, cellHeight, true);
+        return getImage(cell, cellWidth, cellHeight, backend, true);
     }
 
     /**
@@ -186,11 +188,30 @@ class GlyphMakerFont {
      * @param cell the character to draw
      * @param cellWidth the width of the text cell to draw into
      * @param cellHeight the height of the text cell to draw into
+     * @return the glyph as an image
+     */
+    /*
+    public BufferedImage getImage(final Cell cell, final int cellWidth,
+        final int cellHeight) {
+
+        return getImage(cell, cellWidth, cellHeight, true);
+    }
+    */
+
+    /**
+     * Get a glyph image.
+     *
+     * @param cell the character to draw
+     * @param cellWidth the width of the text cell to draw into
+     * @param cellHeight the height of the text cell to draw into
+     * @param backend the backend that can obtain the correct background
+     * color
      * @param blinkVisible if true, the cell is visible if it is blinking
      * @return the glyph as an image
      */
     public BufferedImage getImage(final Cell cell, final int cellWidth,
-        final int cellHeight, final boolean blinkVisible) {
+        final int cellHeight, final Backend backend,
+        final boolean blinkVisible) {
 
         if (gotFontDimensions == false) {
             // Lazy-load the text width/height and adjustments.
@@ -227,14 +248,14 @@ class GlyphMakerFont {
         }
 
         // Draw the background rectangle, then the foreground character.
-        gr2.setColor(SwingTerminal.attrToBackgroundColor(cellColor));
+        gr2.setColor(backend.attrToBackgroundColor(cellColor));
         gr2.fillRect(0, 0, cellWidth, cellHeight);
 
         // Handle blink and underline
         if (!cell.isBlink()
             || (cell.isBlink() && blinkVisible)
         ) {
-            gr2.setColor(SwingTerminal.attrToForegroundColor(cellColor));
+            gr2.setColor(backend.attrToForegroundColor(cellColor));
             char [] chars = Character.toChars(cell.getChar());
             gr2.drawChars(chars, 0, chars.length, textAdjustX,
                 cellHeight - maxDescent + textAdjustY);
@@ -427,12 +448,14 @@ public class GlyphMaker {
      * @param cell the character to draw
      * @param cellWidth the width of the text cell to draw into
      * @param cellHeight the height of the text cell to draw into
+     * @param backend the backend that can obtain the correct background
+     * color
      * @return the glyph as an image
      */
     public BufferedImage getImage(final Cell cell, final int cellWidth,
-        final int cellHeight) {
+        final int cellHeight, final Backend backend) {
 
-        return getImage(cell, cellWidth, cellHeight, true);
+        return getImage(cell, cellWidth, cellHeight, backend, true);
     }
 
     /**
@@ -441,34 +464,37 @@ public class GlyphMaker {
      * @param cell the character to draw
      * @param cellWidth the width of the text cell to draw into
      * @param cellHeight the height of the text cell to draw into
+     * @param backend the backend that can obtain the correct background
+     * color
      * @param blinkVisible if true, the cell is visible if it is blinking
      * @return the glyph as an image
      */
     public BufferedImage getImage(final Cell cell, final int cellWidth,
-        final int cellHeight, final boolean blinkVisible) {
+        final int cellHeight, final Backend backend,
+        final boolean blinkVisible) {
 
         int ch = cell.getChar();
         if (StringUtils.isCjk(ch)) {
             if (makerCjk.canDisplay(ch)) {
-                return makerCjk.getImage(cell, cellWidth, cellHeight,
+                return makerCjk.getImage(cell, cellWidth, cellHeight, backend,
                     blinkVisible);
             }
         }
         if (StringUtils.isEmoji(ch)) {
             if (makerEmoji.canDisplay(ch)) {
                 // System.err.println("emoji: " + String.format("0x%x", ch));
-                return makerEmoji.getImage(cell, cellWidth, cellHeight,
+                return makerEmoji.getImage(cell, cellWidth, cellHeight, backend,
                     blinkVisible);
             }
         }
 
         // When all else fails, use the default.
         if (makerMono.canDisplay(ch)) {
-            return makerMono.getImage(cell, cellWidth, cellHeight,
+            return makerMono.getImage(cell, cellWidth, cellHeight, backend,
                 blinkVisible);
         }
 
-        return makerFallback.getImage(cell, cellWidth, cellHeight,
+        return makerFallback.getImage(cell, cellWidth, cellHeight, backend,
             blinkVisible);
     }
 

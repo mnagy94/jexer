@@ -379,7 +379,7 @@ public class TImage extends TWidget implements EditMenuUser {
      * @param always if true, always resize the cells
      */
     private void sizeToImage(final boolean always) {
-        scaleBackColor = jexer.backend.SwingTerminal.attrToBackgroundColor(getWindow().getBackground());
+        scaleBackColor = getApplication().getBackend().attrToBackgroundColor(getWindow().getBackground());
 
         int textWidth = getScreen().getTextWidth();
         int textHeight = getScreen().getTextHeight();
@@ -437,7 +437,7 @@ public class TImage extends TWidget implements EditMenuUser {
 
                     if (!ImageUtils.isFullyTransparent(newImage)) {
                         cell.setImage(newImage);
-                        cell.flattenImage(false);
+                        cell.flattenImage(false, getApplication().getBackend());
                     }
                     cells[x][y] = cell;
                 }

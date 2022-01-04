@@ -1173,10 +1173,10 @@ public class SwingTerminal extends LogicalScreen
     }
 
     /**
-     * Convert a CellAttributes foreground color to an Swing Color.
+     * Convert a CellAttributes foreground color to an AWT Color.
      *
      * @param attr the text attributes
-     * @return the Swing Color
+     * @return the AWT Color
      */
     public static Color attrToForegroundColor(final CellAttributes attr) {
         int rgb = attr.getForeColorRGB();
@@ -1230,10 +1230,10 @@ public class SwingTerminal extends LogicalScreen
     }
 
     /**
-     * Convert a CellAttributes background color to an Swing Color.
+     * Convert a CellAttributes background color to an AWT Color.
      *
      * @param attr the text attributes
-     * @return the Swing Color
+     * @return the AWT Color
      */
     public static Color attrToBackgroundColor(final CellAttributes attr) {
         int rgb = attr.getBackColorRGB();

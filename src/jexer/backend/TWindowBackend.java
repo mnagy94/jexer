@@ -33,6 +33,7 @@ import java.util.List;
 
 import jexer.TApplication;
 import jexer.TWindow;
+import jexer.bits.CellAttributes;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
@@ -606,6 +607,26 @@ public class TWindowBackend extends TWindow implements Backend {
      */
     public void setOtherApplication(final TApplication application) {
         this.otherApplication = application;
+    }
+
+    /**
+     * Convert a CellAttributes foreground color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToForegroundColor(final CellAttributes attr) {
+        return getApplication().getBackend().attrToForegroundColor(attr);
+    }
+
+    /**
+     * Convert a CellAttributes background color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToBackgroundColor(final CellAttributes attr) {
+        return getApplication().getBackend().attrToBackgroundColor(attr);
     }
 
 }

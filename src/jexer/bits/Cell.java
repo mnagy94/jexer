@@ -29,6 +29,7 @@
 package jexer.bits;
 
 import java.awt.image.BufferedImage;
+import jexer.backend.Backend;
 import jexer.backend.GlyphMaker;
 
 /**
@@ -233,8 +234,10 @@ public class Cell extends CellAttributes {
      * background color, or generating the glyph and rendering over that.
      *
      * @param overGlyph if true, render over the glyph
+     * @param backend the backend that can obtain the correct background
+     * color
      */
-    public void flattenImage(final boolean overGlyph) {
+    public void flattenImage(final boolean overGlyph, final Backend backend) {
         if (!isImage()) {
             return;
         }
@@ -252,15 +255,14 @@ public class Cell extends CellAttributes {
         BufferedImage newImage = new BufferedImage(textWidth,
             textHeight, BufferedImage.TYPE_INT_ARGB);
         java.awt.Graphics gr = newImage.getGraphics();
-        gr.setColor(jexer.backend.SwingTerminal.
-            attrToBackgroundColor(this));
+        gr.setColor(backend.attrToBackgroundColor(this));
 
         if (overGlyph) {
             // Render this cell to a flat image.  The bad news is that we
             // won't get to use the actual terminal's font.
             GlyphMaker glyphMaker = GlyphMaker.getInstance(textHeight);
-            gr.drawImage(glyphMaker.getImage(this, textWidth, textHeight),
-                0, 0, null, null);
+            gr.drawImage(glyphMaker.getImage(this, textWidth, textHeight,
+                    backend), 0, 0, null, null);
         } else {
             // Put the background color behind the pixels.
             gr.fillRect(0, 0, newImage.getWidth(),

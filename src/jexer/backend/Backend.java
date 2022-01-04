@@ -30,6 +30,7 @@ package jexer.backend;
 
 import java.util.List;
 
+import jexer.bits.CellAttributes;
 import jexer.event.TInputEvent;
 
 /**
@@ -145,5 +146,21 @@ public interface Backend {
      * "hand", "text", "move", or "crosshair"
      */
     public void setMouseStyle(final String mouseStyle);
+
+    /**
+     * Convert a CellAttributes foreground color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToForegroundColor(final CellAttributes attr);
+
+    /**
+     * Convert a CellAttributes background color to an AWT Color.
+     *
+     * @param attr the text attributes
+     * @return the AWT Color
+     */
+    public java.awt.Color attrToBackgroundColor(final CellAttributes attr);
 
 }

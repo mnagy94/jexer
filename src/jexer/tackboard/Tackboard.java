@@ -267,7 +267,7 @@ public class Tackboard {
                         // Blit this image over that one.
                         BufferedImage oldImage = oldCell.getImage(true);
                         java.awt.Graphics gr = oldImage.getGraphics();
-                        gr.setColor(jexer.backend.SwingTerminal.
+                        gr.setColor(screen.getBackend().
                             attrToBackgroundColor(oldCell));
                         gr.drawImage(newImage, 0, 0, null, null);
                         gr.dispose();
@@ -279,7 +279,7 @@ public class Tackboard {
                             backImage = new BufferedImage(cellWidth,
                                 cellHeight, BufferedImage.TYPE_INT_ARGB);
                             java.awt.Graphics gr = backImage.getGraphics();
-                            gr.setColor(jexer.backend.SwingTerminal.
+                            gr.setColor(screen.getBackend().
                                 attrToBackgroundColor(oldCell));
                             gr.fillRect(0, 0, backImage.getWidth(),
                                 backImage.getHeight());

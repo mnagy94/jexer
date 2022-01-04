@@ -490,4 +490,11 @@ public interface Screen {
      */
     public Screen snapshot();
 
+    /**
+     * Get the backend that instantiated this screen.
+     *
+     * @return the backend
+     */
+    public Backend getBackend();
+
 }
