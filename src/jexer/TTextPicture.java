@@ -125,7 +125,7 @@ public class TTextPicture extends TScrollableWidget
         try {
             terminal = new ECMA48(ECMA48.DeviceType.XTERM,
                 new FileInputStream(filename), new ByteArrayOutputStream(),
-                this);
+                this, getApplication().getBackend());
 
             terminalClosed = false;
         } catch (FileNotFoundException e) {

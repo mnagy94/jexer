@@ -313,4 +313,35 @@ public final class Color {
         return normalColors[value];
     }
 
+    /**
+     * Public constructor returns one of the static Color instances.
+     *
+     * @param sgrValue a value between 0 and 15, inclusive, representing an
+     * ANSI color
+     * @return Color.RED, Color.BLUE, etc.
+     */
+    public static Color getSgrColor(final int sgrValue) {
+        switch (sgrValue) {
+        case 0:
+            return Color.BLACK;
+        case 1:
+            return Color.RED;
+        case 2:
+            return Color.GREEN;
+        case 3:
+            return Color.YELLOW;
+        case 4:
+            return Color.BLUE;
+        case 5:
+            return Color.MAGENTA;
+        case 6:
+            return Color.CYAN;
+        case 7:
+            return Color.WHITE;
+        default:
+            throw new IllegalArgumentException("Invalid Color value: " +
+                sgrValue);
+        }
+    }
+
 }

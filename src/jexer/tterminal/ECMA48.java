@@ -687,12 +687,14 @@ public class ECMA48 implements Runnable {
      * encoding.
      * @param displayListener a callback to the outer display, or null for
      * default VT100 behavior
+     * @param backend the backend that can obtain the correct background
+     * color
      * @throws UnsupportedEncodingException if an exception is thrown when
      * creating the InputStreamReader
      */
     public ECMA48(final DeviceType type, final InputStream inputStream,
-        final OutputStream outputStream, final DisplayListener displayListener)
-        throws UnsupportedEncodingException {
+        final OutputStream outputStream, final DisplayListener displayListener,
+        final Backend backend) throws UnsupportedEncodingException {
 
         assert (inputStream != null);
         assert (outputStream != null);
@@ -720,6 +722,7 @@ public class ECMA48 implements Runnable {
             this.outputStream = new BufferedOutputStream(outputStream);
         }
         this.displayListener  = displayListener;
+        this.backend = backend;
 
         reset();
         for (int i = 0; i < height; i++) {
@@ -923,15 +926,6 @@ public class ECMA48 implements Runnable {
     // ------------------------------------------------------------------------
     // ECMA48 -----------------------------------------------------------------
     // ------------------------------------------------------------------------
-
-    /**
-     * Set the backend to enable querying uncommon rendering features.
-     *
-     * @param backend the backend
-     */
-    public void setBackend(final Backend backend) {
-        this.backend = backend;
-    }
 
     /**
      * Wait for a period of time to get output from the launched process.
@@ -1442,24 +1436,39 @@ public class ECMA48 implements Runnable {
             colors88.add(0);
         }
 
-        // Set default system colors.  These match DOS colors.
-        colors88.set(0, 0x00000000);
-        colors88.set(1, 0x00a80000);
-        colors88.set(2, 0x0000a800);
-        colors88.set(3, 0x00a85400);
-        colors88.set(4, 0x000000a8);
-        colors88.set(5, 0x00a800a8);
-        colors88.set(6, 0x0000a8a8);
-        colors88.set(7, 0x00a8a8a8);
+        if (backend != null) {
+            // Set default system colors to match the backend.
+            CellAttributes attr = new CellAttributes();
+            for (int i = 0; i < 8; i++) {
+                attr.setForeColor(Color.getSgrColor(i));
+                colors88.set(i, backend.attrToForegroundColor(attr).getRGB());
+            }
+            attr.setBold(true);
+            for (int i = 0; i < 8; i++) {
+                attr.setForeColor(Color.getSgrColor(i));
+                colors88.set(i + 8,
+                    backend.attrToForegroundColor(attr).getRGB());
+            }
+        } else {
+            // Set default system colors.  These match DOS colors.
+            colors88.set(0, 0x00000000);
+            colors88.set(1, 0x00a80000);
+            colors88.set(2, 0x0000a800);
+            colors88.set(3, 0x00a85400);
+            colors88.set(4, 0x000000a8);
+            colors88.set(5, 0x00a800a8);
+            colors88.set(6, 0x0000a8a8);
+            colors88.set(7, 0x00a8a8a8);
 
-        colors88.set(8, 0x00545454);
-        colors88.set(9, 0x00fc5454);
-        colors88.set(10, 0x0054fc54);
-        colors88.set(11, 0x00fcfc54);
-        colors88.set(12, 0x005454fc);
-        colors88.set(13, 0x00fc54fc);
-        colors88.set(14, 0x0054fcfc);
-        colors88.set(15, 0x00fcfcfc);
+            colors88.set(8, 0x00545454);
+            colors88.set(9, 0x00fc5454);
+            colors88.set(10, 0x0054fc54);
+            colors88.set(11, 0x00fcfc54);
+            colors88.set(12, 0x005454fc);
+            colors88.set(13, 0x00fc54fc);
+            colors88.set(14, 0x0054fcfc);
+            colors88.set(15, 0x00fcfcfc);
+        }
 
         // These match xterm's default colors from 256colres.h.
         colors88.set(16, 0x000000);
@@ -5362,9 +5371,22 @@ public class ECMA48 implements Runnable {
                 }
 
                 if (p[0].equals("4")) {
-                    if (p[1].equals("?")) {
+                    if ((p.length >= 3) && (p[2].equals("?"))) {
                         // Query a color index value
-                        // TODO AZL
+                        try {
+                            int color = Integer.parseInt(p[1]);
+                            if ((color >= 0) && (color <= 15)) {
+                                int rgb = colors88.get(color);
+                                int red   = (rgb >>> 16) & 0xFF;
+                                int green = (rgb >>>  8) & 0xFF;
+                                int blue  =  rgb         & 0xFF;
+                                String response = String.format("\033]4;%d;rgb:%02x%02x/%02x%02x/%02x%02x\033\\",
+                                    color, red, red, green, green, blue, blue);
+                                writeRemote(response);
+                            }
+                        } catch (NumberFormatException e) {
+                            // SQUASH
+                        }
                     } else {
                         for (int i = 1; i + 1 < p.length; i += 2) {
                             // Set a color index value

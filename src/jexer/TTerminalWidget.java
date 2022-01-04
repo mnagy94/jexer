@@ -1003,10 +1003,7 @@ public class TTerminalWidget extends TScrollableWidget
             pb.redirectErrorStream(true);
             shell = pb.start();
             emulator = new ECMA48(deviceType, shell.getInputStream(),
-                shell.getOutputStream(), this);
-            if (getApplication() != null) {
-                emulator.setBackend(getApplication().getBackend());
-            }
+                shell.getOutputStream(), this, getApplication().getBackend());
         } catch (IOException e) {
             messageBox(i18n.getString("errorLaunchingShellTitle"),
                 MessageFormat.format(i18n.getString("errorLaunchingShellText"),

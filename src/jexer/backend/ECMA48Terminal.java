@@ -566,6 +566,7 @@ public class ECMA48Terminal extends LogicalScreen
         final InputStream input,
         final OutputStream output) throws UnsupportedEncodingException {
 
+        setDOSColors();
         this.backend    = backend;
 
         resetParser();
@@ -686,6 +687,7 @@ public class ECMA48Terminal extends LogicalScreen
             throw new IllegalArgumentException("Writer must be specified");
         }
 
+        setDOSColors();
         this.backend     = backend;
 
         resetParser();
@@ -3881,8 +3883,6 @@ public class ECMA48Terminal extends LogicalScreen
      * Setup ECMA48 colors to match those provided in system properties.
      */
     private void setCustomSystemColors() {
-        setDOSColors();
-
         MYBLACK   = getCustomColor("jexer.ECMA48.color0", MYBLACK);
         MYRED     = getCustomColor("jexer.ECMA48.color1", MYRED);
         MYGREEN   = getCustomColor("jexer.ECMA48.color2", MYGREEN);
