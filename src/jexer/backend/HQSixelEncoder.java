@@ -90,6 +90,12 @@ public class HQSixelEncoder implements SixelEncoder {
             public long ditherImageTime;
 
             /**
+             * Nanotime after which the dithered image was converted to sixel
+             * and emitted.
+             */
+            public long emitSixelTime;
+
+            /**
              * Nanotime when the timings were finished.
              */
             public long endTime;
@@ -606,8 +612,8 @@ public class HQSixelEncoder implements SixelEncoder {
             // on images that have a very wide color range compared to
             // palette entries.  Too high and you lose a lot of detail on
             // otherwise great images.
-            final int blackDiff = 50;
-            final int whiteDiff = 50;
+            final int blackDiff = 100;
+            final int whiteDiff = 0;
             if (((red * red) + (green * green) + (blue * blue)) < blackDiff) {
                 if (verbosity >= 10) {
                     System.err.printf("mapping to black: %08x\n", rawColor);
@@ -1258,6 +1264,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
         if (image == null) {
             if (lastPalette.timings != null) {
+                lastPalette.timings.emitSixelTime = System.nanoTime();
                 lastPalette.timings.endTime = System.nanoTime();
             }
             return "";
@@ -1282,11 +1289,12 @@ public class HQSixelEncoder implements SixelEncoder {
         lastPalette.emitPalette(sb);
 
         // Render the entire row of cells.
+        int width = image.getWidth();
+        int [][] sixels = new int[width][6];
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
-            int [][] sixels = new int[image.getWidth()][6];
 
             // See which colors are actually used in this band of sixels.
-            for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+            for (int imageX = 0; imageX < width; imageX++) {
                 for (int imageY = 0;
                      (imageY < 6) && (imageY + currentRow < fullHeight);
                      imageY++) {
@@ -1309,7 +1317,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
             for (int i = 0; i < lastPalette.sixelColors.size(); i++) {
                 boolean isUsed = false;
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+                for (int imageX = 0; imageX < width; imageX++) {
                     for (int j = 0; j < 6; j++) {
                         if (sixels[imageX][j] == i) {
                             isUsed = true;
@@ -1329,7 +1337,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
                 int oldData = -1;
                 int oldDataCount = 0;
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+                for (int imageX = 0; imageX < width; imageX++) {
 
                     // Add up all the pixels that match this color.
                     int data = 0;
@@ -1390,7 +1398,7 @@ public class HQSixelEncoder implements SixelEncoder {
                         oldData = data;
                     }
 
-                } // for (int imageX = 0; imageX < image.getWidth(); imageX++)
+                } // for (int imageX = 0; imageX < width; imageX++)
 
                 // Emit the last sequence.
                 if (oldDataCount == 1) {
@@ -1416,6 +1424,7 @@ public class HQSixelEncoder implements SixelEncoder {
         sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
 
         if (lastPalette.timings != null) {
+            lastPalette.timings.emitSixelTime = System.nanoTime();
             lastPalette.timings.endTime = System.nanoTime();
         }
         return sb.toString();
@@ -1574,11 +1583,17 @@ public class HQSixelEncoder implements SixelEncoder {
                     double scanTime = (double) (timings.scanImageTime - timings.startTime) / 1.0e9;
                     double mapTime = (double) (timings.buildColorMapTime - timings.scanImageTime) / 1.0e9;
                     double ditherTime = (double) (timings.ditherImageTime - timings.buildColorMapTime) / 1.0e9;
+                    double emitSixelTime = (double) (timings.emitSixelTime - timings.ditherImageTime) / 1.0e9;
                     double totalTime = (double) (timings.endTime - timings.startTime) / 1.0e9;
 
                     System.err.println("Timings:");
-                    System.err.printf(" scan %6.4fs map %6.4fs dither %6.4fs\n",
-                        scanTime, mapTime, ditherTime);
+                    System.err.printf(" Act. scan %6.4fs\tmap %6.4fs\tdither %6.4fs\temit %6.4fs\n",
+                        scanTime, mapTime, ditherTime, emitSixelTime);
+                    System.err.printf(" Pct. scan %4.2f%%\tmap %4.2f%%\tdither %4.2f%%\temit %4.2f%%\n",
+                        100.0 * scanTime / totalTime,
+                        100.0 * mapTime / totalTime,
+                        100.0 * ditherTime / totalTime,
+                        100.0 * emitSixelTime / totalTime);
                     System.err.printf(" total %6.4fs\n", totalTime);
                 }
             } catch (Exception e) {
