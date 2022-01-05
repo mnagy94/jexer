@@ -95,6 +95,10 @@ Jexer's examples/ folder currently contains:
     viewer](/examples/JexerImageViewer.java) in less than 350 lines of
     code.
 
+  * A [prototype Xterm video player (using JavaCV to decode video
+    frames)](/examples/XtermVideoPlayer.java) in less than 200 lines
+    of code.
+
 jexer.demos contains official demos showing all of the existing UI
 controls.  The demos can be run as follows:
 

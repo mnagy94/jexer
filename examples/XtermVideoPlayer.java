@@ -7,7 +7,22 @@ import jexer.TWindow;
 import jexer.event.TResizeEvent;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Java2DFrameConverter;
+import static org.bytedeco.ffmpeg.global.avutil.av_log_set_level;
+import static org.bytedeco.ffmpeg.global.avutil.AV_LOG_QUIET;
 
+/**
+ * XtermVideoPlayer plays videos in an Xterm.  It uses the JavaCV library to
+ * obtain images from a video file and puts them into a TImage.  The initial
+ * few seconds will often stutter as the Java JIT compiler steps in.
+ *
+ * See JavaCV at https://github.com/bytedeco/javacv .
+ *
+ * Compile it with:
+ *    javac -cp javacv.jar:ffmpeg.jar:jexer.jar XtermVideoPlayer.java
+ *
+ * Run it with (assuming platform is linux-x86_64):
+ *    java -cp javacv.jar:ffmpeg.jar:ffmpeg-linux-x86_64.jar:jexer.jar:. XtermVideoPlayer filename
+ */
 public class XtermVideoPlayer extends TApplication {
 
     // The image reference.
@@ -22,10 +37,11 @@ public class XtermVideoPlayer extends TApplication {
         addFileMenu();
         addWindowMenu();
 
-        // Add a single image to a window.  We will load frames into this
-        // image.
+        // Create a window for the image.  The resize event is overridden so
+        // that the internal image field changes in size with the window.
         TWindow window = new TWindow(this, filename, 0, 0,
-            getScreen().getWidth(), getScreen().getHeight() - 2) {
+            getScreen().getWidth() / 2, getScreen().getHeight() / 2) {
+
             @Override
             public void onResize(final TResizeEvent event) {
                 if (event.getType() == TResizeEvent.Type.WIDGET) {
@@ -38,9 +54,11 @@ public class XtermVideoPlayer extends TApplication {
             }
         };
 
+        // Add the image field.  We will load frames into this.
         image = window.addImage(0, 0, window.getWidth() - 2,
             window.getHeight() - 2, new BufferedImage(720, 360,
                 BufferedImage.TYPE_INT_ARGB), 0, 0);
+        // Be able to see the movie no matter what size the image/window is.
         image.setScaleType(TImage.Scale.SCALE);
     }
 
@@ -48,30 +66,63 @@ public class XtermVideoPlayer extends TApplication {
     private void getFrames(final File file) {
         FFmpegFrameGrabber grabber = null;
         try {
+            // Make ffmpeg quiet.  If we don't do this there will be stuff
+            // emitted to stderr.
+            av_log_set_level(AV_LOG_QUIET);
+
+            // Start the video decoder.
             Java2DFrameConverter conv = new Java2DFrameConverter();
             grabber = new FFmpegFrameGrabber(file);
             grabber.start();
+            long lastFrameMillis = 0;
+
+            // Ideally we would sync with the real video speed and drop
+            // frames as needed.  For this example we will grab at the
+            // reported fps, and (due to how TApplication runs all of its
+            // invokeLaters at once) catch up to dropped frames.
+            double frameRate = grabber.getVideoFrameRate();
+            int fps = (int) frameRate;
+            final long FRAME_TIME = 1000 / fps;
+
+            // Get a rough frame count.
+            int totalFrames = grabber.getLengthInFrames();
+            int frameCount = 0;
+
+            // Keep adding images as long as the application is running.
             while (isRunning()) {
                 BufferedImage frame;
-                frame = conv.convert(grabber.grab());
+                frame = conv.convert(grabber.grabImage());
+                long now = System.currentTimeMillis();
                 if ((image != null) && (frame != null)) {
-                    invokeLater(new Runnable() {
-                        public void run() {
-                            image.setImage(frame);
-                            // image.setScaleType(TImage.Scale.SCALE);
-                            doRepaint();
-                        }
-                    });
-                } else if ((image != null) && (frame == null)) {
-                    // Frame is null.
+                    frameCount++;
+                    if (now - lastFrameMillis > FRAME_TIME) {
+                        invokeLater(new Runnable() {
+                            public void run() {
+                                image.setImage(frame);
+                                doRepaint();
+                            }
+                        });
+                        lastFrameMillis = now;
+                    }
+                } else if (((image != null) && (frame == null)
+                        && (frameCount > 0))
+                    || (frameCount >= totalFrames)
+                ) {
+                    // We are out of frames, the movie is over.
+                    image.getWindow().setTitle(image.getWindow().getTitle() +
+                        " (Completed)");
+                    doRepaint();
+                    break;
                 }
-                try {
-                    // Ideally we would sync with the real video speed and
-                    // drop frames as needed.  For this example we will just
-                    // grab at about 20 fps.
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    // SQUASH
+
+                // Pause until is time for the next frame.
+                long sleepMillis = FRAME_TIME - (now - lastFrameMillis);
+                if ((sleepMillis > 0) && (sleepMillis <= (int) (1000 / fps))) {
+                    try {
+                        Thread.sleep(sleepMillis);
+                    } catch (InterruptedException e) {
+                        // SQUASH
+                    }
                 }
             }
         } catch (Exception e) {
@@ -81,9 +132,10 @@ public class XtermVideoPlayer extends TApplication {
                     new TExceptionDialog(XtermVideoPlayer.this, e);
                 }
             });
-            // And exit the thread
+            // And exit the thread ...
         }
         if (grabber != null) {
+            // Try to shut down FFmpeg.
             try {
                 grabber.release();
             } catch (Exception e) {
@@ -97,6 +149,7 @@ public class XtermVideoPlayer extends TApplication {
         }
     }
 
+    // Main entry point.
     public static void main(String [] args) throws Exception {
         if (args.length == 0) {
             System.err.println("USAGE: java XtermVideoPlayer filename");
@@ -108,10 +161,11 @@ public class XtermVideoPlayer extends TApplication {
             System.exit(-1);
         }
 
-        XtermVideoPlayer app = new XtermVideoPlayer(args[0]);
+        XtermVideoPlayer app = new XtermVideoPlayer(file.getName());
         // The application will spin on its thread.
         (new Thread(app)).start();
 
+        // Frames will continue to grab on the main thread.
         app.getFrames(new File(args[0]));
     }
 }
