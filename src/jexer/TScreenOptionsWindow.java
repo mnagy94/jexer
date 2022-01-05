@@ -301,13 +301,7 @@ public class TScreenOptionsWindow extends TWindow {
                 System.getProperty("jexer.ECMA48.sixel",
                     "true").equals("true")));
         oldSixel = sixel.isChecked();
-        sixelSharedPalette = addCheckBox(3, 16,
-            i18n.getString("sixelSharedPalette"),
-            (ecmaTerminal != null ? ecmaTerminal.hasSixelSharedPalette() :
-                System.getProperty("jexer.ECMA48.sixelSharedPalette",
-                    "true").equals("true")));
-        oldSixelSharedPalette = sixelSharedPalette.isChecked();
-        addLabel(i18n.getString("sixelPaletteSize"), 3, 17, "ttext", false,
+        addLabel(i18n.getString("sixelPaletteSize"), 3, 16, "ttext", false,
             new TAction() {
                 public void DO() {
                     if (sixelPaletteSize != null) {
@@ -315,6 +309,12 @@ public class TScreenOptionsWindow extends TWindow {
                     }
                 }
             });
+        sixelSharedPalette = addCheckBox(3, 17,
+            i18n.getString("sixelSharedPalette"),
+            (ecmaTerminal != null ? ecmaTerminal.hasSixelSharedPalette() :
+                System.getProperty("jexer.ECMA48.sixelSharedPalette",
+                    "true").equals("true")));
+        oldSixelSharedPalette = sixelSharedPalette.isChecked();
         wideCharImages = addCheckBox(3, 18, i18n.getString("wideCharImages"),
             (ecmaTerminal != null ? ecmaTerminal.isWideCharImages() :
                 System.getProperty("jexer.ECMA48.wideCharImages",
@@ -338,31 +338,43 @@ public class TScreenOptionsWindow extends TWindow {
         }
         if (ecmaTerminal == null) {
             // Swing case: turn off stuff we can't change
-            addLabel(i18n.getString("unavailable"), col, 17);
+            addLabel(i18n.getString("unavailable"), col, 16);
             sixel.setEnabled(false);
             sixelSharedPalette.setEnabled(false);
             wideCharImages.setEnabled(false);
             rgbColor.setEnabled(false);
         }
+
         if (ecmaTerminal != null) {
             oldSixelPaletteSize = ecmaTerminal.getSixelPaletteSize();
 
-            String [] sixelSizes = { "2", "256", "512", "1024", "2048" };
+            String [] sixelSizes;
+            if (System.getProperty("jexer.ECMA48.sixelEncoder",
+                    "legacy").equals("hq")
+            ) {
+                String [] sizes = { "     2 ", "    16 ", "    64 ", "   128 ", "   256 ", "   512 ", "  1024 ", "  2048 " };
+                sixelSizes = sizes;
+                sixelSharedPalette.setEnabled(false);
+            } else {
+                String [] sizes = { "     2 ", "   256 ", "   512 ", "  1024 ", "  2048 " };
+                sixelSizes = sizes;
+            }
             List<String> sizes = new ArrayList<String>();
             sizes.addAll(Arrays.asList(sixelSizes));
-            sixelPaletteSize = addComboBox(col, 17, 10, sizes, 0, 4,
+            sixelPaletteSize = addComboBox(col, 16, 10, sizes, 0, 4,
                 new TAction() {
                     public void DO() {
                         try {
                             ecmaTerminal.setSixelPaletteSize(Integer.parseInt(
-                                sixelPaletteSize.getText()));
+                                sixelPaletteSize.getText().trim()));
                         } catch (NumberFormatException e) {
                             // SQUASH
                         }
                     }
                 }
             );
-            sixelPaletteSize.setText(Integer.toString(oldSixelPaletteSize));
+            sixelPaletteSize.setText(String.format("%6d ",
+                    oldSixelPaletteSize));
         }
 
         if (terminal != null) {

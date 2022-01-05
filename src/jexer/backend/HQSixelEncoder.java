@@ -973,25 +973,21 @@ public class HQSixelEncoder implements SixelEncoder {
                 return null;
             }
 
-            BufferedImage ditheredImage = new BufferedImage(sixelImage.getWidth(),
-                sixelImage.getHeight(), BufferedImage.TYPE_INT_ARGB);
-
             int [] rgbArray = sixelImage.getRGB(0, 0, sixelImage.getWidth(),
                 sixelImage.getHeight(), null, 0, sixelImage.getWidth());
-            ditheredImage.setRGB(0, 0, sixelImage.getWidth(),
-                sixelImage.getHeight(), rgbArray, 0, sixelImage.getWidth());
 
-            for (int imageY = 0; imageY < sixelImage.getHeight(); imageY++) {
-                for (int imageX = 0; imageX < sixelImage.getWidth(); imageX++) {
-                    int oldPixel = ditheredImage.getRGB(imageX,
-                        imageY);
+            int height = sixelImage.getHeight();
+            int width = sixelImage.getWidth();
+            for (int imageY = 0; imageY < height; imageY++) {
+                for (int imageX = 0; imageX < width; imageX++) {
+                    int oldPixel = rgbArray[imageX + (width * imageY)];
                     if ((oldPixel & 0xFF000000) != 0xFF000000) {
                         // This is a transparent pixel.
                         if (verbosity >= 10) {
                             System.err.printf("transparent oldPixel(%d, %d) %08x\n",
                                 imageX, imageY, oldPixel);
                         }
-                        ditheredImage.setRGB(imageX, imageY, -1);
+                        rgbArray[imageX + (width * imageY)] = -1;
                         continue;
                     }
                     if (verbosity >= 10) {
@@ -1002,7 +998,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     assert (colorIdx >= 0);
                     assert (colorIdx < sixelColors.size());
                     int newPixel = sixelColors.get(colorIdx);
-                    ditheredImage.setRGB(imageX, imageY, colorIdx);
+                    rgbArray[imageX + (width * imageY)] = colorIdx;
 
                     if (quantizationType == 0) {
                         // For direct map, every possible color is already in
@@ -1038,7 +1034,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
                     int red, green, blue;
                     if (imageX < sixelImage.getWidth() - 1) {
-                        int pXpY  = ditheredImage.getRGB(imageX + 1, imageY);
+                        int pXpY = rgbArray[imageX + 1 + (width * imageY)];
                         if ((pXpY & 0xFF000000) == 0xFF000000) {
                             // 7 --> 3
                             red   = ((pXpY >>> 16) & 0xFF) + (3 * redError);
@@ -1049,15 +1045,13 @@ public class HQSixelEncoder implements SixelEncoder {
                             blue = clampSixel(blue);
                             pXpY = (0xFF << 24) | ((red & 0xFF) << 16);
                             pXpY |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                            ditheredImage.setRGB(imageX + 1, imageY, pXpY);
+                            rgbArray[imageX + 1 + (width * imageY)] = pXpY;
                         } else {
-                            // System.err.printf("pXpY %08x\n", pXpY);
                             assert (transparent == true);
-                            ditheredImage.setRGB(imageX + 1, imageY, -1);
+                            rgbArray[imageX + 1 + (width * imageY)] = 0;
                         }
                         if (imageY < sixelImage.getHeight() - 1) {
-                            int pXpYp = ditheredImage.getRGB(imageX + 1,
-                                imageY + 1);
+                            int pXpYp = rgbArray[imageX + 1 + (width * (imageY + 1))];
                             if ((pXpYp & 0xFF000000) == 0xFF000000) {
                                 red   = ((pXpYp >>> 16) & 0xFF) + redError;
                                 green = ((pXpYp >>>  8) & 0xFF) + greenError;
@@ -1067,20 +1061,15 @@ public class HQSixelEncoder implements SixelEncoder {
                                 blue = clampSixel(blue);
                                 pXpYp = (0xFF << 24) | ((red & 0xFF) << 16);
                                 pXpYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                                ditheredImage.setRGB(imageX + 1, imageY + 1,
-                                    pXpYp);
+                                rgbArray[imageX + 1 + (width * (imageY + 1))] = pXpYp;
                             } else {
-                                // System.err.printf("pXpYp %08x\n", pXpYp);
                                 assert (transparent == true);
-                                ditheredImage.setRGB(imageX + 1, imageY + 1,
-                                    -1);
+                                rgbArray[imageX + 1 + (width * (imageY + 1))] = 0;
                             }
                         }
                     } else if (imageY < sixelImage.getHeight() - 1) {
-                        int pXmYp = ditheredImage.getRGB(imageX - 1,
-                            imageY + 1);
-                        int pXYp  = ditheredImage.getRGB(imageX,
-                            imageY + 1);
+                        int pXmYp = rgbArray[imageX - 1 + (width * (imageY + 1))];
+                        int pXYp = rgbArray[imageX + (width * (imageY + 1))];
 
                         if ((pXmYp & 0xFF000000) == 0xFF000000) {
                             // 3 --> 1
@@ -1092,11 +1081,10 @@ public class HQSixelEncoder implements SixelEncoder {
                             blue = clampSixel(blue);
                             pXmYp = (0xFF << 24) | ((red & 0xFF) << 16);
                             pXmYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                            ditheredImage.setRGB(imageX - 1, imageY + 1, pXmYp);
+                            rgbArray[imageX - 1 + (width * (imageY + 1))] = pXmYp;
                         } else {
-                            // System.err.printf("pXmYp %08x\n", pXmYp);
                             assert (transparent == true);
-                            ditheredImage.setRGB(imageX - 1, imageY + 1, -1);
+                            rgbArray[imageX - 1 + (width * (imageY + 1))] = 0;
                         }
 
                         if ((pXYp & 0xFF000000) == 0xFF000000) {
@@ -1109,16 +1097,18 @@ public class HQSixelEncoder implements SixelEncoder {
                             blue = clampSixel(blue);
                             pXYp = (0xFF << 24) | ((red & 0xFF) << 16);
                             pXYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                            ditheredImage.setRGB(imageX,     imageY + 1, pXYp);
+                            rgbArray[imageX + (width * (imageY + 1))] = pXYp;
                         } else {
-                            // System.err.printf("pXYp %08x\n", pXYp);
                             assert (transparent == true);
-                            ditheredImage.setRGB(imageX,     imageY + 1, -1);
+                            rgbArray[imageX + (width * (imageY + 1))] = 0;
                         }
                     }
-                } // for (int imageY = 0; imageY < image.getHeight(); imageY++)
-            } // for (int imageX = 0; imageX < image.getWidth(); imageX++)
+                } // for (int imageY = 0; imageY < height; imageY++)
+            } // for (int imageX = 0; imageX < width; imageX++)
 
+            BufferedImage ditheredImage = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+            ditheredImage.setRGB(0, 0, width, height, rgbArray, 0, width);
             return ditheredImage;
         }
 
@@ -1548,7 +1538,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
         HQSixelEncoder encoder = new HQSixelEncoder();
         int successCount = 0;
-        boolean allowTransparent = false;
+        boolean allowTransparent = true;
         if (encoder.hasSharedPalette()) {
             System.out.print("\033[?1070l");
         } else {
