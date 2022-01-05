@@ -350,7 +350,7 @@ public class TScreenOptionsWindow extends TWindow {
 
             String [] sixelSizes;
             if (System.getProperty("jexer.ECMA48.sixelEncoder",
-                    "legacy").equals("hq")
+                    "hq").equals("hq")
             ) {
                 String [] sizes = { "     2 ", "    16 ", "    64 ", "   128 ", "   256 ", "   512 ", "  1024 ", "  2048 " };
                 sixelSizes = sizes;
