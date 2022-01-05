@@ -512,6 +512,27 @@ public class StringUtils {
         return ((ch >= 0x1f004) && (ch <= 0x1fffd));
     }
 
+    /**
+     * Check if character is in the Symbols for Legacy Computing range.
+     *
+     * @param ch character to check
+     * @return true if this character is in the Symbols for Legacy Computing
+     * range
+     */
+    public static boolean isLegacyComputingSymbol(final int ch) {
+        return ((ch >= 0x1fb00) && (ch <= 0x1fbff));
+    }
+
+    /**
+     * Check if character is in the braille range.
+     *
+     * @param ch character to check
+     * @return true if this character is in the braille range
+     */
+    public static boolean isBraille(final int ch) {
+        return ((ch >= 0x2800) && (ch <= 0x28ff));
+    }
+
     // ------------------------------------------------------------------------
     // Base64 -----------------------------------------------------------------
     // ------------------------------------------------------------------------

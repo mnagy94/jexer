@@ -64,6 +64,7 @@ import javax.swing.SwingUtilities;
 import jexer.TKeypress;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
+import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
@@ -1477,9 +1478,17 @@ public class SwingTerminal extends LogicalScreen
             return;
         }
 
-        if (!swing.getFont().canDisplay(cell.getChar())) {
+        GlyphMaker glyphMaker = GlyphMaker.getInstance(textHeight);
+        int ch = cell.getChar();
+            // If a fallback font is available that can support Symbols for
+            // Legacy Computing, always use it.  This is for consistency --
+            // we assume the fallback font has better coverage than Terminus.
+        if (((StringUtils.isLegacyComputingSymbol(ch)
+                    || StringUtils.isBraille(ch))
+                && glyphMaker.canDisplay(ch))
+            || !swing.getFont().canDisplay(ch)
+        ) {
             // The main font cannot display this glyph.  Try a fallback font.
-            GlyphMaker glyphMaker = GlyphMaker.getInstance(textHeight);
             BufferedImage newImage = glyphMaker.getImage(cell, textWidth,
                 textHeight, getBackend(), cursorBlinkVisible);
 

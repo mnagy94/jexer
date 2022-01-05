@@ -1616,16 +1616,33 @@ public class ECMA48Terminal extends LogicalScreen
          * draw everything else afterwards.  This works OK, but performance
          * is still a drag on larger pictures.
          */
+        GlyphMaker glyphMaker = GlyphMaker.getInstance(getTextHeight());
         for (int y = 0; y < height; y++) {
+            boolean unsetRow = false;
             for (int x = 0; x < width; x++) {
                 // If physical had non-image data that is now image data, the
                 // entire row must be redrawn.
                 Cell lCell = logical[x][y];
                 Cell pCell = physical[x][y];
                 if (lCell.isImage() && !pCell.isImage()) {
-                    unsetImageRow(y);
-                    break;
+                    unsetRow = true;
                 }
+                int ch = lCell.getChar();
+                if (!lCell.isImage()
+                    && (StringUtils.isLegacyComputingSymbol(ch)
+                        || StringUtils.isBraille(ch))
+                    && glyphMaker.canDisplay(ch)
+                ) {
+                    // If a fallback font is available that can support
+                    // Symbols for Legacy Computing, always use it.
+                    BufferedImage newImage = glyphMaker.getImage(lCell,
+                        getTextWidth(), getTextHeight(), getBackend());
+                    lCell.setImage(newImage);
+                    unsetRow = true;
+                }
+            }
+            if (unsetRow) {
+                unsetImageRow(y);
             }
         }
         for (int y = 0; y < height; y++) {

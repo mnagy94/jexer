@@ -126,6 +126,11 @@ class GlyphMakerFont {
      */
     private HashMap<Cell, BufferedImage> glyphCache;
 
+    /**
+     * If true, this font loaded OK.
+     */
+    private boolean loaded = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -140,7 +145,7 @@ class GlyphMakerFont {
 
         if (filename.length() == 0) {
             // Fallback font
-            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize - 2);
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
             return;
         }
 
@@ -149,16 +154,17 @@ class GlyphMakerFont {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
             InputStream in = loader.getResourceAsStream(filename);
             fontRoot = Font.createFont(Font.TRUETYPE_FONT, in);
-            font = fontRoot.deriveFont(Font.PLAIN, fontSize - 2);
+            font = fontRoot.deriveFont(Font.PLAIN, fontSize);
+            loaded = true;
         } catch (FontFormatException e) {
             // Ideally we would report an error here, either via System.err
             // or TExceptionDialog.  However, I do not want GlyphMaker to
             // know about available backends, so we quietly fallback to
             // whatever is available as MONO.
-            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize - 2);
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
         } catch (IOException e) {
             // See comment above.
-            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize - 2);
+            font = new Font(Font.MONOSPACED, Font.PLAIN, fontSize);
         }
     }
 
@@ -315,6 +321,16 @@ class GlyphMakerFont {
     public boolean canDisplay(final int codePoint) {
         return font.canDisplay(codePoint);
     }
+
+    /**
+     * See if this font loaded OK.
+     *
+     * @return true if this font loaded OK, otherwise it is rendering using
+     * MONO
+     */
+    public boolean isLoaded() {
+        return loaded;
+    }
 }
 
 /**
@@ -381,6 +397,11 @@ public class GlyphMaker {
      */
     private GlyphMakerFont makerFallback;
 
+    /**
+     * The system mono font.
+     */
+    private GlyphMakerFont makerSystemMono;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -392,6 +413,7 @@ public class GlyphMaker {
      */
     private GlyphMaker(final int fontSize) {
         makerMono = new GlyphMakerFont(MONO, fontSize);
+        makerSystemMono = new GlyphMakerFont("", fontSize);
 
         String fontFilename = null;
         fontFilename = System.getProperty("jexer.cjkFont.filename",
@@ -479,10 +501,65 @@ public class GlyphMaker {
                 blinkVisible);
         }
 
+        if (makerSystemMono.canDisplay(ch)) {
+            // System.err.println("system mono: " + String.format("0x%x", ch));
+            return makerSystemMono.getImage(cell, cellWidth, cellHeight,
+                backend, blinkVisible);
+        }
+
         // When all else fails, use the default.
         // System.err.println("mono: " + String.format("0x%x", ch));
         return makerMono.getImage(cell, cellWidth, cellHeight, backend,
             blinkVisible);
+    }
+
+    /**
+     * Check if a CJK font is available.
+     *
+     * @return true if a CJK font is available
+     */
+    public boolean isCjk() {
+        return makerCjk.isLoaded();
+    }
+
+    /**
+     * Check if an emoji font is available.
+     *
+     * @return true if an emoji font is available
+     */
+    public boolean isEmoji() {
+        return makerEmoji.isLoaded();
+    }
+
+    /**
+     * Check if a fallback font is available.
+     *
+     * @return true if a fallback font is available
+     */
+    public boolean isFallback() {
+        return makerFallback.isLoaded();
+    }
+
+    /**
+     * Checks if a fallback font has a glyph for the specified character.
+     *
+     * @param codePoint the character (Unicode code point) for which a glyph
+     * is needed.
+     * @return true if this Font has a glyph for the character; false
+     * otherwise.
+     */
+    public boolean canDisplay(final int codePoint) {
+        if ((makerFallback.isLoaded() && makerFallback.canDisplay(codePoint))
+            || (makerEmoji.isLoaded() && makerEmoji.canDisplay(codePoint))
+            || (makerCjk.isLoaded() && makerCjk.canDisplay(codePoint))
+
+            // Put the system mono font ahead of terminus.
+            || makerSystemMono.canDisplay(codePoint)
+            || (makerMono.isLoaded() && makerMono.canDisplay(codePoint))
+        ) {
+            return true;
+        }
+        return false;
     }
 
 }
