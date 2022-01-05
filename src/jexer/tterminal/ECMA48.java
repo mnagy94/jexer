@@ -53,7 +53,6 @@ import javax.imageio.ImageIO;
 import jexer.TKeypress;
 import jexer.backend.Backend;
 import jexer.backend.GlyphMaker;
-import jexer.backend.SwingTerminal;
 import jexer.bits.Color;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
@@ -246,7 +245,7 @@ public class ECMA48 implements Runnable {
     /**
      * The version of the terminal to report in XTVERSION.
      */
-    private final String VERSION = "1.5.0";
+    private final String VERSION = "1.6.0";
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -698,6 +697,7 @@ public class ECMA48 implements Runnable {
 
         assert (inputStream != null);
         assert (outputStream != null);
+        assert (backend != null);
 
         csiParams         = new ArrayList<Integer>();
         tabStops          = new ArrayList<Integer>();
@@ -5402,9 +5402,7 @@ public class ECMA48 implements Runnable {
                 if (p[0].equals("10")) {
                     if (p[1].equals("?")) {
                         // Respond with foreground color.
-                        java.awt.Color color = (backend != null ?
-                            backend.attrToForegroundColor(currentState.attr) :
-                            SwingTerminal.attrToForegroundColor(currentState.attr));
+                        java.awt.Color color = backend.attrToForegroundColor(currentState.attr);
                         writeRemote(String.format(
                             "\033]10;rgb:%04x/%04x/%04x\033\\",
                                 color.getRed() << 8,
@@ -5416,9 +5414,7 @@ public class ECMA48 implements Runnable {
                 if (p[0].equals("11")) {
                     if (p[1].equals("?")) {
                         // Respond with background color.
-                        java.awt.Color color = (backend != null ?
-                            backend.attrToBackgroundColor(currentState.attr) :
-                            SwingTerminal.attrToBackgroundColor(currentState.attr));
+                        java.awt.Color color = backend.attrToBackgroundColor(currentState.attr);
                         writeRemote(String.format(
                             "\033]11;rgb:%04x/%04x/%04x\033\\",
                                 color.getRed() << 8,
@@ -7879,10 +7875,7 @@ public class ECMA48 implements Runnable {
             maybeTransparent = true;
         }
         SixelDecoder sixel = new SixelDecoder(sixelParseBuffer.toString(),
-            sixelPalette,
-            (backend != null ?
-                backend.attrToBackgroundColor(currentState.attr) :
-                SwingTerminal.attrToBackgroundColor(currentState.attr)),
+            sixelPalette, backend.attrToBackgroundColor(currentState.attr),
             maybeTransparent);
         BufferedImage image = sixel.getImage();
 
@@ -8275,18 +8268,14 @@ public class ECMA48 implements Runnable {
             // Scale the image to fit the requested dimensions.
             image = ImageUtils.scaleImage(image, displayWidth, displayHeight,
                 ImageUtils.Scale.SCALE,
-                (backend != null ?
-                    backend.attrToBackgroundColor(currentState.attr) :
-                    SwingTerminal.attrToBackgroundColor(currentState.attr)));
+                backend.attrToBackgroundColor(currentState.attr));
         } else if ((displayWidth != fileImageWidth)
             || (displayHeight != fileImageHeight)
         ) {
             // Scale the image to fit the requested dimensions.
             image = ImageUtils.scaleImage(image, displayWidth, displayHeight,
                 ImageUtils.Scale.STRETCH,
-                (backend != null ?
-                    backend.attrToBackgroundColor(currentState.attr) :
-                    SwingTerminal.attrToBackgroundColor(currentState.attr)));
+                backend.attrToBackgroundColor(currentState.attr));
         }
 
         imageToCells(image, !doNotMoveCursor, maybeTransparent);
