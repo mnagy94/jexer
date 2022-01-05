@@ -6,6 +6,8 @@ build/**
 *.gif
 *.six
 autumn.bash
+run_swing.bash
+run_xterm.bash
 err*
 
 # Mobile Tools for Java (J2ME)
