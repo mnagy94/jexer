@@ -1002,10 +1002,10 @@ public class ECMA48Terminal extends LogicalScreen
         }
         // Default to legacy uniform quantizer.
         if (System.getProperty("jexer.ECMA48.sixelEncoder",
-                "legacy").equals("hq")) {
-            sixelEncoder = new HQSixelEncoder();
-        } else {
+                "hq").equals("legacy")) {
             sixelEncoder = new LegacySixelEncoder();
+        } else {
+            sixelEncoder = new HQSixelEncoder();
         }
         sixelEncoder.reloadOptions();
 
