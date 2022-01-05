@@ -188,22 +188,6 @@ class GlyphMakerFont {
      * @param cell the character to draw
      * @param cellWidth the width of the text cell to draw into
      * @param cellHeight the height of the text cell to draw into
-     * @return the glyph as an image
-     */
-    /*
-    public BufferedImage getImage(final Cell cell, final int cellWidth,
-        final int cellHeight) {
-
-        return getImage(cell, cellWidth, cellHeight, true);
-    }
-    */
-
-    /**
-     * Get a glyph image.
-     *
-     * @param cell the character to draw
-     * @param cellWidth the width of the text cell to draw into
-     * @param cellHeight the height of the text cell to draw into
      * @param backend the backend that can obtain the correct background
      * color
      * @param blinkVisible if true, the cell is visible if it is blinking
@@ -476,6 +460,7 @@ public class GlyphMaker {
         int ch = cell.getChar();
         if (StringUtils.isCjk(ch)) {
             if (makerCjk.canDisplay(ch)) {
+                // System.err.println("CJK: " + String.format("0x%x", ch));
                 return makerCjk.getImage(cell, cellWidth, cellHeight, backend,
                     blinkVisible);
             }
@@ -488,13 +473,15 @@ public class GlyphMaker {
             }
         }
 
-        // When all else fails, use the default.
-        if (makerMono.canDisplay(ch)) {
-            return makerMono.getImage(cell, cellWidth, cellHeight, backend,
+        if (makerFallback.canDisplay(ch)) {
+            // System.err.println("fallback: " + String.format("0x%x", ch));
+            return makerFallback.getImage(cell, cellWidth, cellHeight, backend,
                 blinkVisible);
         }
 
-        return makerFallback.getImage(cell, cellWidth, cellHeight, backend,
+        // When all else fails, use the default.
+        // System.err.println("mono: " + String.format("0x%x", ch));
+        return makerMono.getImage(cell, cellWidth, cellHeight, backend,
             blinkVisible);
     }
 

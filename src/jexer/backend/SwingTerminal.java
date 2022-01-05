@@ -1477,6 +1477,30 @@ public class SwingTerminal extends LogicalScreen
             return;
         }
 
+        if (!swing.getFont().canDisplay(cell.getChar())) {
+            // The main font cannot display this glyph.  Try a fallback font.
+            GlyphMaker glyphMaker = GlyphMaker.getInstance(textHeight);
+            BufferedImage newImage = glyphMaker.getImage(cell, textWidth,
+                textHeight, getBackend(), cursorBlinkVisible);
+
+            if (swing.getFrame() != null) {
+                gr.drawImage(newImage, xPixel, yPixel, swing.getFrame());
+            } else {
+                gr.drawImage(newImage, xPixel, yPixel, swing.getComponent());
+            }
+
+            if (cell.isCacheable()) {
+                Cell key = new Cell(cell);
+                if (cell.isBlink() && !cursorBlinkVisible) {
+                    glyphCacheBlink.put(key, newImage);
+                } else {
+                    glyphCache.put(key, newImage);
+                }
+            }
+
+            return;
+        }
+
         // Generate glyph and draw it.
         Graphics2D gr2 = null;
         int gr2x = xPixel;

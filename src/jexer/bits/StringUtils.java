@@ -457,6 +457,8 @@ public class StringUtils {
                 || ((ch >= 0x30000) && (ch <= 0x3fffd))
                 // emoji - exclude symbols for legacy computing
                 || ((ch >= 0x1f004) && (ch < 0x1fb00))
+                // Symbols for Legacy Computing, 1 or 2?
+                // || ((ch >= 0x1fb00) && (ch <= 0x1fbff))
                 || ((ch >= 0x1fc00) && (ch <= 0x1fffd))
             )
         ) {
@@ -503,6 +505,10 @@ public class StringUtils {
      * @return true if this character is in the emoji range
      */
     public static boolean isEmoji(final int ch) {
+        if ((ch >= 0x1fb00) && (ch <= 0x1fbff)) {
+            // Unicode Symbols for Legacy Computing
+            return false;
+        }
         return ((ch >= 0x1f004) && (ch <= 0x1fffd));
     }
 
