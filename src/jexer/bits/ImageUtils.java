@@ -28,7 +28,22 @@
  */
 package jexer.bits;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
+import javax.imageio.stream.ImageInputStream;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * ImageUtils contains methods to:
@@ -36,6 +51,8 @@ import java.awt.image.BufferedImage;
  *    - Check if an image is fully transparent.
  *
  *    - Scale an image and preserve aspect ratio.
+ *
+ *    - Open an animated image as an Animation.
  */
 public class ImageUtils {
 
@@ -176,6 +193,219 @@ public class ImageUtils {
         gr.drawImage(image, x, y, destWidth, destHeight, null);
         gr.dispose();
         return newImage;
+    }
+
+    /**
+     * Open an image as an Animation.
+     *
+     * @param filename the name of the file that contains an animation
+     * @return the animation, or null on error
+     */
+    public static Animation getAnimation(final String filename) {
+        return getAnimation(new File(filename));
+    }
+
+    /**
+     * Open an image as an Animation.
+     *
+     * @param file the file that contains an animation
+     * @return the animation, or null on error
+     */
+    public static Animation getAnimation(final File file) {
+        try {
+            List<BufferedImage> frames = new LinkedList<BufferedImage>();
+            List<String> disposals = new LinkedList<String>();
+            int delays = 0;
+
+            /*
+             * Assume infinite loop.  Finite-count looping in GIFs is an
+             * Application Extension made popular by Netscape 2.0: see
+             * http://giflib.sourceforge.net/whatsinagif/bits_and_bytes.html
+             * .
+             *
+             * Unfortunately the Sun GIF decoder did not read and expose
+             * this.
+             */
+            int loopCount = 0;
+
+            ImageReader reader = null;
+            ImageInputStream stream;
+            stream = ImageIO.createImageInputStream(new FileInputStream(file));
+            Iterator<ImageReader> iter = ImageIO.getImageReaders(stream);
+            while (iter.hasNext()) {
+                reader = iter.next();
+                break;
+            }
+            if (reader == null) {
+                return null;
+            }
+            reader.setInput(stream);
+
+            int width = -1;
+            int height = -1;
+            java.awt.Color backgroundColor = null;
+
+            IIOMetadata metadata = reader.getStreamMetadata();
+            if (metadata != null) {
+                IIOMetadataNode gblRoot;
+                gblRoot = (IIOMetadataNode) metadata.getAsTree(metadata.
+                    getNativeMetadataFormatName());
+                NodeList gblScreenDesc;
+                gblScreenDesc = gblRoot.getElementsByTagName(
+                        "LogicalScreenDescriptor");
+                if ((gblScreenDesc != null)
+                    && (gblScreenDesc.getLength() > 0)
+                ) {
+                    IIOMetadataNode screenDescriptor;
+                    screenDescriptor = (IIOMetadataNode) gblScreenDesc.item(0);
+
+                    if (screenDescriptor != null) {
+                        width = Integer.parseInt(screenDescriptor.
+                            getAttribute("logicalScreenWidth"));
+                        height = Integer.parseInt(screenDescriptor.
+                            getAttribute("logicalScreenHeight"));
+                    }
+                }
+                NodeList gblColorTable = gblRoot.getElementsByTagName(
+                        "GlobalColorTable");
+
+                if ((gblColorTable != null)
+                    && (gblColorTable.getLength() > 0)
+                ) {
+                    IIOMetadataNode colorTable = (IIOMetadataNode) gblColorTable.item(0);
+
+                    if (colorTable != null) {
+                        String bgIndex = colorTable.getAttribute(
+                                "backgroundColorIndex");
+
+                        IIOMetadataNode color;
+                        color = (IIOMetadataNode) colorTable.getFirstChild();
+                        while (color != null) {
+                            if (color.getAttribute("index").equals(bgIndex)) {
+                                int red = Integer.parseInt(
+                                        color.getAttribute("red"));
+                                int green = Integer.parseInt(
+                                        color.getAttribute("green"));
+                                int blue = Integer.parseInt(
+                                        color.getAttribute("blue"));
+                                backgroundColor = new java.awt.Color(red,
+                                    green, blue);
+                                break;
+                            }
+
+                            color = (IIOMetadataNode) color.getNextSibling();
+                        }
+                    }
+                }
+
+            }
+            BufferedImage master = null;
+            Graphics2D masterGraphics = null;
+            int lastx = 0;
+            int lasty = 0;
+            boolean hasBackround = false;
+
+            for (int frameIndex = 0; ; frameIndex++) {
+                BufferedImage image;
+                try {
+                    image = reader.read(frameIndex);
+                } catch (IndexOutOfBoundsException io) {
+                    break;
+                }
+                assert (image != null);
+
+                if (width == -1 || height == -1) {
+                    width = image.getWidth();
+                    height = image.getHeight();
+                }
+                IIOMetadataNode root;
+                root = (IIOMetadataNode) reader.getImageMetadata(frameIndex).
+                        getAsTree("javax_imageio_gif_image_1.0");
+                IIOMetadataNode gce;
+                gce = (IIOMetadataNode) root.getElementsByTagName(
+                        "GraphicControlExtension").item(0);
+                int delay = Integer.valueOf(gce.getAttribute("delayTime"));
+                String disposal = gce.getAttribute("disposalMethod");
+
+                int x = 0;
+                int y = 0;
+
+                if (master == null) {
+                    master = new BufferedImage(width, height,
+                        BufferedImage.TYPE_INT_ARGB);
+                    masterGraphics = master.createGraphics();
+                    masterGraphics.setBackground(new java.awt.Color(0, 0, 0, 0));
+                    if ((image.getWidth() == width)
+                        && (image.getHeight() == height)
+                    ) {
+                        hasBackround = true;
+                    }
+                } else {
+                    NodeList children = root.getChildNodes();
+                    for (int nodeIndex = 0; nodeIndex < children.getLength();
+                         nodeIndex++) {
+
+                        Node nodeItem = children.item(nodeIndex);
+                        if (nodeItem.getNodeName().equals("ImageDescriptor")) {
+                            NamedNodeMap map = nodeItem.getAttributes();
+                            x = Integer.valueOf(map.getNamedItem(
+                                "imageLeftPosition").getNodeValue());
+                            y = Integer.valueOf(map.getNamedItem(
+                                "imageTopPosition").getNodeValue());
+                        }
+                    }
+                }
+                masterGraphics.drawImage(image, x, y, null);
+                lastx = x;
+                lasty = y;
+
+                BufferedImage copy = new BufferedImage(master.getColorModel(),
+                    master.copyData(null), master.isAlphaPremultiplied(), null);
+                frames.add(copy);
+                disposals.add(disposal);
+                delays += delay;
+
+                if (disposal.equals("restoreToPrevious")) {
+                    BufferedImage from = null;
+                    for (int i = frameIndex - 1; i >= 0; i--) {
+                        if (!disposals.get(i).equals("restoreToPrevious")
+                            || (frameIndex == 0)
+                        ) {
+                            from = frames.get(i);
+                            break;
+                        }
+                    }
+
+                    master = new BufferedImage(from.getColorModel(),
+                        from.copyData(null), from.isAlphaPremultiplied(), null);
+                    masterGraphics = master.createGraphics();
+                    masterGraphics.setBackground(new java.awt.Color(0, 0, 0, 0));
+                } else if (disposal.equals("restoreToBackgroundColor")
+                    && (backgroundColor != null)) {
+
+                    if (!hasBackround || (frameIndex > 1)) {
+                        master.createGraphics().fillRect(lastx, lasty,
+                            frames.get(frameIndex - 1).getWidth(),
+                            frames.get(frameIndex - 1).getHeight());
+                    }
+                }
+            }
+            reader.dispose();
+
+            if (frames.size() == 1) {
+                loopCount = 1;
+            }
+            if (frames.size() == 0) {
+                return null;
+            }
+            Animation animation = new Animation(frames,
+                (delays * 10 / frames.size()), loopCount);
+            return animation;
+
+        } catch (IOException e) {
+            // SQUASH
+            return null;
+        }
     }
 
 }

@@ -30,6 +30,7 @@ package jexer;
 
 import java.awt.image.BufferedImage;
 
+import jexer.bits.Animation;
 import jexer.bits.Cell;
 import jexer.bits.ImageUtils;
 import jexer.event.TCommandEvent;
@@ -40,7 +41,7 @@ import static jexer.TCommand.*;
 import static jexer.TKeypress.*;
 
 /**
- * TImage renders a piece of a bitmap image on screen.
+ * TImage renders a piece of a bitmap image or an animated image on screen.
  */
 public class TImage extends TWidget implements EditMenuUser {
 
@@ -151,6 +152,11 @@ public class TImage extends TWidget implements EditMenuUser {
      */
     private int lastTextHeight = -1;
 
+    /**
+     * Animation to display.
+     */
+    private Animation animation;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -168,8 +174,8 @@ public class TImage extends TWidget implements EditMenuUser {
      * @param top top row of the image.  0 is the top-most row.
      */
     public TImage(final TWidget parent, final int x, final int y,
-        final int width, final int height,
-        final BufferedImage image, final int left, final int top) {
+        final int width, final int height, final BufferedImage image,
+        final int left, final int top) {
 
         this(parent, x, y, width, height, image, left, top, null);
     }
@@ -188,15 +194,64 @@ public class TImage extends TWidget implements EditMenuUser {
      * @param clickAction function to call when mouse is pressed
      */
     public TImage(final TWidget parent, final int x, final int y,
-        final int width, final int height,
-        final BufferedImage image, final int left, final int top,
-        final TAction clickAction) {
+        final int width, final int height, final BufferedImage image,
+        final int left, final int top, final TAction clickAction) {
 
         // Set parent and window
         super(parent, x, y, width, height);
 
         setCursorVisible(false);
         this.originalImage = image;
+        this.left = left;
+        this.top = top;
+        this.clickAction = clickAction;
+
+        sizeToImage(true);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width number of text cells for width of the image
+     * @param height number of text cells for height of the image
+     * @param animation the animation to display
+     * @param left left column of the image.  0 is the left-most column.
+     * @param top top row of the image.  0 is the top-most row.
+     */
+    public TImage(final TWidget parent, final int x, final int y,
+        final int width, final int height, final Animation animation,
+        final int left, final int top) {
+
+        this(parent, x, y, width, height, animation, left, top, null);
+    }
+
+    /**
+     * Public constructor.
+     *
+     * @param parent parent widget
+     * @param x column relative to parent
+     * @param y row relative to parent
+     * @param width number of text cells for width of the image
+     * @param height number of text cells for height of the image
+     * @param animation the animation to display
+     * @param left left column of the image.  0 is the left-most column.
+     * @param top top row of the image.  0 is the top-most row.
+     * @param clickAction function to call when mouse is pressed
+     */
+    public TImage(final TWidget parent, final int x, final int y,
+        final int width, final int height, final Animation animation,
+        final int left, final int top, final TAction clickAction) {
+
+        // Set parent and window
+        super(parent, x, y, width, height);
+
+        setCursorVisible(false);
+        animation.start(getApplication());
+        this.animation = animation;
+        this.originalImage = animation.getFrame();
         this.left = left;
         this.top = top;
         this.clickAction = clickAction;
@@ -339,6 +394,16 @@ public class TImage extends TWidget implements EditMenuUser {
         }
     }
 
+    /**
+     * Stop the animation on close.
+     */
+    @Override
+    public void close() {
+        if (animation != null) {
+            animation.stop();
+        }
+    }
+
     // ------------------------------------------------------------------------
     // TWidget ----------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -348,7 +413,18 @@ public class TImage extends TWidget implements EditMenuUser {
      */
     @Override
     public void draw() {
-        sizeToImage(false);
+        if (animation != null) {
+            BufferedImage newFrame = animation.getFrame();
+            if (newFrame != originalImage) {
+                originalImage = newFrame;
+                image = null;
+                sizeToImage(true);
+            } else {
+                sizeToImage(false);
+            }
+        } else {
+            sizeToImage(false);
+        }
 
         // We have already broken the image up, just draw the previously
         // created set of cells.
@@ -544,6 +620,27 @@ public class TImage extends TWidget implements EditMenuUser {
     public void setImage(final BufferedImage image) {
         this.originalImage = image;
         this.image = null;
+        sizeToImage(true);
+        if (animation != null) {
+            animation.stop();
+            animation = null;
+        }
+    }
+
+    /**
+     * Set the image space to an animation, and reprocess to make the visible
+     * image.
+     *
+     * @param animation the new animation
+     */
+    public void setAnimation(final Animation animation) {
+        if (this.animation != null) {
+            this.animation.stop();
+            this.animation = null;
+        }
+        this.animation = animation;
+        originalImage = animation.getFrame();
+        image = null;
         sizeToImage(true);
     }
 

@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 
+import jexer.bits.Animation;
+import jexer.bits.ImageUtils;
 import jexer.event.TKeypressEvent;
 import jexer.event.TMouseEvent;
 import jexer.event.TResizeEvent;
@@ -102,10 +104,18 @@ public class TImageWindow extends TScrollableWindow {
 
         super(parent, file.getName(), x, y, width, height, RESIZABLE);
 
-        BufferedImage image = ImageIO.read(file);
+        BufferedImage image = null;
+        Animation animation = null;
+        if (file.getName().toLowerCase().endsWith(".gif")) {
+            animation = ImageUtils.getAnimation(file);
+            imageField = addImage(0, 0, getWidth() - 2, getHeight() - 2,
+                animation, 0, 0);
+         } else {
+            image = ImageIO.read(file);
+            imageField = addImage(0, 0, getWidth() - 2, getHeight() - 2,
+                image, 0, 0);
+        }
 
-        imageField = addImage(0, 0, getWidth() - 2, getHeight() - 2,
-            image, 0, 0);
         setTitle(file.getName());
 
         setupAfterImage();
