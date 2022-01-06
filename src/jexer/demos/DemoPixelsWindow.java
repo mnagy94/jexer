@@ -47,6 +47,8 @@ import jexer.TLabel;
 import jexer.TTimer;
 import jexer.TWidget;
 import jexer.TWindow;
+import jexer.bits.Animation;
+import jexer.bits.ImageUtils;
 import jexer.event.TCommandEvent;
 import jexer.layout.StretchLayoutManager;
 import jexer.tackboard.Bitmap;
@@ -102,7 +104,7 @@ public class DemoPixelsWindow extends TWindow {
     public DemoPixelsWindow(final TApplication parent) {
         // Construct a demo window.  X and Y don't matter because it will be
         // centered on screen.
-        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 11,
+        super(parent, i18n.getString("windowTitle"), 0, 0, 64, 17,
             CENTERED | RESIZABLE);
 
         setLayoutManager(new StretchLayoutManager(getWidth() - 2,
@@ -197,7 +199,10 @@ public class DemoPixelsWindow extends TWindow {
             loader = Thread.currentThread().getContextClassLoader();
             BufferedImage image;
             image = ImageIO.read(loader.getResource("demo/trans_icon.png"));
-            addUnderlay(new Bitmap(17, 33, 0, image));
+            Animation animation;
+            animation = ImageUtils.getAnimation(loader.getResource(
+                "demo/butterfly.gif"));
+            addUnderlay(new Bitmap(17, 33, 0, animation, getApplication()));
             addOverlay(new Bitmap(11, 97, 0, image));
 
             timer3 = getApplication().addTimer(100, true,

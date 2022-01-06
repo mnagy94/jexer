@@ -32,7 +32,9 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.IOException;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -202,7 +204,12 @@ public class ImageUtils {
      * @return the animation, or null on error
      */
     public static Animation getAnimation(final String filename) {
-        return getAnimation(new File(filename));
+        try {
+            return getAnimation(new FileInputStream(filename));
+        } catch (IOException e) {
+            // SQUASH
+            return null;
+        }
     }
 
     /**
@@ -212,6 +219,36 @@ public class ImageUtils {
      * @return the animation, or null on error
      */
     public static Animation getAnimation(final File file) {
+        try {
+            return getAnimation(new FileInputStream(file));
+        } catch (IOException e) {
+            // SQUASH
+            return null;
+        }
+    }
+
+    /**
+     * Open an image as an Animation.
+     *
+     * @param url the URK that contains an animation
+     * @return the animation, or null on error
+     */
+    public static Animation getAnimation(final URL url) {
+        try {
+            return getAnimation(url.openStream());
+        } catch (IOException e) {
+            // SQUASH
+            return null;
+        }
+    }
+
+    /**
+     * Open an image as an Animation.
+     *
+     * @param inputStream the inputStream that contains an animation
+     * @return the animation, or null on error
+     */
+    public static Animation getAnimation(final InputStream inputStream) {
         try {
             List<BufferedImage> frames = new LinkedList<BufferedImage>();
             List<String> disposals = new LinkedList<String>();
@@ -230,7 +267,7 @@ public class ImageUtils {
 
             ImageReader reader = null;
             ImageInputStream stream;
-            stream = ImageIO.createImageInputStream(new FileInputStream(file));
+            stream = ImageIO.createImageInputStream(inputStream);
             Iterator<ImageReader> iter = ImageIO.getImageReaders(stream);
             while (iter.hasNext()) {
                 reader = iter.next();
