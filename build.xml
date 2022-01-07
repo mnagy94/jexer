@@ -4,7 +4,7 @@
 
    The MIT License (MIT)
 
-   Copyright (C) 2021 Autumn Lamonte
+   Copyright (C) 2022 Autumn Lamonte
 
    Permission is hereby granted, free of charge, to any person
    obtaining a copy of this software and associated documentation
@@ -117,17 +117,8 @@
         <![CDATA[<h1>Jexer - Java Text User Interface Library</h1>]]>
       </doctitle>
       <bottom>
-        <![CDATA[<i>Copyright &#169; 2021 Autumn Lamonte. Licensed MIT.</i>]]>
+        <![CDATA[<i>Copyright &#169; 2022 Autumn Lamonte. Licensed MIT.</i>]]>
       </bottom>
-      <!--
-          <tag name="todo" scope="all" description="To do:"/>
-          <group title="Group 1 Packages" packages="com.dummy.test.a*"/>
-          <group title="Group 2 Packages" packages="com.dummy.test.b*:com.dummy.test.c*"/>
-          <link offline="true"
-          href="http://docs.oracle.com/javase/7/docs/api/"
-          packagelistLoc="C:\tmp"/>
-          <link href="http://docs.oracle.com/javase/7/docs/api/"/>
-      -->
     </javadoc>
   </target>
 

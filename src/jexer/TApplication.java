@@ -403,12 +403,6 @@ public class TApplication implements Runnable {
     protected MousePointer customWidgetMousePointer;
 
     /**
-     * If true, the backend was in pixelMouse mode when the
-     * customWidgetMousePointer was last set.
-     */
-    protected boolean oldPixelMouse = false;
-
-    /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
      * two such threads in existence: the primary for normal case and a
      * secondary that is used for TMessageBox, TInputBox, and similar.
