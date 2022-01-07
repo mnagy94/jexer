@@ -5,7 +5,7 @@ build/**
 *.png
 *.gif
 *.six
-autumn.bash
+autumn.bash*
 run_swing.bash
 run_xterm.bash
 err*
