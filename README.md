@@ -30,10 +30,11 @@ better:
 ![Xterm Snake Image](/screenshots/snake_xterm_hq.png?raw=true "Xterm Snake Image - HQ Encoder")
 
 
-...How...did...?
-----------------
+How...?  What...?
+-----------------
 
-[Here you go.](https://jexer.sourceforge.io/evolution.html)
+Wondering how I did it?  [Here you
+go.](https://jexer.sourceforge.io/evolution.html)
 
 
 License
