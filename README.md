@@ -30,6 +30,12 @@ better:
 ![Xterm Snake Image](/screenshots/snake_xterm_hq.png?raw=true "Xterm Snake Image - HQ Encoder")
 
 
+...How...did...?
+----------------
+
+[Here you go.](https://jexer.sourceforge.io/evolution.html)
+
+
 License
 -------
 
@@ -185,7 +191,7 @@ The table below lists terminals tested against Jexer's Xterm backend:
 | xfce4-terminal | X11                | yes         | yes          | no     |
 | Windows Terminal(6) | Windows       | yes         | yes          | no     |
 | DomTerm(3)     | Web                | yes         | no           | yes    |
-| aminal(3)      | X11                | yes         | no           | no     |
+| darktile       | X11                | yes         | no           | no(5)  |
 | konsole        | X11                | yes         | no           | no     |
 | yakuake        | X11                | yes         | no           | no     |
 | screen         | CLI                | yes(1)      | yes(1)       | no(2)  |
