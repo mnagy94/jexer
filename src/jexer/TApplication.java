@@ -2786,7 +2786,9 @@ public class TApplication implements Runnable {
                     statusBar = topLevel.getStatusBar();
                 }
             } else {
-                statusBar = desktop.getStatusBar();
+                if (desktop != null) {
+                    statusBar = desktop.getStatusBar();
+                }
             }
 
             if (statusBar != null) {
