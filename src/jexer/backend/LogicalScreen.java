@@ -1599,9 +1599,12 @@ public class LogicalScreen implements Screen {
                         continue;
                     }
 
-                    if (overCell.isImage() && !overCell.isTransparentImage()) {
+                    if (!thisCell.isImage()
+                        && overCell.isImage()
+                        && !overCell.isTransparentImage()
+                    ) {
                         // The image from the new cell will fully cover this
-                        // cell's image.
+                        // cell's background or glyph.
 
                         // We need to blit overCell's image over thisOldBg at
                         // alpha < 255.
@@ -1614,6 +1617,34 @@ public class LogicalScreen implements Screen {
                         g2d = newImage.createGraphics();
                         g2d.setColor(new java.awt.Color(thisOldBg));
                         g2d.fillRect(0, 0, image.getWidth(), image.getHeight());
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                fAlpha));
+                        g2d.drawImage(image, 0, 0, null);
+                        g2d.dispose();
+                        thisCell.setImage(newImage);
+                        thisCell.setOpaqueImage();
+                        continue;
+                    }
+
+                    if (thisCell.isImage()
+                        && overCell.isImage()
+                        && !overCell.isTransparentImage()
+                    ) {
+                        // The image from the new cell will fully cover this
+                        // cell's image.
+
+                        // We need to blit overCell's image over this image
+                        // at alpha < 255.
+                        Cell overCopy = new Cell(overCell);
+                        overCopy.flattenImage(false, backend);
+                        BufferedImage image = overCopy.getImage();
+                        BufferedImage newImage;
+                        newImage = new BufferedImage(image.getWidth(),
+                            image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                        g2d = newImage.createGraphics();
+                        Cell thisCopy = new Cell(thisCell);
+                        thisCopy.flattenImage(false, backend);
+                        g2d.drawImage(thisCopy.getImage(), 0, 0, null);
                         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
