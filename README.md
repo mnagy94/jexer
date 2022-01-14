@@ -12,12 +12,13 @@ like this:
 
 ![WezTerm, translucent images](/screenshots/wezterm_translucent_images.png?raw=true "WezTerm, translucent images")
 
-...or anything in between.  Translucent images are a work in progress
-and will be included in the next release.
+...or anything in between.  Translucent windows -- including images --
+are a work in progress and will be included in the next release.
 
 Jexer works on both Xterm-like terminals and Swing, and supports
 images in both Xterm and Swing.  On Swing, images are true color; on
-Xterm, images are rendered as sixel, iTerm2, or Jexer images.
+Xterm, images are rendered as sixel (256-1024 colors typically),
+iTerm2, or Jexer images.
 
 Support for pixel-based operations was introduced in version 1.5.0.
 If the terminal supports mouse mode 1016 (SGR-Pixel), one can now get
