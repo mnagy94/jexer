@@ -3,7 +3,7 @@ Terminal Emulator Multimedia Standard - Proposed Design
 
 Version: 1
 
-
+ 
 
 Purpose
 -------
