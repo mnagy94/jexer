@@ -829,19 +829,31 @@ public class ECMA48Terminal extends LogicalScreen
         }
         if (output != null) {
             if (hasSynchronizedOutput) {
-                // Begin Synchronized Update (BSU)
-                output.write("\033[?2026h");
-                output.write(sb.toString());
-                // End Synchronized Update (ESU)
-                output.write("\033[?2026l");
+                if (sb.length() > 0) {
+                    // Begin Synchronized Update (BSU)
+                    output.write("\033[?2026h");
+                    if (debugToStderr) {
+                        System.err.printf("Writing %d bytes to terminal (sync)\n",
+                            sb.length());
+                    }
+                    output.write(sb.toString());
+                    // End Synchronized Update (ESU)
+                    output.write("\033[?2026l");
+                }
                 if (debugToStderr) {
                     System.err.printf("flushPhysical() \033[?2026h%s\033[?2026l\n",
                         sb.toString());
                 }
             } else {
-                output.write(sb.toString());
+                if (sb.length() > 0) {
+                    if (debugToStderr) {
+                        System.err.printf("Writing %d bytes to terminal\n",
+                            sb.length());
+                    }
+                    output.write(sb.toString());
+                }
             }
-            flush();
+            output.flush();
         }
     }
 
@@ -1073,24 +1085,41 @@ public class ECMA48Terminal extends LogicalScreen
         char [] readBuffer = new char[128];
         List<TInputEvent> events = new ArrayList<TInputEvent>();
 
+        // boolean debugToStderr = true;
+
         while (!done && !stopReaderThread) {
             try {
                 // We assume that if inputStream has bytes available, then
                 // input won't block on read().
+                if (debugToStderr) {
+                    System.err.printf("Looking for input...");
+                }
+
                 int n = inputStream.available();
 
-                /*
-                System.err.printf("inputStream.available(): %d\n", n);
-                System.err.flush();
-                */
+                if (debugToStderr) {
+                    if (n == 0) {
+                        System.err.println("none.");
+                    }
+                    if (n < 0) {
+                        System.err.printf("WHAT?!  n = %d\n", n);
+                    }
+                }
 
                 if (n > 0) {
+                    if (debugToStderr) {
+                        System.err.printf("%d bytes to read.\n", n);
+                    }
+
                     if (readBuffer.length < n) {
                         // The buffer wasn't big enough, make it huger
                         readBuffer = new char[readBuffer.length * 2];
                     }
 
-                    // System.err.printf("BEFORE read()\n"); System.err.flush();
+                    if (debugToStderr) {
+                        System.err.printf("B4 read(): readBuffer.length = %d\n",
+                            readBuffer.length);
+                    }
 
                     int rc = input.read(readBuffer, 0, readBuffer.length);
 
@@ -1100,9 +1129,22 @@ public class ECMA48Terminal extends LogicalScreen
                     */
 
                     if (rc == -1) {
+                        if (debugToStderr) {
+                            System.err.println(" ---- EOF ----");
+                        }
+
                         // This is EOF
                         done = true;
                     } else {
+                        if (debugToStderr) {
+                            StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < rc; i++) {
+                                sb.append(readBuffer[i]);
+                            }
+                            System.err.printf("%d rc = %d INPUT: ",
+                                System.currentTimeMillis(), rc);
+                            System.err.println(sb.toString());
+                        }
                         for (int i = 0; i < rc; i++) {
                             int ch = readBuffer[i];
                             processChar(events, (char)ch);
@@ -1111,27 +1153,62 @@ public class ECMA48Terminal extends LogicalScreen
                         if (events.size() > 0) {
                             // Add to the queue for the backend thread to
                             // be able to obtain.
+                            if (debugToStderr) {
+                                System.err.printf("Checking eventQueue...");
+                            }
+
                             synchronized (eventQueue) {
                                 eventQueue.addAll(events);
                             }
+                            if (debugToStderr) {
+                                System.err.printf("done.\n");
+                            }
+
                             if (listener != null) {
+                                if (debugToStderr) {
+                                    System.err.printf("Waking up listener...");
+                                }
+
                                 synchronized (listener) {
                                     listener.notifyAll();
                                 }
+                                if (debugToStderr) {
+                                    System.err.printf("done.\n");
+                                }
+
                             }
                             events.clear();
                         }
                     }
                 } else {
+                    if (debugToStderr) {
+                        System.err.println("Looking for idle events");
+                    }
                     getIdleEvents(events);
                     if (events.size() > 0) {
+                        if (debugToStderr) {
+                            System.err.printf("Checking eventQueue...");
+                        }
+
                         synchronized (eventQueue) {
                             eventQueue.addAll(events);
                         }
+                        if (debugToStderr) {
+                            System.err.printf("done.\n");
+                        }
+
                         if (listener != null) {
+                            if (debugToStderr) {
+                                System.err.printf("Waking up listener...");
+                            }
+
                             synchronized (listener) {
                                 listener.notifyAll();
                             }
+                            if (debugToStderr) {
+                                System.err.printf("done.\n");
+                            }
+
                         }
                         events.clear();
                     }
@@ -1338,6 +1415,7 @@ public class ECMA48Terminal extends LogicalScreen
                         y, x, lastX, textEnd);
                     System.err.printf("   lCell: %s\n", lCell);
                     System.err.printf("   pCell: %s\n", pCell);
+                    System.err.printf("   lastAttr: %s\n", lastAttr);
                     System.err.printf("    ====    \n");
                 }
 
@@ -1420,158 +1498,84 @@ public class ECMA48Terminal extends LogicalScreen
                 assert (!lCell.isImage());
 
                 // Now emit only the modified attributes
-                if ((lCell.getForeColor() != lastAttr.getForeColor())
-                    && (lCell.getBackColor() != lastAttr.getBackColor())
-                    && (!lCell.isRGB())
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-                    // Both colors changed, attributes the same
-                    sb.append(color(lCell.isBold(),
-                            lCell.getForeColor(), lCell.getBackColor()));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("1 Change only fore/back colors\n");
-                    }
-
-                } else if (lCell.isRGB()
-                    && (lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
-                    && (lCell.getBackColorRGB() != lastAttr.getBackColorRGB())
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-                    // Both colors changed, attributes the same
-                    sb.append(colorRGB(lCell.getForeColorRGB(),
-                            lCell.getBackColorRGB()));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("1 Change only fore/back colors (RGB)\n");
-                    }
-                } else if ((lCell.getForeColor() != lastAttr.getForeColor())
-                    && (lCell.getBackColor() != lastAttr.getBackColor())
-                    && (!lCell.isRGB())
-                    && (lCell.isBold() != lastAttr.isBold())
-                    && (lCell.isReverse() != lastAttr.isReverse())
-                    && (lCell.isUnderline() != lastAttr.isUnderline())
-                    && (lCell.isBlink() != lastAttr.isBlink())
-                ) {
-                    // Everything is different
-                    sb.append(color(lCell.getForeColor(),
-                            lCell.getBackColor(),
-                            lCell.isBold(), lCell.isReverse(),
-                            lCell.isBlink(),
-                            lCell.isUnderline()));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("2 Set all attributes\n");
-                    }
-                } else if ((lCell.getForeColor() != lastAttr.getForeColor())
-                    && (lCell.getBackColor() == lastAttr.getBackColor())
-                    && (!lCell.isRGB())
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-
-                    // Attributes same, foreColor different
-                    sb.append(color(lCell.isBold(),
-                            lCell.getForeColor(), true));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("3 Change foreColor\n");
-                    }
-                } else if (lCell.isRGB()
-                    && (lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
-                    && (lCell.getBackColorRGB() == lastAttr.getBackColorRGB())
-                    && (lCell.getForeColorRGB() >= 0)
-                    && (lCell.getBackColorRGB() >= 0)
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-                    // Attributes same, foreColor different
-                    sb.append(colorRGB(lCell.getForeColorRGB(), true));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("3 Change foreColor (RGB)\n");
-                    }
-                } else if ((lCell.getForeColor() == lastAttr.getForeColor())
-                    && (lCell.getBackColor() != lastAttr.getBackColor())
-                    && (!lCell.isRGB())
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-                    // Attributes same, backColor different
-                    sb.append(color(lCell.isBold(),
-                            lCell.getBackColor(), false));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("4 Change backColor\n");
-                    }
-                } else if (lCell.isRGB()
-                    && (lCell.getForeColorRGB() == lastAttr.getForeColorRGB())
-                    && (lCell.getBackColorRGB() != lastAttr.getBackColorRGB())
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-                    // Attributes same, foreColor different
-                    sb.append(colorRGB(lCell.getBackColorRGB(), false));
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("5 Change backColor (RGB)\n");
-                    }
-                } else if ((lCell.getForeColor() == lastAttr.getForeColor())
-                    && (lCell.getBackColor() == lastAttr.getBackColor())
-                    && (lCell.getForeColorRGB() == lastAttr.getForeColorRGB())
-                    && (lCell.getBackColorRGB() == lastAttr.getBackColorRGB())
-                    && (lCell.isBold() == lastAttr.isBold())
-                    && (lCell.isReverse() == lastAttr.isReverse())
-                    && (lCell.isUnderline() == lastAttr.isUnderline())
-                    && (lCell.isBlink() == lastAttr.isBlink())
-                ) {
-
-                    // All attributes the same, just print the char
-                    // NOP
-
-                    if (debugToStderr && reallyDebug) {
-                        System.err.printf("6 Only emit character\n");
-                    }
-                } else {
-                    // Just reset everything again
-                    if (!lCell.isRGB()) {
-                        sb.append(color(lCell.getForeColor(),
-                                lCell.getBackColor(),
-                                lCell.isBold(),
-                                lCell.isReverse(),
-                                lCell.isBlink(),
-                                lCell.isUnderline()));
-
-                        if (debugToStderr && reallyDebug) {
-                            System.err.printf("7 Change all attributes\n");
-                        }
+                StringBuilder attrSgr = new StringBuilder(8);
+                if (lCell.isBold() != lastAttr.isBold()) {
+                    if (lCell.isBold()) {
+                        attrSgr.append(";1");
                     } else {
-                        sb.append(colorRGB(lCell.getForeColorRGB(),
-                                lCell.getBackColorRGB(),
-                                lCell.isBold(),
-                                lCell.isReverse(),
-                                lCell.isBlink(),
-                                lCell.isUnderline()));
-                        if (debugToStderr && reallyDebug) {
-                            System.err.printf("8 Change all attributes (RGB)\n");
-                        }
+                        attrSgr.append(";22");
                     }
-
                 }
+                if (lCell.isUnderline() != lastAttr.isUnderline()) {
+                    if (lCell.isUnderline()) {
+                        attrSgr.append(";4");
+                    } else {
+                        attrSgr.append(";24");
+                    }
+                }
+                if (lCell.isBlink() != lastAttr.isBlink()) {
+                    if (lCell.isBlink()) {
+                        attrSgr.append(";5");
+                    } else {
+                        attrSgr.append(";25");
+                    }
+                }
+                if (lCell.isReverse() != lastAttr.isReverse()) {
+                    if (lCell.isReverse()) {
+                        attrSgr.append(";7");
+                    } else {
+                        attrSgr.append(";27");
+                    }
+                }
+                if (attrSgr.length() > 0) {
+                    if (debugToStderr && reallyDebug) {
+                        System.err.println("2 attr: " + attrSgr.substring(1));
+                    }
+                    sb.append("\033[");
+                    sb.append(attrSgr.substring(1));
+                    sb.append("m");
+                }
+
+                if ((lCell.getForeColorRGB() >= 0)
+                    && ((lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
+                        || (lastAttr.getForeColorRGB() < 0))
+                ) {
+                    if (debugToStderr && reallyDebug) {
+                        System.err.println("3 set foreColorRGB");
+                    }
+                    sb.append(colorRGB(lCell.getForeColorRGB(), true));
+                } else {
+                    if ((lCell.getForeColorRGB() < 0)
+                        && ((lastAttr.getForeColorRGB() >= 0)
+                            || !lCell.getForeColor().equals(lastAttr.getForeColor()))
+                    ) {
+                        if (debugToStderr && reallyDebug) {
+                            System.err.println("4 set foreColor");
+                        }
+                        sb.append(color(lCell.getForeColor(), true, true));
+                    }
+                }
+
+                if ((lCell.getBackColorRGB() >= 0)
+                    && ((lCell.getBackColorRGB() != lastAttr.getBackColorRGB())
+                        || (lastAttr.getBackColorRGB() < 0))
+                ) {
+                    if (debugToStderr && reallyDebug) {
+                        System.err.println("5 set backColorRGB");
+                    }
+                    sb.append(colorRGB(lCell.getBackColorRGB(), false));
+                } else {
+                    if ((lCell.getBackColorRGB() < 0)
+                        && ((lastAttr.getBackColorRGB() >= 0)
+                            || !lCell.getBackColor().equals(lastAttr.getBackColor()))
+                    ) {
+                        if (debugToStderr && reallyDebug) {
+                            System.err.println("6 set backColor");
+                        }
+                        sb.append(color(lCell.getBackColor(), false, true));
+                    }
+                }
+
                 // Emit the character
                 if (wideCharImages
                     // Don't emit the right-half of full-width chars.
@@ -2457,6 +2461,10 @@ public class ECMA48Terminal extends LogicalScreen
                 default:
                     break;
                 }
+
+                // We have changed a system color.  Redraw the entire screen.
+                clearPhysical();
+                reallyCleared = true;
             } catch (NumberFormatException e) {
                 return;
             }
@@ -2489,7 +2497,7 @@ public class ECMA48Terminal extends LogicalScreen
         boolean alt = false;
         boolean shift = false;
 
-        if (debugToStderr && false) {
+        if (debugToStderr) {
             System.err.printf("state: %s ch %c\r\n", state, ch);
         }
 
@@ -4338,6 +4346,59 @@ public class ECMA48Terminal extends LogicalScreen
         }
         sb.append(String.format("%d;%dm", ecmaForeColor, ecmaBackColor));
         sb.append(rgbColor(bold, foreColor, backColor));
+        return sb.toString();
+    }
+
+    /**
+     * Create a SGR parameter sequence for several attributes.  This sequence
+     * first resets all attributes to default, then sets attributes as per
+     * the parameters.
+     *
+     * @param bold if true, set bold
+     * @param reverse if true, set reverse
+     * @param blink if true, set blink
+     * @param underline if true, set underline
+     * @return the string to emit to an ANSI / ECMA-style terminal,
+     * e.g. "\033[0;1;5m"
+     */
+    private String attributes(final boolean bold, final boolean reverse,
+        final boolean blink, final boolean underline) {
+
+        StringBuilder sb = new StringBuilder();
+        if        (  bold &&  reverse &&  blink && !underline ) {
+            sb.append("\033[0;1;7;5m");
+        } else if (  bold &&  reverse && !blink && !underline ) {
+            sb.append("\033[0;1;7m");
+        } else if ( !bold &&  reverse &&  blink && !underline ) {
+            sb.append("\033[0;7;5m");
+        } else if (  bold && !reverse &&  blink && !underline ) {
+            sb.append("\033[0;1;5m");
+        } else if (  bold && !reverse && !blink && !underline ) {
+            sb.append("\033[0;1m");
+        } else if ( !bold &&  reverse && !blink && !underline ) {
+            sb.append("\033[0;7m");
+        } else if ( !bold && !reverse &&  blink && !underline) {
+            sb.append("\033[0;5m");
+        } else if (  bold &&  reverse &&  blink &&  underline ) {
+            sb.append("\033[0;1;7;5;4m");
+        } else if (  bold &&  reverse && !blink &&  underline ) {
+            sb.append("\033[0;1;7;4m");
+        } else if ( !bold &&  reverse &&  blink &&  underline ) {
+            sb.append("\033[0;7;5;4m");
+        } else if (  bold && !reverse &&  blink &&  underline ) {
+            sb.append("\033[0;1;5;4m");
+        } else if (  bold && !reverse && !blink &&  underline ) {
+            sb.append("\033[0;1;4m");
+        } else if ( !bold &&  reverse && !blink &&  underline ) {
+            sb.append("\033[0;7;4m");
+        } else if ( !bold && !reverse &&  blink &&  underline) {
+            sb.append("\033[0;5;4m");
+        } else if ( !bold && !reverse && !blink &&  underline) {
+            sb.append("\033[0;4m");
+        } else {
+            assert (!bold && !reverse && !blink && !underline);
+            sb.append("\033[0m");
+        }
         return sb.toString();
     }
 

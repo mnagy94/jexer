@@ -3735,9 +3735,7 @@ public class ECMA48 implements Runnable {
                         // screen.  We won't switch to a different buffer,
                         // instead we will just clear the screen.
                         currentState.attr.setForeColor(Color.WHITE);
-                        currentState.attr.setForeColorRGB(-1);
                         currentState.attr.setBackColor(Color.BLACK);
-                        currentState.attr.setBackColorRGB(-1);
                         eraseScreen(0, 0, height - 1, width - 1, false);
                         scrollRegionTop = 0;
                         scrollRegionBottom = height - 1;
@@ -4428,9 +4426,7 @@ public class ECMA48 implements Runnable {
      */
     private void sgr() {
         for (int i = 0; i < collectBuffer.length(); i++) {
-            if ((collectBuffer.charAt(i) == '>')
-                || (collectBuffer.charAt(i) == '>')
-            ) {
+            if (collectBuffer.charAt(i) == '>') {
                 // Private-mode sequence, disregard.
                 return;
             }
@@ -4672,42 +4668,34 @@ public class ECMA48 implements Runnable {
             case 30:
                 // Set black foreground
                 currentState.attr.setForeColor(Color.BLACK);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 31:
                 // Set red foreground
                 currentState.attr.setForeColor(Color.RED);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 32:
                 // Set green foreground
                 currentState.attr.setForeColor(Color.GREEN);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 33:
                 // Set yellow foreground
                 currentState.attr.setForeColor(Color.YELLOW);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 34:
                 // Set blue foreground
                 currentState.attr.setForeColor(Color.BLUE);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 35:
                 // Set magenta foreground
                 currentState.attr.setForeColor(Color.MAGENTA);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 36:
                 // Set cyan foreground
                 currentState.attr.setForeColor(Color.CYAN);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 37:
                 // Set white foreground
                 currentState.attr.setForeColor(Color.WHITE);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 38:
                 if (type == DeviceType.XTERM) {
@@ -4758,47 +4746,38 @@ public class ECMA48 implements Runnable {
                 // Underscore off, default foreground color
                 currentState.attr.setUnderline(false);
                 currentState.attr.setForeColor(Color.WHITE);
-                currentState.attr.setForeColorRGB(-1);
                 break;
             case 40:
                 // Set black background
                 currentState.attr.setBackColor(Color.BLACK);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 41:
                 // Set red background
                 currentState.attr.setBackColor(Color.RED);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 42:
                 // Set green background
                 currentState.attr.setBackColor(Color.GREEN);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 43:
                 // Set yellow background
                 currentState.attr.setBackColor(Color.YELLOW);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 44:
                 // Set blue background
                 currentState.attr.setBackColor(Color.BLUE);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 45:
                 // Set magenta background
                 currentState.attr.setBackColor(Color.MAGENTA);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 46:
                 // Set cyan background
                 currentState.attr.setBackColor(Color.CYAN);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 47:
                 // Set white background
                 currentState.attr.setBackColor(Color.WHITE);
-                currentState.attr.setBackColorRGB(-1);
                 break;
             case 48:
                 if (type == DeviceType.XTERM) {
@@ -4844,7 +4823,6 @@ public class ECMA48 implements Runnable {
             case 49:
                 // Default background
                 currentState.attr.setBackColor(Color.BLACK);
-                currentState.attr.setBackColorRGB(-1);
                 break;
 
             default:

@@ -31,6 +31,7 @@ package jexer.backend;
 import java.util.ArrayList;
 import java.util.List;
 
+import jexer.bits.BorderStyle;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Clipboard;
@@ -608,7 +609,7 @@ public class MultiScreen implements Screen {
     /**
      * Draw a box with a border and empty background.
      *
-     * @param left left column of box.  0 is the left-most row.
+     * @param left left column of box.  0 is the left-most column.
      * @param top top row of the box.  0 is the top-most row.
      * @param right right column of box
      * @param bottom bottom row of the box
@@ -629,26 +630,24 @@ public class MultiScreen implements Screen {
     /**
      * Draw a box with a border and empty background.
      *
-     * @param left left column of box.  0 is the left-most row.
+     * @param left left column of box.  0 is the left-most column.
      * @param top top row of the box.  0 is the top-most row.
      * @param right right column of box
      * @param bottom bottom row of the box
      * @param border attributes to use for the border
      * @param background attributes to use for the background
-     * @param borderType if 1, draw a single-line border; if 2, draw a
-     * double-line border; if 3, draw double-line top/bottom edges and
-     * single-line left/right edges (like Qmodem)
+     * @param borderStyle style of border
      * @param shadow if true, draw a "shadow" on the box
      */
     public void drawBox(final int left, final int top,
         final int right, final int bottom,
         final CellAttributes border, final CellAttributes background,
-        final int borderType, final boolean shadow) {
+        final BorderStyle borderStyle, final boolean shadow) {
 
         synchronized (screens) {
             for (Screen screen: screens) {
                 screen.drawBox(left, top, right, bottom, border, background,
-                    borderType, shadow);
+                    borderStyle, shadow);
             }
         }
     }
@@ -656,7 +655,7 @@ public class MultiScreen implements Screen {
     /**
      * Draw a box shadow.
      *
-     * @param left left column of box.  0 is the left-most row.
+     * @param left left column of box.  0 is the left-most column.
      * @param top top row of the box.  0 is the top-most row.
      * @param right right column of box
      * @param bottom bottom row of the box
@@ -949,6 +948,118 @@ public class MultiScreen implements Screen {
             int height = 25;
             other.setDimensions(width, height);
             return other;
+        }
+    }
+
+    /**
+     * Obtain a snapshot copy of a rectangular portion of the screen.
+     *
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @return a copy of the screen's data from this rectangle.  Any cells
+     * outside the actual screen dimensions will be blank.
+     */
+    public Screen snapshot(final int x, final int y, final int width,
+        final int height) {
+
+        synchronized (screens) {
+            // Only copy from the first screen.
+            if (screens.size() > 0) {
+                return screens.get(0).snapshot(x, y, width, height);
+            }
+
+            // No screens are defined, create a blank.
+
+            LogicalScreen other = null;
+
+            other = new LogicalScreen();
+            int newWidth = x + width;
+            int newHeight = y + 25;
+            other.setDimensions(newWidth, newHeight);
+            return other;
+        }
+    }
+
+    /**
+     * Copy all of screen's data to this screen.
+     *
+     * @param other the other screen
+     */
+    public void copyScreen(final Screen other) {
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.copyScreen(other);
+            }
+        }
+    }
+
+    /**
+     * Copy a rectangular portion of another screen to this one.  Any cells
+     * outside this screen's dimensions will be ignored.
+     *
+     * @param other the other screen
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     */
+    public void copyScreen(final Screen other, final int x, final int y,
+        final int width, final int height) {
+
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.copyScreen(other, x, y, width, height);
+            }
+        }
+    }
+
+    /**
+     * Alpha-blend a rectangular portion of another screen onto this one.
+     * Any cells outside this screen's dimensions will be ignored.
+     *
+     * @param otherScreen the other screen
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @param alpha the alpha transparency level (0 - 255) to use for cells
+     * from the other screen
+     * @param filterHatch if true, prevent hatch-like characters from
+     * showing through
+     */
+    public void blendScreen(final Screen otherScreen, final int x, final int y,
+        final int width, final int height, final int alpha,
+        final boolean filterHatch) {
+
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.blendScreen(otherScreen, x, y, width, height, alpha,
+                    filterHatch);
+            }
+        }
+    }
+
+    /**
+     * Alpha-blend a rectangle with a specified color and alpha onto this
+     * screen.  Any cells outside this screen's dimensions will be ignored.
+     *
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @param color the RGB color to blend
+     * @param alpha the alpha transparency level (0 - 255) to use for cells
+     * from the other screen
+     */
+    public void blendRectangle(final int x, final int y,
+        final int width, final int height, final int color, final int alpha) {
+
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.blendRectangle(x, y, width, height, color, alpha);
+            }
         }
     }
 

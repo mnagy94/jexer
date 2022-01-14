@@ -160,6 +160,17 @@ public class TTerminalWindow extends TScrollableWindow {
                 onShellExit();
             }
         });
+
+        int opacity = 95;
+        try {
+            opacity = Integer.parseInt(System.getProperty(
+                "jexer.TTerminal.opacity", "95"));
+            opacity = Math.max(opacity, 10);
+            opacity = Math.min(opacity, 100);
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+        setAlpha(opacity * 255 / 100);
     }
 
     /**
@@ -216,6 +227,17 @@ public class TTerminalWindow extends TScrollableWindow {
                 onShellExit();
             }
         });
+
+        int opacity = 95;
+        try {
+            opacity = Integer.parseInt(System.getProperty(
+                "jexer.TTerminal.opacity", "95"));
+            opacity = Math.max(opacity, 10);
+            opacity = Math.min(opacity, 100);
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+        setAlpha(opacity * 255 / 100);
     }
 
     // ------------------------------------------------------------------------

@@ -31,6 +31,7 @@ package jexer.bits;
 import java.awt.image.BufferedImage;
 import jexer.backend.Backend;
 import jexer.backend.GlyphMaker;
+import jexer.backend.SwingTerminal;
 
 /**
  * This class represents a single text cell or bit of image on the screen.
@@ -184,7 +185,11 @@ public class Cell extends CellAttributes {
     public void setImage(final BufferedImage image) {
         this.image = image;
         hasTransparentPixels = 0;
-        imageHashCode = image.hashCode();
+        if (image == null) {
+            imageHashCode = 0;
+        } else {
+            imageHashCode = image.hashCode();
+        }
         width = Width.SINGLE;
     }
 
@@ -255,7 +260,11 @@ public class Cell extends CellAttributes {
         BufferedImage newImage = new BufferedImage(textWidth,
             textHeight, BufferedImage.TYPE_INT_ARGB);
         java.awt.Graphics gr = newImage.getGraphics();
-        gr.setColor(backend.attrToBackgroundColor(this));
+        if (backend != null) {
+            gr.setColor(backend.attrToBackgroundColor(this));
+        } else {
+            gr.setColor(SwingTerminal.attrToBackgroundColor(this));
+        }
 
         if (overGlyph) {
             // Render this cell to a flat image.  The bad news is that we
@@ -271,6 +280,38 @@ public class Cell extends CellAttributes {
         gr.drawImage(image, 0, 0, null, null);
         gr.dispose();
         setImage(newImage);
+    }
+
+    /**
+     * Flatten the image on this cell by rendering it either onto a
+     * background color.
+     *
+     * @param background the background color to draw on
+     */
+    private void flattenImage(final java.awt.Color background) {
+        assert (isImage());
+
+        if (hasTransparentPixels == 2) {
+            // The image already covers the entire cell.
+            return;
+        }
+
+        int textWidth = image.getWidth();
+        int textHeight = image.getHeight();
+        BufferedImage newImage = new BufferedImage(textWidth,
+            textHeight, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics gr = newImage.getGraphics();
+        gr.setColor(background);
+
+        // Put the background color behind the pixels.
+        gr.fillRect(0, 0, newImage.getWidth(), newImage.getHeight());
+        gr.drawImage(image, 0, 0, null, null);
+        gr.dispose();
+
+        setImage(newImage);
+
+        // We know we are opaque now.
+        hasTransparentPixels = 2;
     }
 
     /**
@@ -740,9 +781,11 @@ public class Cell extends CellAttributes {
      */
     @Override
     public String toString() {
-        return String.format("%s fore: %s back: %s bold: %s blink: %s ch %c",
+        return String.format("%s fore: %s RGB %06x back: %s RGB %06x bold: %s blink: %s ch %c",
             (isImage() ? "IMAGE" : ""),
-            getForeColor(), getBackColor(), isBold(), isBlink(), ch);
+            getForeColor(), getForeColorRGB(),
+            getBackColor(), getBackColorRGB(),
+            isBold(), isBlink(), ch);
     }
 
     /**

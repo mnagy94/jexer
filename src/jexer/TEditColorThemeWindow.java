@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ResourceBundle;
 
+import jexer.bits.BorderStyle;
 import jexer.bits.Color;
 import jexer.bits.ColorTheme;
 import jexer.bits.CellAttributes;
@@ -230,15 +231,23 @@ public class TEditColorThemeWindow extends TWindow {
             CellAttributes background = getWindow().getBackground();
             CellAttributes attr = new CellAttributes();
 
-            drawBox(0, 0, getWidth(), getHeight(), border, background, 1,
-                false);
+            BorderStyle borderStyle;
+            borderStyle = BorderStyle.getStyle(System.getProperty(
+                "jexer.TEditColorTheme.options.borderStyle", "single"));
+
+            drawBox(0, 0, getWidth(), getHeight(), border, background,
+                borderStyle, false);
 
             attr.setTo(getTheme().getColor("twindow.background.modal"));
             if (isActive()) {
                 attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
                 attr.setBold(getTheme().getColor("tlabel").isBold());
             }
-            putStringXY(1, 0, i18n.getString("foregroundLabel"), attr);
+            if (borderStyle.equals(BorderStyle.NONE)) {
+                putStringXY(0, 0, i18n.getString("foregroundLabel"), attr);
+            } else {
+                putStringXY(1, 0, i18n.getString("foregroundLabel"), attr);
+            }
 
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
@@ -518,15 +527,23 @@ public class TEditColorThemeWindow extends TWindow {
             CellAttributes background = getWindow().getBackground();
             CellAttributes attr = new CellAttributes();
 
-            drawBox(0, 0, getWidth(), getHeight(), border, background, 1,
-                false);
+            BorderStyle borderStyle;
+            borderStyle = BorderStyle.getStyle(System.getProperty(
+                "jexer.TEditColorTheme.options.borderStyle", "single"));
+
+            drawBox(0, 0, getWidth(), getHeight(), border, background,
+                borderStyle, false);
 
             attr.setTo(getTheme().getColor("twindow.background.modal"));
             if (isActive()) {
                 attr.setForeColor(getTheme().getColor("tlabel").getForeColor());
                 attr.setBold(getTheme().getColor("tlabel").isBold());
             }
-            putStringXY(1, 0, i18n.getString("backgroundLabel"), attr);
+            if (borderStyle.equals(BorderStyle.NONE)) {
+                putStringXY(0, 0, i18n.getString("backgroundLabel"), attr);
+            } else {
+                putStringXY(1, 0, i18n.getString("backgroundLabel"), attr);
+            }
 
             // Have to draw the colors manually because the int value matches
             // SGR, not CGA.
@@ -929,6 +946,79 @@ public class TEditColorThemeWindow extends TWindow {
         }
 
         editTheme.setColor(colorName, attr);
+    }
+
+    /**
+     * Set the border style for the window when it is the foreground window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TEditColorTheme.borderStyle.
+     */
+    @Override
+    public void setBorderStyleForeground(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TEditColorTheme.borderStyle",
+                "double");
+            super.setBorderStyleForeground(style);
+        } else {
+            super.setBorderStyleForeground(borderStyle);
+        }
+    }
+
+    /**
+     * Set the border style for the window when it is the modal window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TEditColorTheme.borderStyle.
+     */
+    @Override
+    public void setBorderStyleModal(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TEditColorTheme.borderStyle",
+                "double");
+            super.setBorderStyleModal(style);
+        } else {
+            super.setBorderStyleModal(borderStyle);
+        }
+    }
+
+    /**
+     * Set the border style for the window when it is an inactive/background
+     * window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TEditColorTheme.borderStyle.
+     */
+    @Override
+    public void setBorderStyleInactive(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TEditColorTheme.borderStyle",
+                "double");
+            super.setBorderStyleInactive(style);
+        } else {
+            super.setBorderStyleInactive(borderStyle);
+        }
+    }
+
+    /**
+     * Set the border style for the window when it is being dragged/resize.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TEditColorTheme.borderStyle.
+     */
+    @Override
+    public void setBorderStyleMoving(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TEditColorTheme.borderStyle",
+                "double");
+            super.setBorderStyleMoving(style);
+        } else {
+            super.setBorderStyleMoving(borderStyle);
+        }
     }
 
 }

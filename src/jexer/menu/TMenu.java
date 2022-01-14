@@ -34,6 +34,7 @@ import jexer.TApplication;
 import jexer.TKeypress;
 import jexer.TWidget;
 import jexer.TWindow;
+import jexer.bits.BorderStyle;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
@@ -200,6 +201,22 @@ public class TMenu extends TWindow {
             useIcons = true;
         }
 
+        // Set the border style from the system properties
+        setBorderStyleForeground(null);
+        setBorderStyleInactive(null);
+        setBorderStyleModal(null);
+        setBorderStyleMoving(null);
+
+        int opacity = 95;
+        try {
+            opacity = Integer.parseInt(System.getProperty(
+                "jexer.TMenu.opacity", "95"));
+            opacity = Math.max(opacity, 10);
+            opacity = Math.min(opacity, 100);
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+        setAlpha(opacity * 255 / 100);
     }
 
     // ------------------------------------------------------------------------
@@ -389,17 +406,13 @@ public class TMenu extends TWindow {
         }
 
         // Draw the box
-        char cTopLeft;
-        char cTopRight;
-        char cBottomLeft;
-        char cBottomRight;
-        char cHSide;
-
-        cTopLeft = GraphicsChars.ULCORNER;
-        cTopRight = GraphicsChars.URCORNER;
-        cBottomLeft = GraphicsChars.LLCORNER;
-        cBottomRight = GraphicsChars.LRCORNER;
-        cHSide = GraphicsChars.SINGLE_BAR;
+        BorderStyle borderStyle = getBorderStyle();
+        int cTopLeft     = borderStyle.getTopLeft();
+        int cTopRight    = borderStyle.getTopRight();
+        int cBottomLeft  = borderStyle.getBottomLeft();
+        int cBottomRight = borderStyle.getBottomRight();
+        int cHSide       = borderStyle.getHorizontal();
+        int cVSide       = borderStyle.getVertical();
 
         // Place the corner characters
         putCharXY(1, 0, cTopLeft, background);
@@ -412,7 +425,9 @@ public class TMenu extends TWindow {
         hLineXY(1 + 1, getHeight() - 1, getWidth() - 4, cHSide, background);
 
         // Draw a shadow
-        drawBoxShadow(0, 0, getWidth(), getHeight());
+        if (!getApplication().hasTranslucence()) {
+            drawBoxShadow(0, 0, getWidth(), getHeight());
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -917,6 +932,79 @@ public class TMenu extends TWindow {
      */
     protected void resetTabOrder() {
         super.resetTabOrder();
+    }
+
+    /**
+     * Set the border style for the window when it is the foreground window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TMenu.borderStyle.
+     */
+    @Override
+    public void setBorderStyleForeground(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TMenu.borderStyle",
+                "single");
+            super.setBorderStyleForeground(style);
+        } else {
+            super.setBorderStyleForeground(borderStyle);
+        }
+    }
+
+    /**
+     * Set the border style for the window when it is the modal window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TMenu.borderStyle.
+     */
+    @Override
+    public void setBorderStyleModal(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TMenu.borderStyle",
+                "single");
+            super.setBorderStyleModal(style);
+        } else {
+            super.setBorderStyleModal(borderStyle);
+        }
+    }
+
+    /**
+     * Set the border style for the window when it is an inactive/background
+     * window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TMenu.borderStyle.
+     */
+    @Override
+    public void setBorderStyleInactive(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TMenu.borderStyle",
+                "single");
+            super.setBorderStyleInactive(style);
+        } else {
+            super.setBorderStyleInactive(borderStyle);
+        }
+    }
+
+    /**
+     * Set the border style for the window when it is being dragged/resize.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TMenu.borderStyle.
+     */
+    @Override
+    public void setBorderStyleMoving(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TMenu.borderStyle",
+                "single");
+            super.setBorderStyleMoving(style);
+        } else {
+            super.setBorderStyleMoving(borderStyle);
+        }
     }
 
 }

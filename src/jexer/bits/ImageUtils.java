@@ -55,6 +55,8 @@ import org.w3c.dom.NodeList;
  *    - Scale an image and preserve aspect ratio.
  *
  *    - Open an animated image as an Animation.
+ *
+ *    - Compute the distance between two colors in RGB space.
  */
 public class ImageUtils {
 
@@ -443,6 +445,26 @@ public class ImageUtils {
             // SQUASH
             return null;
         }
+    }
+
+    /**
+     * Report the absolute distance in RGB space between two RGB colors.
+     *
+     * @param first the first color
+     * @param second the second color
+     * @return the distance
+     */
+    public static int rgbDistance(final int first, final int second) {
+        int red   = (first >>> 16) & 0xFF;
+        int green = (first >>>  8) & 0xFF;
+        int blue  =  first         & 0xFF;
+        int red2   = (second >>> 16) & 0xFF;
+        int green2 = (second >>>  8) & 0xFF;
+        int blue2  =  second         & 0xFF;
+        double diff = Math.pow(red2 - red, 2);
+        diff += Math.pow(green2 - green, 2);
+        diff += Math.pow(blue2 - blue, 2);
+        return (int) Math.sqrt(diff);
     }
 
 }

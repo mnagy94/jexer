@@ -739,6 +739,68 @@ public class ColorTheme {
     }
 
     /**
+     * Set the theme to femme.  I love pink.  You can too!  💗
+     */
+    public void setFemme() {
+        setDefaultTheme();
+        final int pink = 0xf7a8b8;
+        final int blue = 0x55cdfc;
+
+        for (String key: colors.keySet()) {
+            CellAttributes color = colors.get(key);
+
+            Color fg = color.getForeColor();
+            Color bg = color.getBackColor();
+            boolean bold = color.isBold();
+            if (bg.equals(Color.WHITE) && fg.equals(Color.BLACK)) {
+                color.setForeColor(Color.MAGENTA);
+                color.setBackColorRGB(pink);
+            } else if (bg.equals(Color.WHITE) && fg.equals(Color.WHITE)) {
+                color.setForeColor(Color.MAGENTA);
+                color.setBackColorRGB(pink);
+                color.setBold(true);
+            } else if (bg.equals(Color.WHITE) && fg.equals(Color.WHITE)) {
+                color.setForeColorRGB(blue);
+                color.setBackColorRGB(pink);
+                color.setBold(true);
+            } else if (bg.equals(Color.WHITE) && fg.equals(Color.GREEN)) {
+                color.setForeColor(Color.BLUE);
+                color.setBackColor(Color.BLACK);
+                color.setBold(true);
+            } else if (bg.equals(Color.WHITE) && fg.equals(Color.RED)) {
+                color.setForeColorRGB(blue);
+                color.setBackColorRGB(pink);
+                color.setBold(true);
+            } else if (bg.equals(Color.BLUE) && fg.equals(Color.CYAN)) {
+                color.setForeColor(Color.RED);
+                color.setBackColor(Color.MAGENTA);
+                color.setBold(true);
+            } else if (fg.equals(Color.BLUE) && bg.equals(Color.CYAN)) {
+                color.setForeColor(Color.MAGENTA);
+                color.setBackColor(Color.RED);
+                color.setBold(true);
+            } else if (bg.equals(Color.BLUE)) {
+                color.setBackColor(Color.BLACK);
+            } else if (bg.equals(Color.GREEN)) {
+                color.setBackColor(Color.CYAN);
+            } else if (fg.equals(Color.WHITE) && bold) {
+                color.setForeColor(Color.RED);
+            }
+
+            colors.put(key, color);
+        }
+
+        /*
+        CellAttributes color;
+        color = new CellAttributes();
+        color.setForeColor(Color.MAGENTA);
+        color.setBackColorRGB(pink);
+        color.setBold(false);
+        colors.put("twindow.background.modal", color);
+         */
+    }
+
+    /**
      * Make human-readable description of this Cell.
      *
      * @return displayable String

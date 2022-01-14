@@ -28,6 +28,7 @@
  */
 package jexer;
 
+import jexer.bits.BorderStyle;
 import jexer.bits.CellAttributes;
 import jexer.bits.StringUtils;
 
@@ -133,11 +134,19 @@ public class TRadioGroup extends TWidget {
             radioGroupColor = getTheme().getColor("tradiogroup.inactive");
         }
 
+        BorderStyle borderStyle;
+        borderStyle = BorderStyle.getStyle(System.getProperty(
+            "jexer.TRadioGroup.borderStyle", "singleVdoubleH"));
+
         drawBox(0, 0, getWidth(), getHeight(), radioGroupColor, radioGroupColor,
-            3, false);
+            borderStyle, false);
 
         hLineXY(1, 0, StringUtils.width(label) + 2, ' ', radioGroupColor);
-        putStringXY(2, 0, label, radioGroupColor);
+        if (borderStyle.equals(BorderStyle.NONE)) {
+            putStringXY(1, 0, label, radioGroupColor);
+        } else {
+            putStringXY(2, 0, label, radioGroupColor);
+        }
     }
 
     // ------------------------------------------------------------------------

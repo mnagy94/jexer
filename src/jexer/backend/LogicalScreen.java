@@ -28,13 +28,16 @@
  */
 package jexer.backend;
 
+import java.awt.AlphaComposite;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-import jexer.backend.GlyphMaker;
+import jexer.bits.BorderStyle;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Clipboard;
 import jexer.bits.GraphicsChars;
+import jexer.bits.ImageUtils;
 import jexer.bits.StringUtils;
 
 /**
@@ -142,12 +145,22 @@ public class LogicalScreen implements Screen {
      * Public constructor.  Sets everything to not-bold, white-on-black.
      */
     protected LogicalScreen() {
-        offsetX  = 0;
-        offsetY  = 0;
-        width    = 80;
-        height   = 24;
-        logical  = null;
-        physical = null;
+        this(80, 24);
+    }
+
+    /**
+     * Public constructor.  Sets everything to not-bold, white-on-black.
+     *
+     * @param width width in cells
+     * @param height height in cells
+     */
+    protected LogicalScreen(final int width, final int height) {
+        offsetX     = 0;
+        offsetY     = 0;
+        this.width  = 80;
+        this.height = 24;
+        logical     = null;
+        physical    = null;
         reallocate(width, height);
     }
 
@@ -748,7 +761,8 @@ public class LogicalScreen implements Screen {
         final int right, final int bottom,
         final CellAttributes border, final CellAttributes background) {
 
-        drawBox(left, top, right, bottom, border, background, 1, false);
+        drawBox(left, top, right, bottom, border, background,
+            BorderStyle.DEFAULT, false);
     }
 
     /**
@@ -760,57 +774,23 @@ public class LogicalScreen implements Screen {
      * @param bottom bottom row of the box
      * @param border attributes to use for the border
      * @param background attributes to use for the background
-     * @param borderType if 1, draw a single-line border; if 2, draw a
-     * double-line border; if 3, draw double-line top/bottom edges and
-     * single-line left/right edges (like Qmodem)
+     * @param borderStyle style of border
      * @param shadow if true, draw a "shadow" on the box
      */
-    public final void drawBox(final int left, final int top,
+    public void drawBox(final int left, final int top,
         final int right, final int bottom,
         final CellAttributes border, final CellAttributes background,
-        final int borderType, final boolean shadow) {
+        final BorderStyle borderStyle, final boolean shadow) {
 
         int boxWidth = right - left;
         int boxHeight = bottom - top;
 
-        char cTopLeft;
-        char cTopRight;
-        char cBottomLeft;
-        char cBottomRight;
-        char cHSide;
-        char cVSide;
-
-        switch (borderType) {
-        case 1:
-            cTopLeft = GraphicsChars.ULCORNER;
-            cTopRight = GraphicsChars.URCORNER;
-            cBottomLeft = GraphicsChars.LLCORNER;
-            cBottomRight = GraphicsChars.LRCORNER;
-            cHSide = GraphicsChars.SINGLE_BAR;
-            cVSide = GraphicsChars.WINDOW_SIDE;
-            break;
-
-        case 2:
-            cTopLeft = GraphicsChars.WINDOW_LEFT_TOP_DOUBLE;
-            cTopRight = GraphicsChars.WINDOW_RIGHT_TOP_DOUBLE;
-            cBottomLeft = GraphicsChars.WINDOW_LEFT_BOTTOM_DOUBLE;
-            cBottomRight = GraphicsChars.WINDOW_RIGHT_BOTTOM_DOUBLE;
-            cHSide = GraphicsChars.DOUBLE_BAR;
-            cVSide = GraphicsChars.WINDOW_SIDE_DOUBLE;
-            break;
-
-        case 3:
-            cTopLeft = GraphicsChars.WINDOW_LEFT_TOP;
-            cTopRight = GraphicsChars.WINDOW_RIGHT_TOP;
-            cBottomLeft = GraphicsChars.WINDOW_LEFT_BOTTOM;
-            cBottomRight = GraphicsChars.WINDOW_RIGHT_BOTTOM;
-            cHSide = GraphicsChars.WINDOW_TOP;
-            cVSide = GraphicsChars.WINDOW_SIDE;
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid border type: "
-                + borderType);
-        }
+        int cTopLeft     = borderStyle.getTopLeft();
+        int cTopRight    = borderStyle.getTopRight();
+        int cBottomLeft  = borderStyle.getBottomLeft();
+        int cBottomRight = borderStyle.getBottomRight();
+        int cHSide       = borderStyle.getHorizontal();
+        int cVSide       = borderStyle.getVertical();
 
         // Place the corner characters
         putCharXY(left, top, cTopLeft, border);
@@ -1289,8 +1269,7 @@ public class LogicalScreen implements Screen {
     public Screen snapshot() {
         LogicalScreen other = null;
         synchronized (this) {
-            other = new LogicalScreen();
-            other.setDimensions(width, height);
+            other = new LogicalScreen(width, height);
             for (int row = 0; row < height; row++) {
                 for (int col = 0; col < width; col++) {
                     other.logical[col][row] = new Cell(logical[col][row]);
@@ -1298,6 +1277,83 @@ public class LogicalScreen implements Screen {
             }
         }
         return other;
+    }
+
+    /**
+     * Obtain a snapshot copy of a rectangular portion of the screen.
+     *
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @return a copy of the screen's data from this rectangle.  Any cells
+     * outside the actual screen dimensions will be blank.
+     */
+    public Screen snapshot(final int x, final int y, final int width,
+        final int height) {
+
+        LogicalScreen other = null;
+        synchronized (this) {
+            other = new LogicalScreen(width, height);
+            for (int row = y; (row < y + height) && (row < this.height); row++) {
+                if (row < 0) {
+                    continue;
+                }
+                for (int col = x; (col < x + width) && (col < this.width); col++) {
+                    if (col < 0) {
+                        continue;
+                    }
+                    other.logical[col - x][row - y] = new Cell(logical[col][row]);
+                }
+            }
+        }
+        return other;
+    }
+
+    /**
+     * Copy all of screen's data to this screen.
+     *
+     * @param other the other screen
+     */
+    public void copyScreen(final Screen other) {
+        synchronized (this) {
+            if ((other.getWidth() != width) || (other.getHeight() != height)) {
+                setDimensions(other.getWidth(), other.getHeight());
+            }
+            for (int row = 0; row < height; row++) {
+                for (int col = 0; col < width; col++) {
+                    logical[col][row] = new Cell(other.getCharXY(col, row));
+                }
+            }
+        }
+    }
+
+    /**
+     * Copy a rectangular portion of another screen to this one.  Any cells
+     * outside this screen's dimensions will be ignored.
+     *
+     * @param other the other screen
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     */
+    public void copyScreen(final Screen other, final int x, final int y,
+        final int width, final int height) {
+
+        synchronized (this) {
+            for (int row = y; (row < y + height) && (row < this.height); row++) {
+                if (row < 0) {
+                    continue;
+                }
+                for (int col = x; (col < x + width) && (col < this.width); col++) {
+                    if (col < 0) {
+                        continue;
+                    }
+                    logical[col][row] = new Cell(other.getCharXY(col - x, row - y));
+                }
+            }
+        }
     }
 
     /**
@@ -1317,5 +1373,314 @@ public class LogicalScreen implements Screen {
     public final Backend getBackend() {
         return backend;
     }
+
+    /**
+     * Alpha-blend a rectangle with a specified color and alpha onto this
+     * screen.  Any cells outside this screen's dimensions will be ignored.
+     *
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @param color the RGB color to blend
+     * @param alpha the alpha transparency level (0 - 255) to use for cells
+     * from the other screen
+     */
+    public void blendRectangle(final int x, final int y,
+        final int width, final int height, final int color, final int alpha) {
+
+        // We just create a new blank screen and blend it.
+        LogicalScreen rectangle = new LogicalScreen(width, height);
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                rectangle.logical[col][row].setBackColorRGB(color);
+            }
+        }
+
+        blendScreen(rectangle, x, y, width, height, alpha, false);
+    }
+
+    /**
+     * Alpha-blend a rectangular portion of another screen onto this one.
+     * Any cells outside this screen's dimensions will be ignored.
+     *
+     * @param otherScreen the other screen
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @param alpha the alpha transparency level (0 - 255) to use for cells
+     * from the other screen
+     * @param filterHatch if true, prevent hatch-like characters from
+     * showing through
+     */
+    public void blendScreen(final Screen otherScreen, final int x, final int y,
+        final int width, final int height, final int alpha,
+        final boolean filterHatch) {
+
+        if (alpha == 255) {
+            // This is a raw copy.
+            copyScreen(otherScreen, x, y, width, height);
+            return;
+        }
+
+        /*
+         * We need to blend the background colors of other's cells over the
+         * cells of this screen (foreground and background), honoring our
+         * alpha.  We will create a bitmap of one pixel per cell, blend that
+         * via AWT, and then set the cell RGBs and char's.
+         */
+        synchronized (this) {
+
+            BufferedImage thisForeground = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+            BufferedImage thisBackground = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+            BufferedImage overBackground = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+            BufferedImage thisOldBackground = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+
+            final int OPAQUE = 0xFF000000;
+
+            for (int row = y; (row < y + height) && (row < this.height); row++) {
+                if (row < 0) {
+                    continue;
+                }
+                for (int col = x; (col < x + width) && (col < this.width); col++) {
+                    if (col < 0) {
+                        continue;
+                    }
+
+                    Cell cell = logical[col][row];
+                    int thisBg = cell.getBackColorRGB();
+                    if (thisBg < 0) {
+                        if (backend != null) {
+                            thisBg = backend.attrToBackgroundColor(cell).getRGB();
+                        } else {
+                            thisBg = SwingTerminal.attrToBackgroundColor(cell).getRGB();
+                        }
+                    }
+                    int thisFg = cell.getForeColorRGB();
+                    if (thisFg < 0) {
+                        if (backend != null) {
+                            thisFg = backend.attrToForegroundColor(cell).getRGB();
+                        } else {
+                            thisFg = SwingTerminal.attrToForegroundColor(cell).getRGB();
+                        }
+                    }
+
+                    Cell over = otherScreen.getCharXY(col - x, row - y);
+                    int overBg = over.getBackColorRGB();
+                    if (overBg < 0) {
+                        if (backend != null) {
+                            overBg = backend.attrToBackgroundColor(over).getRGB();
+                        } else {
+                            overBg = SwingTerminal.attrToBackgroundColor(over).getRGB();
+                        }
+                    }
+                    thisFg |= OPAQUE;
+                    thisBg |= OPAQUE;
+                    overBg |= OPAQUE;
+
+                    thisForeground.setRGB(col - x, row - y, thisFg);
+                    thisBackground.setRGB(col - x, row - y, thisBg);
+                    thisOldBackground.setRGB(col - x, row - y, thisBg);
+                    overBackground.setRGB(col - x, row - y, overBg);
+                }
+            }
+
+            // The three bitmaps are ready.  We have skipped over
+            // cells/pixels that cannot overlap.  Now blit overBackground
+            // over both thisForeground and thisBackground, and then assign
+            // cell colors and cell chars/images.
+            float fAlpha = (float) (alpha / 255.0);
+            Graphics2D g2d = thisForeground.createGraphics();
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                    fAlpha));
+            g2d.drawImage(overBackground, 0, 0, null);
+            g2d.dispose();
+
+            g2d = thisBackground.createGraphics();
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                    fAlpha));
+            g2d.drawImage(overBackground, 0, 0, null);
+            g2d.dispose();
+
+            for (int row = y; (row < y + height) && (row < this.height); row++) {
+                if (row < 0) {
+                    continue;
+                }
+                for (int col = x; (col < x + width) && (col < this.width); col++) {
+                    if (col < 0) {
+                        continue;
+                    }
+                    Cell thisCell = logical[col][row];
+                    Cell overCell = otherScreen.getCharXY(col - x, row - y);
+                    int thisFg = thisForeground.getRGB(col - x, row - y);
+                    int thisBg = thisBackground.getRGB(col - x, row - y);
+                    int thisOldBg = thisOldBackground.getRGB(col - x, row - y);
+                    int overBg = overBackground.getRGB(col - x, row - y);
+
+                    thisCell.setBackColorRGB(thisBg | OPAQUE);
+                    thisCell.setForeColorRGB(thisFg | OPAQUE);
+
+                    if (!overCell.isImage() && (overCell.getChar() == ' ')) {
+                        // The overlaying cell is invisible.
+
+                        if (thisCell.isImage()) {
+                            // Our image will show through.  We need to blend
+                            // otherBg at alpha < 255 over this image.
+                            Cell thisCopy = new Cell(thisCell);
+                            thisCopy.flattenImage(false, backend);
+                            BufferedImage image = thisCopy.getImage();
+                            BufferedImage newImage;
+                            newImage = new BufferedImage(image.getWidth(),
+                                image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                            g2d = newImage.createGraphics();
+                            g2d.drawImage(image, 0, 0, null);
+
+                            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                    fAlpha));
+                            g2d.setColor(new java.awt.Color(overBg));
+                            g2d.fillRect(0, 0, image.getWidth(),
+                                image.getHeight());
+                            g2d.dispose();
+                            thisCell.setImage(newImage);
+                            thisCell.setOpaqueImage();
+                        } else {
+                            // Our character will show through.  If the
+                            // contrast between our foreground and background
+                            // is small, then drop the character.
+                            if (ImageUtils.rgbDistance(thisFg, thisBg) < 5) {
+                                thisCell.setChar(' ');
+                            }
+
+                            if (filterHatch) {
+                                // Special case: the hatch characters are not
+                                // allowed to show through.
+                                int ch = thisCell.getChar();
+                                if ((ch == 0x2591)
+                                    || (ch == 0x2592)
+                                    || (ch == 0x2593)
+                                ) {
+                                    thisCell.setChar(' ');
+                                }
+                            }
+                            if (cursorVisible &&
+                                (col == cursorX) &&
+                                (row == cursorY)
+                            ) {
+                                // Don't surface the character behind the
+                                // cursor.
+                                thisCell.setChar(' ');
+                            }
+                        }
+                        continue;
+                    }
+
+                    // The overlaying cell has a character, use it.
+                    thisCell.setChar(overCell.getChar());
+                    int fg = overCell.getForeColorRGB();
+                    if (fg < 0) {
+                        thisCell.setForeColor(overCell.getForeColor());
+                    } else {
+                        thisCell.setForeColorRGB(fg);
+                    }
+                    thisCell.setBold(overCell.isBold());
+                    thisCell.setBlink(overCell.isBlink());
+                    thisCell.setUnderline(overCell.isUnderline());
+                    thisCell.setProtect(overCell.isProtect());
+
+                    if (!overCell.isImage()) {
+                        // If we had an image, destroy it.  Text ALWAYS
+                        // overwrites images.
+                        thisCell.setImage(null);
+                        continue;
+                    }
+
+                    if (overCell.isImage() && !overCell.isTransparentImage()) {
+                        // The image from the new cell will fully cover this
+                        // cell's image.
+
+                        // We need to blit overCell's image over thisOldBg at
+                        // alpha < 255.
+                        Cell overCopy = new Cell(overCell);
+                        overCopy.flattenImage(false, backend);
+                        BufferedImage image = overCopy.getImage();
+                        BufferedImage newImage;
+                        newImage = new BufferedImage(image.getWidth(),
+                            image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                        g2d = newImage.createGraphics();
+                        g2d.setColor(new java.awt.Color(thisOldBg));
+                        g2d.fillRect(0, 0, image.getWidth(), image.getHeight());
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                fAlpha));
+                        g2d.drawImage(image, 0, 0, null);
+                        g2d.dispose();
+                        thisCell.setImage(newImage);
+                        thisCell.setOpaqueImage();
+                        continue;
+                    }
+
+                    if (thisCell.isImage()
+                        && overCell.isImage()
+                        && overCell.isTransparentImage()
+                    ) {
+                        // We need to blit overCell's image over a rectangle
+                        // of otherBg at alpha = 255, and then blit that over
+                        // thisCell's image at alpha < 255.
+
+                        Cell overCopy = new Cell(overCell);
+                        overCopy.flattenImage(false, backend);
+                        BufferedImage image = overCopy.getImage();
+                        BufferedImage newImage;
+                        newImage = new BufferedImage(image.getWidth(),
+                            image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                        g2d = newImage.createGraphics();
+                        g2d.drawImage(thisCell.getImage(), 0, 0, null);
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                fAlpha));
+                        g2d.drawImage(image, 0, 0, null);
+                        g2d.dispose();
+                        thisCell.setImage(newImage);
+                        thisCell.setOpaqueImage();
+                        continue;
+                    }
+
+                    if (!thisCell.isImage()
+                        && overCell.isImage()
+                        && overCell.isTransparentImage()
+                    ) {
+                        // We need to blit overCell's image over a rectangle
+                        // of otherBg at alpha = 255, and blit that over
+                        // thisOldBg at alpha < 255.
+
+                        Cell overCopy = new Cell(overCell);
+                        overCopy.flattenImage(false, backend);
+                        BufferedImage image = overCopy.getImage();
+                        BufferedImage newImage;
+                        newImage = new BufferedImage(image.getWidth(),
+                            image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+                        g2d = newImage.createGraphics();
+                        g2d.setColor(new java.awt.Color(thisOldBg));
+                        g2d.fillRect(0, 0, image.getWidth(), image.getHeight());
+                        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                                fAlpha));
+                        g2d.drawImage(image, 0, 0, null);
+                        g2d.dispose();
+                        thisCell.setImage(newImage);
+                        thisCell.setOpaqueImage();
+                        continue;
+                    }
+
+                    // There should be nothing to do now.  We have set the
+                    // character, or set the image, and blended backgrounds
+                    // for each case.
+                }
+            }
+        }
+    }
+
 
 }

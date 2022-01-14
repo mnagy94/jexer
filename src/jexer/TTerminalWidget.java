@@ -709,13 +709,11 @@ public class TTerminalWidget extends TScrollableWidget
                 if (reverse) {
                     if (ch.getForeColorRGB() < 0) {
                         newCell.setBackColor(ch.getForeColor());
-                        newCell.setBackColorRGB(-1);
                     } else {
                         newCell.setBackColorRGB(ch.getForeColorRGB());
                     }
                     if (ch.getBackColorRGB() < 0) {
                         newCell.setForeColor(ch.getBackColor());
-                        newCell.setForeColorRGB(-1);
                     } else {
                         newCell.setForeColorRGB(ch.getBackColorRGB());
                     }
@@ -1299,6 +1297,7 @@ public class TTerminalWidget extends TScrollableWidget
         } else if (getScreen() instanceof ECMA48Terminal) {
             ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
 
+            /* Always render double-width/height with images.
             if (!terminal.hasSixel()
                 && !terminal.hasJexerImages()
                 && !terminal.hasIterm2Images()
@@ -1309,13 +1308,17 @@ public class TTerminalWidget extends TScrollableWidget
                 putCharXY(x + 1, y, ' ', cell);
                 return;
             }
+             */
             cursorBlinkVisible = blinkState;
+
+        /* Always render double-width/height with images.
         } else {
             // We don't know how to dray glyphs to this screen, draw them as
             // text and bail out.
             putCharXY(x, y, cell);
             putCharXY(x + 1, y, ' ', cell);
             return;
+        */
         }
 
         if ((textWidth != lastTextWidth) || (textHeight != lastTextHeight)) {

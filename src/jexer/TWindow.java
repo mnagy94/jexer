@@ -32,7 +32,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jexer.backend.Screen;
+import jexer.bits.BorderStyle;
 import jexer.bits.CellAttributes;
+import jexer.bits.ColorTheme;
 import jexer.bits.GraphicsChars;
 import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
@@ -186,6 +188,13 @@ public class TWindow extends TWidget {
     boolean hidden = false;
 
     /**
+     * Widgets on this window can pull colors from this ColorTheme.  Note
+     * package private access: if null, TWidget.getTheme() will pull from
+     * TApplication.
+     */
+    ColorTheme theme;
+
+    /**
      * A window may have a status bar associated with it.  TApplication will
      * draw this status bar last, and will also route events to it first
      * before the window.
@@ -217,6 +226,31 @@ public class TWindow extends TWidget {
      * window.
      */
     protected Tackboard overlay = null;
+
+    /**
+     * The border style for an active window.
+     */
+    protected BorderStyle borderStyleActive = BorderStyle.DOUBLE;
+
+    /**
+     * The border style for an active modal window.
+     */
+    protected BorderStyle borderStyleActiveModal = BorderStyle.DOUBLE;
+
+    /**
+     * The border style for an inactive window.
+     */
+    protected BorderStyle borderStyleInactive = BorderStyle.SINGLE;
+
+    /**
+     * The border style for a window being dragged/resized.
+     */
+    protected BorderStyle borderStyleMoving = BorderStyle.SINGLE;
+
+    /**
+     * The alpha blending value.
+     */
+    private int alpha = 255;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -307,6 +341,23 @@ public class TWindow extends TWidget {
 
         // Add me to the application
         application.addWindowToApplication(this);
+
+        // Set default borders
+        setBorderStyleForeground(null);
+        setBorderStyleInactive(null);
+        setBorderStyleModal(null);
+        setBorderStyleMoving(null);
+
+        int opacity = 95;
+        try {
+            opacity = Integer.parseInt(System.getProperty(
+                "jexer.TWindow.opacity", "95"));
+            opacity = Math.max(opacity, 10);
+            opacity = Math.min(opacity, 100);
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+        setAlpha(opacity * 255 / 100);
     }
 
     // ------------------------------------------------------------------------
@@ -359,6 +410,7 @@ public class TWindow extends TWidget {
      */
     protected boolean mouseOnResize() {
         if (((flags & RESIZABLE) != 0)
+            && (getBorderStyle() != BorderStyle.NONE)
             && !isModal()
             && (mouse != null)
             && (mouse.getAbsoluteY() == getY() + getHeight() - 1)
@@ -392,6 +444,12 @@ public class TWindow extends TWidget {
             if (getChildren().contains(w)) {
                 getChildren().remove(w);
             }
+        }
+        if (underlay != null) {
+            underlay.clear();
+        }
+        if (overlay != null) {
+            overlay.clear();
         }
     }
 
@@ -662,9 +720,12 @@ public class TWindow extends TWidget {
             }
 
             /*
-             * Only permit keyboard resizing if the window was RESIZABLE.
+             * Only permit keyboard resizing if the window was RESIZABLE and
+             * there is a window border.
              */
-            if ((flags & RESIZABLE) != 0) {
+            if (((flags & RESIZABLE) != 0)
+                && (getBorderStyle() != BorderStyle.NONE)
+            ) {
 
                 if (keypress.equals(kbShiftLeft)) {
                     if ((getWidth() > minimumWindowWidth)
@@ -938,9 +999,9 @@ public class TWindow extends TWidget {
         // Draw the box and background first.
         CellAttributes border = getBorder();
         CellAttributes background = getBackground();
-        int borderType = getBorderType();
-        drawBox(0, 0, getWidth(), getHeight(), border, background, borderType,
-            true);
+        BorderStyle borderStyle = getBorderStyle();
+        drawBox(0, 0, getWidth(), getHeight(), border, background, borderStyle,
+            !getApplication().hasTranslucence());
 
         if ((title != null) && (title.length() > 0)) {
             // Draw the title
@@ -952,11 +1013,17 @@ public class TWindow extends TWidget {
         }
 
         if (isActive()) {
+            int lBracket = '[';
+            int rBracket = ']';
+            if (borderStyle.equals(BorderStyle.SINGLE_ROUND)) {
+                lBracket = '(';
+                rBracket = ')';
+            }
 
             // Draw the close button
             if ((flags & NOCLOSEBOX) == 0) {
-                putCharXY(2, 0, '[', border);
-                putCharXY(4, 0, ']', border);
+                putCharXY(2, 0, lBracket, border);
+                putCharXY(4, 0, rBracket, border);
                 if (mouseOnClose() && mouse.isMouse1()) {
                     putCharXY(3, 0, GraphicsChars.CP437[0x0F],
                         getBorderControls());
@@ -969,8 +1036,8 @@ public class TWindow extends TWidget {
             // Draw the maximize button
             if (!isModal() && ((flags & NOZOOMBOX) == 0)) {
 
-                putCharXY(getWidth() - 5, 0, '[', border);
-                putCharXY(getWidth() - 3, 0, ']', border);
+                putCharXY(getWidth() - 5, 0, lBracket, border);
+                putCharXY(getWidth() - 3, 0, rBracket, border);
                 if (mouseOnMaximize() && mouse.isMouse1()) {
                     putCharXY(getWidth() - 4, 0, GraphicsChars.CP437[0x0F],
                         getBorderControls());
@@ -986,12 +1053,15 @@ public class TWindow extends TWidget {
             }
 
             // Draw the resize corner
-            if (!isModal() && ((flags & RESIZABLE) != 0)) {
+            if (!isModal()
+                && ((flags & RESIZABLE) != 0)
+                && (getBorderStyle() != BorderStyle.NONE)
+            ) {
                 if ((flags & RESIZABLE) != 0) {
                     putCharXY(getWidth() - 2, getHeight() - 1,
-                        GraphicsChars.SINGLE_BAR, getBorderControls());
+                        getBorderStyle().getHorizontal(), getBorderControls());
                     putCharXY(getWidth() - 1, getHeight() - 1,
-                        GraphicsChars.LRCORNER, getBorderControls());
+                        getBorderStyle().getBottomRight(), getBorderControls());
                 }
             }
         }
@@ -1428,7 +1498,9 @@ public class TWindow extends TWidget {
      * @return true if this window is resizable
      */
     public final boolean isResizable() {
-        if ((flags & RESIZABLE) == 0) {
+        if (((flags & RESIZABLE) == 0)
+            || (getBorderStyle() == BorderStyle.NONE)
+        ) {
             return false;
         }
         return true;
@@ -1525,29 +1597,32 @@ public class TWindow extends TWidget {
     }
 
     /**
-     * Retrieve the border line type.
+     * Retrieve the border line style.
      *
-     * @return the border line type
+     * @return the border line style
      */
-    private int getBorderType() {
+    public BorderStyle getBorderStyle() {
         if (!isModal()
             && (inWindowMove || inWindowResize || inKeyboardResize)
         ) {
             assert (isActive());
-            return 1;
+            return borderStyleMoving;
         } else if (isModal() && inWindowMove) {
             assert (isActive());
-            return 1;
+            // Modals cannot be resized, hence the separate check.
+            return borderStyleMoving;
         } else if (isModal()) {
             if (isActive()) {
-                return 2;
+                return borderStyleActiveModal;
             } else {
-                return 1;
+                // One can stack modals, so an inactive but modal window is
+                // possible.
+                return borderStyleInactive;
             }
         } else if (isActive()) {
-            return 2;
+            return borderStyleActive;
         } else {
-            return 1;
+            return borderStyleInactive;
         }
     }
 
@@ -1629,6 +1704,160 @@ public class TWindow extends TWidget {
         if (overlay != null) {
             overlay.setDirty();
         }
+    }
+
+    /**
+     * Set the border style for the window when it is the foreground window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TWindow.borderStyleForeground.
+     */
+    public void setBorderStyleForeground(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TWindow.borderStyleForeground",
+                "double");
+            borderStyleActive = BorderStyle.getStyle(style);
+        } else if (borderStyle.equals("default")) {
+            borderStyleActive = BorderStyle.DOUBLE;
+        } else {
+            borderStyleActive = BorderStyle.getStyle(borderStyle);
+        }
+    }
+
+    /**
+     * Get the border style for the window when it is the foreground window.
+     *
+     * @return the border style
+     */
+    public BorderStyle getBorderStyleForeground() {
+        return borderStyleActive;
+    }
+
+    /**
+     * Set the border style for the window when it is the modal window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TWindow.borderStyleModal.
+     */
+    public void setBorderStyleModal(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TWindow.borderStyleModal",
+                "double");
+            borderStyleActiveModal = BorderStyle.getStyle(style);
+        } else if (borderStyle.equals("default")) {
+            borderStyleActiveModal = BorderStyle.DOUBLE;
+        } else {
+            borderStyleActiveModal = BorderStyle.getStyle(borderStyle);
+        }
+    }
+
+    /**
+     * Get the border style for the window when it is the modal window.
+     *
+     * @return the border style
+     */
+    public BorderStyle getBorderStyleModal() {
+        return borderStyleActiveModal;
+    }
+
+    /**
+     * Set the border style for the window when it is an inactive/background
+     * window.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TWindow.borderStyleInactive.
+     */
+    public void setBorderStyleInactive(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TWindow.borderStyleInactive",
+                "single");
+            borderStyleInactive = BorderStyle.getStyle(style);
+        } else if (borderStyle.equals("default")) {
+            borderStyleInactive = BorderStyle.SINGLE;
+        } else {
+            borderStyleInactive = BorderStyle.getStyle(borderStyle);
+        }
+    }
+
+    /**
+     * Get the border style for the window when it is an inactive/background
+     * window.
+     *
+     * @return the border style
+     */
+    public BorderStyle getBorderStyleInactive() {
+        return borderStyleInactive;
+    }
+
+    /**
+     * Set the border style for the window when it is being dragged/resize.
+     *
+     * @param borderStyle the border style string, one of: "default", "none",
+     * "single", "double", "singleVdoubleH", "singleHdoubleV", or "round"; or
+     * null to use the value from jexer.TWindow.borderStyleMoving.
+     */
+    public void setBorderStyleMoving(final String borderStyle) {
+        if (borderStyle == null) {
+            String style = System.getProperty("jexer.TWindow.borderStyleMoving",
+                "single");
+            borderStyleMoving = BorderStyle.getStyle(style);
+        } else if (borderStyle.equals("default")) {
+            borderStyleMoving = BorderStyle.SINGLE;
+        } else {
+            borderStyleMoving = BorderStyle.getStyle(borderStyle);
+        }
+    }
+
+    /**
+     * Get the border style for the window when it is being dragged/resize.
+     *
+     * @return the border style
+     */
+    public BorderStyle getBorderStyleMoving() {
+        return borderStyleMoving;
+    }
+
+    /**
+     * Get the custom color theme for this window.
+     *
+     * @return the color theme, or null if the window does not have a custom
+     * color theme
+     */
+    public final ColorTheme getWindowTheme() {
+        return theme;
+    }
+
+    /**
+     * Set a custom color theme for this window.
+     *
+     * @param theme the custom theme, or null to use the application-level
+     * color theme
+     */
+    public final void setWindowTheme(final ColorTheme theme) {
+        this.theme = theme;
+    }
+
+    /**
+     * Set the alpha level for this window.
+     *
+     * @param alpha a value between 0 (fully transparent) and 255 (fully
+     * opaque)
+     */
+    public void setAlpha(final int alpha) {
+        assert ((alpha >= 0) && (alpha <= 255));
+        this.alpha = alpha;
+    }
+
+    /**
+     * Get the alpha level for this window.
+     *
+     * @return a value between 0 (fully transparent) and 255 (fully opaque)
+     */
+    public int getAlpha() {
+        return alpha;
     }
 
 }

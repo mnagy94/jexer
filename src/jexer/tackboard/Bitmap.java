@@ -164,6 +164,19 @@ public class Bitmap extends TackboardItem {
         return renderedImage;
     }
 
+    /**
+     * Remove this item from its board.  Subclasses can use this for cleanup
+     * also.
+     */
+    @Override
+    public void remove() {
+        super.remove();
+
+        if (animation != null) {
+            animation.stop();
+        }
+    }
+
     // ------------------------------------------------------------------------
     // Bitmap -----------------------------------------------------------------
     // ------------------------------------------------------------------------

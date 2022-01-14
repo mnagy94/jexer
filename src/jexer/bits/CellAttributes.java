@@ -125,7 +125,7 @@ public class CellAttributes {
      * @return bold value
      */
     public final boolean isBold() {
-        return ((flags & BOLD) == 0 ? false : true);
+        return ((flags & BOLD) != 0);
     }
 
     /**
@@ -268,7 +268,8 @@ public class CellAttributes {
     }
 
     /**
-     * Getter for foreColor RGB.
+     * Getter for foreColor RGB.  Note that this is always a RGB value,
+     * i.e. alpha is 0.
      *
      * @return foreColor value.  Negative means unset.
      */
@@ -282,11 +283,13 @@ public class CellAttributes {
      * @param foreColorRGB new foreColor RGB value
      */
     public final void setForeColorRGB(final int foreColorRGB) {
-        this.foreColorRGB = foreColorRGB;
+        this.foreColorRGB = foreColorRGB & 0xFFFFFF;
+        this.foreColor = Color.WHITE;
     }
 
     /**
-     * Getter for backColor RGB.
+     * Getter for backColor RGB.  Note that this is always a RGB value,
+     * i.e. alpha is 0.
      *
      * @return backColor value.  Negative means unset.
      */
@@ -300,7 +303,8 @@ public class CellAttributes {
      * @param backColorRGB new backColor RGB value
      */
     public final void setBackColorRGB(final int backColorRGB) {
-        this.backColorRGB = backColorRGB;
+        this.backColorRGB = backColorRGB & 0xFFFFFF;
+        this.backColor = Color.BLACK;
     }
 
     /**

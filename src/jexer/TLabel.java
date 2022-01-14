@@ -203,8 +203,13 @@ public class TLabel extends TWidget {
         mnemonicColor.setTo(getTheme().getColor("tlabel.mnemonic"));
         if (useWindowBackground) {
             CellAttributes background = getWindow().getBackground();
-            color.setBackColor(background.getBackColor());
-            mnemonicColor.setBackColor(background.getBackColor());
+            if (background.getBackColorRGB() == -1) {
+                color.setBackColor(background.getBackColor());
+                mnemonicColor.setBackColor(background.getBackColor());
+            } else {
+                color.setBackColorRGB(background.getBackColorRGB());
+                mnemonicColor.setBackColorRGB(background.getBackColorRGB());
+            }
         }
         putStringXY(0, 0, mnemonic.getRawLabel(), color);
         if (mnemonic.getScreenShortcutIdx() >= 0) {

@@ -277,6 +277,7 @@ public class DemoPixelsWindow extends TWindow {
      */
     @Override
     public void onClose() {
+        super.onClose();
         getApplication().removeTimer(timer3);
     }
 

@@ -119,7 +119,7 @@ public class SwingTerminal extends LogicalScreen
      * A value of 25 or more feels sluggish for input, but is sustainable for
      * the garbage collector.
      */
-    private static final long SYNC_MIN_MILLIS_SUSTAIN = 20;
+    private static final long SYNC_MIN_MILLIS_SUSTAIN = 10;
 
     /**
      * The number of frames that can be emitted quickly (at
@@ -1611,7 +1611,7 @@ public class SwingTerminal extends LogicalScreen
                 xPixel -= textWidth;
                 break;
             }
-            gr.setColor(attrToForegroundColor(lCell));
+            gr.setColor((Color.WHITE).darker());
             switch (cursorStyle) {
             default:
                 // Fall through...

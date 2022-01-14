@@ -118,6 +118,17 @@ public class TImageWindow extends TScrollableWindow {
 
         setTitle(file.getName());
 
+        int opacity = 100;
+        try {
+            opacity = Integer.parseInt(System.getProperty(
+                "jexer.TImage.opacity", "100"));
+            opacity = Math.max(opacity, 10);
+            opacity = Math.min(opacity, 100);
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+        setAlpha(opacity * 255 / 100);
+
         setupAfterImage();
     }
 

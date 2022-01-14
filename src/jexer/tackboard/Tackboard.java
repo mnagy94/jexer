@@ -279,8 +279,10 @@ public class Tackboard {
                             backImage = new BufferedImage(cellWidth,
                                 cellHeight, BufferedImage.TYPE_INT_ARGB);
                             java.awt.Graphics gr = backImage.getGraphics();
-                            gr.setColor(screen.getBackend().
-                                attrToBackgroundColor(oldCell));
+
+                            java.awt.Color oldColor = screen.getBackend().
+                                    attrToBackgroundColor(oldCell);
+                            gr.setColor(oldColor);
                             gr.fillRect(0, 0, backImage.getWidth(),
                                 backImage.getHeight());
                             gr.drawImage(newImage, 0, 0, null, null);

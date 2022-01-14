@@ -31,6 +31,7 @@ package jexer.menu;
 import jexer.TKeypress;
 import jexer.TWidget;
 import jexer.backend.Backend;
+import jexer.bits.BorderStyle;
 import jexer.bits.CellAttributes;
 import jexer.bits.GraphicsChars;
 import jexer.bits.MnemonicString;
@@ -249,7 +250,8 @@ public class TMenuItem extends TWidget {
 
         boolean useIcons = ((TMenu) getParent()).useIcons;
 
-        char cVSide = GraphicsChars.WINDOW_SIDE;
+        BorderStyle borderStyle = ((TMenu) getParent()).getBorderStyle();
+        int cVSide = borderStyle.getVertical();
         vLineXY(0, 0, 1, cVSide, background);
         vLineXY(getWidth() - 1, 0, 1, cVSide, background);
 

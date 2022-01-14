@@ -35,6 +35,7 @@ import java.util.ArrayList;
 
 import jexer.backend.Screen;
 import jexer.bits.Animation;
+import jexer.bits.BorderStyle;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Clipboard;
@@ -1419,6 +1420,13 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @return the ColorTheme
      */
     public final ColorTheme getTheme() {
+        if (this instanceof TWindow) {
+            TWindow window = (TWindow) this;
+            if (window.theme != null) {
+                return window.theme;
+            }
+        }
+
         if (window != null) {
             return window.getApplication().getTheme();
         }
@@ -2136,18 +2144,16 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param bottom bottom row of the box
      * @param border attributes to use for the border
      * @param background attributes to use for the background
-     * @param borderType if 1, draw a single-line border; if 2, draw a
-     * double-line border; if 3, draw double-line top/bottom edges and
-     * single-line left/right edges (like Qmodem)
+     * @param borderStyle style of border
      * @param shadow if true, draw a "shadow" on the box
      */
     public final void drawBox(final int left, final int top,
         final int right, final int bottom,
         final CellAttributes border, final CellAttributes background,
-        final int borderType, final boolean shadow) {
+        final BorderStyle borderStyle, final boolean shadow) {
 
         getScreen().drawBox(left, top, right, bottom, border, background,
-            borderType, shadow);
+            borderStyle, shadow);
     }
 
     /**

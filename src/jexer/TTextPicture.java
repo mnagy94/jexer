@@ -366,13 +366,11 @@ public class TTextPicture extends TScrollableWidget
                 if (reverse) {
                     if (ch.getForeColorRGB() < 0) {
                         newCell.setBackColor(ch.getForeColor());
-                        newCell.setBackColorRGB(-1);
                     } else {
                         newCell.setBackColorRGB(ch.getForeColorRGB());
                     }
                     if (ch.getBackColorRGB() < 0) {
                         newCell.setForeColor(ch.getBackColor());
-                        newCell.setForeColorRGB(-1);
                     } else {
                         newCell.setForeColorRGB(ch.getBackColorRGB());
                     }
