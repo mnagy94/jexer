@@ -28,6 +28,11 @@
  */
 package jexer;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+
+import jexer.bits.BorderStyle;
+import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Color;
 import jexer.bits.GraphicsChars;
@@ -45,6 +50,41 @@ import static jexer.TKeypress.kbSpace;
  * @see TAction#DO()
  */
 public class TButton extends TWidget {
+
+    // ------------------------------------------------------------------------
+    // Constants --------------------------------------------------------------
+    // ------------------------------------------------------------------------
+
+    /**
+     * Available styles of the button.
+     */
+    public static enum Style {
+
+        /**
+         * A fully-text square button.  The default style.
+         */
+        SQUARE,
+
+        /**
+         * A button with round semi-circle edges.
+         */
+        ROUND,
+
+        /**
+         * A button with diamond end points.
+         */
+        DIAMOND,
+
+        /**
+         * A button arrow pointing left.
+         */
+        ARROW_LEFT,
+
+        /**
+         * A button arrow pointing right.
+         */
+        ARROW_RIGHT,
+    }
 
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
@@ -75,6 +115,41 @@ public class TButton extends TWidget {
      * shadow".
      */
     private CellAttributes shadowColor;
+
+    /**
+     * The style of button to draw.
+     */
+    private Style style = Style.SQUARE;
+
+    /**
+     * The left edge character, used if the enclosing window has a custom
+     * border.
+     */
+    private Cell leftEdgeChar;
+
+    /**
+     * The right edge character, used if the enclosing window has a custom
+     * border.
+     */
+    private Cell rightEdgeChar;
+
+    /**
+     * The left edge character, used if the enclosing window has a custom
+     * border.
+     */
+    private Cell leftEdgeShadowChar;
+
+    /**
+     * The right edge character, used if the enclosing window has a custom
+     * border.
+     */
+    private Cell rightEdgeShadowCharTop;
+
+    /**
+     * The right edge character, used if the enclosing window has a custom
+     * border.
+     */
+    private Cell rightEdgeShadowCharBottom;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -164,6 +239,9 @@ public class TButton extends TWidget {
         this.mouse = mouse;
 
         if ((mouseOnButton()) && (mouse.isMouse1())) {
+            if (!inButtonPress) {
+                rightEdgeShadowCharTop = null;
+            }
             // Begin button press
             inButtonPress = true;
         }
@@ -195,6 +273,9 @@ public class TButton extends TWidget {
         this.mouse = mouse;
 
         if (!mouseOnButton()) {
+            if (inButtonPress) {
+                rightEdgeShadowCharTop = null;
+            }
             inButtonPress = false;
         }
     }
@@ -262,20 +343,31 @@ public class TButton extends TWidget {
             menuMnemonicColor = getTheme().getColor("tbutton.mnemonic");
         }
 
+        if ((leftEdgeChar == null)
+            || (rightEdgeChar == null)
+            || (leftEdgeShadowChar == null)
+            || (rightEdgeShadowCharTop == null)
+            || (rightEdgeShadowCharBottom == null)
+        ) {
+            // TODO: If the color theme changes, we need to regenerate these.
+            drawEnds(getWindow().getBackground(), buttonColor);
+        }
+
         if (inButtonPress) {
-            putCharXY(1, 0, ' ', buttonColor);
+            putCharXY(1, 0, leftEdgeChar);
             putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
-            putCharXY(getWidth() - 1, 0, ' ', buttonColor);
+            putCharXY(getWidth() - 1, 0, rightEdgeChar);
         } else {
-            putCharXY(0, 0, ' ', buttonColor);
+            putCharXY(0, 0, leftEdgeChar);
             putStringXY(1, 0, mnemonic.getRawLabel(), buttonColor);
-            putCharXY(getWidth() - 2, 0, ' ', buttonColor);
+            putCharXY(getWidth() - 2, 0, rightEdgeChar);
 
             if (shadowColor != null) {
-                putCharXY(getWidth() - 1, 0,
-                    GraphicsChars.CP437[0xDC], shadowColor);
-                hLineXY(1, 1, getWidth() - 1,
-                    GraphicsChars.CP437[0xDF], shadowColor);
+                putCharXY(1, 1, leftEdgeShadowChar);
+                hLineXY(2, 1, getWidth() - 3, GraphicsChars.CP437[0xDF],
+                    shadowColor);
+                putCharXY(getWidth() - 1, 0, rightEdgeShadowCharTop);
+                putCharXY(getWidth() - 1, 1, rightEdgeShadowCharBottom);
             }
         }
         if (mnemonic.getScreenShortcutIdx() >= 0) {
@@ -309,6 +401,9 @@ public class TButton extends TWidget {
     public void dispatch() {
         if (action != null) {
             action.DO(this);
+            if (inButtonPress) {
+                rightEdgeShadowCharTop = null;
+            }
             inButtonPress = false;
         }
     }
@@ -328,6 +423,245 @@ public class TButton extends TWidget {
         } else {
             shadowColor = null;
         }
+    }
+
+    /**
+     * Set the button style.
+     *
+     * @param style SQUARE, ROUND, etc.
+     */
+    public void setStyle(final Style style) {
+        this.style = style;
+        leftEdgeChar = null;
+        rightEdgeChar = null;
+        leftEdgeShadowChar = null;
+        rightEdgeShadowCharTop = null;
+        rightEdgeShadowCharBottom = null;
+    }
+
+    /**
+     * Draw the button ends and populate leftEdgeChar, rightEdgeChar,
+     * leftEdgeShadowChar, and rightEdgeShadowChar.
+     *
+     * @param rectangleColor the background color
+     * @param buttonColor the button foreground color
+     */
+    private void drawEnds(final CellAttributes rectangleColor,
+        final CellAttributes buttonColor) {
+
+        if (style == Style.SQUARE) {
+            leftEdgeChar = new Cell(buttonColor);
+            rightEdgeChar = new Cell(buttonColor);
+            leftEdgeShadowChar = new Cell(GraphicsChars.CP437[0xDF],
+                shadowColor);
+            rightEdgeShadowCharTop = new Cell(GraphicsChars.CP437[0xDC],
+                shadowColor);
+            rightEdgeShadowCharBottom = new Cell(GraphicsChars.CP437[0xDF],
+                shadowColor);
+            return;
+        }
+        leftEdgeChar = new Cell(buttonColor);
+        rightEdgeChar = new Cell(buttonColor);
+        leftEdgeShadowChar = new Cell(shadowColor);
+        rightEdgeShadowCharTop = new Cell(shadowColor);
+        rightEdgeShadowCharBottom = new Cell(shadowColor);
+
+        int cellWidth = getScreen().getTextWidth();
+        int cellHeight = getScreen().getTextHeight();
+
+        BufferedImage image = new BufferedImage(cellWidth * 2, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        BufferedImage shadowImage = new BufferedImage(cellWidth * 2,
+            cellHeight * 2, BufferedImage.TYPE_INT_ARGB);
+
+        // Draw the shadow first, so that it be underneath the right edge.
+        Graphics2D gr2s = shadowImage.createGraphics();
+        gr2s.setColor(getApplication().getBackend().
+            attrToBackgroundColor(rectangleColor));
+        gr2s.fillRect(0, 0, cellWidth * 2, cellHeight * 2);
+        gr2s.setColor(getApplication().getBackend().
+            attrToForegroundColor(shadowColor));
+
+        int [] xPoints;
+        int [] yPoints;
+        switch (style) {
+        case ROUND:
+            gr2s.fillOval(0, cellHeight / 2, cellWidth * 2, cellHeight);
+            break;
+        case DIAMOND:
+            xPoints = new int[4];
+            yPoints = new int[4];
+            xPoints[0] = 0;
+            xPoints[1] = cellWidth;
+            xPoints[2] = 2 * cellWidth;
+            xPoints[3] = cellWidth;
+            yPoints[0] = cellHeight;
+            yPoints[1] = cellHeight / 2;
+            yPoints[2] = cellHeight;
+            yPoints[3] = cellHeight + cellHeight / 2;
+            gr2s.fillPolygon(xPoints, yPoints, 4);
+            break;
+        case ARROW_LEFT:
+            xPoints = new int[6];
+            yPoints = new int[6];
+            xPoints[0] = 0;
+            xPoints[1] = cellWidth;
+            xPoints[2] = 2 * cellWidth;
+            xPoints[3] = cellWidth;
+            xPoints[4] = 2 * cellWidth;
+            xPoints[5] = cellWidth;
+            yPoints[0] = cellHeight;
+            yPoints[1] = cellHeight / 2;
+            yPoints[2] = cellHeight / 2;
+            yPoints[3] = cellHeight;
+            yPoints[4] = cellHeight + cellHeight / 2;
+            yPoints[5] = cellHeight + cellHeight / 2;
+            gr2s.fillPolygon(xPoints, yPoints, 6);
+            break;
+        case ARROW_RIGHT:
+            xPoints = new int[6];
+            yPoints = new int[6];
+            xPoints[0] = 2 * cellWidth;
+            xPoints[1] = cellWidth;
+            xPoints[2] = 0;
+            xPoints[3] = cellWidth;
+            xPoints[4] = 0;
+            xPoints[5] = cellWidth;
+            yPoints[0] = cellHeight;
+            yPoints[1] = cellHeight / 2;
+            yPoints[2] = cellHeight / 2;
+            yPoints[3] = cellHeight;
+            yPoints[4] = cellHeight + cellHeight / 2;
+            yPoints[5] = cellHeight + cellHeight / 2;
+            gr2s.fillPolygon(xPoints, yPoints, 6);
+            break;
+        case SQUARE:
+            // Not possible.
+            return;
+        }
+        gr2s.dispose();
+        // gr2s now has the shadow bits, shifted half a cell down from 0.
+
+        Graphics2D gr2 = image.createGraphics();
+        gr2.setColor(getApplication().getBackend().
+            attrToBackgroundColor(rectangleColor));
+        gr2.fillRect(0, 0, cellWidth * 2, cellHeight);
+        if (!inButtonPress) {
+            gr2.setColor(getApplication().getBackend().
+                attrToForegroundColor(shadowColor));
+            gr2.fillRect(cellWidth, cellHeight / 2, cellWidth,
+                cellHeight - (cellHeight / 2));
+        }
+        gr2.setColor(getApplication().getBackend().
+            attrToBackgroundColor(buttonColor));
+        switch (style) {
+        case ROUND:
+            gr2.fillOval(0, 0, cellWidth * 2, cellHeight);
+            break;
+        case DIAMOND:
+            xPoints = new int[4];
+            yPoints = new int[4];
+            xPoints[0] = 0;
+            xPoints[1] = cellWidth;
+            xPoints[2] = 2 * cellWidth;
+            xPoints[3] = cellWidth;
+            yPoints[0] = cellHeight / 2;
+            yPoints[1] = 0;
+            yPoints[2] = cellHeight / 2;
+            yPoints[3] = cellHeight;
+            gr2.fillPolygon(xPoints, yPoints, 4);
+            break;
+        case ARROW_LEFT:
+            xPoints = new int[6];
+            yPoints = new int[6];
+            xPoints[0] = 0;
+            xPoints[1] = cellWidth;
+            xPoints[2] = 2 * cellWidth;
+            xPoints[3] = cellWidth;
+            xPoints[4] = 2 * cellWidth;
+            xPoints[5] = cellWidth;
+            yPoints[0] = cellHeight / 2;
+            yPoints[1] = 0;
+            yPoints[2] = 0;
+            yPoints[3] = cellHeight / 2;
+            yPoints[4] = cellHeight;
+            yPoints[5] = cellHeight;
+            gr2.fillPolygon(xPoints, yPoints, 6);
+            break;
+        case ARROW_RIGHT:
+            xPoints = new int[6];
+            yPoints = new int[6];
+            xPoints[0] = 2 * cellWidth;
+            xPoints[1] = cellWidth;
+            xPoints[2] = 0;
+            xPoints[3] = cellWidth;
+            xPoints[4] = 0;
+            xPoints[5] = cellWidth;
+            yPoints[0] = cellHeight / 2;
+            yPoints[1] = 0;
+            yPoints[2] = 0;
+            yPoints[3] = cellHeight / 2;
+            yPoints[4] = cellHeight;
+            yPoints[5] = cellHeight;
+            gr2.fillPolygon(xPoints, yPoints, 6);
+            break;
+        case SQUARE:
+            // Not possible.
+            return;
+        }
+        gr2.dispose();
+        // gr2 now has the foreground ends, on both halves.
+
+        // Left edge: left half of image
+        BufferedImage cellImage = new BufferedImage(cellWidth, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        gr2 = cellImage.createGraphics();
+        gr2.drawImage(image.getSubimage(0, 0, cellWidth, cellHeight),
+            0, 0, null);
+        gr2.dispose();
+        leftEdgeChar.setImage(cellImage);
+        leftEdgeChar.setOpaqueImage();
+
+        // Right edge: left half of image
+        cellImage = new BufferedImage(cellWidth, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        gr2 = cellImage.createGraphics();
+        gr2.drawImage(image.getSubimage(cellWidth, 0, cellWidth, cellHeight),
+            0, 0, null);
+        gr2.dispose();
+        rightEdgeChar.setImage(cellImage);
+        rightEdgeChar.setOpaqueImage();
+
+        // Left shadow edge: bottom-left half of shadowImage
+        cellImage = new BufferedImage(cellWidth, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        gr2s = cellImage.createGraphics();
+        gr2s.drawImage(shadowImage.getSubimage(0, cellHeight,
+                cellWidth, cellHeight), 0, 0, null);
+        gr2s.dispose();
+        leftEdgeShadowChar.setImage(cellImage);
+        leftEdgeShadowChar.setOpaqueImage();
+
+        // Right shadow edge top: top-right half of shadowImage
+        cellImage = new BufferedImage(cellWidth, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        gr2s = cellImage.createGraphics();
+        gr2s.drawImage(shadowImage.getSubimage(cellWidth, 0,
+                cellWidth, cellHeight), 0, 0, null);
+        gr2s.dispose();
+        rightEdgeShadowCharTop.setImage(cellImage);
+        rightEdgeShadowCharTop.setOpaqueImage();
+
+        // Right shadow edge bottom: bottom-right half of shadowImage
+        cellImage = new BufferedImage(cellWidth, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        gr2s = cellImage.createGraphics();
+        gr2s.drawImage(shadowImage.getSubimage(cellWidth, cellHeight,
+                cellWidth, cellHeight), 0, 0, null);
+        gr2s.dispose();
+        rightEdgeShadowCharBottom.setImage(cellImage);
+        rightEdgeShadowCharBottom.setOpaqueImage();
+
     }
 
 }
