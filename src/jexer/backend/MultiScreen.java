@@ -456,6 +456,24 @@ public class MultiScreen implements Screen {
     }
 
     /**
+     * Draw a vertical line from (x, y) to (x, y + n).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public void vLineXY(final int x, final int y, final int n,
+        final Cell ch) {
+
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.vLineXY(x, y, n, ch);
+            }
+        }
+    }
+
+    /**
      * Draw a horizontal line from (x, y) to (x + n, y).
      *
      * @param x column coordinate.  0 is the left-most column.
@@ -470,6 +488,24 @@ public class MultiScreen implements Screen {
         synchronized (screens) {
             for (Screen screen: screens) {
                 screen.hLineXY(x, y, n, ch, attr);
+            }
+        }
+    }
+
+    /**
+     * Draw a horizontal line from (x, y) to (x + n, y).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public void hLineXY(final int x, final int y, final int n,
+        final Cell ch) {
+
+        synchronized (screens) {
+            for (Screen screen: screens) {
+                screen.hLineXY(x, y, n, ch);
             }
         }
     }

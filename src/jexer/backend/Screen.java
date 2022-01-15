@@ -253,6 +253,17 @@ public interface Screen {
         final int ch, final CellAttributes attr);
 
     /**
+     * Draw a vertical line from (x, y) to (x, y + n).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public void vLineXY(final int x, final int y, final int n,
+        final Cell ch);
+
+    /**
      * Draw a horizontal line from (x, y) to (x + n, y).
      *
      * @param x column coordinate.  0 is the left-most column.
@@ -263,6 +274,17 @@ public interface Screen {
      */
     public void hLineXY(final int x, final int y, final int n,
         final int ch, final CellAttributes attr);
+
+    /**
+     * Draw a horizontal line from (x, y) to (x + n, y).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public void hLineXY(final int x, final int y, final int n,
+        final Cell ch);
 
     /**
      * Change the width.  Everything on-screen will be destroyed and must be

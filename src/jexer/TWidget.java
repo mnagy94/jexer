@@ -2104,6 +2104,20 @@ public abstract class TWidget implements Comparable<TWidget> {
     }
 
     /**
+     * Draw a vertical line from (x, y) to (x, y + n).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public final void vLineXY(final int x, final int y, final int n,
+        final Cell ch) {
+
+        getScreen().vLineXY(x, y, n, ch);
+    }
+
+    /**
      * Draw a horizontal line from (x, y) to (x + n, y).
      *
      * @param x column coordinate.  0 is the left-most column.
@@ -2116,6 +2130,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         final int ch, final CellAttributes attr) {
 
         getScreen().hLineXY(x, y, n, ch, attr);
+    }
+
+    /**
+     * Draw a horizontal line from (x, y) to (x + n, y).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public final void hLineXY(final int x, final int y, final int n,
+        final Cell ch) {
+
+        getScreen().hLineXY(x, y, n, ch);
     }
 
     /**

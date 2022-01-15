@@ -745,6 +745,7 @@ public class ColorTheme {
         setDefaultTheme();
         final int pink = 0xf7a8b8;
         final int blue = 0x55cdfc;
+        final int pink2 = 0xd77888;
 
         for (String key: colors.keySet()) {
             CellAttributes color = colors.get(key);
@@ -790,14 +791,29 @@ public class ColorTheme {
             colors.put(key, color);
         }
 
-        /*
         CellAttributes color;
         color = new CellAttributes();
         color.setForeColor(Color.MAGENTA);
-        color.setBackColorRGB(pink);
+        color.setBackColorRGB(pink2);
         color.setBold(false);
+        colors.put("twindow.background", color);
+        colors.put("twindow.background.inactive", color);
         colors.put("twindow.background.modal", color);
-         */
+        colors.put("twindow.background.modal.inactive", color);
+        colors.put("twindow.background.windowmove", color);
+
+        color = new CellAttributes();
+        color.setForeColor(Color.MAGENTA);
+        color.setBold(true);
+        colors.put("twindow.border", color);
+        colors.put("twindow.border.inactive", color);
+        colors.put("twindow.border.modal", color);
+        colors.put("twindow.border.modal.inactive", color);
+
+        color = new CellAttributes();
+        color.setForeColorRGB(blue);
+        colors.put("twindow.border.windowmove", color);
+        colors.put("twindow.border.modal.windowmove", color);
     }
 
     /**

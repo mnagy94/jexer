@@ -273,23 +273,20 @@ public class LegacySixelEncoder implements SixelEncoder {
          */
         public BufferedImage ditherImage(final BufferedImage image) {
 
-            BufferedImage ditheredImage = new BufferedImage(image.getWidth(),
-                image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-
             int [] rgbArray = image.getRGB(0, 0, image.getWidth(),
                 image.getHeight(), null, 0, image.getWidth());
-            ditheredImage.setRGB(0, 0, image.getWidth(), image.getHeight(),
-                rgbArray, 0, image.getWidth());
 
-            for (int imageY = 0; imageY < image.getHeight(); imageY++) {
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
-                    int oldPixel = ditheredImage.getRGB(imageX,
-                        imageY) & 0xFFFFFF;
+            int height = image.getHeight();
+            int width = image.getWidth();
+            for (int imageY = 0; imageY < height; imageY++) {
+                for (int imageX = 0; imageX < width; imageX++) {
+                    int oldPixel = rgbArray[imageX + (width * imageY)]
+                        & 0xFFFFFF;
                     int colorIdx = matchColor(oldPixel);
                     assert (colorIdx >= 0);
                     assert (colorIdx < paletteSize);
                     int newPixel = rgbColors.get(colorIdx);
-                    ditheredImage.setRGB(imageX, imageY, colorIdx);
+                    rgbArray[imageX + (width * imageY)] = colorIdx;
 
                     int oldRed   = (oldPixel >>> 16) & 0xFF;
                     int oldGreen = (oldPixel >>>  8) & 0xFF;
@@ -305,7 +302,7 @@ public class LegacySixelEncoder implements SixelEncoder {
 
                     int red, green, blue;
                     if (imageX < image.getWidth() - 1) {
-                        int pXpY  = ditheredImage.getRGB(imageX + 1, imageY);
+                        int pXpY = rgbArray[imageX + 1 + (width * imageY)];
                         red   = ((pXpY >>> 16) & 0xFF) + (7 * redError);
                         green = ((pXpY >>>  8) & 0xFF) + (7 * greenError);
                         blue  = ( pXpY         & 0xFF) + (7 * blueError);
@@ -314,10 +311,9 @@ public class LegacySixelEncoder implements SixelEncoder {
                         blue = clamp(blue);
                         pXpY = ((red & 0xFF) << 16);
                         pXpY |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                        ditheredImage.setRGB(imageX + 1, imageY, pXpY);
+                        rgbArray[imageX + 1 + (width * imageY)] = pXpY;
                         if (imageY < image.getHeight() - 1) {
-                            int pXpYp = ditheredImage.getRGB(imageX + 1,
-                                imageY + 1);
+                            int pXpYp = rgbArray[imageX + 1 + (width * (imageY + 1))];
                             red   = ((pXpYp >>> 16) & 0xFF) + redError;
                             green = ((pXpYp >>>  8) & 0xFF) + greenError;
                             blue  = ( pXpYp         & 0xFF) + blueError;
@@ -326,13 +322,11 @@ public class LegacySixelEncoder implements SixelEncoder {
                             blue = clamp(blue);
                             pXpYp = ((red & 0xFF) << 16);
                             pXpYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                            ditheredImage.setRGB(imageX + 1, imageY + 1, pXpYp);
+                            rgbArray[imageX + 1 + (width * (imageY + 1))] = pXpYp;
                         }
                     } else if (imageY < image.getHeight() - 1) {
-                        int pXmYp = ditheredImage.getRGB(imageX - 1,
-                            imageY + 1);
-                        int pXYp  = ditheredImage.getRGB(imageX,
-                            imageY + 1);
+                        int pXmYp = rgbArray[imageX - 1 + (width * (imageY + 1))];
+                        int pXYp = rgbArray[imageX + (width * (imageY + 1))];
 
                         red   = ((pXmYp >>> 16) & 0xFF) + (3 * redError);
                         green = ((pXmYp >>>  8) & 0xFF) + (3 * greenError);
@@ -342,7 +336,7 @@ public class LegacySixelEncoder implements SixelEncoder {
                         blue = clamp(blue);
                         pXmYp = ((red & 0xFF) << 16);
                         pXmYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                        ditheredImage.setRGB(imageX - 1, imageY + 1, pXmYp);
+                        rgbArray[imageX - 1 + (width * (imageY + 1))] = pXmYp;
 
                         red   = ((pXYp >>> 16) & 0xFF) + (5 * redError);
                         green = ((pXYp >>>  8) & 0xFF) + (5 * greenError);
@@ -352,10 +346,15 @@ public class LegacySixelEncoder implements SixelEncoder {
                         blue = clamp(blue);
                         pXYp = ((red & 0xFF) << 16);
                         pXYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
-                        ditheredImage.setRGB(imageX,     imageY + 1, pXYp);
+                        rgbArray[imageX + (width * (imageY + 1))] = pXYp;
                     }
-                } // for (int imageY = 0; imageY < image.getHeight(); imageY++)
-            } // for (int imageX = 0; imageX < image.getWidth(); imageX++)
+                } // for (int imageY = 0; imageY < height; imageY++)
+            } // for (int imageX = 0; imageX < width; imageX++)
+
+            BufferedImage ditheredImage = new BufferedImage(image.getWidth(),
+                image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            ditheredImage.setRGB(0, 0, image.getWidth(), image.getHeight(),
+                rgbArray, 0, image.getWidth());
 
             return ditheredImage;
         }
@@ -786,8 +785,14 @@ public class LegacySixelEncoder implements SixelEncoder {
         }
 
         // Render the entire row of cells.
+        int width = image.getWidth();
+        int [][] sixels = new int[image.getWidth()][6];
+
+        // There is a small performance gain reading the array all at once.
+        int [] rgbArray = image.getRGB(0, 0, width, image.getHeight(),
+            null, 0, width);
+
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
-            int [][] sixels = new int[image.getWidth()][6];
 
             // See which colors are actually used in this band of sixels.
             for (int imageX = 0; imageX < image.getWidth(); imageX++) {
@@ -795,7 +800,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                      (imageY < 6) && (imageY + currentRow < fullHeight);
                      imageY++) {
 
-                    int colorIdx = image.getRGB(imageX, imageY + currentRow);
+                    int colorIdx = rgbArray[imageX +
+                        (width * (imageY + currentRow))];
                     if (colorIdx == -1) {
                         continue;
                     }
@@ -821,7 +827,8 @@ public class LegacySixelEncoder implements SixelEncoder {
 
                 // Set to the beginning of scan line for the next set of
                 // colored pixels, and select the color.
-                sb.append(String.format("$#%d", i));
+                sb.append("$#");
+                sb.append(Integer.toString(i));
 
                 int oldData = -1;
                 int oldDataCount = 0;
@@ -869,7 +876,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                         if (oldDataCount == 1) {
                             sb.append((char) oldData);
                         } else if (oldDataCount > 1) {
-                            sb.append(String.format("!%d", oldDataCount));
+                            sb.append("!");
+                            sb.append(Integer.toString(oldDataCount));
                             sb.append((char) oldData);
                         }
                         oldDataCount = 1;
@@ -882,7 +890,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                 if (oldDataCount == 1) {
                     sb.append((char) oldData);
                 } else if (oldDataCount > 1) {
-                    sb.append(String.format("!%d", oldDataCount));
+                    sb.append("!");
+                    sb.append(Integer.toString(oldDataCount));
                     sb.append((char) oldData);
                 }
 

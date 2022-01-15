@@ -117,39 +117,45 @@ public class TButton extends TWidget {
     private CellAttributes shadowColor;
 
     /**
+     * The background color used for the button shadow, as set by
+     * setShadowColor().
+     */
+    private CellAttributes givenShadowColor;
+
+    /**
      * The style of button to draw.
      */
     private Style style = Style.SQUARE;
 
     /**
-     * The left edge character, used if the enclosing window has a custom
-     * border.
+     * The left edge character.
      */
     private Cell leftEdgeChar;
 
     /**
-     * The right edge character, used if the enclosing window has a custom
-     * border.
+     * The right edge character.
      */
     private Cell rightEdgeChar;
 
     /**
-     * The left edge character, used if the enclosing window has a custom
-     * border.
+     * The left edge character.
      */
     private Cell leftEdgeShadowChar;
 
     /**
-     * The right edge character, used if the enclosing window has a custom
-     * border.
+     * The right edge character.
      */
     private Cell rightEdgeShadowCharTop;
 
     /**
-     * The right edge character, used if the enclosing window has a custom
-     * border.
+     * The right edge character.
      */
     private Cell rightEdgeShadowCharBottom;
+
+    /**
+     * The bottom shadow character.
+     */
+    private Cell shadowCharBottom;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -176,10 +182,7 @@ public class TButton extends TWidget {
         super.setHeight(2);
         super.setWidth(StringUtils.width(mnemonic.getRawLabel()) + 3);
 
-        shadowColor = new CellAttributes();
-        shadowColor.setTo(getWindow().getBackground());
-        shadowColor.setForeColor(Color.BLACK);
-        shadowColor.setBold(false);
+        setStyle((String) null);
 
         // Since we set dimensions after TWidget's constructor, we need to
         // update the layout manager.
@@ -332,6 +335,17 @@ public class TButton extends TWidget {
         CellAttributes buttonColor;
         CellAttributes menuMnemonicColor;
 
+        if (shadowColor == null) {
+            shadowColor = new CellAttributes();
+            if (givenShadowColor == null) {
+                shadowColor.setTo(getWindow().getBackground());
+            } else {
+                shadowColor.setTo(givenShadowColor);
+            }
+            shadowColor.setForeColor(Color.BLACK);
+            shadowColor.setBold(false);
+        }
+
         if (!isEnabled()) {
             buttonColor = getTheme().getColor("tbutton.disabled");
             menuMnemonicColor = getTheme().getColor("tbutton.disabled");
@@ -348,6 +362,7 @@ public class TButton extends TWidget {
             || (leftEdgeShadowChar == null)
             || (rightEdgeShadowCharTop == null)
             || (rightEdgeShadowCharBottom == null)
+            || (shadowCharBottom == null)
         ) {
             // TODO: If the color theme changes, we need to regenerate these.
             drawEnds(getWindow().getBackground(), buttonColor);
@@ -364,8 +379,7 @@ public class TButton extends TWidget {
 
             if (shadowColor != null) {
                 putCharXY(1, 1, leftEdgeShadowChar);
-                hLineXY(2, 1, getWidth() - 3, GraphicsChars.CP437[0xDF],
-                    shadowColor);
+                hLineXY(2, 1, getWidth() - 3, shadowCharBottom);
                 putCharXY(getWidth() - 1, 0, rightEdgeShadowCharTop);
                 putCharXY(getWidth() - 1, 1, rightEdgeShadowCharBottom);
             }
@@ -416,13 +430,15 @@ public class TButton extends TWidget {
      */
     public void setShadowColor(final CellAttributes color) {
         if (color != null) {
-            shadowColor = new CellAttributes();
-            shadowColor.setTo(color);
-            shadowColor.setForeColor(Color.BLACK);
-            shadowColor.setBold(false);
+            givenShadowColor = new CellAttributes();
+            givenShadowColor.setTo(color);
+            givenShadowColor.setForeColor(Color.BLACK);
+            givenShadowColor.setBold(false);
         } else {
-            shadowColor = null;
+            givenShadowColor = null;
         }
+        rightEdgeShadowCharBottom = null;
+        shadowColor = null;
     }
 
     /**
@@ -437,6 +453,7 @@ public class TButton extends TWidget {
         leftEdgeShadowChar = null;
         rightEdgeShadowCharTop = null;
         rightEdgeShadowCharBottom = null;
+        shadowColor = null;
     }
 
     /**
@@ -458,6 +475,8 @@ public class TButton extends TWidget {
                 shadowColor);
             rightEdgeShadowCharBottom = new Cell(GraphicsChars.CP437[0xDF],
                 shadowColor);
+            shadowCharBottom = new Cell(GraphicsChars.CP437[0xDF],
+                shadowColor);
             return;
         }
         leftEdgeChar = new Cell(buttonColor);
@@ -465,6 +484,7 @@ public class TButton extends TWidget {
         leftEdgeShadowChar = new Cell(shadowColor);
         rightEdgeShadowCharTop = new Cell(shadowColor);
         rightEdgeShadowCharBottom = new Cell(shadowColor);
+        shadowCharBottom = new Cell(shadowColor);
 
         int cellWidth = getScreen().getTextWidth();
         int cellHeight = getScreen().getTextHeight();
@@ -474,13 +494,34 @@ public class TButton extends TWidget {
         BufferedImage shadowImage = new BufferedImage(cellWidth * 2,
             cellHeight * 2, BufferedImage.TYPE_INT_ARGB);
 
+        java.awt.Color shadowRgb = null;
+        if (shadowColor.getForeColorRGB() < 0) {
+            shadowRgb = getApplication().getBackend().
+                attrToForegroundColor(shadowColor);
+        } else {
+            shadowRgb = new java.awt.Color(shadowColor.getForeColorRGB());
+        }
+        java.awt.Color rectangleRgb = null;
+        if (rectangleColor.getBackColorRGB() < 0) {
+            rectangleRgb = getApplication().getBackend().
+                attrToBackgroundColor(rectangleColor);
+        } else {
+            rectangleRgb = new java.awt.Color(rectangleColor.getBackColorRGB());
+        }
+
+        java.awt.Color buttonRgb = null;
+        if (buttonColor.getBackColorRGB() < 0) {
+            buttonRgb = getApplication().getBackend().
+                attrToBackgroundColor(buttonColor);
+        } else {
+            buttonRgb = new java.awt.Color(buttonColor.getBackColorRGB());
+        }
+
         // Draw the shadow first, so that it be underneath the right edge.
         Graphics2D gr2s = shadowImage.createGraphics();
-        gr2s.setColor(getApplication().getBackend().
-            attrToBackgroundColor(rectangleColor));
+        gr2s.setColor(rectangleRgb);
         gr2s.fillRect(0, 0, cellWidth * 2, cellHeight * 2);
-        gr2s.setColor(getApplication().getBackend().
-            attrToForegroundColor(shadowColor));
+        gr2s.setColor(shadowRgb);
 
         int [] xPoints;
         int [] yPoints;
@@ -543,17 +584,14 @@ public class TButton extends TWidget {
         // gr2s now has the shadow bits, shifted half a cell down from 0.
 
         Graphics2D gr2 = image.createGraphics();
-        gr2.setColor(getApplication().getBackend().
-            attrToBackgroundColor(rectangleColor));
+        gr2.setColor(rectangleRgb);
         gr2.fillRect(0, 0, cellWidth * 2, cellHeight);
         if (!inButtonPress) {
-            gr2.setColor(getApplication().getBackend().
-                attrToForegroundColor(shadowColor));
+            gr2.setColor(shadowRgb);
             gr2.fillRect(cellWidth, cellHeight / 2, cellWidth,
                 cellHeight - (cellHeight / 2));
         }
-        gr2.setColor(getApplication().getBackend().
-            attrToBackgroundColor(buttonColor));
+        gr2.setColor(buttonRgb);
         switch (style) {
         case ROUND:
             gr2.fillOval(0, 0, cellWidth * 2, cellHeight);
@@ -662,6 +700,50 @@ public class TButton extends TWidget {
         rightEdgeShadowCharBottom.setImage(cellImage);
         rightEdgeShadowCharBottom.setOpaqueImage();
 
+        cellImage = new BufferedImage(cellWidth, cellHeight,
+            BufferedImage.TYPE_INT_ARGB);
+        gr2s = cellImage.createGraphics();
+        gr2s.setColor(rectangleRgb);
+        gr2s.fillRect(0, 0, cellWidth, cellHeight);
+        gr2s.setColor(shadowRgb);
+        gr2s.fillRect(0, 0, cellWidth, cellHeight / 2);
+        gr2s.dispose();
+        shadowCharBottom.setImage(cellImage);
+        shadowCharBottom.setOpaqueImage();
+
     }
+
+    /**
+     * Set the button style.
+     *
+     * @param buttonStyle the button style string, one of: "square", "round",
+     * "diamond", "leftArrow", or "rightArrow"; or null to use the value from
+     * jexer.TButton.style.
+     */
+    public void setStyle(final String buttonStyle) {
+        String styleString = System.getProperty("jexer.TButton.style",
+            "square");
+        if (buttonStyle != null) {
+            styleString = buttonStyle.toLowerCase();
+        }
+        if (styleString.equals("square")) {
+            style = Style.SQUARE;
+        } else if (styleString.equals("round")) {
+            style = Style.ROUND;
+        } else if (styleString.equals("diamond")) {
+            style = Style.DIAMOND;
+        } else if (styleString.equals("arrowleft")
+            || styleString.equals("leftarrow")
+        ) {
+            style = Style.ARROW_LEFT;
+        } else if (styleString.equals("arrowright")
+            || styleString.equals("rightarrow")
+        ) {
+            style = Style.ARROW_RIGHT;
+        } else {
+            style = Style.SQUARE;
+        }
+    }
+
 
 }

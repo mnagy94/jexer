@@ -394,7 +394,7 @@ public class LogicalScreen implements Screen {
     public final void putAttrXY(final int x, final int y,
         final CellAttributes attr) {
 
-        putAttrXY(x, y, attr, true);
+        putAttrXY(x, y, attr);
     }
 
     /**
@@ -424,7 +424,7 @@ public class LogicalScreen implements Screen {
         }
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
-            logical[X][Y].setAttr(attr, true);
+            logical[X][Y].setAttr(attr);
 
             // If this happens to be the cursor position, make the position
             // dirty.
@@ -642,6 +642,22 @@ public class LogicalScreen implements Screen {
     }
 
     /**
+     * Draw a vertical line from (x, y) to (x, y + n).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public void vLineXY(final int x, final int y, final int n,
+        final Cell ch) {
+
+        for (int i = y; i < y + n; i++) {
+            putCharXY(x, i, ch);
+        }
+    }
+
+    /**
      * Draw a horizontal line from (x, y) to (x + n, y).
      *
      * @param x column coordinate.  0 is the left-most column.
@@ -655,6 +671,22 @@ public class LogicalScreen implements Screen {
 
         for (int i = x; i < x + n; i++) {
             putCharXY(i, y, ch, attr);
+        }
+    }
+
+    /**
+     * Draw a horizontal line from (x, y) to (x + n, y).
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param n number of characters to draw
+     * @param ch character to draw
+     */
+    public void hLineXY(final int x, final int y, final int n,
+        final Cell ch) {
+
+        for (int i = x; i < x + n; i++) {
+            putCharXY(i, y, ch);
         }
     }
 
