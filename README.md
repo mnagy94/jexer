@@ -32,12 +32,22 @@ better:
 
 ![Xterm Snake Image](/screenshots/snake_xterm_hq.png?raw=true "Xterm Snake Image - HQ Encoder")
 
+Jexer can be run inside its own terminal window, with support for all
+of its features including images and mouse, and more terminals:
+
+![Yo Dawg...](/screenshots/jexer_sixel_in_sixel.png?raw=true "Yo Dawg, I heard you like text windowing systems, so I ran a text windowing system inside your text windowing system so you can have a terminal in your terminal.")
+
 
 How...?  What...?
 -----------------
 
 Wondering how I did it?  [Here you
 go.](https://jexer.sourceforge.io/evolution.html)
+
+(And if you like this kind of stuff, then you need to go check out
+[notcurses](https://github.com/dankamongmen/notcurses) poste haste.
+It's _very_ fast, it's in C, under active development, and has great
+ties into the wider open-source ecosystem.)
 
 
 License
@@ -71,13 +81,18 @@ The Jexer source code is hosted at: https://gitlab.com/klamonte/jexer
 Documentation
 -------------
 
-* [Java API Docs](https://jexer.sourceforge.io/apidocs/api/index.html)
-
 * [Wiki](https://gitlab.com/klamonte/jexer/wikis/home)
 
 * [Jexer web page](https://jexer.sourceforge.io/)
 
+* [Java API Docs](https://jexer.sourceforge.io/apidocs/api/index.html)
+
 * [Development Standards](https://gitlab.com/klamonte/jexer/wikis/dev-standards)
+
+* [Porting Guide](https://gitlab.com/klamonte/jexer/wikis/porting) -
+  If you don't like writing Java, here is your map to where the key
+  features are so you can implement them in a different
+  system/language.
 
 
 
@@ -144,49 +159,26 @@ controls.  The demos can be run as follows:
 
 
 
-More Screenshots
-----------------
-
-Jexer can be run inside its own terminal window, with support for all
-of its features including images and mouse, and more terminals:
-
-![Yo Dawg...](/screenshots/jexer_sixel_in_sixel.png?raw=true "Yo Dawg, I heard you like text windowing systems, so I ran a text windowing system inside your text windowing system so you can have a terminal in your terminal.")
-
-Sixel output uses a single palette which works OK for a variety of
-real-world images:
-
-![Sixel Pictures Of Cliffs Of Moher And Buoy](/screenshots/sixel_images.png?raw=true "Sixel Pictures Of Cliffs Of Moher And Buoy")
-
-The color wheel with that palette is shown below:
-
-![Sixel Color Wheel](/screenshots/sixel_color_wheel.png?raw=true "Sixel Color Wheel")
-
-There is now support for rendering the text underneath images
-(jexer.ECMA48.imagesOverText and jexer.Swing.imagesOverText).  This is
-readily visible in terminal windows with sixel and PNG images.  (If
-you like this, then you need to go check out
-[notcurses](https://github.com/dankamongmen/notcurses) poste haste.)
-
-![PNG with transparency over text](/screenshots/for_nick.png?raw=true "PNG with transparency over text")
-
-
-
 Terminal Support
 ----------------
 
-The table below lists terminals tested against Jexer's Xterm backend:
+Most popular terminals can run Jexer, but only a few support all of
+Jexer's features.  Jexer is actively developed against
+[xterm](https://invisible-island.net/xterm/) and
+[wezterm](https://wezfurlong.org/wezterm/) .  The table below lists
+the terminals last tested against Jexer:
 
 | Terminal       | Environment        | Mouse Click | Mouse Cursor | Images |
 | -------------- | ------------------ | ----------- | ------------ | ------ |
 | xterm          | X11                | yes         | yes          | yes    |
 | jexer          | CLI, X11, Windows  | yes         | yes          | yes    |
+| wezterm        | X11, Windows       | yes         | yes          | yes(7) |
+| foot(3)        | Wayland            | yes         | yes          | yes    |
+| contour(3)     | X11                | yes         | yes          | yes    |
 | mintty         | Windows            | yes         | yes          | yes    |
 | mlterm         | X11                | yes         | yes          | yes    |
 | RLogin         | Windows            | yes         | yes          | yes    |
 | alacritty(3b)  | X11                | yes         | yes          | yes    |
-| contour(3)     | X11                | yes         | yes          | yes    |
-| foot(3)        | Wayland            | yes         | yes          | yes    |
-| wezterm        | X11, Windows       | yes         | yes          | yes(7) |
 | gnome-terminal | X11                | yes         | yes          | no     |
 | iTerm2         | Mac                | yes         | yes          | no(5)  |
 | kitty(3)       | X11                | yes         | yes          | no     |
