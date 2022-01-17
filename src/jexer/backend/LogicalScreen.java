@@ -394,7 +394,7 @@ public class LogicalScreen implements Screen {
     public final void putAttrXY(final int x, final int y,
         final CellAttributes attr) {
 
-        putAttrXY(x, y, attr);
+        putAttrXY(x, y, attr, true);
     }
 
     /**
@@ -424,7 +424,7 @@ public class LogicalScreen implements Screen {
         }
 
         if ((X >= 0) && (X < width) && (Y >= 0) && (Y < height)) {
-            logical[X][Y].setAttr(attr);
+            logical[X][Y].setAttr(attr, true);
 
             // If this happens to be the cursor position, make the position
             // dirty.
@@ -1623,6 +1623,7 @@ public class LogicalScreen implements Screen {
                     thisCell.setBlink(overCell.isBlink());
                     thisCell.setUnderline(overCell.isUnderline());
                     thisCell.setProtect(overCell.isProtect());
+                    thisCell.setAnimations(overCell.getAnimations());
 
                     if (!overCell.isImage()) {
                         // If we had an image, destroy it.  Text ALWAYS

@@ -230,11 +230,24 @@ class GlyphMakerFont {
         gr2.setFont(font);
 
         Cell cellColor = new Cell(cell);
+        if (cell.isPulse()) {
+            cellColor.setPulse(false, false, 0);
+            cellColor.setForeColorRGB(cell.getForeColorPulseRGB(backend,
+                    System.currentTimeMillis()));
+        }
 
         // Check for reverse
         if (cell.isReverse()) {
-            cellColor.setForeColor(cell.getBackColor());
-            cellColor.setBackColor(cell.getForeColor());
+            if (cell.getBackColorRGB() < 0) {
+                cellColor.setForeColor(cell.getBackColor());
+            } else {
+                cellColor.setForeColorRGB(cell.getBackColorRGB());
+            }
+            if (cell.getForeColorRGB() < 0) {
+                cellColor.setBackColor(cell.getForeColor());
+            } else {
+                cellColor.setBackColorRGB(cell.getForeColorRGB());
+            }
         }
 
         // Draw the background rectangle, then the foreground character.

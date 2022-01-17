@@ -224,8 +224,11 @@ public class Tackboard {
             int dx = x % cellWidth;
             int dy = y % cellHeight;
 
-            int left = (x < 0 ? -1 : 0) * 0;
-            int top = (y < 0 ? -1 : 0) * 0;
+            // I had thought that with the offsets there might be a
+            // discontinuity around +/- 0, but there isn't.  Still, leaving
+            // these here in case I'm wrong later on.
+            final int left = 0;
+            final int top = 0;
 
             for (int sy = 0; sy < rows; sy++) {
                 if ((sy + textY + top < 0)

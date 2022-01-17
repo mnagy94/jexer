@@ -269,6 +269,7 @@ public class TackboardItem implements Comparable<TackboardItem> {
     public void remove() {
         if (tackboard != null) {
             tackboard.getItems().remove(this);
+            tackboard.setDirty();
         }
         tackboard = null;
     }

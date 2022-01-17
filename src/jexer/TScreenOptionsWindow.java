@@ -328,7 +328,7 @@ public class TScreenOptionsWindow extends TWindow {
                     try {
                         newOpacity = Integer.parseInt(windowOpacity.getText());
                     } catch (NumberFormatException e) {
-                        fontSize.setText(Integer.toString(currentOpacity));
+                        windowOpacity.setText(Integer.toString(currentOpacity));
                     }
                     if (newOpacity != currentOpacity) {
                         getApplication().setWindowOpacity(newOpacity);

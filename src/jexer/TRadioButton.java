@@ -193,6 +193,14 @@ public class TRadioButton extends TWidget {
             mnemonicColor = getTheme().getColor("tradiobutton.mnemonic");
         }
 
+        // Pulse color.
+        if (selected && isActive() && getWindow().isActive()) {
+            radioButtonColor.setPulse(true, false, 0);
+            radioButtonColor.setPulseColorRGB(getScreen().getBackend().
+                attrToForegroundColor(getTheme().getColor(
+                    "tradiobutton.pulse")).getRGB());
+        }
+
         putCharXY(0, 0, '(', radioButtonColor);
         if (selected) {
             putCharXY(1, 0, GraphicsChars.CP437[0x07], radioButtonColor);

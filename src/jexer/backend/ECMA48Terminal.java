@@ -434,6 +434,7 @@ public class ECMA48Terminal extends LogicalScreen
             for (Cell cell: cells) {
                 sb.append(cell.hashCode());
             }
+            // System.err.println("key: " + sb.toString());
             return sb.toString();
         }
 
@@ -1407,7 +1408,7 @@ public class ECMA48Terminal extends LogicalScreen
             Cell lCell = logical[x][y];
             Cell pCell = physical[x][y];
 
-            if (!lCell.equals(pCell) || reallyCleared) {
+            if (!lCell.equals(pCell) || lCell.isPulse() || reallyCleared) {
 
                 if (debugToStderr && reallyDebug) {
                     System.err.printf("\n--\n");
@@ -1536,14 +1537,28 @@ public class ECMA48Terminal extends LogicalScreen
                     sb.append("m");
                 }
 
-                if ((lCell.getForeColorRGB() >= 0)
-                    && ((lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
-                        || (lastAttr.getForeColorRGB() < 0))
+                boolean doForeColorRGB = false;
+                int foreColorRGB = lCell.getForeColorRGB();
+                long now = System.currentTimeMillis();
+                if (lCell.isPulse()) {
+                    foreColorRGB = lCell.getForeColorPulseRGB(backend, now);
+                    int lastForeColorRGB = lastAttr.getForeColorRGB();
+                    if (lastAttr.isPulse()) {
+                        lastForeColorRGB = lastAttr.getForeColorRGB();
+                    }
+                    if (foreColorRGB != lastForeColorRGB) {
+                        doForeColorRGB = true;
+                    }
+                }
+                if (doForeColorRGB
+                    || ((lCell.getForeColorRGB() >= 0)
+                        && ((lCell.getForeColorRGB() != lastAttr.getForeColorRGB())
+                            || (lastAttr.getForeColorRGB() < 0)))
                 ) {
                     if (debugToStderr && reallyDebug) {
                         System.err.println("3 set foreColorRGB");
                     }
-                    sb.append(colorRGB(lCell.getForeColorRGB(), true));
+                    sb.append(colorRGB(foreColorRGB, true));
                 } else {
                     if ((lCell.getForeColorRGB() < 0)
                         && ((lastAttr.getForeColorRGB() >= 0)
@@ -3353,8 +3368,13 @@ public class ECMA48Terminal extends LogicalScreen
         for (Cell cell: cells) {
             if (cell.isInvertedImage()) {
                 saveInCache = false;
+                break;
             }
+            // Compute the hashcode so that the cell image hash is available
+            // for looking up in the image cache.
+            cell.hashCode();
         }
+
         if (saveInCache) {
             String cachedResult = sixelCache.get(cells);
             if (cachedResult != null) {
@@ -3595,7 +3615,11 @@ public class ECMA48Terminal extends LogicalScreen
         for (Cell cell: cells) {
             if (cell.isInvertedImage()) {
                 saveInCache = false;
+                break;
             }
+            // Compute the hashcode so that the cell image hash is available
+            // for looking up in the image cache.
+            cell.hashCode();
         }
         if (saveInCache) {
             String cachedResult = iterm2Cache.get(cells);
@@ -3773,7 +3797,11 @@ public class ECMA48Terminal extends LogicalScreen
         for (Cell cell: cells) {
             if (cell.isInvertedImage()) {
                 saveInCache = false;
+                break;
             }
+            // Compute the hashcode so that the cell image hash is available
+            // for looking up in the image cache.
+            cell.hashCode();
         }
         if (saveInCache) {
             String cachedResult = jexerCache.get(cells);

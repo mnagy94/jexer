@@ -216,9 +216,9 @@ public class DemoApplication extends TApplication {
             System.setProperty("jexer.TScreenOptions.borderStyle", "round");
             System.setProperty("jexer.TScreenOptions.grid.borderStyle", "round");
             System.setProperty("jexer.TScreenOptions.options.borderStyle", "round");
-            System.setProperty("jexer.TWindow.opacity", "70");
-            System.setProperty("jexer.TImage.opacity", "70");
-            System.setProperty("jexer.TTerminal.opacity", "70");
+            System.setProperty("jexer.TWindow.opacity", "80");
+            System.setProperty("jexer.TImage.opacity", "80");
+            System.setProperty("jexer.TTerminal.opacity", "80");
             System.setProperty("jexer.TButton.style", "round");
 
             getTheme().setFemme();
@@ -227,7 +227,7 @@ public class DemoApplication extends TApplication {
                 window.setBorderStyleModal("round");
                 window.setBorderStyleMoving("round");
                 window.setBorderStyleInactive("round");
-                window.setAlpha(70 * 255 / 100);
+                window.setAlpha(80 * 255 / 100);
 
                 for (TWidget widget: window.getChildren()) {
                     if (widget instanceof TButton) {
@@ -240,9 +240,10 @@ public class DemoApplication extends TApplication {
                 m.setBorderStyleModal("round");
                 m.setBorderStyleMoving("round");
                 m.setBorderStyleInactive("round");
-                m.setAlpha(70 * 255 / 100);
+                m.setAlpha(90 * 255 / 100);
             }
             setDesktop(null);
+            setHideStatusBar(true);
             return true;
         }
 
@@ -286,10 +287,19 @@ public class DemoApplication extends TApplication {
                 m.setAlpha(90 * 255 / 100);
             }
             setDesktop(new TDesktop(this));
+            setHideStatusBar(false);
             return true;
         }
 
         return super.onMenu(menu);
+    }
+
+    /**
+     * Show FPS.
+     */
+    @Override
+    protected void onPreDraw() {
+        menuTrayText = String.format("FPS %d", getFramesPerSecond());
     }
 
     // ------------------------------------------------------------------------

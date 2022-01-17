@@ -1526,15 +1526,23 @@ public class SwingTerminal extends LogicalScreen
         }
 
         Cell cellColor = new Cell(cell);
+        if (cell.isPulse()) {
+            cellColor.setPulse(false, false, 0);
+            cellColor.setForeColorRGB(cell.getForeColorPulseRGB(backend,
+                    System.currentTimeMillis()));
+        }
 
         // Check for reverse
         if (cell.isReverse()) {
-            if (cell.isRGB()) {
-                cellColor.setForeColorRGB(cell.getBackColorRGB());
-                cellColor.setBackColorRGB(cell.getForeColorRGB());
-            } else {
+            if (cell.getBackColorRGB() < 0) {
                 cellColor.setForeColor(cell.getBackColor());
+            } else {
+                cellColor.setForeColorRGB(cell.getBackColorRGB());
+            }
+            if (cell.getForeColorRGB() < 0) {
                 cellColor.setBackColor(cell.getForeColor());
+            } else {
+                cellColor.setBackColorRGB(cell.getForeColorRGB());
             }
         }
 
@@ -1719,6 +1727,7 @@ public class SwingTerminal extends LogicalScreen
 
                     if (!lCell.equals(pCell)
                         || lCell.isBlink()
+                        || lCell.isPulse()
                         || reallyCleared
                         || (swing.getFrame() == null)) {
 
@@ -1799,7 +1808,8 @@ public class SwingTerminal extends LogicalScreen
                             || ((x == cursorX)
                                 && (y == cursorY)
                                 && cursorVisible)
-                            || (lCell.isBlink())
+                            || lCell.isBlink()
+                            || lCell.isPulse()
                         ) {
                             if (lCell.isImage()) {
                                 if (imagesOverText) {
@@ -1847,6 +1857,7 @@ public class SwingTerminal extends LogicalScreen
                             && (y == cursorY)
                             && cursorVisible)
                         || lCell.isBlink()
+                        || lCell.isPulse()
                     ) {
                         if (xPixel < xMin) {
                             xMin = xPixel;

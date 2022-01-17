@@ -57,6 +57,8 @@ import org.w3c.dom.NodeList;
  *    - Open an animated image as an Animation.
  *
  *    - Compute the distance between two colors in RGB space.
+ *
+ *    - Compute the partial movement between two colors in RGB space.
  */
 public class ImageUtils {
 
@@ -465,6 +467,43 @@ public class ImageUtils {
         diff += Math.pow(green2 - green, 2);
         diff += Math.pow(blue2 - blue, 2);
         return (int) Math.sqrt(diff);
+    }
+
+    /**
+     * Move from one point in RGB space to another, by a certain fraction.
+     *
+     * @param start the starting point color
+     * @param end the ending point color
+     * @param fraction the amount of movement between start and end, between
+     * 0.0 (start) and 1.0 (end).
+     * @return the final color
+     */
+    public static int rgbMove(final int start, final int end,
+        final double fraction) {
+
+        if (fraction <= 0) {
+            return start;
+        }
+        if (fraction >= 1) {
+            return end;
+        }
+
+        int red   = (start >>> 16) & 0xFF;
+        int green = (start >>>  8) & 0xFF;
+        int blue  =  start         & 0xFF;
+        int red2   = (end >>> 16) & 0xFF;
+        int green2 = (end >>>  8) & 0xFF;
+        int blue2  =  end         & 0xFF;
+
+        int rgbRed   =   red + (int) (fraction * (  red2 - red));
+        int rgbGreen = green + (int) (fraction * (green2 - green));
+        int rgbBlue  =  blue + (int) (fraction * ( blue2 - blue));
+
+        rgbRed   = Math.min(Math.max(  rgbRed, 0), 255);
+        rgbGreen = Math.min(Math.max(rgbGreen, 0), 255);
+        rgbBlue  = Math.min(Math.max( rgbBlue, 0), 255);
+
+        return (rgbRed << 16) | (rgbGreen << 8) | rgbBlue;
     }
 
 }

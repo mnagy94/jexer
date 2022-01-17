@@ -894,30 +894,45 @@ public class TApplication implements Runnable {
         menuItems       = new LinkedList<TMenuItem>();
         desktop         = new TDesktop(this);
 
-        // Special case: the Swing backend needs to have a timer to drive its
-        // blink state.
-        if (backend instanceof SwingBackend) {
-            long millis = ((SwingBackend) backend).getBlinkMillis();
-            addTimer(millis, true,
-                new TAction() {
-                    public void DO() {
-                        TApplication.this.doRepaint();
-                    }
-                }
-            );
-        }
+        final boolean animationsEnabled = true;
+        if (!animationsEnabled) {
+            // If animations are disabled, we need additional timers.
 
-        // Special case: the MultiBackend needs to have a timer to drive
-        // blink state and idle checks.
-        if (backend instanceof MultiBackend) {
-            // Default to 500 millis.
-            long millis = 500;
-            addTimer(millis, true,
+            // Special case: the Swing backend needs to have a timer to drive
+            // its blink state.
+            if (backend instanceof SwingBackend) {
+                long millis = ((SwingBackend) backend).getBlinkMillis();
+                addTimer(millis, true,
+                    new TAction() {
+                        public void DO() {
+                            TApplication.this.doRepaint();
+                        }
+                    }
+                );
+            }
+
+            // Special case: the MultiBackend needs to have a timer to drive
+            // blink state and idle checks.
+            if (backend instanceof MultiBackend) {
+                // Default to 500 millis.
+                long millis = 500;
+                addTimer(millis, true,
+                    new TAction() {
+                        public void DO() {
+                            TApplication.this.doRepaint();
+                            // Update idle checks.
+                            TApplication.this.getBackend().hasEvents();
+                        }
+                    }
+                );
+            }
+        } else {
+            // Animations always check every 1/32 of a second.
+            final int ANIMATION_FPS = 32;
+            TTimer animationTimer = addTimer(1000 / ANIMATION_FPS, true,
                 new TAction() {
                     public void DO() {
-                        TApplication.this.doRepaint();
-                        // Update idle checks.
-                        TApplication.this.getBackend().hasEvents();
+                        doRepaint();
                     }
                 }
             );

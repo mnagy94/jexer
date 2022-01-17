@@ -99,16 +99,10 @@ public class Cell extends CellAttributes {
     private java.awt.Color background = java.awt.Color.BLACK;
 
     /**
-     * hashCode() needs to call image.hashCode(), which can get quite
+     * hashCode() needs to call makeImageHashCode(), which can get quite
      * expensive.
      */
     private int imageHashCode = 0;
-
-    /**
-     * hashCode() needs to call background.hashCode(), which can get quite
-     * expensive.
-     */
-    private int backgroundHashCode = 0;
 
     /**
      * If this cell has image data, whether or not it also has transparent
@@ -184,12 +178,8 @@ public class Cell extends CellAttributes {
      */
     public void setImage(final BufferedImage image) {
         this.image = image;
+        imageHashCode = 0;
         hasTransparentPixels = 0;
-        if (image == null) {
-            imageHashCode = 0;
-        } else {
-            imageHashCode = image.hashCode();
-        }
         width = Width.SINGLE;
     }
 
@@ -312,42 +302,6 @@ public class Cell extends CellAttributes {
 
         // We know we are opaque now.
         hasTransparentPixels = 2;
-    }
-
-    /**
-     * Blit another cell's image on top of the image data for this cell.
-     *
-     * @param cell the other cell
-     */
-    public void blitImage(final Cell cell) {
-        if (!cell.isImage() || cell.isFullyTransparentImage()) {
-            // The other cell has no image data.
-            return;
-        }
-        if (!isImage() || !cell.isTransparentImage()) {
-            // Just replace this cell's image.
-            setImage(cell.getImage());
-            return;
-        }
-        assert (isImage() && cell.isTransparentImage());
-        assert (image.getWidth() > 0);
-        assert (image.getHeight() > 0);
-        assert (cell.getImage().getWidth() > 0);
-        assert (cell.getImage().getHeight() > 0);
-
-        // Blit the new cell image over this cell's image.
-        int textWidth = Math.min(image.getWidth(), cell.getImage().getWidth());
-        int textHeight = Math.min(image.getHeight(),
-            cell.getImage().getHeight());
-        BufferedImage newImage = new BufferedImage(textWidth,
-            textHeight, BufferedImage.TYPE_INT_ARGB);
-
-        java.awt.Graphics gr = newImage.getGraphics();
-        gr.setColor(java.awt.Color.BLACK);
-        gr.drawImage(image, 0, 0, null, null);
-        gr.drawImage(cell.getImage(), 0, 0, null, null);
-        gr.dispose();
-        setImage(newImage);
     }
 
     /**
@@ -565,7 +519,6 @@ public class Cell extends CellAttributes {
         imageHashCode = 0;
         invertedImage = null;
         background = java.awt.Color.BLACK;
-        backgroundHashCode = 0;
         hasTransparentPixels = -1;
     }
 
@@ -581,7 +534,6 @@ public class Cell extends CellAttributes {
         imageHashCode = 0;
         invertedImage = null;
         background = java.awt.Color.BLACK;
-        backgroundHashCode = 0;
         hasTransparentPixels = -1;
     }
 
@@ -626,6 +578,8 @@ public class Cell extends CellAttributes {
          *   - Are text only and have 24-bit RGB color.
          *
          *   - Are image over a glyph.
+         *
+         *   - Are animated text cells.
          */
         if ((image == null)
             && (getForeColorRGB() != -1)
@@ -634,6 +588,9 @@ public class Cell extends CellAttributes {
             return false;
         }
         if ((image != null) && (ch != ' ')) {
+            return false;
+        }
+        if ((image == null) && (isPulse())) {
             return false;
         }
         return true;
@@ -675,6 +632,14 @@ public class Cell extends CellAttributes {
                 return false;
             }
             // Either both objects have their image inverted, or neither do.
+            if (imageHashCode == 0) {
+                // Lazy-load hash code.
+                imageHashCode = makeImageHashCode();
+            }
+            if (that.imageHashCode == 0) {
+                // Lazy-load hash code.
+                that.imageHashCode = that.makeImageHashCode();
+            }
             if ((imageHashCode == that.imageHashCode)
                 && (background.equals(that.background))
             ) {
@@ -691,6 +656,20 @@ public class Cell extends CellAttributes {
             return super.equals(rhs);
         }
         return false;
+    }
+
+    /**
+     * Make a hashcode based on the data in image.  This is needed because
+     * two visibly identical BufferedImage's can return different hash codes,
+     * which breaks caching.  And we really really need caching here.
+     */
+    private int makeImageHashCode() {
+        if (image == null) {
+            return 0;
+        }
+        return java.util.Arrays.hashCode(image.getRGB(0, 0,
+                image.getWidth(), image.getHeight(), null, 0,
+                image.getWidth()));
     }
 
     /**
@@ -711,8 +690,11 @@ public class Cell extends CellAttributes {
             hash = (B * hash) + image.hashCode();
             hash = (B * hash) + background.hashCode();
              */
+            if (imageHashCode == 0) {
+                // Lazy-load hash code.
+                imageHashCode = makeImageHashCode();
+            }
             hash = (B * hash) + imageHashCode;
-            hash = (B * hash) + backgroundHashCode;
         }
         if (invertedImage != null) {
             hash = (B * hash) + invertedImage.hashCode();
@@ -735,12 +717,10 @@ public class Cell extends CellAttributes {
             this.invertedImage = that.invertedImage;
             this.background = that.background;
             this.imageHashCode = that.imageHashCode;
-            this.backgroundHashCode = that.backgroundHashCode;
             this.hasTransparentPixels = that.hasTransparentPixels;
         } else {
             this.image = null;
             this.imageHashCode = 0;
-            this.backgroundHashCode = 0;
             this.hasTransparentPixels = -1;
             this.width = Width.SINGLE;
         }
@@ -756,6 +736,7 @@ public class Cell extends CellAttributes {
      */
     public void setAttr(final CellAttributes that) {
         image = null;
+        imageHashCode = 0;
         hasTransparentPixels = -1;
         super.setTo(that);
     }
@@ -769,6 +750,7 @@ public class Cell extends CellAttributes {
     public void setAttr(final CellAttributes that, final boolean keepImage) {
         if (!keepImage) {
             image = null;
+            imageHashCode = 0;
             hasTransparentPixels = -1;
         }
         super.setTo(that);

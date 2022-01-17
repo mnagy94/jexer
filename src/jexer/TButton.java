@@ -368,6 +368,25 @@ public class TButton extends TWidget {
             drawEnds(getWindow().getBackground(), buttonColor);
         }
 
+        buttonColor = new CellAttributes(buttonColor);
+        buttonColor.setForeColorRGB(getScreen().getBackend().
+            attrToForegroundColor(buttonColor).getRGB());
+        menuMnemonicColor = new CellAttributes(menuMnemonicColor);
+        menuMnemonicColor.setForeColorRGB(getScreen().getBackend().
+            attrToForegroundColor(menuMnemonicColor).getRGB());
+
+        // Pulse colors.
+        if (isActive() && getWindow().isActive()) {
+            buttonColor.setPulse(true, false, 0);
+            buttonColor.setPulseColorRGB(getScreen().getBackend().
+                attrToForegroundColor(getTheme().getColor(
+                    "tbutton.pulse")).getRGB());
+            menuMnemonicColor.setPulse(true, false, 0);
+            menuMnemonicColor.setPulseColorRGB(getScreen().getBackend().
+                attrToForegroundColor(getTheme().getColor(
+                    "tbutton.mnemonic.pulse")).getRGB());
+        }
+
         if (inButtonPress) {
             putCharXY(1, 0, leftEdgeChar);
             putStringXY(2, 0, mnemonic.getRawLabel(), buttonColor);
