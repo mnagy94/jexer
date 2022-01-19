@@ -858,7 +858,7 @@ public class MultiScreen implements Screen {
      * @return the width in pixels of a character cell
      */
     public int getTextWidth() {
-        int textWidth = 16;
+        int textWidth = 10;
         synchronized (screens) {
             for (Screen screen: screens) {
                 int newTextWidth = screen.getTextWidth();

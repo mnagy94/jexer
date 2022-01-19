@@ -498,6 +498,15 @@ public class ECMA48Terminal extends LogicalScreen
              */
         }
 
+        /**
+         * Get th number of entries in the cache.
+         *
+         * @return the number of entries
+         */
+        public int size() {
+            return cache.size();
+        }
+
     }
 
     // ------------------------------------------------------------------------
@@ -1262,7 +1271,7 @@ public class ECMA48Terminal extends LogicalScreen
         if (sessionInfo.getWindowWidth() > 0) {
             return (widthPixels / sessionInfo.getWindowWidth());
         }
-        return 16;
+        return 10;
     }
 
     /**
@@ -3346,20 +3355,28 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (y == height - 1) {
-            // We are on the bottom row.  If scrolling mode is enabled
-            // (default), then VT320/xterm will scroll the entire screen if
-            // we draw any pixels here.  Do not draw the image, bail out
-            // instead.
-            sb.append(normal());
-            sb.append(gotoXY(x, y));
-            for (int j = 0; j < cells.size(); j++) {
-                sb.append(' ');
+            if (sixelEncoder instanceof HQSixelEncoder) {
+                // HQ can emit images with transparency.  We can use that
+                // along with DECSDM to get up to 1000 pixel width images on
+                // the bottom row.
+                emitSixelOnBottomRow(x, y, cells, sb);
+                return sb.toString();
+            } else {
+                // We are on the bottom row.  If scrolling mode is enabled
+                // (default), then VT320/xterm will scroll the entire screen if
+                // we draw any pixels here.  Do not draw the image, bail out
+                // instead.
+                sb.append(normal());
+                sb.append(gotoXY(x, y));
+                for (int j = 0; j < cells.size(); j++) {
+                    sb.append(' ');
+                }
+                return sb.toString();
             }
-            return sb.toString();
         }
 
         if (sixelCache == null) {
-            sixelCache = new ImageCache(height * width / 2);
+            sixelCache = new ImageCache(height * width * 10);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3388,11 +3405,22 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         // If the final image would be larger than 1000 pixels wide, break it
-        // up into smaller images.
-        if (cells.size() * getTextWidth() > 1000) {
+        // up into smaller images.  Or if we are using the HQ encoder and
+        // will have more than some multiple of the palette size in total
+        // pixels.
+        int maxChunkLength = 1000;
+        if (sixelEncoder instanceof HQSixelEncoder) {
+            maxChunkLength = Math.min(maxChunkLength,
+                sixelEncoder.getPaletteSize() * 10 / getTextHeight());
+            /*
+            System.err.printf("maxChunkLength: %d cache used size %d\n",
+                maxChunkLength, sixelCache.size());
+             */
+        }
+        if (cells.size() * getTextWidth() > maxChunkLength) {
             StringBuilder chunkSb = new StringBuilder();
             int chunkStart = 0;
-            int chunkSize = 1000 / getTextWidth();
+            int chunkSize = maxChunkLength / getTextWidth();
             int remaining = cells.size();
             int chunkX = x;
             ArrayList<Cell> chunk;
@@ -3416,6 +3444,51 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         return (startSixel(x, y) + sixel + endSixel());
+    }
+
+    /**
+     * Create a sixel string representing a row of several cells containing
+     * bitmap data on the bottom.  This technique may not work on all
+     * terminals, and is limited to 1000 pixels from the left edge.
+     *
+     * @param x column coordinate.  0 is the left-most column.
+     * @param y row coordinate.  0 is the top-most row.
+     * @param cells the cells containing the bitmap data
+     * @param sb the StringBuilder to write to
+     */
+    private void emitSixelOnBottomRow(final int x, final int y,
+        final ArrayList<Cell> cells, final StringBuilder sb) {
+
+        int cellWidth = getTextWidth();
+        int cellHeight = getTextHeight();
+        int pixelX = x * cellWidth;
+        int pixelY = y * cellHeight;
+        int maxPixelX = pixelX + (cells.size() * cellWidth);
+        int maxPixelY = pixelY + cellHeight;
+        if ((maxPixelX > 1000) || (maxPixelY > 1000)) {
+            // There is no point, xterm will not display this image.
+            sb.append(normal());
+            sb.append(gotoXY(x, y));
+            for (int i = 0; i < cells.size(); i++) {
+                sb.append(' ');
+            }
+            return;
+        }
+
+        // The final image will be 1000 x 1000 or less.
+        BufferedImage cellsImage = cellsToImage(cells);
+        BufferedImage fullImage = new BufferedImage(maxPixelX,
+            maxPixelY, BufferedImage.TYPE_INT_ARGB);
+        Graphics gr = fullImage.getGraphics();
+        gr.drawImage(cellsImage, pixelX, pixelY, null);
+        gr.dispose();
+
+        // HQSixelEncoder.toSixel() can accept allowTransparent.
+        String sixel = ((HQSixelEncoder) sixelEncoder).toSixel(fullImage, true);
+        sb.append("\033[?80h\033P0;1;0q");
+        sb.append(sixel);
+        // System.err.println("SIXEL: " + sixel);
+        sb.append("\033\\\033[?80l");
     }
 
     /**
@@ -3606,7 +3679,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (iterm2Cache == null) {
-            iterm2Cache = new ImageCache(height * width / 2);
+            iterm2Cache = new ImageCache(height * width * 10);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted
@@ -3788,7 +3861,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (jexerCache == null) {
-            jexerCache = new ImageCache(height * width / 2);
+            jexerCache = new ImageCache(height * width * 10);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted

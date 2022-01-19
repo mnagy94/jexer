@@ -632,17 +632,15 @@ public class Cell extends CellAttributes {
                 return false;
             }
             // Either both objects have their image inverted, or neither do.
-            if (imageHashCode == 0) {
-                // Lazy-load hash code.
-                imageHashCode = makeImageHashCode();
-            }
-            if (that.imageHashCode == 0) {
-                // Lazy-load hash code.
-                that.imageHashCode = that.makeImageHashCode();
-            }
-            if ((imageHashCode == that.imageHashCode)
-                && (background.equals(that.background))
+            if ((imageHashCode != 0) && (that.imageHashCode != 0)
+                && (imageHashCode != that.imageHashCode)
             ) {
+                return false;
+            }
+            if (compareCellImages(this, that) == false) {
+                return false;
+            }
+            if (background.equals(that.background)) {
                 // Fall through to the attributes check below.
                 // ...
             } else {
@@ -670,6 +668,53 @@ public class Cell extends CellAttributes {
         return java.util.Arrays.hashCode(image.getRGB(0, 0,
                 image.getWidth(), image.getHeight(), null, 0,
                 image.getWidth()));
+    }
+
+    /**
+     * Compare two Cell's images for equality.  If the images are equal, then
+     * the imageHashCode on both is set.
+     *
+     * @param first the first Cell
+     * @param second the second Cell
+     */
+    private boolean compareCellImages(final Cell first,
+        final Cell second) {
+
+        assert (first.image != null);
+        assert (second.image != null);
+
+        int width = first.image.getWidth();
+        int height = first.image.getHeight();
+        if (width != second.image.getWidth()) {
+            return false;
+        }
+        if (height != second.image.getHeight()) {
+            return false;
+        }
+
+        int [] firstRgbArray = first.image.getRGB(0, 0, width, height,
+            null, 0, width);
+        int [] secondRgbArray = second.image.getRGB(0, 0, width, height,
+            null, 0, width);
+
+        // This should be impossible, but check anyway.
+        if (firstRgbArray.length != secondRgbArray.length) {
+            return false;
+        }
+
+        int hashCode = 1;
+        for (int i = 0; i < firstRgbArray.length; i++) {
+            if (firstRgbArray[i] != secondRgbArray[i]) {
+                return false;
+            }
+
+            // Integer.hashCode() was introduced in Java 1.8.  It breaks the
+            // original Jexer 1.0 dev goal for Java 1.6 compatibility.
+            hashCode = 31 * hashCode + Integer.hashCode(firstRgbArray[i]);
+        }
+        first.imageHashCode = hashCode;
+        second.imageHashCode = hashCode;
+        return true;
     }
 
     /**

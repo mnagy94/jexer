@@ -146,6 +146,9 @@ public class DemoApplication extends TApplication {
             (backendType == BackendType.SWING ? 28 : -1), 20);
         addAllWidgets();
         getBackend().setTitle(i18n.getString("applicationTitle"));
+
+        // Use cute theme by default.
+        onMenu(new TMenuEvent(getBackend(), 10001));
     }
 
     // ------------------------------------------------------------------------
@@ -204,7 +207,7 @@ public class DemoApplication extends TApplication {
         }
 
         if (menu.getId() == 10001) {
-            // Look sexy: switch the color theme, window borders, and button
+            // Look cute: switch the color theme, window borders, and button
             // styles.
             System.setProperty("jexer.TWindow.borderStyleForeground", "round");
             System.setProperty("jexer.TWindow.borderStyleModal", "round");
@@ -320,7 +323,7 @@ public class DemoApplication extends TApplication {
         TMenu demoMenu = addMenu(i18n.getString("demo"));
         demoMenu.addItem(10000, i18n.getString("mainWindow"));
         demoMenu.addSeparator();
-        demoMenu.addItem(10001, i18n.getString("lookSexy"));
+        demoMenu.addItem(10001, i18n.getString("lookCute"));
         demoMenu.addItem(10002, i18n.getString("lookBland"));
         demoMenu.addSeparator();
         TMenuItem item = demoMenu.addItem(2000, i18n.getString("checkable"));
