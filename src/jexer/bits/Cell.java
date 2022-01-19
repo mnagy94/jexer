@@ -692,8 +692,14 @@ public class Cell extends CellAttributes {
             return false;
         }
 
+        assert (first != null);
+        assert (first.image != null);
+        assert (first.image.getWidth() == second.image.getWidth());
+        assert (first.image.getHeight() == second.image.getHeight());
         int [] firstRgbArray = first.image.getRGB(0, 0, width, height,
             null, 0, width);
+        assert (second != null);
+        assert (second.image != null);
         int [] secondRgbArray = second.image.getRGB(0, 0, width, height,
             null, 0, width);
 

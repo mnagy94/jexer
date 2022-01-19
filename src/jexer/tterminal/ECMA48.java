@@ -520,6 +520,11 @@ public class ECMA48 implements Runnable {
     private HashMap<Integer, java.awt.Color> sixelPalette;
 
     /**
+     * Sixel scrolling option.
+     */
+    private boolean sixelScrolling = true;
+
+    /**
      * XTGETTCAP collection buffer.
      */
     private StringBuilder xtgettcapBuffer = new StringBuilder();
@@ -3632,11 +3637,24 @@ public class ECMA48 implements Runnable {
                 if (type == DeviceType.XTERM) {
                     if (decPrivateModeFlag == true) {
                         if (value == true) {
-                            // Enable sixel scrolling (default).
-                            // Not supported
+                            // Set DECSDM: Disable sixel scrolling.
+
+                            /*
+                             * This was actually recorded incorrectly in the
+                             * DEC VT330/340 programmer's guide
+                             * (https://vt100.net/docs/vt3xx-gp/chapter14.html).
+                             *
+                             * On real hardware, setting 80 DISABLES
+                             * scrolling.  Much thanks to James Holderness
+                             * for finding this and sharing it with several
+                             * terminals:
+                             *
+                             * https://github.com/hackerb9/lsix/issues/41
+                             */
+                            sixelScrolling = false;
                         } else {
-                            // Disable sixel scrolling.
-                            // Not supported
+                            // Reset DECSDM: Enable sixel scrolling (default).
+                            sixelScrolling = true;
                         }
                     }
                 }
@@ -7874,7 +7892,19 @@ public class ECMA48 implements Runnable {
         if (maybeTransparent) {
             maybeTransparent = sixel.isTransparent();
         }
-        imageToCells(image, true, maybeTransparent);
+
+        if (!sixelScrolling) {
+            int oldCursorX = currentState.cursorX;
+            int oldCursorY = currentState.cursorY;
+            currentState.cursorX = 0;
+            currentState.cursorY = 0;
+            imageToCells(image, false, maybeTransparent);
+            currentState.cursorX = oldCursorX;
+            currentState.cursorY = oldCursorY;
+        } else {
+            imageToCells(image, true, maybeTransparent);
+        }
+
     }
 
     /**
@@ -8460,7 +8490,7 @@ public class ECMA48 implements Runnable {
                 // Room for more image on the visible screen.
                 currentState.cursorX++;
             }
-            if (currentState.cursorY < scrollRegionBottom - 1) {
+            if (currentState.cursorY <= scrollRegionBottom - 1) {
                 // Not at the bottom, down a line.
                 linefeed();
             } else if (scroll == true) {

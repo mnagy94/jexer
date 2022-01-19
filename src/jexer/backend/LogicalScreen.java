@@ -305,13 +305,15 @@ public class LogicalScreen implements Screen {
     public final boolean isDirty() {
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                if (!logical[x][y].equals(physical[x][y])) {
-                    return true;
-                }
                 if (logical[x][y].isBlink()) {
                     // Blinking screens are always dirty.  There is
                     // opportunity for a Netscape blink tag joke here...
                     return true;
+                }
+                synchronized (this) {
+                    if (!logical[x][y].equals(physical[x][y])) {
+                        return true;
+                    }
                 }
             }
         }
@@ -429,8 +431,10 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                physical[cursorX][cursorY].unset();
-                unsetImageRow(cursorY);
+                synchronized (this) {
+                    physical[cursorX][cursorY].unset();
+                    unsetImageRow(cursorY);
+                }
             }
         }
     }
@@ -488,8 +492,10 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                physical[cursorX][cursorY].unset();
-                unsetImageRow(cursorY);
+                synchronized (this) {
+                    physical[cursorX][cursorY].unset();
+                    unsetImageRow(cursorY);
+                }
             }
         }
     }
@@ -535,8 +541,10 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                physical[cursorX][cursorY].unset();
-                unsetImageRow(cursorY);
+                synchronized (this) {
+                    physical[cursorX][cursorY].unset();
+                    unsetImageRow(cursorY);
+                }
             }
         }
     }
@@ -573,8 +581,10 @@ public class LogicalScreen implements Screen {
             // If this happens to be the cursor position, make the position
             // dirty.
             if ((cursorX == X) && (cursorY == Y)) {
-                physical[cursorX][cursorY].unset();
-                unsetImageRow(cursorY);
+                synchronized (this) {
+                    physical[cursorX][cursorY].unset();
+                    unsetImageRow(cursorY);
+                }
             }
         }
     }
@@ -922,8 +932,10 @@ public class LogicalScreen implements Screen {
             && (cursorX <= width - 1)
         ) {
             // Make the current cursor position dirty
-            physical[cursorX][cursorY].unset();
-            unsetImageRow(cursorY);
+            synchronized (this) {
+                physical[cursorX][cursorY].unset();
+                unsetImageRow(cursorY);
+            }
         }
 
         cursorVisible = visible;
@@ -1023,7 +1035,7 @@ public class LogicalScreen implements Screen {
     /**
      * Clear the physical screen.
      */
-    public final void clearPhysical() {
+    public synchronized final void clearPhysical() {
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
                 physical[col][row].unset();
