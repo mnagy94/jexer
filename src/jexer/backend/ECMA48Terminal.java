@@ -225,6 +225,11 @@ public class ECMA48Terminal extends LogicalScreen
     private SixelEncoder sixelEncoder = null;
 
     /**
+     * If true, ask sixel to be fast and dirty.
+     */
+    private boolean sixelFastAndDirty = false;
+
+    /**
      * The sixel post-rendered string cache.
      */
     private ImageCache sixelCache = null;
@@ -1022,12 +1027,19 @@ public class ECMA48Terminal extends LogicalScreen
         } else {
             sixel = true;
         }
-        // Default to legacy uniform quantizer.
+        // Default to HQ quantizer.
         if (System.getProperty("jexer.ECMA48.sixelEncoder",
                 "hq").equals("legacy")) {
             sixelEncoder = new LegacySixelEncoder();
         } else {
             sixelEncoder = new HQSixelEncoder();
+        }
+        if (System.getProperty("jexer.ECMA48.sixelFastAndDirty",
+                "false").equals("true")
+        ) {
+            sixelFastAndDirty = true;
+        } else {
+            sixelFastAndDirty = false;
         }
         sixelEncoder.reloadOptions();
 
@@ -3375,33 +3387,37 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
 
-        if (sixelCache == null) {
-            sixelCache = new ImageCache(height * width * 10);
-        }
-
-        // Save and get rows to/from the cache that do NOT have inverted
-        // cells.
         boolean saveInCache = true;
-        for (Cell cell: cells) {
-            if (cell.isInvertedImage()) {
-                saveInCache = false;
-                break;
+        if (sixelFastAndDirty) {
+            saveInCache = false;
+        } else {
+            if (sixelCache == null) {
+                sixelCache = new ImageCache(height * width * 10);
             }
-            // Compute the hashcode so that the cell image hash is available
-            // for looking up in the image cache.
-            cell.hashCode();
-        }
 
-        if (saveInCache) {
-            String cachedResult = sixelCache.get(cells);
-            if (cachedResult != null) {
-                // System.err.println("CACHE HIT");
-                sb.append(startSixel(x, y));
-                sb.append(cachedResult);
-                sb.append(endSixel());
-                return sb.toString();
+            // Save and get rows to/from the cache that do NOT have inverted
+            // cells.
+            for (Cell cell: cells) {
+                if (cell.isInvertedImage()) {
+                    saveInCache = false;
+                    break;
+                }
+                // Compute the hashcode so that the cell image hash is
+                // available for looking up in the image cache.
+                cell.hashCode();
             }
-            // System.err.println("CACHE MISS");
+
+            if (saveInCache) {
+                String cachedResult = sixelCache.get(cells);
+                if (cachedResult != null) {
+                    // System.err.println("CACHE HIT");
+                    sb.append(startSixel(x, y));
+                    sb.append(cachedResult);
+                    sb.append(endSixel());
+                    return sb.toString();
+                }
+                // System.err.println("CACHE MISS");
+            }
         }
 
         // If the final image would be larger than 1000 pixels wide, break it

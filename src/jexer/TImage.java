@@ -28,6 +28,9 @@
  */
 package jexer;
 
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 import jexer.bits.Animation;
@@ -156,6 +159,11 @@ public class TImage extends TWidget implements EditMenuUser {
      * Animation to display.
      */
     private Animation animation;
+
+    /**
+     * Anti-aliasing support.  It is normally off for performance.
+     */
+    private boolean antiAlias = false;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -505,7 +513,7 @@ public class TImage extends TWidget implements EditMenuUser {
                     // Render over a full-cell-size image.
                     BufferedImage newImage = new BufferedImage(textWidth,
                         textHeight, BufferedImage.TYPE_INT_ARGB);
-                    java.awt.Graphics gr = newImage.getGraphics();
+                    Graphics gr = newImage.getGraphics();
                     BufferedImage subImage = image.getSubimage(x * textWidth,
                         y * textHeight, width, height);
                     gr.drawImage(subImage, 0, 0, null, null);
@@ -535,6 +543,25 @@ public class TImage extends TWidget implements EditMenuUser {
         if (top < 0) {
             top = 0;
         }
+    }
+
+    /**
+     * Get anti-aliasing value.
+     *
+     * @return true if anti-aliasing is enabled
+     */
+    public boolean isAntiAlias() {
+        return antiAlias;
+    }
+
+    /**
+     * Set anti-aliasing.
+     *
+     * @param antiAlias if true, anti-aliasing will be enabled
+     */
+    public void setAntiAlias(final boolean antiAlias) {
+        this.antiAlias = antiAlias;
+        sizeToImage(true);
     }
 
     /**
@@ -825,7 +852,20 @@ public class TImage extends TWidget implements EditMenuUser {
             break;
         }
 
-        java.awt.Graphics gr = newImage.createGraphics();
+        Graphics gr = newImage.createGraphics();
+        if (gr instanceof Graphics2D) {
+            if (antiAlias) {
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_ON);
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+            } else {
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                    RenderingHints.VALUE_ANTIALIAS_OFF);
+                ((Graphics2D) gr).setRenderingHint(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_SPEED);
+            }
+        }
         if (scale == Scale.SCALE) {
             gr.setColor(scaleBackColor);
             gr.fillRect(0, 0, width * textWidth, height * textHeight);

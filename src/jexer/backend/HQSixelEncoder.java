@@ -59,6 +59,12 @@ public class HQSixelEncoder implements SixelEncoder {
     private static final int ALPHA_OPAQUE = 102;        // ~40%
 
     /**
+     * When fastAndDirty is set, the effective palette size for non-indexed
+     * images.
+     */
+    private static final int FAST_AND_DIRTY = 16;
+
+    /**
      * Palette is used to manage the conversion of images between 24-bit RGB
      * color and a palette of paletteSize colors.
      */
@@ -448,7 +454,14 @@ public class HQSixelEncoder implements SixelEncoder {
             }
 
             paletteSize = size;
-            sixelColors = new ArrayList<Integer>(size);
+            int numColors = paletteSize;
+            if (fastAndDirty) {
+                // Fast and dirty: use fewer colors.  Horizontal banding will
+                // result, but might not be noticeable for fast-moving
+                // scenes.
+                numColors = Math.min(paletteSize, FAST_AND_DIRTY);
+            }
+            sixelColors = new ArrayList<Integer>(numColors);
 
             if (image.getTransparency() == Transparency.TRANSLUCENT) {
                 // PNG like images where transparency is carried in alpha.
@@ -560,10 +573,10 @@ public class HQSixelEncoder implements SixelEncoder {
              *
              * - Otherwise use octree.
              */
-            if (paletteSize >= colorMap.size()) {
+            if (numColors >= colorMap.size()) {
                 quantizationType = 0;
                 directMap();
-            } else if ((colorMap.size() <= paletteSize * 10) || true) {
+            } else if ((colorMap.size() <= numColors * 10) || true) {
                 // For now, direct map and median cut are all we get.
                 quantizationType = 1;
                 medianCut();
@@ -774,9 +787,18 @@ public class HQSixelEncoder implements SixelEncoder {
             for (ColorIdx color: colorMap.values()) {
                 bucket.add(color);
             }
+
+            int numColors = paletteSize;
+            if (fastAndDirty) {
+                // Fast and dirty: use fewer colors.  Horizontal banding will
+                // result, but might not be noticeable for fast-moving
+                // scenes.
+                numColors = Math.min(paletteSize, FAST_AND_DIRTY);
+            }
+
             // Find the number of buckets we can have based on the palette
             // size.
-            int log2 = 31 - Integer.numberOfLeadingZeros(paletteSize);
+            int log2 = 31 - Integer.numberOfLeadingZeros(numColors);
             int totalBuckets = 1 << log2;
             if (verbosity >= 1) {
                 System.err.println("Total buckets possible: " + totalBuckets);
@@ -1155,6 +1177,11 @@ public class HQSixelEncoder implements SixelEncoder {
      */
     private boolean doTimings = false;
 
+    /**
+     * If true, be fast and dirty.
+     */
+    private boolean fastAndDirty = false;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1199,6 +1226,13 @@ public class HQSixelEncoder implements SixelEncoder {
             }
         } catch (NumberFormatException e) {
             // SQUASH
+        }
+        if (System.getProperty("jexer.ECMA48.sixelFastAndDirty",
+                "false").equals("true")
+        ) {
+            fastAndDirty = true;
+        } else {
+            fastAndDirty = false;
         }
     }
 
