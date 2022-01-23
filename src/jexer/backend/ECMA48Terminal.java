@@ -1705,8 +1705,8 @@ public class ECMA48Terminal extends LogicalScreen
          * gotoxy(), it doesn't matter in what order they are delivered to
          * the terminal.
          */
-        // DEBUG: two threads
-        ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
+        // TODO: find a good number of threads
+        ExecutorService imageExecutor = Executors.newFixedThreadPool(10);
         List<Future<String>> imageResults = new ArrayList<Future<String>>();
 
         for (int y = 0; y < height; y++) {
@@ -1801,12 +1801,16 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
 
-        // Collect all the encoded images, checking every 10ms.
+        // Collect all the encoded images, checking frequently.
         imageExecutor.shutdown();
         try {
-            while (!imageExecutor.awaitTermination(10, TimeUnit.MILLISECONDS)) {
+            while (!imageExecutor.awaitTermination(5, TimeUnit.MILLISECONDS)) {
                 // NOP
             }
+        } catch (InterruptedException e) {
+            // SQUASH
+        }
+        try {
             for (Future<String> image: imageResults) {
                 sb.append(image.get());
             }
