@@ -48,6 +48,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.imageio.ImageIO;
 
 import jexer.bits.Cell;
@@ -450,7 +456,7 @@ public class ECMA48Terminal extends LogicalScreen
          * @return the image string representing these cells, or null if this
          * list of cells is not in the cache
          */
-        public String get(final ArrayList<Cell> cells) {
+        public synchronized String get(final ArrayList<Cell> cells) {
             CacheEntry entry = cache.get(makeKey(cells));
             if (entry == null) {
                 return null;
@@ -465,7 +471,9 @@ public class ECMA48Terminal extends LogicalScreen
          * @param cells the list of cells that are the cache key
          * @param data the image string representing these cells
          */
-        public void put(final ArrayList<Cell> cells, final String data) {
+        public synchronized void put(final ArrayList<Cell> cells,
+            final String data) {
+
             String key = makeKey(cells);
 
             // System.err.println("put() " + key + " size " + cache.size());
@@ -508,7 +516,7 @@ public class ECMA48Terminal extends LogicalScreen
          *
          * @return the number of entries
          */
-        public int size() {
+        public synchronized int size() {
             return cache.size();
         }
 
@@ -1429,6 +1437,10 @@ public class ECMA48Terminal extends LogicalScreen
             Cell lCell = logical[x][y];
             Cell pCell = physical[x][y];
 
+            if (lCell.isImage()) {
+                continue;
+            }
+
             if (!lCell.equals(pCell) || lCell.isPulse() || reallyCleared) {
 
                 if (debugToStderr && reallyDebug) {
@@ -1633,6 +1645,7 @@ public class ECMA48Terminal extends LogicalScreen
         } // for (int x = 0; x < width; x++)
     }
 
+
     /**
      * Render the screen to a string that can be emitted to something that
      * knows how to process ECMA-48/ANSI X3.64 escape sequences.
@@ -1685,6 +1698,17 @@ public class ECMA48Terminal extends LogicalScreen
                 unsetImageRow(y);
             }
         }
+
+        /*
+         * Image encoding is expensive, especially when the image is not in
+         * cache.  We multithread it.  Since each image contains its own
+         * gotoxy(), it doesn't matter in what order they are delivered to
+         * the terminal.
+         */
+        // DEBUG: two threads
+        ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
+        List<Future<String>> imageResults = new ArrayList<Future<String>>();
+
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Cell lCell = logical[x][y];
@@ -1738,18 +1762,60 @@ public class ECMA48Terminal extends LogicalScreen
                         System.err.println("images to render: iTerm2: " +
                             iterm2Images + " Jexer: " + jexerImageOption);
                     }
+
                     if (iterm2Images) {
-                        sb.append(toIterm2Image(x, y, cellsToDraw));
+                        if (iterm2Cache == null) {
+                            iterm2Cache = new ImageCache(height * width * 10);
+                        }
                     } else if (jexerImageOption != JexerImageOption.DISABLED) {
-                        sb.append(toJexerImage(x, y, cellsToDraw));
+                        if (jexerCache == null) {
+                            jexerCache = new ImageCache(height * width * 10);
+                        }
                     } else {
-                        sb.append(toSixel(x, y, cellsToDraw));
+                        if (sixelCache == null) {
+                            sixelCache = new ImageCache(height * width * 10);
+                        }
                     }
+
+                    final int callX = x;
+                    final int callY = y;
+
+                    // Make a deep copy of the cells to render.
+                    final ArrayList<Cell> callCells;
+                    callCells = new ArrayList<Cell>(cellsToDraw);
+                    imageResults.add(imageExecutor.submit(new Callable<String>() {
+                        @Override
+                        public String call() {
+                            if (iterm2Images) {
+                                return toIterm2Image(callX, callY, callCells);
+                            } else if (jexerImageOption != JexerImageOption.DISABLED) {
+                                return toJexerImage(callX, callY, callCells);
+                            } else {
+                                return toSixel(callX, callY, callCells);
+                            }
+                        }
+                    }));
                 }
 
                 x = right;
             }
         }
+
+        // Collect all the encoded images, checking every 10ms.
+        imageExecutor.shutdown();
+        try {
+            while (!imageExecutor.awaitTermination(10, TimeUnit.MILLISECONDS)) {
+                // NOP
+            }
+            for (Future<String> image: imageResults) {
+                sb.append(image.get());
+            }
+        } catch (InterruptedException e) {
+            // SQUASH
+        } catch (ExecutionException e) {
+            // SQUASH
+        }
+        imageExecutor.shutdownNow();
 
         // Draw the text part now.
         for (int y = 0; y < height; y++) {
@@ -3391,10 +3457,6 @@ public class ECMA48Terminal extends LogicalScreen
         if (sixelFastAndDirty) {
             saveInCache = false;
         } else {
-            if (sixelCache == null) {
-                sixelCache = new ImageCache(height * width * 10);
-            }
-
             // Save and get rows to/from the cache that do NOT have inverted
             // cells.
             for (Cell cell: cells) {
@@ -3697,10 +3759,6 @@ public class ECMA48Terminal extends LogicalScreen
             return sb.toString();
         }
 
-        if (iterm2Cache == null) {
-            iterm2Cache = new ImageCache(height * width * 10);
-        }
-
         // Save and get rows to/from the cache that do NOT have inverted
         // cells.
         boolean saveInCache = true;
@@ -3877,10 +3935,6 @@ public class ECMA48Terminal extends LogicalScreen
                 sb.append(' ');
             }
             return sb.toString();
-        }
-
-        if (jexerCache == null) {
-            jexerCache = new ImageCache(height * width * 10);
         }
 
         // Save and get rows to/from the cache that do NOT have inverted

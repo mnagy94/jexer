@@ -65,6 +65,28 @@ public class HQSixelEncoder implements SixelEncoder {
     private static final int FAST_AND_DIRTY = 16;
 
     /**
+     * When run from the command line, we need both the image, and to know if
+     * the image is transparent in order to set to correct sixel introducer.
+     * So toSixel() returns a tuple now.
+     */
+    private class SixelResult {
+        /**
+         * The encoded image.
+         */
+        public String encodedImage;
+
+        /**
+         * If true, this image has transparent pixels.
+         */
+        public boolean transparent = false;
+
+        /**
+         * The palette used by this image.
+         */
+        public Palette palette;
+    }
+
+    /**
      * Palette is used to manage the conversion of images between 24-bit RGB
      * color and a palette of paletteSize colors.
      */
@@ -1259,15 +1281,32 @@ public class HQSixelEncoder implements SixelEncoder {
     public String toSixel(final BufferedImage bitmap,
         final boolean allowTransparent) {
 
+        return toSixelResult(bitmap, allowTransparent).encodedImage;
+    }
+
+    /**
+     * Create a sixel string representing a bitmap.  The returned string does
+     * NOT include the DCS start or ST end sequences.
+     *
+     * @param bitmap the bitmap data
+     * @param allowTransparent if true, allow transparent pixels to be
+     * specified
+     * @return the encoded string and transparency flag
+     */
+    private SixelResult toSixelResult(final BufferedImage bitmap,
+        final boolean allowTransparent) {
+
         // Start with 16k potential total output.
         StringBuilder sb = new StringBuilder(16384);
 
         assert (bitmap != null);
-
         int fullHeight = bitmap.getHeight();
 
+        SixelResult result = new SixelResult();
+
         // Anaylze the picture and generate a palette.
-        lastPalette = new Palette(paletteSize, bitmap, allowTransparent);
+        Palette palette = new Palette(paletteSize, bitmap, allowTransparent);
+        result.palette = palette;
 
         // DEBUG
         /*
@@ -1281,18 +1320,19 @@ public class HQSixelEncoder implements SixelEncoder {
          */
 
         // Dither the image
-        BufferedImage image = lastPalette.ditherImage();
+        BufferedImage image = palette.ditherImage();
 
-        if (lastPalette.timings != null) {
-            lastPalette.timings.ditherImageTime = System.nanoTime();
+        if (palette.timings != null) {
+            palette.timings.ditherImageTime = System.nanoTime();
         }
 
         if (image == null) {
-            if (lastPalette.timings != null) {
-                lastPalette.timings.emitSixelTime = System.nanoTime();
-                lastPalette.timings.endTime = System.nanoTime();
+            if (palette.timings != null) {
+                palette.timings.emitSixelTime = System.nanoTime();
+                palette.timings.endTime = System.nanoTime();
             }
-            return "";
+            result.encodedImage = "";
+            return result;
         }
 
         // DEBUG
@@ -1311,7 +1351,7 @@ public class HQSixelEncoder implements SixelEncoder {
         int rasterWidth = bitmap.getWidth();
 
         // Emit the palette.
-        lastPalette.emitPalette(sb);
+        palette.emitPalette(sb);
 
         // Render the entire row of cells.
         int width = image.getWidth();
@@ -1339,9 +1379,9 @@ public class HQSixelEncoder implements SixelEncoder {
                         sixels[imageX][imageY] = colorIdx;
                         continue;
                     }
-                    if (!lastPalette.noDither) {
+                    if (!palette.noDither) {
                         assert (colorIdx >= 0);
-                        assert (colorIdx < lastPalette.sixelColors.size());
+                        assert (colorIdx < palette.sixelColors.size());
                     }
                     if (!allowTransparent) {
                         assert (colorIdx != -1);
@@ -1350,7 +1390,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 }
             }
 
-            for (int i = 0; i < lastPalette.sixelColors.size(); i++) {
+            for (int i = 0; i < palette.sixelColors.size(); i++) {
                 boolean isUsed = false;
                 for (int imageX = 0; imageX < width; imageX++) {
                     for (int j = 0; j < 6; j++) {
@@ -1445,7 +1485,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     sb.append((char) oldData);
                 }
 
-            } // for (int i = 0; i < lastPalette.sixelColors.size(); i++)
+            } // for (int i = 0; i < palette.sixelColors.size(); i++)
 
             // Advance to the next scan line.
             sb.append("-");
@@ -1458,11 +1498,12 @@ public class HQSixelEncoder implements SixelEncoder {
         // Add the raster information.
         sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
 
-        if (lastPalette.timings != null) {
-            lastPalette.timings.emitSixelTime = System.nanoTime();
-            lastPalette.timings.endTime = System.nanoTime();
+        if (palette.timings != null) {
+            palette.timings.emitSixelTime = System.nanoTime();
+            palette.timings.endTime = System.nanoTime();
         }
-        return sb.toString();
+        result.encodedImage = sb.toString();
+        return result;
     }
 
     /**
@@ -1544,18 +1585,6 @@ public class HQSixelEncoder implements SixelEncoder {
     }
 
     /**
-     * Get the sixel transparency option.
-     *
-     * @return true if some pixels will be transparent
-     */
-    public boolean isTransparent() {
-        if (lastPalette != null) {
-            return lastPalette.transparent;
-        }
-        return false;
-    }
-
-    /**
      * Convert all filenames to sixel.
      *
      * @param args[] the filenames to read
@@ -1598,13 +1627,15 @@ public class HQSixelEncoder implements SixelEncoder {
                 BufferedImage image = ImageIO.read(new FileInputStream(args[i]));
                 // Put together the image.
                 StringBuilder sb = new StringBuilder();
-                encoder.emitPalette(sb);
-                sb.append(encoder.toSixel(image, allowTransparent));
+                SixelResult result = encoder.toSixelResult(image,
+                    allowTransparent);
+                result.palette.emitPalette(sb);
+                sb.append(result.encodedImage);
                 sb.append("\033\\");
                 // If there are transparent pixels, we need to note that at
                 // the beginning.
                 String header = "\033Pq";
-                if (encoder.isTransparent() && allowTransparent) {
+                if (result.transparent && allowTransparent) {
                     header = "\033P0;1;0q";
                 }
                 // Now put it together.
@@ -1612,9 +1643,8 @@ public class HQSixelEncoder implements SixelEncoder {
                 System.out.print(sb.toString());
                 System.out.flush();
 
-
                 if (encoder.doTimings) {
-                    Palette.Timings timings = encoder.lastPalette.timings;
+                    Palette.Timings timings = result.palette.timings;
                     double scanTime = (double) (timings.scanImageTime - timings.startTime) / 1.0e9;
                     double mapTime = (double) (timings.buildColorMapTime - timings.scanImageTime) / 1.0e9;
                     double ditherTime = (double) (timings.ditherImageTime - timings.buildColorMapTime) / 1.0e9;
