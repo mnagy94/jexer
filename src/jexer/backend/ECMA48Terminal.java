@@ -1706,7 +1706,8 @@ public class ECMA48Terminal extends LogicalScreen
          * the terminal.
          */
         // TODO: find a good number of threads
-        ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
+        final int threadCount = 1;
+        ExecutorService imageExecutor = Executors.newFixedThreadPool(threadCount);
         List<Future<String>> imageResults = new ArrayList<Future<String>>();
 
         for (int y = 0; y < height; y++) {
@@ -1801,25 +1802,21 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
 
-        // Collect all the encoded images, checking frequently.
-        imageExecutor.shutdown();
-        try {
-            while (!imageExecutor.awaitTermination(5, TimeUnit.MILLISECONDS)) {
-                // NOP
-            }
-        } catch (InterruptedException e) {
-            // SQUASH
-        }
-        try {
-            for (Future<String> image: imageResults) {
+        // Collect all the encoded images.
+        while (imageResults.size() > 0) {
+            try {
+                Future<String> image = imageResults.get(0);
                 sb.append(image.get());
+                imageResults.remove(0);
+            } catch (InterruptedException e) {
+                // SQUASH
+                // e.printStackTrace();
+            } catch (ExecutionException e) {
+                // SQUASH
+                // e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            // SQUASH
-        } catch (ExecutionException e) {
-            // SQUASH
         }
-        imageExecutor.shutdownNow();
+        imageExecutor.shutdown();
 
         // Draw the text part now.
         for (int y = 0; y < height; y++) {
