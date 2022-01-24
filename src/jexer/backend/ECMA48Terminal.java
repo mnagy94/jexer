@@ -3689,13 +3689,30 @@ public class ECMA48Terminal extends LogicalScreen
                 rgbArray = cells.get(cells.size() - 1).getImage().getRGB(0, 0,
                     totalWidth, imageHeight, null, 0, totalWidth);
             } catch (Exception e) {
+                // TODO: Both of these setRGB cases are failing sometimes in
+                // the multihead case.  Figure it out.
+                return image;
+                /*
                 throw new RuntimeException("image " + imageWidth + "x" +
                     imageHeight + " cells.get(cells.size() - 1).getImage() " +
                     cells.get(cells.size() - 1).getImage(), e);
+                 */
             }
         }
-        image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
-            imageHeight, rgbArray, 0, totalWidth);
+        try {
+            image.setRGB((cells.size() - 1) * imageWidth, 0, totalWidth,
+                imageHeight, rgbArray, 0, totalWidth);
+        } catch (Exception e) {
+            // TODO: Both of these setRGB cases are failing sometimes in the
+            // multihead case.  Figure it out.
+            return image;
+            /*
+            throw new RuntimeException("image " + imageWidth + "x" +
+                imageHeight + " cells.get(cells.size() - 1).getImage() " +
+                cells.get(cells.size() - 1).getImage(), e);
+             */
+        }
+
 
         if (totalWidth < imageWidth) {
             int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
