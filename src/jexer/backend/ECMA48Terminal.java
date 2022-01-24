@@ -1707,8 +1707,14 @@ public class ECMA48Terminal extends LogicalScreen
          */
         // TODO: find a good number of threads
         final int threadCount = 1;
-        ExecutorService imageExecutor = Executors.newFixedThreadPool(threadCount);
-        List<Future<String>> imageResults = new ArrayList<Future<String>>();
+
+        ExecutorService imageExecutor = null;
+        List<Future<String>> imageResults = null;
+
+        if (threadCount > 1) {
+            imageExecutor = Executors.newFixedThreadPool(threadCount);
+            imageResults = new ArrayList<Future<String>>();
+        }
 
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -1778,45 +1784,59 @@ public class ECMA48Terminal extends LogicalScreen
                         }
                     }
 
-                    final int callX = x;
-                    final int callY = y;
-
-                    // Make a deep copy of the cells to render.
-                    final ArrayList<Cell> callCells;
-                    callCells = new ArrayList<Cell>(cellsToDraw);
-                    imageResults.add(imageExecutor.submit(new Callable<String>() {
-                        @Override
-                        public String call() {
-                            if (iterm2Images) {
-                                return toIterm2Image(callX, callY, callCells);
-                            } else if (jexerImageOption != JexerImageOption.DISABLED) {
-                                return toJexerImage(callX, callY, callCells);
-                            } else {
-                                return toSixel(callX, callY, callCells);
-                            }
+                    if (threadCount == 1) {
+                        // Single-threaded
+                        if (iterm2Images) {
+                            sb.append(toIterm2Image(x, y, cellsToDraw));
+                        } else if (jexerImageOption != JexerImageOption.DISABLED) {
+                            sb.append(toJexerImage(x, y, cellsToDraw));
+                        } else {
+                            sb.append(toSixel(x, y, cellsToDraw));
                         }
-                    }));
+                    } else {
+                        // Multi-threaded: experimental and likely borken
+                        final int callX = x;
+                        final int callY = y;
+
+                        // Make a deep copy of the cells to render.
+                        final ArrayList<Cell> callCells;
+                        callCells = new ArrayList<Cell>(cellsToDraw);
+                        imageResults.add(imageExecutor.submit(new Callable<String>() {
+                            @Override
+                            public String call() {
+                                if (iterm2Images) {
+                                    return toIterm2Image(callX, callY, callCells);
+                                } else if (jexerImageOption != JexerImageOption.DISABLED) {
+                                    return toJexerImage(callX, callY, callCells);
+                                } else {
+                                    return toSixel(callX, callY, callCells);
+                                }
+                            }
+                        }));
+                    }
                 }
 
                 x = right;
             }
         }
 
-        // Collect all the encoded images.
-        while (imageResults.size() > 0) {
-            try {
-                Future<String> image = imageResults.get(0);
-                sb.append(image.get());
-                imageResults.remove(0);
-            } catch (InterruptedException e) {
-                // SQUASH
-                // e.printStackTrace();
-            } catch (ExecutionException e) {
-                // SQUASH
-                // e.printStackTrace();
+        if (threadCount > 1) {
+            // Collect all the encoded images.
+            while (imageResults.size() > 0) {
+                try {
+                    Future<String> image = imageResults.get(0);
+                    sb.append(image.get());
+                    imageResults.remove(0);
+                } catch (InterruptedException e) {
+                    // SQUASH
+                    // e.printStackTrace();
+                } catch (ExecutionException e) {
+                    // SQUASH
+                    // e.printStackTrace();
+                }
             }
+            imageExecutor.shutdown();
         }
-        imageExecutor.shutdown();
 
         // Draw the text part now.
         for (int y = 0; y < height; y++) {
