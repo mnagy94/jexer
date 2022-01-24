@@ -113,6 +113,15 @@ public class Cell extends CellAttributes {
      */
     private int hasTransparentPixels = -1;
 
+    /**
+     * The image ID, a positive integer.  This is NOT like a the hashcode.
+     * Instead is an ID assigned by the logical layer that created the image,
+     * so that as this image cell is passed down to the user-facing screen it
+     * can be quickly be determined if it is different from another image
+     * cell.
+     */
+    private int imageId = 0;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -181,6 +190,19 @@ public class Cell extends CellAttributes {
         imageHashCode = 0;
         hasTransparentPixels = 0;
         width = Width.SINGLE;
+        this.imageId = 0;
+    }
+
+    /**
+     * Set the image data for this cell.
+     *
+     * @param image the image for this cell
+     * @param imageId the ID for this image
+     */
+    public void setImage(final BufferedImage image, final int imageId) {
+        setImage(image);
+        assert (imageId > 0);
+        this.imageId = imageId;
     }
 
     /**
@@ -222,6 +244,24 @@ public class Cell extends CellAttributes {
         }
         gr.dispose();
         return newImage;
+    }
+
+    /**
+     * "Mix" the imageId of another Cell into this cell.  When two cells both
+     * have imageId's set, the mixture of them should be a deterministic
+     * combination such that one can compare a sequence of "mixed" cells and
+     * know (within a high degree of likelihood) that they produced the same
+     * final image.
+     *
+     * @param other the other cell
+     */
+    public void mixImageId(final Cell other) {
+        if (other.imageId <= 0) {
+            this.imageId = 0;
+            return;
+        }
+        assert (other.isImage());
+        this.imageId = ((this.imageId << 4) ^ other.imageId) & 0x7FFFFFFF;
     }
 
     /**
@@ -518,6 +558,7 @@ public class Cell extends CellAttributes {
         image = null;
         imageHashCode = 0;
         invertedImage = null;
+        imageId = 0;
         background = java.awt.Color.BLACK;
         hasTransparentPixels = -1;
     }
@@ -533,6 +574,7 @@ public class Cell extends CellAttributes {
         image = null;
         imageHashCode = 0;
         invertedImage = null;
+        imageId = 0;
         background = java.awt.Color.BLACK;
         hasTransparentPixels = -1;
     }
@@ -634,6 +676,11 @@ public class Cell extends CellAttributes {
             // Either both objects have their image inverted, or neither do.
             if ((imageHashCode != 0) && (that.imageHashCode != 0)
                 && (imageHashCode != that.imageHashCode)
+            ) {
+                return false;
+            }
+            if ((imageId != 0) && (that.imageId != 0)
+                && (imageId != that.imageId)
             ) {
                 return false;
             }
@@ -746,6 +793,7 @@ public class Cell extends CellAttributes {
                 imageHashCode = makeImageHashCode();
             }
             hash = (B * hash) + imageHashCode;
+            hash = (B * hash) + imageId;
         }
         if (invertedImage != null) {
             hash = (B * hash) + invertedImage.hashCode();
@@ -768,10 +816,12 @@ public class Cell extends CellAttributes {
             this.invertedImage = that.invertedImage;
             this.background = that.background;
             this.imageHashCode = that.imageHashCode;
+            this.imageId = that.imageId;
             this.hasTransparentPixels = that.hasTransparentPixels;
         } else {
             this.image = null;
             this.imageHashCode = 0;
+            this.imageId = 0;
             this.hasTransparentPixels = -1;
             this.width = Width.SINGLE;
         }
@@ -788,6 +838,7 @@ public class Cell extends CellAttributes {
     public void setAttr(final CellAttributes that) {
         image = null;
         imageHashCode = 0;
+        imageId = 0;
         hasTransparentPixels = -1;
         super.setTo(that);
     }
@@ -802,6 +853,7 @@ public class Cell extends CellAttributes {
         if (!keepImage) {
             image = null;
             imageHashCode = 0;
+            imageId = 0;
             hasTransparentPixels = -1;
         }
         super.setTo(that);
