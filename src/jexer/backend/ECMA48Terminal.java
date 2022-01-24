@@ -1706,7 +1706,7 @@ public class ECMA48Terminal extends LogicalScreen
          * the terminal.
          */
         // TODO: find a good number of threads
-        ExecutorService imageExecutor = Executors.newFixedThreadPool(10);
+        ExecutorService imageExecutor = Executors.newFixedThreadPool(2);
         List<Future<String>> imageResults = new ArrayList<Future<String>>();
 
         for (int y = 0; y < height; y++) {
