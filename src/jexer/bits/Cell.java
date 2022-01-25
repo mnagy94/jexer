@@ -279,6 +279,20 @@ public class Cell extends CellAttributes {
     }
 
     /**
+     * "Mix" the imageId of another operation into this cell.  When a cell
+     * has its imageId set, the mixture of it and other operations should be
+     * a deterministic combination such that one can compare a sequence of
+     * cell + operations and know (within a high degree of likelihood) that
+     * they produced the same final image.
+     *
+     * @param operation the operation to mix in, typically a color
+     * translucent RGB that was blitted over or under this image
+     */
+    public void mixImageId(final int operation) {
+        imageId = ((imageId << 4) ^ operation) & 0x7FFFFFFF;
+    }
+
+    /**
      * Flatten the image on this cell by rendering it either onto the
      * background color, or generating the glyph and rendering over that.
      *

@@ -1590,8 +1590,14 @@ public class LogicalScreen implements Screen {
                             g2d.fillRect(0, 0, image.getWidth(),
                                 image.getHeight());
                             g2d.dispose();
-                            // TODO: Retain imageId mixed with otherBg
-                            thisCell.setImage(newImage);
+                            // Retain imageId mixed with overBg
+                            int imageId = thisCell.getImageId();
+                            if (imageId > 0) {
+                                thisCell.setImage(newImage, imageId);
+                                thisCell.mixImageId(overBg);
+                            } else {
+                                thisCell.setImage(newImage);
+                            }
                             thisCell.setOpaqueImage();
                         } else {
                             // Our character will show through.  If the
@@ -1667,8 +1673,14 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
-                        // TODO: mix overCell.imageId with thisOldBg and set
-                        thisCell.setImage(newImage);
+                        // Retain overCell.imageId with thisOldBg and set
+                        int imageId = thisCell.getImageId();
+                        if (imageId > 0) {
+                            thisCell.setImage(newImage, imageId);
+                            thisCell.mixImageId(thisOldBg);
+                        } else {
+                            thisCell.setImage(newImage);
+                        }
                         thisCell.setOpaqueImage();
                         continue;
                     }
@@ -1696,9 +1708,14 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
-                        // TODO: mix overCell.imageId with thisCell.imageId
-                        // and set
-                        thisCell.setImage(newImage);
+                        // Retain overCell.imageId with thisCell.imageId
+                        int imageId = thisCell.getImageId();
+                        if (imageId > 0) {
+                            thisCell.setImage(newImage, imageId);
+                            thisCell.mixImageId(overCell);
+                        } else {
+                            thisCell.setImage(newImage);
+                        }
                         thisCell.setOpaqueImage();
                         continue;
                     }
@@ -1723,9 +1740,16 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
-                        // TODO: mix overCell.imageId with otherBg, then
-                        // thisCell.imageId, then set
-                        thisCell.setImage(newImage);
+                        // Retain overCell.imageId with overBg, then
+                        // thisCell.imageId
+                        int imageId = thisCell.getImageId();
+                        if (imageId > 0) {
+                            thisCell.setImage(newImage, imageId);
+                            thisCell.mixImageId(overCell);
+                            thisCell.mixImageId(overBg);
+                        } else {
+                            thisCell.setImage(newImage);
+                        }
                         thisCell.setOpaqueImage();
                         continue;
                     }
@@ -1735,7 +1759,7 @@ public class LogicalScreen implements Screen {
                         && overCell.isTransparentImage()
                     ) {
                         // We need to blit overCell's image over a rectangle
-                        // of otherBg at alpha = 255, and blit that over
+                        // of overBg at alpha = 255, and blit that over
                         // thisOldBg at alpha < 255.
 
                         Cell overCopy = new Cell(overCell);
@@ -1751,9 +1775,17 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
-                        // TODO: mix overCell.imageId with otherBg, then
+                        // Retain overCell.imageId with overBg, then
                         // thisOldBg, then set
-                        thisCell.setImage(newImage);
+                        int imageId = thisCell.getImageId();
+                        if (imageId > 0) {
+                            thisCell.setImage(newImage, imageId);
+                            thisCell.mixImageId(overCell);
+                            thisCell.mixImageId(overBg);
+                            thisCell.mixImageId(thisOldBg);
+                        } else {
+                            thisCell.setImage(newImage);
+                        }
                         thisCell.setOpaqueImage();
                         continue;
                     }

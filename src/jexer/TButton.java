@@ -669,6 +669,9 @@ public class TButton extends TWidget {
         gr2.dispose();
         // gr2 now has the foreground ends, on both halves.
 
+        int imageId = System.identityHashCode(this);
+        imageId ^= (int) System.currentTimeMillis();
+
         // Left edge: left half of image
         BufferedImage cellImage = new BufferedImage(cellWidth, cellHeight,
             BufferedImage.TYPE_INT_ARGB);
@@ -676,7 +679,8 @@ public class TButton extends TWidget {
         gr2.drawImage(image.getSubimage(0, 0, cellWidth, cellHeight),
             0, 0, null);
         gr2.dispose();
-        leftEdgeChar.setImage(cellImage);
+        imageId++;
+        leftEdgeChar.setImage(cellImage, imageId & 0x7FFFFFFF);
         leftEdgeChar.setOpaqueImage();
 
         // Right edge: left half of image
@@ -686,7 +690,8 @@ public class TButton extends TWidget {
         gr2.drawImage(image.getSubimage(cellWidth, 0, cellWidth, cellHeight),
             0, 0, null);
         gr2.dispose();
-        rightEdgeChar.setImage(cellImage);
+        imageId++;
+        rightEdgeChar.setImage(cellImage, imageId & 0x7FFFFFFF);
         rightEdgeChar.setOpaqueImage();
 
         // Left shadow edge: bottom-left half of shadowImage
@@ -696,7 +701,8 @@ public class TButton extends TWidget {
         gr2s.drawImage(shadowImage.getSubimage(0, cellHeight,
                 cellWidth, cellHeight), 0, 0, null);
         gr2s.dispose();
-        leftEdgeShadowChar.setImage(cellImage);
+        imageId++;
+        leftEdgeShadowChar.setImage(cellImage, imageId & 0x7FFFFFFF);
         leftEdgeShadowChar.setOpaqueImage();
 
         // Right shadow edge top: top-right half of shadowImage
@@ -706,7 +712,8 @@ public class TButton extends TWidget {
         gr2s.drawImage(shadowImage.getSubimage(cellWidth, 0,
                 cellWidth, cellHeight), 0, 0, null);
         gr2s.dispose();
-        rightEdgeShadowCharTop.setImage(cellImage);
+        imageId++;
+        rightEdgeShadowCharTop.setImage(cellImage, imageId & 0x7FFFFFFF);
         rightEdgeShadowCharTop.setOpaqueImage();
 
         // Right shadow edge bottom: bottom-right half of shadowImage
@@ -716,7 +723,8 @@ public class TButton extends TWidget {
         gr2s.drawImage(shadowImage.getSubimage(cellWidth, cellHeight,
                 cellWidth, cellHeight), 0, 0, null);
         gr2s.dispose();
-        rightEdgeShadowCharBottom.setImage(cellImage);
+        imageId++;
+        rightEdgeShadowCharBottom.setImage(cellImage, imageId & 0x7FFFFFFF);
         rightEdgeShadowCharBottom.setOpaqueImage();
 
         cellImage = new BufferedImage(cellWidth, cellHeight,
@@ -727,7 +735,8 @@ public class TButton extends TWidget {
         gr2s.setColor(shadowRgb);
         gr2s.fillRect(0, 0, cellWidth, cellHeight / 2);
         gr2s.dispose();
-        shadowCharBottom.setImage(cellImage);
+        imageId++;
+        shadowCharBottom.setImage(cellImage, imageId & 0x7FFFFFFF);
         shadowCharBottom.setOpaqueImage();
 
     }

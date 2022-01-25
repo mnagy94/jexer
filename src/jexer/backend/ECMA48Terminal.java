@@ -1729,8 +1729,9 @@ public class ECMA48Terminal extends LogicalScreen
                 }
 
                 int right = x;
-                // This little loop is a *HUGE* bottleneck for image cells.
-                // Gotta somehow make it faster.
+                // This little loop is a *HUGE* bottleneck for image cells
+                // when imageId is not set.  Higher layers of code should
+                // always aim to set imageId before putting it on the screen.
                 while ((right < width)
                     && (logical[right][y].isImage())
                     && (!logical[right][y].equals(physical[right][y])

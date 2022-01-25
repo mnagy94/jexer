@@ -8453,7 +8453,6 @@ public class ECMA48 implements Runnable {
                         gr.drawImage(oldCell.getImage(), 0, 0, null, null);
                         gr.drawImage(cells[x][y].getImage(), 0, 0, null, null);
                         gr.dispose();
-                        // TODO: mix with oldCell.imageId
                         cells[x][y].setImage(newImage);
                         cells[x][y].isTransparentImage();
                     } else if (false) {

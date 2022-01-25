@@ -176,6 +176,9 @@ public class Tackboard {
             lastTextHeight = cellHeight;
         }
 
+        int imageId = System.identityHashCode(this);
+        imageId ^= (int) System.currentTimeMillis();
+
         for (TackboardItem item: items) {
             if (redraw) {
                 item.setDirty();
@@ -274,7 +277,8 @@ public class Tackboard {
                             attrToBackgroundColor(oldCell));
                         gr.drawImage(newImage, 0, 0, null, null);
                         gr.dispose();
-                        oldCell.setImage(oldImage);
+                        imageId++;
+                        oldCell.setImage(oldImage, imageId & 0x7FFFFFFF);
                     } else {
                         // Old cell is text only, just add the image.
                         if (!transparent) {
@@ -290,9 +294,11 @@ public class Tackboard {
                                 backImage.getHeight());
                             gr.drawImage(newImage, 0, 0, null, null);
                             gr.dispose();
-                            oldCell.setImage(backImage);
+                            imageId++;
+                            oldCell.setImage(backImage, imageId & 0x7FFFFFFF);
                         } else {
-                            oldCell.setImage(newImage);
+                            imageId++;
+                            oldCell.setImage(newImage, imageId & 0x7FFFFFFF);
                         }
                     }
                     screen.putCharXY(sx + textX + left, sy + textY + top,

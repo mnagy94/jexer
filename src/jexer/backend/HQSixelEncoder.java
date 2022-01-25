@@ -961,6 +961,13 @@ public class HQSixelEncoder implements SixelEncoder {
                 // Due to dithering, we are close but not quite on a color in
                 // the index.  Do a search in the buckets to find the one
                 // that is closest to this color.
+                //
+                // TODO: Make this faster, it's a search through every
+                // bucket!  This is a HUGE bottleneck for median cut.  chafa
+                // has a very fast way to search through a palette, can that
+                // approach be adapted for use here?
+                //
+                // https://github.com/hpjansson/chafa/issues/27#issuecomment-647584817
                 int red   = (color >>> 16) & 0xFF;
                 int green = (color >>>  8) & 0xFF;
                 int blue  =  color         & 0xFF;
