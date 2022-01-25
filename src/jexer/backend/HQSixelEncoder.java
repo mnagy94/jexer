@@ -429,7 +429,17 @@ public class HQSixelEncoder implements SixelEncoder {
          * The image from the constructor, mapped to sixel color space with
          * transparent pixels removed.
          */
-        private BufferedImage sixelImage;
+        private int [] sixelImage;
+
+        /**
+         * The width of the image.
+         */
+        private int sixelImageWidth;
+
+        /**
+         * The width of the image.
+         */
+        private int sixelImageHeight;
 
         /**
          * If true, some pixels of the image are transparent.
@@ -511,20 +521,21 @@ public class HQSixelEncoder implements SixelEncoder {
                 }
             }
 
-            int width = image.getWidth();
-            int height = image.getHeight();
-            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                 BufferedImage.TYPE_INT_ARGB);
+            sixelImageWidth = image.getWidth();
+            sixelImageHeight = image.getHeight();
 
             if (verbosity >= 1) {
                 System.err.printf("Palette() image is %dx%d, bpp %d transparent %s allowed %s\n",
-                    width, height, image.getColorModel().getPixelSize(),
+                    sixelImageWidth, sixelImageHeight,
+                    image.getColorModel().getPixelSize(),
                     transparent, allowTransparent);
             }
 
             // Perform population count on colors.
-            int [] rgbArray = image.getRGB(0, 0, width, height, null, 0, width);
-            colorMap = new HashMap<Integer, ColorIdx>(width * height);
+            int [] rgbArray = image.getRGB(0, 0,
+                sixelImageWidth, sixelImageHeight, null, 0, sixelImageWidth);
+            sixelImage = rgbArray;
+            colorMap = new HashMap<Integer, ColorIdx>(sixelImageWidth * sixelImageHeight);
             int transparent_count = 0;
 
             for (int i = 0; i < rgbArray.length; i++) {
@@ -562,17 +573,17 @@ public class HQSixelEncoder implements SixelEncoder {
                     color.count++;
                 }
             }
-            // Save the image data mapped to the 101^3 sixel color space.
-            // This also sets any pixels with partial transparency below
-            // ALPHA_OPAQUE to fully transparent (and pink).
-            sixelImage.setRGB(0, 0, width, height, rgbArray, 0, width);
+            // At this point the image data is mapped to the 101^3 sixel
+            // color space, and any pixels with partial transparency below
+            // ALPHA_OPAQUE are fully transparent (and pink).
 
             if (verbosity >= 1) {
                 System.err.printf("# colors in image: %d palette size %d\n",
                     colorMap.size(), paletteSize);
                 System.err.printf("# transparent pixels: %d (%3.1f%%)\n",
                     transparent_count,
-                    (double) transparent_count * 100.0 / (width * height));
+                    (double) transparent_count * 100.0 /
+                        (sixelImageWidth * sixelImageHeight));
             }
             if ((transparent_count == 0) || !allowTransparent) {
                 transparent = false;
@@ -680,15 +691,14 @@ public class HQSixelEncoder implements SixelEncoder {
 
             assert (quantizationType == -1);
 
-            int width = image.getWidth();
-            int height = image.getHeight();
-            sixelImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                 BufferedImage.TYPE_INT_ARGB);
+            sixelImageWidth = image.getWidth();
+            sixelImageHeight = image.getHeight();
+            sixelImage = new int [sixelImageWidth * sixelImageHeight];
 
             if (verbosity >= 1) {
                 System.err.printf("Image is %dx%d, bpp %d transparent %s\n",
-                    width, height, index.getPixelSize(), transparent
-                );
+                    sixelImageWidth, sixelImageHeight, index.getPixelSize(),
+                    transparent);
             }
 
             // Map the pre-existing image palette into sixelImage and
@@ -708,8 +718,8 @@ public class HQSixelEncoder implements SixelEncoder {
                 throw new RuntimeException("Transfer type " +
                     transferType + " unsupported");
             }
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
+            for (int y = 0; y < sixelImageHeight; y++) {
+                for (int x = 0; x < sixelImageWidth; x++) {
                     pixel = raster.getDataElements(x, y, pixel);
                     byte [] indexedPixel = (byte []) pixel;
                     int idx = indexedPixel[0] & 0xFF;
@@ -717,10 +727,10 @@ public class HQSixelEncoder implements SixelEncoder {
                         idx += 128;
                     }
                     if (idx == transparentPixel) {
-                        sixelImage.setRGB(x, y, -1);
+                        sixelImage[x + (y * sixelImageWidth)] = -1;
                     } else {
                         // System.err.printf("(%d, %d) --> %d\n", x, y, idx);
-                        sixelImage.setRGB(x, y, idx);
+                        sixelImage[x + (y * sixelImageWidth)] = idx;
                         maxColorIdx = Math.max(idx, maxColorIdx);
                     }
                 }
@@ -1014,15 +1024,13 @@ public class HQSixelEncoder implements SixelEncoder {
                 return null;
             }
 
-            int [] rgbArray = sixelImage.getRGB(0, 0, sixelImage.getWidth(),
-                sixelImage.getHeight(), null, 0, sixelImage.getWidth());
-
+            int [] rgbArray = sixelImage;
             if (noDither) {
                 return rgbArray;
             }
 
-            int height = sixelImage.getHeight();
-            int width = sixelImage.getWidth();
+            int height = sixelImageHeight;
+            int width = sixelImageWidth;
             for (int imageY = 0; imageY < height; imageY++) {
                 for (int imageX = 0; imageX < width; imageX++) {
                     int oldPixel = rgbArray[imageX + (width * imageY)];
@@ -1078,7 +1086,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     int blueError  = ( oldBlue - newBlue)  / 6;
 
                     int red, green, blue;
-                    if (imageX < sixelImage.getWidth() - 1) {
+                    if (imageX < sixelImageWidth - 1) {
                         int pXpY = rgbArray[imageX + 1 + (width * imageY)];
                         if ((pXpY & 0xFF000000) == 0xFF000000) {
                             // 7 --> 3
@@ -1095,7 +1103,7 @@ public class HQSixelEncoder implements SixelEncoder {
                             assert (transparent == true);
                             rgbArray[imageX + 1 + (width * imageY)] = 0;
                         }
-                        if (imageY < sixelImage.getHeight() - 1) {
+                        if (imageY < sixelImageHeight - 1) {
                             int pXpYp = rgbArray[imageX + 1 + (width * (imageY + 1))];
                             if ((pXpYp & 0xFF000000) == 0xFF000000) {
                                 red   = ((pXpYp >>> 16) & 0xFF) + redError;
@@ -1112,7 +1120,7 @@ public class HQSixelEncoder implements SixelEncoder {
                                 rgbArray[imageX + 1 + (width * (imageY + 1))] = 0;
                             }
                         }
-                    } else if (imageY < sixelImage.getHeight() - 1) {
+                    } else if (imageY < sixelImageHeight - 1) {
                         int pXmYp = rgbArray[imageX - 1 + (width * (imageY + 1))];
                         int pXYp = rgbArray[imageX + (width * (imageY + 1))];
 
@@ -1305,6 +1313,7 @@ public class HQSixelEncoder implements SixelEncoder {
         // Anaylze the picture and generate a palette.
         Palette palette = new Palette(paletteSize, bitmap, allowTransparent);
         result.palette = palette;
+        result.transparent = palette.transparent;
 
         // Dither the image.  We don't bother wrapping it in a BufferedImage.
         int [] rgbArray = palette.ditherImage();
@@ -1336,6 +1345,8 @@ public class HQSixelEncoder implements SixelEncoder {
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
 
             // See which colors are actually used in this band of sixels.
+            boolean [] usedColors = new boolean[palette.sixelColors.size()];
+
             for (int imageX = 0; imageX < width; imageX++) {
                 for (int imageY = 0;
                      (imageY < 6) && (imageY + currentRow < fullHeight);
@@ -1359,19 +1370,12 @@ public class HQSixelEncoder implements SixelEncoder {
                         assert (colorIdx != -1);
                     }
                     sixels[imageX][imageY] = colorIdx;
+                    usedColors[colorIdx] = true;
                 }
             }
 
-            for (int i = 0; i < palette.sixelColors.size(); i++) {
-                boolean isUsed = false;
-                for (int imageX = 0; imageX < width; imageX++) {
-                    for (int j = 0; j < 6; j++) {
-                        if (sixels[imageX][j] == i) {
-                            isUsed = true;
-                        }
-                    }
-                }
-                if (isUsed == false) {
+            for (int i = 0; i < usedColors.length; i++) {
+                if (!usedColors[i]) {
                     continue;
                 }
 
