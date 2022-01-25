@@ -1590,6 +1590,7 @@ public class LogicalScreen implements Screen {
                             g2d.fillRect(0, 0, image.getWidth(),
                                 image.getHeight());
                             g2d.dispose();
+                            // TODO: Retain imageId mixed with otherBg
                             thisCell.setImage(newImage);
                             thisCell.setOpaqueImage();
                         } else {
@@ -1666,6 +1667,7 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
+                        // TODO: mix overCell.imageId with thisOldBg and set
                         thisCell.setImage(newImage);
                         thisCell.setOpaqueImage();
                         continue;
@@ -1694,6 +1696,8 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
+                        // TODO: mix overCell.imageId with thisCell.imageId
+                        // and set
                         thisCell.setImage(newImage);
                         thisCell.setOpaqueImage();
                         continue;
@@ -1719,6 +1723,8 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
+                        // TODO: mix overCell.imageId with otherBg, then
+                        // thisCell.imageId, then set
                         thisCell.setImage(newImage);
                         thisCell.setOpaqueImage();
                         continue;
@@ -1745,6 +1751,8 @@ public class LogicalScreen implements Screen {
                                 fAlpha));
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
+                        // TODO: mix overCell.imageId with otherBg, then
+                        // thisOldBg, then set
                         thisCell.setImage(newImage);
                         thisCell.setOpaqueImage();
                         continue;

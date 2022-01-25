@@ -1729,6 +1729,8 @@ public class ECMA48Terminal extends LogicalScreen
                 }
 
                 int right = x;
+                // This little loop is a *HUGE* bottleneck for image cells.
+                // Gotta somehow make it faster.
                 while ((right < width)
                     && (logical[right][y].isImage())
                     && (!logical[right][y].equals(physical[right][y])
@@ -3666,7 +3668,7 @@ public class ECMA48Terminal extends LogicalScreen
             image.setRGB(i * imageWidth, 0, tileWidth, tileHeight,
                 rgbArray, 0, tileWidth);
             if (tileHeight < fullHeight) {
-                int backgroundColor = cells.get(i).getBackground().getRGB();
+                int backgroundColor = 0;
                 for (int imageX = 0; imageX < image.getWidth(); imageX++) {
                     for (int imageY = imageHeight; imageY < fullHeight;
                          imageY++) {
@@ -3715,8 +3717,7 @@ public class ECMA48Terminal extends LogicalScreen
 
 
         if (totalWidth < imageWidth) {
-            int backgroundColor = cells.get(cells.size() - 1).getBackground().getRGB();
-
+            int backgroundColor = 0;
             for (int imageX = image.getWidth() - totalWidth;
                  imageX < image.getWidth(); imageX++) {
 

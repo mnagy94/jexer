@@ -93,12 +93,6 @@ public class Cell extends CellAttributes {
     private BufferedImage invertedImage = null;
 
     /**
-     * The background color used for the area the image portion might not
-     * cover.
-     */
-    private java.awt.Color background = java.awt.Color.BLACK;
-
-    /**
      * hashCode() needs to call makeImageHashCode(), which can get quite
      * expensive.
      */
@@ -247,6 +241,26 @@ public class Cell extends CellAttributes {
     }
 
     /**
+     * Set the image ID.
+     *
+     * @param imageId the ID, a positive integer
+     */
+    public void setImageId(final int imageId) {
+        if (imageId > 0) {
+            this.imageId = imageId;
+        }
+    }
+
+    /**
+     * Get the image ID.
+     *
+     * @return the ID, or 0 if not set
+     */
+    public int getImageId() {
+        return imageId;
+    }
+
+    /**
      * "Mix" the imageId of another Cell into this cell.  When two cells both
      * have imageId's set, the mixture of them should be a deterministic
      * combination such that one can compare a sequence of "mixed" cells and
@@ -342,15 +356,6 @@ public class Cell extends CellAttributes {
 
         // We know we are opaque now.
         hasTransparentPixels = 2;
-    }
-
-    /**
-     * Get the bitmap image background color for this cell.
-     *
-     * @return the bitmap image background color
-     */
-    public java.awt.Color getBackground() {
-        return background;
     }
 
     /**
@@ -559,7 +564,6 @@ public class Cell extends CellAttributes {
         imageHashCode = 0;
         invertedImage = null;
         imageId = 0;
-        background = java.awt.Color.BLACK;
         hasTransparentPixels = -1;
     }
 
@@ -575,7 +579,6 @@ public class Cell extends CellAttributes {
         imageHashCode = 0;
         invertedImage = null;
         imageId = 0;
-        background = java.awt.Color.BLACK;
         hasTransparentPixels = -1;
     }
 
@@ -674,26 +677,13 @@ public class Cell extends CellAttributes {
                 return false;
             }
             // Either both objects have their image inverted, or neither do.
-            if ((imageHashCode != 0) && (that.imageHashCode != 0)
-                && (imageHashCode != that.imageHashCode)
-            ) {
-                return false;
+            if ((imageId != 0) && (that.imageId != 0)) {
+                return (imageId == that.imageId);
             }
-            if ((imageId != 0) && (that.imageId != 0)
-                && (imageId != that.imageId)
-            ) {
-                return false;
+            if ((imageHashCode != 0) && (that.imageHashCode != 0)) {
+                return (imageHashCode == that.imageHashCode);
             }
-            if (compareCellImages(this, that) == false) {
-                return false;
-            }
-            if (background.equals(that.background)) {
-                // Fall through to the attributes check below.
-                // ...
-            } else {
-                // The cells are not the same visually.
-                return false;
-            }
+            return compareCellImages(this, that);
         }
 
         // Normal case: character and attributes must match.
@@ -784,10 +774,6 @@ public class Cell extends CellAttributes {
         hash = (B * hash) + ch;
         hash = (B * hash) + width.hashCode();
         if (image != null) {
-            /*
-            hash = (B * hash) + image.hashCode();
-            hash = (B * hash) + background.hashCode();
-             */
             if (imageHashCode == 0) {
                 // Lazy-load hash code.
                 imageHashCode = makeImageHashCode();
@@ -814,7 +800,6 @@ public class Cell extends CellAttributes {
             this.width = that.width;
             this.image = that.image;
             this.invertedImage = that.invertedImage;
-            this.background = that.background;
             this.imageHashCode = that.imageHashCode;
             this.imageId = that.imageId;
             this.hasTransparentPixels = that.hasTransparentPixels;

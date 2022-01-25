@@ -495,6 +495,8 @@ public class TImage extends TWidget implements EditMenuUser {
             // Break the image up into an array of cells.
             cells = new Cell[cellColumns][cellRows];
 
+            int imageId = System.identityHashCode(this);
+            imageId ^= (int) System.currentTimeMillis();
             for (int x = 0; x < cellColumns; x++) {
                 for (int y = 0; y < cellRows; y++) {
 
@@ -522,6 +524,8 @@ public class TImage extends TWidget implements EditMenuUser {
                     if (!ImageUtils.isFullyTransparent(newImage)) {
                         cell.setImage(newImage);
                         cell.flattenImage(false, getApplication().getBackend());
+                        imageId++;
+                        cell.setImageId(imageId & 0x7FFFFFFF);
                     }
                     cells[x][y] = cell;
                 }

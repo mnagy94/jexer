@@ -910,14 +910,8 @@ public class HQSixelEncoder implements SixelEncoder {
          * @param x the int value
          * @return an int between 0 and 100.
          */
-        private int clampSixel(final int x) {
-            if (x < 0) {
-                return 0;
-            }
-            if (x > 100) {
-                return 100;
-            }
-            return x;
+        private final int clampSixel(final int x) {
+            return Math.max(0, Math.min(x, 100));
         }
 
         /**
@@ -1004,14 +998,10 @@ public class HQSixelEncoder implements SixelEncoder {
          * Dither an image to a paletteSize palette.  The dithered
          * image cells will contain indexes into the palette.
          *
-         * @return the dithered image.  Every pixel is an index into the
-         * palette.
+         * @return the dithered image rgb data.  Every pixel is an index into
+         * the palette.
          */
-        public BufferedImage ditherImage() {
-            if (noDither) {
-                return sixelImage;
-            }
-
+        public int [] ditherImage() {
             if (quantizationType == 2) {
                 // TODO: octree
                 return null;
@@ -1019,6 +1009,10 @@ public class HQSixelEncoder implements SixelEncoder {
 
             int [] rgbArray = sixelImage.getRGB(0, 0, sixelImage.getWidth(),
                 sixelImage.getHeight(), null, 0, sixelImage.getWidth());
+
+            if (noDither) {
+                return rgbArray;
+            }
 
             int height = sixelImage.getHeight();
             int width = sixelImage.getWidth();
@@ -1087,8 +1081,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             red = clampSixel(red);
                             green = clampSixel(green);
                             blue = clampSixel(blue);
-                            pXpY = (0xFF << 24) | ((red & 0xFF) << 16);
-                            pXpY |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                            pXpY = (0xFF << 24) | ((red & 0xFF) << 16)
+                                 | ((green & 0xFF) << 8) | (blue & 0xFF);
                             rgbArray[imageX + 1 + (width * imageY)] = pXpY;
                         } else {
                             assert (transparent == true);
@@ -1103,8 +1097,8 @@ public class HQSixelEncoder implements SixelEncoder {
                                 red = clampSixel(red);
                                 green = clampSixel(green);
                                 blue = clampSixel(blue);
-                                pXpYp = (0xFF << 24) | ((red & 0xFF) << 16);
-                                pXpYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                                pXpYp = (0xFF << 24) | ((red & 0xFF) << 16)
+                                      | ((green & 0xFF) << 8) | (blue & 0xFF);
                                 rgbArray[imageX + 1 + (width * (imageY + 1))] = pXpYp;
                             } else {
                                 assert (transparent == true);
@@ -1123,8 +1117,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             red = clampSixel(red);
                             green = clampSixel(green);
                             blue = clampSixel(blue);
-                            pXmYp = (0xFF << 24) | ((red & 0xFF) << 16);
-                            pXmYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                            pXmYp = (0xFF << 24) | ((red & 0xFF) << 16)
+                                  | ((green & 0xFF) << 8) | (blue & 0xFF);
                             rgbArray[imageX - 1 + (width * (imageY + 1))] = pXmYp;
                         } else {
                             assert (transparent == true);
@@ -1139,8 +1133,8 @@ public class HQSixelEncoder implements SixelEncoder {
                             red = clampSixel(red);
                             green = clampSixel(green);
                             blue = clampSixel(blue);
-                            pXYp = (0xFF << 24) | ((red & 0xFF) << 16);
-                            pXYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                            pXYp = (0xFF << 24) | ((red & 0xFF) << 16)
+                                 | ((green & 0xFF) << 8) | (blue & 0xFF);
                             rgbArray[imageX + (width * (imageY + 1))] = pXYp;
                         } else {
                             assert (transparent == true);
@@ -1150,10 +1144,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 } // for (int imageY = 0; imageY < height; imageY++)
             } // for (int imageX = 0; imageX < width; imageX++)
 
-            BufferedImage ditheredImage = new BufferedImage(width, height,
-                BufferedImage.TYPE_INT_ARGB);
-            ditheredImage.setRGB(0, 0, width, height, rgbArray, 0, width);
-            return ditheredImage;
+            return rgbArray;
         }
 
         /**
@@ -1308,25 +1299,14 @@ public class HQSixelEncoder implements SixelEncoder {
         Palette palette = new Palette(paletteSize, bitmap, allowTransparent);
         result.palette = palette;
 
-        // DEBUG
-        /*
-        System.err.println("BITMAP:");
-        for (int y = 0; y < Math.min(10, bitmap.getHeight()); y++) {
-            for (int x = 0; x < bitmap.getWidth(); x++) {
-                System.err.printf("(%d, %d) --> %08x\n", x, y,
-                    bitmap.getRGB(x, y));
-            }
-        }
-         */
-
-        // Dither the image
-        BufferedImage image = palette.ditherImage();
+        // Dither the image.  We don't bother wrapping it in a BufferedImage.
+        int [] rgbArray = palette.ditherImage();
 
         if (palette.timings != null) {
             palette.timings.ditherImageTime = System.nanoTime();
         }
 
-        if (image == null) {
+        if (rgbArray == null) {
             if (palette.timings != null) {
                 palette.timings.emitSixelTime = System.nanoTime();
                 palette.timings.endTime = System.nanoTime();
@@ -1334,17 +1314,6 @@ public class HQSixelEncoder implements SixelEncoder {
             result.encodedImage = "";
             return result;
         }
-
-        // DEBUG
-        /*
-        System.err.println("DITHERED IMAGE:");
-        for (int y = 0; y < Math.min(10, image.getHeight()); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                System.err.printf("(%d, %d) --> %08x\n", x, y,
-                    image.getRGB(x, y));
-            }
-        }
-         */
 
         // Collect the raster information
         int rasterHeight = 0;
@@ -1354,12 +1323,8 @@ public class HQSixelEncoder implements SixelEncoder {
         palette.emitPalette(sb);
 
         // Render the entire row of cells.
-        int width = image.getWidth();
+        int width = bitmap.getWidth();
         int [][] sixels = new int[width][6];
-
-        // There is a small performance gain reading the array all at once.
-        int [] rgbArray = image.getRGB(0, 0, width, image.getHeight(),
-            null, 0, width);
 
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
 

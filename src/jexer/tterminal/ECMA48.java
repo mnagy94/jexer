@@ -8362,6 +8362,8 @@ public class ECMA48 implements Runnable {
         }
 
         // Break the image up into an array of cells.
+        int imageId = System.identityHashCode(this);
+        imageId ^= (int) System.currentTimeMillis();
         Cell [][] cells = new Cell[cellColumns][cellRows];
         for (int x = 0; x < cellColumns; x++) {
             for (int y = 0; y < cellRows; y++) {
@@ -8401,7 +8403,8 @@ public class ECMA48 implements Runnable {
                     gr.drawImage(imageSlice, 0, 0, null, null);
                     gr.dispose();
 
-                    cell.setImage(newImage);
+                    imageId++;
+                    cell.setImage(newImage, imageId & 0x7FFFFFFF);
 
                     if (maybeTransparent) {
                         // Check now if this cell has transparent pixels.
@@ -8450,6 +8453,7 @@ public class ECMA48 implements Runnable {
                         gr.drawImage(oldCell.getImage(), 0, 0, null, null);
                         gr.drawImage(cells[x][y].getImage(), 0, 0, null, null);
                         gr.dispose();
+                        // TODO: mix with oldCell.imageId
                         cells[x][y].setImage(newImage);
                         cells[x][y].isTransparentImage();
                     } else if (false) {
