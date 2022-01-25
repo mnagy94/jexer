@@ -1674,7 +1674,7 @@ public class LogicalScreen implements Screen {
                         g2d.drawImage(image, 0, 0, null);
                         g2d.dispose();
                         // Retain overCell.imageId with thisOldBg and set
-                        int imageId = thisCell.getImageId();
+                        int imageId = overCell.getImageId();
                         if (imageId > 0) {
                             thisCell.setImage(newImage, imageId);
                             thisCell.mixImageId(thisOldBg);
@@ -1777,10 +1777,9 @@ public class LogicalScreen implements Screen {
                         g2d.dispose();
                         // Retain overCell.imageId with overBg, then
                         // thisOldBg, then set
-                        int imageId = thisCell.getImageId();
+                        int imageId = overCell.getImageId();
                         if (imageId > 0) {
                             thisCell.setImage(newImage, imageId);
-                            thisCell.mixImageId(overCell);
                             thisCell.mixImageId(overBg);
                             thisCell.mixImageId(thisOldBg);
                         } else {
