@@ -65,6 +65,13 @@ public class HQSixelEncoder implements SixelEncoder {
     private static final int FAST_AND_DIRTY = 16;
 
     /**
+     * If true, try to partition the search space.  This is currently not
+     * working well, but it can be quite a bit faster.  The inaccuracy is
+     * very easy to see on a color wheel: tons of artifacts.
+     */
+    private static final boolean SEARCH_BUCKETS = true;
+
+    /**
      * When run from the command line, we need both the image, and to know if
      * the image is transparent in order to set to correct sixel introducer.
      * So toSixel() returns a tuple now.
@@ -464,6 +471,21 @@ public class HQSixelEncoder implements SixelEncoder {
         private ArrayList<ArrayList<Bucket>> searchBuckets;
 
         /**
+         * The mask for bits for red in searchBuckets.  Default is 3.
+         */
+        private int redMask = 0xE00000;
+
+        /**
+         * The number of bits for green in searchBuckets.  Default is 3.
+         */
+        private int greenMask = 0xE000;
+
+        /**
+         * The number of bits for blue in searchBuckets.  Default is 2.
+         */
+        private int blueMask = 0xC0;
+
+        /**
          * If true, quantization is done.
          */
         private boolean quantizationDone = false;
@@ -822,10 +844,159 @@ public class HQSixelEncoder implements SixelEncoder {
         public void medianCut() {
             assert (quantizationType == 1);
 
-            // Populate the "total" bucket.
+            // Populate the "total" bucket, performing some stats along the
+            // way.
+
+            /*
+             * Persumably the final colors in the palette will roughly
+             * partition the colors in the source image to maximize
+             * variability.  Meaning that if there is a lot of distinct (say)
+             * red shades, then there will be a lot of distinct red colors in
+             * the final palette.  We can measure the variance of each
+             * channel as we are building the initial bucket, and assign bits
+             * to the search masks to proportionally match.
+             *
+             * This currently does not work great: there could be a neighbor
+             * nearer to a palette color in RGB space that is in a different
+             * search bucket and will not be checked.  Really I need a data
+             * structure that is guaranteed to find the closest color.  I can
+             * cheat a bit by making more search buckets (say 10-12 bit
+             * space), but that's really just putting it off.  Let's live
+             * with some noise for now.
+             */
+            double redMean = 0;
+            double redDeltaSum = 0;
+            double greenMean = 0;
+            double greenDeltaSum = 0;
+            double blueMean = 0;
+            double blueDeltaSum = 0;
+            int count = 0;
+
             Bucket bucket = new Bucket(colorMap.size());
             for (ColorIdx color: colorMap.values()) {
                 bucket.add(color);
+
+                int rgb = color.color;
+                int red   = (rgb >>> 16) & 0xFF;
+                int green = (rgb >>>  8) & 0xFF;
+                int blue  =  rgb         & 0xFF;
+
+                if (SEARCH_BUCKETS) {
+                    // We compute an "online" version of the mean and variance.
+                    count++;
+                    double redDelta = red - redMean;
+                    redMean += redDelta / count;
+                    double redDelta2 = red - redMean;
+                    redDeltaSum += redDelta * redDelta2;
+                    double greenDelta = green - greenMean;
+                    greenMean += greenDelta / count;
+                    double greenDelta2 = green - greenMean;
+                    greenDeltaSum += greenDelta * greenDelta2;
+                    double blueDelta = blue - blueMean;
+                    blueMean += blueDelta / count;
+                    double blueDelta2 = blue - blueMean;
+                    blueDeltaSum += blueDelta * blueDelta2;
+                }
+            }
+
+            if (SEARCH_BUCKETS) {
+                int colorN = colorMap.size();
+                if (colorN > 2) {
+                    double redSq = redDeltaSum / (colorN - 1);
+                    double greenSq = greenDeltaSum / (colorN - 1);
+                    double blueSq = blueDeltaSum / (colorN - 1);
+
+                    double totalSq = redSq + greenSq + blueSq;
+                    double redFrac = redSq / totalSq;
+                    double greenFrac = greenSq / totalSq;
+                    double blueFrac = blueSq / totalSq;
+
+                    int redBits = Math.max(1, Math.min((int) (redFrac * 8.0), 6));
+                    int greenBits = Math.max(1, Math.min((int) (greenFrac * 8.0), 6));
+                    // Must have at least 1 bit for blue.
+                    int blueBits = Math.max(1, 8 - redBits - greenBits);
+                    // Steal it from green if needed.
+                    greenBits = 8 - redBits - blueBits;
+                    assert (redBits + greenBits + blueBits == 8);
+                    assert ((redBits >= 1) && (redBits <= 6));
+                    assert ((greenBits >= 1) && (greenBits <= 6));
+                    assert ((blueBits >= 1) && (blueBits <= 6));
+
+                    if (verbosity >= 1) {
+                        System.err.printf("Variance: %4.2f%% red %4.2f%% green %4.2f%% blue\n",
+                            redFrac * 100.0, greenFrac * 100.0, blueFrac * 100.0);
+                        System.err.printf("    Bits:     %d  red     %d  green     %d  blue\n",
+                            redBits, greenBits, blueBits);
+                    }
+
+                    // There is a faster way to do this surely.
+                    switch (redBits) {
+                    case 1:
+                        redMask = 0x800000;
+                        break;
+                    case 2:
+                        redMask = 0xC00000;
+                        break;
+                    case 3:
+                        redMask = 0xE00000;
+                        break;
+                    case 4:
+                        redMask = 0xF00000;
+                        break;
+                    case 5:
+                        redMask = 0xF80000;
+                        break;
+                    case 6:
+                        redMask = 0xFC0000;
+                        break;
+                    default:
+                        break;
+                    }
+                    switch (greenBits) {
+                    case 1:
+                        greenMask = 0x8000;
+                        break;
+                    case 2:
+                        greenMask = 0xC000;
+                        break;
+                    case 3:
+                        greenMask = 0xE000;
+                        break;
+                    case 4:
+                        greenMask = 0xF000;
+                        break;
+                    case 5:
+                        greenMask = 0xF800;
+                        break;
+                    case 6:
+                        greenMask = 0xFC00;
+                        break;
+                    default:
+                        break;
+                    }
+                    switch (blueBits) {
+                    case 1:
+                        blueMask = 0x80;
+                        break;
+                    case 2:
+                        blueMask = 0xC0;
+                        break;
+                    case 3:
+                        blueMask = 0xE0;
+                        break;
+                    case 4:
+                        blueMask = 0xF0;
+                        break;
+                    case 5:
+                        blueMask = 0xF8;
+                        break;
+                    case 6:
+                        blueMask = 0xFC;
+                        break;
+                    default:
+                        break;
+                    }
+                }
             }
 
             int numColors = paletteSize;
@@ -904,16 +1075,18 @@ public class HQSixelEncoder implements SixelEncoder {
             // assign the number of bits to each channel to maximize coverage
             // of the palette space and make each searchBucket as small as
             // possible.
-            searchBuckets = new ArrayList<ArrayList<Bucket>>(256);
-            for (int i = 0; i < 256; i++) {
-                searchBuckets.add(new ArrayList<Bucket>());
-            }
-            for (Bucket b: buckets) {
-                int averageColor = b.average();
-                int maskedColor = ((averageColor & 0xE00000) >>> 16)
-                                | ((averageColor & 0xE000) >>> 11)
-                                | ((averageColor & 0xC0) >>> 6);
-                searchBuckets.get(maskedColor).add(b);
+            if (SEARCH_BUCKETS) {
+                searchBuckets = new ArrayList<ArrayList<Bucket>>(256);
+                for (int i = 0; i < 256; i++) {
+                    searchBuckets.add(new ArrayList<Bucket>());
+                }
+                for (Bucket b: buckets) {
+                    int averageColor = b.average();
+                    int maskedColor = ((averageColor & redMask  ) >>> 16)
+                                    | ((averageColor & greenMask) >>> 8)
+                                    |  (averageColor & blueMask );
+                    searchBuckets.get(maskedColor).add(b);
+                }
             }
 
             quantizationDone = true;
@@ -924,10 +1097,13 @@ public class HQSixelEncoder implements SixelEncoder {
                     System.err.printf("   %03d %08x\n", i,
                         sixelColors.get(i));
                 }
-                System.err.printf("searchBuckets\n",
-                    sixelColors.size());
-                for (int i = 0; i < searchBuckets.size(); i++) {
-                    System.err.printf("   %03d\n", searchBuckets.get(i).size());
+                if (SEARCH_BUCKETS) {
+                    System.err.printf("searchBuckets\n",
+                        sixelColors.size());
+                    for (int i = 0; i < searchBuckets.size(); i++) {
+                        System.err.printf("   %03d\n",
+                            searchBuckets.get(i).size());
+                    }
                 }
             }
 
@@ -1011,14 +1187,16 @@ public class HQSixelEncoder implements SixelEncoder {
 
                 // See first if there are buckets on the same masked color.
                 ArrayList<Bucket> bucketsToSearch = buckets;
-                int maskedColor = ((color & 0xE00000) >>> 16)
-                                | ((color & 0xE000) >>> 11)
-                                | ((color & 0xC0) >>> 6);
-                if (searchBuckets.get(maskedColor).size() > 0) {
-                    bucketsToSearch = searchBuckets.get(maskedColor);
-                    if (verbosity >= 5) {
-                        System.err.printf("Can search fast: %d buckets\n",
-                            searchBuckets.get(maskedColor).size());
+                if (SEARCH_BUCKETS) {
+                    int maskedColor = ((color & redMask  ) >>> 16)
+                                    | ((color & greenMask) >>> 8)
+                                    |  (color & blueMask );
+                    if (searchBuckets.get(maskedColor).size() > 0) {
+                        bucketsToSearch = searchBuckets.get(maskedColor);
+                        if (verbosity >= 5) {
+                            System.err.printf("Can search fast: %d buckets\n",
+                                searchBuckets.get(maskedColor).size());
+                        }
                     }
                 }
 
