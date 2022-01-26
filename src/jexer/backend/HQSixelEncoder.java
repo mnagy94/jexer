@@ -634,7 +634,10 @@ public class HQSixelEncoder implements SixelEncoder {
              *
              * - Otherwise use octree.
              */
-            if (numColors >= colorMap.size()) {
+            if ((numColors <= 256) && (colorMap.size() <= numColors)) {
+                // TODO: The numColors <= 256 above should not be there.  But
+                // apparently my median cut is buggy and only works with 256+
+                // colors.  Honestly, is my median cut even doing anything?!
                 quantizationType = 0;
                 directMap();
             } else if (true || (colorMap.size() <= numColors * 10)) {
