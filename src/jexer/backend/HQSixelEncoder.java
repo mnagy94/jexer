@@ -251,7 +251,10 @@ public class HQSixelEncoder implements SixelEncoder {
              * @return the index
              */
             public int getIndex() {
-                return colors.get(0).index;
+                if (colors.size() > 0) {
+                    return colors.get(0).index;
+                }
+                return 0;
             }
 
             /**
@@ -365,6 +368,10 @@ public class HQSixelEncoder implements SixelEncoder {
              */
             public int average() {
                 if (quantizationDone) {
+                    if (colors.size() == 0) {
+                        lastAverage = 0xFF000000;
+                        return lastAverage;
+                    }
                     int sixelColor = sixelColors.get(colors.get(0).index);
                     if ((sixelColor == 0xFF000000)
                         || (sixelColor == 0xFF646464)
@@ -390,6 +397,10 @@ public class HQSixelEncoder implements SixelEncoder {
                     totalGreen += color.count * green;
                     totalBlue  += color.count * blue;
                     count += color.count;
+                }
+                if (count == 0) {
+                    lastAverage = 0xFF000000;
+                    return lastAverage;
                 }
                 totalRed   = clampSixel((int) (totalRed   / count));
                 totalGreen = clampSixel((int) (totalGreen / count));
@@ -627,7 +638,7 @@ public class HQSixelEncoder implements SixelEncoder {
              *
              * - Otherwise use octree.
              */
-            if ((numColors <= 256) && (colorMap.size() <= numColors)) {
+            if (colorMap.size() <= numColors) {
                 // TODO: The numColors <= 256 above should not be there.  But
                 // apparently my median cut is buggy and only works with 256+
                 // colors.  Honestly, is my median cut even doing anything?!
