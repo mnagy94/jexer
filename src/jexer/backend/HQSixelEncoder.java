@@ -458,6 +458,12 @@ public class HQSixelEncoder implements SixelEncoder {
         private ArrayList<Bucket> buckets;
 
         /**
+         * A fixed-size array of median cut bucket RGBs masked down to 8
+         * bits, each entry containing a list of buckets.
+         */
+        private ArrayList<ArrayList<Bucket>> searchBuckets;
+
+        /**
          * If true, quantization is done.
          */
         private boolean quantizationDone = false;
@@ -609,7 +615,7 @@ public class HQSixelEncoder implements SixelEncoder {
             if (numColors >= colorMap.size()) {
                 quantizationType = 0;
                 directMap();
-            } else if ((colorMap.size() <= numColors * 10) || true) {
+            } else if (true || (colorMap.size() <= numColors * 10)) {
                 // For now, direct map and median cut are all we get.
                 quantizationType = 1;
                 medianCut();
@@ -693,7 +699,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
             sixelImageWidth = image.getWidth();
             sixelImageHeight = image.getHeight();
-            sixelImage = new int [sixelImageWidth * sixelImageHeight];
+            sixelImage = new int[sixelImageWidth * sixelImageHeight];
 
             if (verbosity >= 1) {
                 System.err.printf("Image is %dx%d, bpp %d transparent %s\n",
@@ -784,7 +790,9 @@ public class HQSixelEncoder implements SixelEncoder {
             for (ColorIdx color: colorMap.values()) {
                 sixelColors.add(color.color);
             }
-            Collections.sort(sixelColors);
+            if (verbosity >= 5) {
+                Collections.sort(sixelColors);
+            }
             assert (sixelColors.size() == colorMap.size());
             for (int i = 0; i < sixelColors.size(); i++) {
                 colorMap.get(sixelColors.get(i)).index = i;
@@ -891,6 +899,23 @@ public class HQSixelEncoder implements SixelEncoder {
                 sixelColors.set(lightestIdx, 0xFF646464);
             }
 
+            // This provides a modest speedup: partition the bucket colors by
+            // 3 bits red, 3 bits green, 2 bits blue.  Next stage is to
+            // assign the number of bits to each channel to maximize coverage
+            // of the palette space and make each searchBucket as small as
+            // possible.
+            searchBuckets = new ArrayList<ArrayList<Bucket>>(256);
+            for (int i = 0; i < 256; i++) {
+                searchBuckets.add(new ArrayList<Bucket>());
+            }
+            for (Bucket b: buckets) {
+                int averageColor = b.average();
+                int maskedColor = ((averageColor & 0xE00000) >>> 16)
+                                | ((averageColor & 0xE000) >>> 11)
+                                | ((averageColor & 0xC0) >>> 6);
+                searchBuckets.get(maskedColor).add(b);
+            }
+
             quantizationDone = true;
             if (verbosity >= 5) {
                 System.err.printf("COLOR MAP: %d entries\n",
@@ -898,6 +923,11 @@ public class HQSixelEncoder implements SixelEncoder {
                 for (int i = 0; i < sixelColors.size(); i++) {
                     System.err.printf("   %03d %08x\n", i,
                         sixelColors.get(i));
+                }
+                System.err.printf("searchBuckets\n",
+                    sixelColors.size());
+                for (int i = 0; i < searchBuckets.size(); i++) {
+                    System.err.printf("   %03d\n", searchBuckets.get(i).size());
                 }
             }
 
@@ -978,13 +1008,27 @@ public class HQSixelEncoder implements SixelEncoder {
                 // approach be adapted for use here?
                 //
                 // https://github.com/hpjansson/chafa/issues/27#issuecomment-647584817
+
+                // See first if there are buckets on the same masked color.
+                ArrayList<Bucket> bucketsToSearch = buckets;
+                int maskedColor = ((color & 0xE00000) >>> 16)
+                                | ((color & 0xE000) >>> 11)
+                                | ((color & 0xC0) >>> 6);
+                if (searchBuckets.get(maskedColor).size() > 0) {
+                    bucketsToSearch = searchBuckets.get(maskedColor);
+                    if (verbosity >= 5) {
+                        System.err.printf("Can search fast: %d buckets\n",
+                            searchBuckets.get(maskedColor).size());
+                    }
+                }
+
                 int red   = (color >>> 16) & 0xFF;
                 int green = (color >>>  8) & 0xFF;
                 int blue  =  color         & 0xFF;
                 double diff = Double.MAX_VALUE;
                 int idx = -1;
                 int i = 0;
-                for (Bucket b: buckets) {
+                for (Bucket b: bucketsToSearch) {
                     int rgbColor = b.average();
                     double newDiff = 0;
                     int red2   = (rgbColor >>> 16) & 0xFF;
