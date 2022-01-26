@@ -254,13 +254,7 @@ public class LegacySixelEncoder implements SixelEncoder {
          * @return an int between 0 and 255.
          */
         private int clamp(final int x) {
-            if (x < 0) {
-                return 0;
-            }
-            if (x > 255) {
-                return 255;
-            }
-            return x;
+            return Math.max(0, Math.min(x, 255));
         }
 
         /**
@@ -268,10 +262,10 @@ public class LegacySixelEncoder implements SixelEncoder {
          * image cells will contain indexes into the palette.
          *
          * @param image the image to dither
-         * @return the dithered image.  Every pixel is an index into the
-         * palette.
+         * @return the dithered image rgb data.  Every pixel is an index into
+         * the palette.
          */
-        public BufferedImage ditherImage(final BufferedImage image) {
+        public int [] ditherImage(final BufferedImage image) {
 
             int [] rgbArray = image.getRGB(0, 0, image.getWidth(),
                 image.getHeight(), null, 0, image.getWidth());
@@ -309,8 +303,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                         red = clamp(red);
                         green = clamp(green);
                         blue = clamp(blue);
-                        pXpY = ((red & 0xFF) << 16);
-                        pXpY |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                        pXpY = ((red & 0xFF) << 16)
+                             | ((green & 0xFF) << 8) | (blue & 0xFF);
                         rgbArray[imageX + 1 + (width * imageY)] = pXpY;
                         if (imageY < image.getHeight() - 1) {
                             int pXpYp = rgbArray[imageX + 1 + (width * (imageY + 1))];
@@ -320,8 +314,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                             red = clamp(red);
                             green = clamp(green);
                             blue = clamp(blue);
-                            pXpYp = ((red & 0xFF) << 16);
-                            pXpYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                            pXpYp = ((red & 0xFF) << 16)
+                                  | ((green & 0xFF) << 8) | (blue & 0xFF);
                             rgbArray[imageX + 1 + (width * (imageY + 1))] = pXpYp;
                         }
                     } else if (imageY < image.getHeight() - 1) {
@@ -334,8 +328,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                         red = clamp(red);
                         green = clamp(green);
                         blue = clamp(blue);
-                        pXmYp = ((red & 0xFF) << 16);
-                        pXmYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                        pXmYp = ((red & 0xFF) << 16)
+                              | ((green & 0xFF) << 8) | (blue & 0xFF);
                         rgbArray[imageX - 1 + (width * (imageY + 1))] = pXmYp;
 
                         red   = ((pXYp >>> 16) & 0xFF) + (5 * redError);
@@ -344,19 +338,14 @@ public class LegacySixelEncoder implements SixelEncoder {
                         red = clamp(red);
                         green = clamp(green);
                         blue = clamp(blue);
-                        pXYp = ((red & 0xFF) << 16);
-                        pXYp |= ((green & 0xFF) << 8) | (blue & 0xFF);
+                        pXYp = ((red & 0xFF) << 16)
+                             | ((green & 0xFF) << 8) | (blue & 0xFF);
                         rgbArray[imageX + (width * (imageY + 1))] = pXYp;
                     }
                 } // for (int imageY = 0; imageY < height; imageY++)
             } // for (int imageX = 0; imageX < width; imageX++)
 
-            BufferedImage ditheredImage = new BufferedImage(image.getWidth(),
-                image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            ditheredImage.setRGB(0, 0, image.getWidth(), image.getHeight(),
-                rgbArray, 0, image.getWidth());
-
-            return ditheredImage;
+            return rgbArray;
         }
 
         /**
@@ -663,7 +652,7 @@ public class LegacySixelEncoder implements SixelEncoder {
             final boolean [] used) {
 
             for (int i = 0; i < paletteSize; i++) {
-                if (((used != null) && (used[i] == true)) || (used == null)) {
+                if ((used == null) || ((used != null) && (used[i] == true))) {
                     int rgbColor = rgbColors.get(i);
                     sb.append(String.format("#%d;2;%d;%d;%d", i,
                             ((rgbColor >>> 16) & 0xFF) * 100 / 255,
@@ -675,9 +664,46 @@ public class LegacySixelEncoder implements SixelEncoder {
         }
     }
 
+    /**
+     * Timings records time points in the image generation cycle.
+     */
+    private class Timings {
+        /**
+         * Nanotime when the timings were begun.
+         */
+        public long startTime;
+
+        /**
+         * Nanotime after the color map was produced.
+         */
+        public long buildColorMapTime;
+
+        /**
+         * Nanotime after which the RGB image was dithered into an
+         * indexed image.
+         */
+        public long ditherImageTime;
+
+        /**
+         * Nanotime after which the dithered image was converted to sixel
+         * and emitted.
+         */
+        public long emitSixelTime;
+
+        /**
+         * Nanotime when the timings were finished.
+         */
+        public long endTime;
+    }
+
     // ------------------------------------------------------------------------
     // Variables --------------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Verbosity level for analysis mode.
+     */
+    private int verbosity = 0;
 
     /**
      * If true, use a single shared palette for sixel.
@@ -695,6 +721,16 @@ public class LegacySixelEncoder implements SixelEncoder {
      * 2048.
      */
     private int paletteSize = 1024;
+
+    /**
+     * If true, record timings for the image.
+     */
+    private boolean doTimings = false;
+
+    /**
+     * Timings.
+     */
+    private Timings timings;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -759,6 +795,11 @@ public class LegacySixelEncoder implements SixelEncoder {
 
         int fullHeight = bitmap.getHeight();
 
+        if (doTimings) {
+            timings = new Timings();
+            timings.startTime = System.nanoTime();
+        }
+
         // Dither the image.  It is ok to lose the original here.
         if (palette == null) {
             palette = new Palette();
@@ -766,36 +807,42 @@ public class LegacySixelEncoder implements SixelEncoder {
                 palette.emitPalette(sb, null);
             }
         }
-        BufferedImage image = palette.ditherImage(bitmap);
+        if (timings != null) {
+            timings.buildColorMapTime = System.nanoTime();
+        }
+
+        int [] rgbArray = palette.ditherImage(bitmap);
+        int width = bitmap.getWidth();
+
+        if (timings != null) {
+            timings.ditherImageTime = System.nanoTime();
+        }
 
         // Collect the raster information
         int rasterHeight = 0;
-        int rasterWidth = image.getWidth();
+        int rasterWidth = width;
 
         if (sharedPalette == false) {
             // Emit the palette, but only for the colors actually used by
             // these cells.
             boolean [] usedColors = new boolean[paletteSize];
-            for (int imageX = 0; imageX < image.getWidth(); imageX++) {
-                for (int imageY = 0; imageY < image.getHeight(); imageY++) {
-                    usedColors[image.getRGB(imageX, imageY)] = true;
+            for (int imageX = 0; imageX < width; imageX++) {
+                for (int imageY = 0; imageY < fullHeight; imageY++) {
+                    usedColors[rgbArray[imageX + (imageY * width)]] = true;
                 }
             }
             palette.emitPalette(sb, usedColors);
         }
 
         // Render the entire row of cells.
-        int width = image.getWidth();
-        int [][] sixels = new int[image.getWidth()][6];
-
-        // There is a small performance gain reading the array all at once.
-        int [] rgbArray = image.getRGB(0, 0, width, image.getHeight(),
-            null, 0, width);
+        int [][] sixels = new int[width][6];
 
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
 
             // See which colors are actually used in this band of sixels.
-            for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+            boolean [] usedColors = new boolean[paletteSize];
+
+            for (int imageX = 0; imageX < width; imageX++) {
                 for (int imageY = 0;
                      (imageY < 6) && (imageY + currentRow < fullHeight);
                      imageY++) {
@@ -809,19 +856,12 @@ public class LegacySixelEncoder implements SixelEncoder {
                     assert (colorIdx < paletteSize);
 
                     sixels[imageX][imageY] = colorIdx;
+                    usedColors[colorIdx] = true;
                 }
             }
 
-            for (int i = 0; i < paletteSize; i++) {
-                boolean isUsed = false;
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
-                    for (int j = 0; j < 6; j++) {
-                        if (sixels[imageX][j] == i) {
-                            isUsed = true;
-                        }
-                    }
-                }
-                if (isUsed == false) {
+            for (int i = 0; i < usedColors.length; i++) {
+                if (!usedColors[i]) {
                     continue;
                 }
 
@@ -832,7 +872,7 @@ public class LegacySixelEncoder implements SixelEncoder {
 
                 int oldData = -1;
                 int oldDataCount = 0;
-                for (int imageX = 0; imageX < image.getWidth(); imageX++) {
+                for (int imageX = 0; imageX < width; imageX++) {
 
                     // Add up all the pixels that match this color.
                     int data = 0;
@@ -884,7 +924,7 @@ public class LegacySixelEncoder implements SixelEncoder {
                         oldData = data;
                     }
 
-                } // for (int imageX = 0; imageX < image.getWidth(); imageX++)
+                } // for (int imageX = 0; imageX < width; imageX++)
 
                 // Emit the last sequence.
                 if (oldDataCount == 1) {
@@ -908,6 +948,10 @@ public class LegacySixelEncoder implements SixelEncoder {
         // Add the raster information
         sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
 
+        if (timings != null) {
+            timings.emitSixelTime = System.nanoTime();
+            timings.endTime = System.nanoTime();
+        }
         return sb.toString();
     }
 
@@ -997,28 +1041,77 @@ public class LegacySixelEncoder implements SixelEncoder {
      */
     public static void main(final String [] args) {
         if (args.length == 0) {
-            System.err.println("USAGE: java jexer.backend.LegacySixelEncoder { file1 [ file2 ... ] }");
+            System.err.println("USAGE: java jexer.backend.LegacySixelEncoder [ -v | -vv | -t | -p ] { file1 [ file2 ... ] }");
             System.exit(-1);
         }
 
         LegacySixelEncoder encoder = new LegacySixelEncoder();
         int successCount = 0;
+        boolean performance = false;
         if (encoder.hasSharedPalette()) {
             System.out.print("\033[?1070l");
         } else {
             System.out.print("\033[?1070h");
         }
         System.out.flush();
+
         for (int i = 0; i < args.length; i++) {
+            if ((i == 0) && args[i].equals("-v")) {
+                encoder.verbosity = 1;
+                encoder.doTimings = true;
+                continue;
+            }
+            if ((i == 0) && args[i].equals("-vv")) {
+                encoder.verbosity = 10;
+                encoder.doTimings = true;
+                continue;
+            }
+            if ((i == 0) && args[i].equals("-t")) {
+                encoder.doTimings = true;
+                continue;
+            }
+            if ((i == 0) && args[i].equals("-p")) {
+                encoder.verbosity = 1;
+                encoder.doTimings = true;
+                performance = true;
+                continue;
+            }
+
             try {
                 BufferedImage image = ImageIO.read(new FileInputStream(args[i]));
-                StringBuilder sb = new StringBuilder();
-                sb.append("\033Pq");
-                encoder.emitPalette(sb);
-                sb.append(encoder.toSixel(image));
-                sb.append("\033\\");
-                System.out.print(sb.toString());
-                System.out.flush();
+                int count = 1;
+                if (performance) {
+                    count = 20;
+                }
+                for (int j = 0; j < count; j++) {
+
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("\033Pq");
+                    encoder.emitPalette(sb);
+                    sb.append(encoder.toSixel(image));
+                    sb.append("\033\\");
+                    System.out.print(sb.toString());
+                    System.out.flush();
+
+                    if (encoder.doTimings) {
+                        Timings timings = encoder.timings;
+                        assert (timings != null);
+                        double mapTime = (double) (timings.buildColorMapTime - timings.startTime) / 1.0e9;
+                        double ditherTime = (double) (timings.ditherImageTime - timings.buildColorMapTime) / 1.0e9;
+                        double emitSixelTime = (double) (timings.emitSixelTime - timings.ditherImageTime) / 1.0e9;
+                        double totalTime = (double) (timings.endTime - timings.startTime) / 1.0e9;
+
+                        System.err.println("Timings:");
+                        System.err.printf(" Act.\tmap %6.4fs\tdither %6.4fs\temit %6.4fs\n",
+                            mapTime, ditherTime, emitSixelTime);
+                        System.err.printf(" Pct.\tmap %4.2f%%\tdither %4.2f%%\temit %4.2f%%\n",
+                            100.0 * mapTime / totalTime,
+                            100.0 * ditherTime / totalTime,
+                            100.0 * emitSixelTime / totalTime);
+                        System.err.printf(" total %6.4fs\n", totalTime);
+                    }
+
+                }
             } catch (Exception e) {
                 System.err.println("Error reading file:");
                 e.printStackTrace();
