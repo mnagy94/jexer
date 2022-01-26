@@ -911,12 +911,22 @@ public class HQSixelEncoder implements SixelEncoder {
                     double greenFrac = greenSq / totalSq;
                     double blueFrac = blueSq / totalSq;
 
-                    int redBits = Math.max(1, Math.min((int) (redFrac * 8.0), 6));
-                    int greenBits = Math.max(1, Math.min((int) (greenFrac * 8.0), 6));
+                    // Assign the MOST bits to the SMALLEST variance.
+                    // Smaller variance means more colors are in that range
+                    // -- it's going to have more buckets accordingly.
+                    int redBits = Math.max(1,
+                        Math.min((int) ((1.0 - redFrac) * 6.0), 6));
+                    int greenBits = Math.max(1,
+                        Math.min((int) ((1.0 - greenFrac) * 6.0), 6));
                     // Must have at least 1 bit for blue.
                     int blueBits = Math.max(1, 8 - redBits - greenBits);
-                    // Steal it from green if needed.
-                    greenBits = 8 - redBits - blueBits;
+                    if (redFrac < greenFrac) {
+                        // Steal it from green.
+                        greenBits = 8 - redBits - blueBits;
+                    } else {
+                        // Steal it from red.
+                        redBits = 8 - greenBits - blueBits;
+                    }
                     assert (redBits + greenBits + blueBits == 8);
                     assert ((redBits >= 1) && (redBits <= 6));
                     assert ((greenBits >= 1) && (greenBits <= 6));
@@ -1793,19 +1803,21 @@ public class HQSixelEncoder implements SixelEncoder {
             || ((args.length == 1) && args[0].equals("-vv"))
             || ((args.length == 1) && args[0].equals("-t"))
         ) {
-            System.err.println("USAGE: java jexer.backend.HQSixelEncoder [ -t | -v | -vv ] { file1 [ file2 ... ] }");
+            System.err.println("USAGE: java jexer.backend.HQSixelEncoder [ -p | -t | -v | -vv ] { file1 [ file2 ... ] }");
             System.exit(-1);
         }
 
         HQSixelEncoder encoder = new HQSixelEncoder();
         int successCount = 0;
         boolean allowTransparent = true;
+        boolean performance = false;
         if (encoder.hasSharedPalette()) {
             System.out.print("\033[?1070l");
         } else {
             System.out.print("\033[?1070h");
         }
         System.out.flush();
+
         for (int i = 0; i < args.length; i++) {
             if ((i == 0) && args[i].equals("-v")) {
                 encoder.verbosity = 1;
@@ -1821,50 +1833,65 @@ public class HQSixelEncoder implements SixelEncoder {
                 encoder.doTimings = true;
                 continue;
             }
+            if ((i == 0) && args[i].equals("-p")) {
+                encoder.verbosity = 1;
+                encoder.doTimings = true;
+                performance = true;
+                continue;
+            }
+
             try {
                 BufferedImage image = ImageIO.read(new FileInputStream(args[i]));
-                // Put together the image.
-                StringBuilder sb = new StringBuilder();
-                SixelResult result = encoder.toSixelResult(image,
-                    allowTransparent);
-                result.palette.emitPalette(sb);
-                sb.append(result.encodedImage);
-                sb.append("\033\\");
-                // If there are transparent pixels, we need to note that at
-                // the beginning.
-                String header = "\033Pq";
-                if (result.transparent && allowTransparent) {
-                    header = "\033P0;1;0q";
+                int count = 1;
+                if (performance) {
+                    count = 20;
                 }
-                // Now put it together.
-                System.out.print(header);
-                System.out.print(sb.toString());
-                System.out.flush();
+                for (int j = 0; j < count; j++) {
+                    // Put together the image.
+                    StringBuilder sb = new StringBuilder();
+                    SixelResult result = encoder.toSixelResult(image,
+                        allowTransparent);
+                    result.palette.emitPalette(sb);
+                    sb.append(result.encodedImage);
+                    sb.append("\033\\");
+                    // If there are transparent pixels, we need to note that
+                    // at the beginning.
+                    String header = "\033Pq";
+                    if (result.transparent && allowTransparent) {
+                        header = "\033P0;1;0q";
+                    }
+                    // Now put it together.
+                    System.out.print(header);
+                    System.out.print(sb.toString());
+                    System.out.flush();
 
-                if (encoder.doTimings) {
-                    Palette.Timings timings = result.palette.timings;
-                    double scanTime = (double) (timings.scanImageTime - timings.startTime) / 1.0e9;
-                    double mapTime = (double) (timings.buildColorMapTime - timings.scanImageTime) / 1.0e9;
-                    double ditherTime = (double) (timings.ditherImageTime - timings.buildColorMapTime) / 1.0e9;
-                    double emitSixelTime = (double) (timings.emitSixelTime - timings.ditherImageTime) / 1.0e9;
-                    double totalTime = (double) (timings.endTime - timings.startTime) / 1.0e9;
+                    if (encoder.doTimings) {
+                        Palette.Timings timings = result.palette.timings;
+                        double scanTime = (double) (timings.scanImageTime - timings.startTime) / 1.0e9;
+                        double mapTime = (double) (timings.buildColorMapTime - timings.scanImageTime) / 1.0e9;
+                        double ditherTime = (double) (timings.ditherImageTime - timings.buildColorMapTime) / 1.0e9;
+                        double emitSixelTime = (double) (timings.emitSixelTime - timings.ditherImageTime) / 1.0e9;
+                        double totalTime = (double) (timings.endTime - timings.startTime) / 1.0e9;
 
-                    System.err.println("Timings:");
-                    System.err.printf(" Act. scan %6.4fs\tmap %6.4fs\tdither %6.4fs\temit %6.4fs\n",
-                        scanTime, mapTime, ditherTime, emitSixelTime);
-                    System.err.printf(" Pct. scan %4.2f%%\tmap %4.2f%%\tdither %4.2f%%\temit %4.2f%%\n",
-                        100.0 * scanTime / totalTime,
-                        100.0 * mapTime / totalTime,
-                        100.0 * ditherTime / totalTime,
-                        100.0 * emitSixelTime / totalTime);
-                    System.err.printf(" total %6.4fs\n", totalTime);
-                }
+                        System.err.println("Timings:");
+                        System.err.printf(" Act. scan %6.4fs\tmap %6.4fs\tdither %6.4fs\temit %6.4fs\n",
+                            scanTime, mapTime, ditherTime, emitSixelTime);
+                        System.err.printf(" Pct. scan %4.2f%%\tmap %4.2f%%\tdither %4.2f%%\temit %4.2f%%\n",
+                            100.0 * scanTime / totalTime,
+                            100.0 * mapTime / totalTime,
+                            100.0 * ditherTime / totalTime,
+                            100.0 * emitSixelTime / totalTime);
+                        System.err.printf(" total %6.4fs\n", totalTime);
+                    }
+
+                } // for (int j = 0; j < count; j++)
             } catch (Exception e) {
                 System.err.println("Error reading file:");
                 e.printStackTrace();
             }
 
-        }
+        } // for (int i = 0; i < args.length; i++)
+
         System.out.print("\033[?1070h");
         System.out.flush();
         if (successCount == args.length) {
