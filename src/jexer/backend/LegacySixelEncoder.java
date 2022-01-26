@@ -800,6 +800,12 @@ public class LegacySixelEncoder implements SixelEncoder {
             timings.startTime = System.nanoTime();
         }
 
+        if (verbosity >= 1) {
+            System.err.printf("toSixel() image is %dx%d, bpp %d\n",
+                bitmap.getWidth(), bitmap.getHeight(),
+                bitmap.getColorModel().getPixelSize());
+        }
+
         // Dither the image.  It is ok to lose the original here.
         if (palette == null) {
             palette = new Palette();
@@ -852,8 +858,10 @@ public class LegacySixelEncoder implements SixelEncoder {
                     if (colorIdx == -1) {
                         continue;
                     }
+                    /*
                     assert (colorIdx >= 0);
                     assert (colorIdx < paletteSize);
+                     */
 
                     sixels[imageX][imageY] = colorIdx;
                     usedColors[colorIdx] = true;

@@ -1597,6 +1597,7 @@ public class HQSixelEncoder implements SixelEncoder {
                         sixels[imageX][imageY] = colorIdx;
                         continue;
                     }
+                    /*
                     if (!palette.noDither) {
                         assert (colorIdx >= 0);
                         assert (colorIdx < palette.sixelColors.size());
@@ -1604,6 +1605,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     if (!allowTransparent) {
                         assert (colorIdx != -1);
                     }
+                     */
                     sixels[imageX][imageY] = colorIdx;
                     usedColors[colorIdx] = true;
                 }
@@ -1659,24 +1661,16 @@ public class HQSixelEncoder implements SixelEncoder {
                     assert (data < 64);
                     data += 63;
 
-                    // DEBUG
-                    /*
-                    if (i == 63) {
-                        System.err.printf("color63 %d %d %c %d\n",
-                            data, oldData, (char) oldData, oldDataCount);
-                    }
-                     */
-
                     if (data == oldData) {
                         oldDataCount++;
                     } else {
                         if (oldDataCount == 1) {
-                            assert (oldData != -1);
+                            // assert (oldData != -1);
                             sb.append((char) oldData);
                         } else if (oldDataCount > 1) {
                             sb.append("!");
                             sb.append(Integer.toString(oldDataCount));
-                            assert (oldData != -1);
+                            // assert (oldData != -1);
                             sb.append((char) oldData);
                         }
                         oldDataCount = 1;
@@ -1687,7 +1681,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
                 // Emit the last sequence.
                 if (oldDataCount == 1) {
-                    assert (oldData != -1);
+                    // assert (oldData != -1);
                     sb.append((char) oldData);
                 } else if (oldDataCount > 1) {
                     assert (oldData != -1);
