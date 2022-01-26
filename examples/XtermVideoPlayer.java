@@ -37,6 +37,15 @@ public class XtermVideoPlayer extends TApplication {
         addFileMenu();
         addWindowMenu();
 
+        // Make it cute.
+        getTheme().setFemme();
+        System.setProperty("jexer.TWindow.borderStyleForeground", "round");
+        System.setProperty("jexer.TWindow.borderStyleModal", "round");
+        System.setProperty("jexer.TWindow.borderStyleMoving", "round");
+        System.setProperty("jexer.TWindow.borderStyleInactive", "round");
+        setDesktop(null);
+        setHideStatusBar(true);
+
         // Create a window for the image.  The resize event is overridden so
         // that the internal image field changes in size with the window.
         TWindow window = new TWindow(this, filename, 0, 0,
@@ -53,6 +62,7 @@ public class XtermVideoPlayer extends TApplication {
                 }
             }
         };
+        window.setAlpha(255);
 
         // Add the image field.  We will load frames into this.
         image = window.addImage(0, 0, window.getWidth() - 2,
@@ -147,6 +157,14 @@ public class XtermVideoPlayer extends TApplication {
                 });
             }
         }
+    }
+
+    /**
+     * Show FPS.
+     */
+    @Override
+    protected void onPreDraw() {
+        menuTrayText = String.format("FPS %d", getFramesPerSecond());
     }
 
     // Main entry point.
