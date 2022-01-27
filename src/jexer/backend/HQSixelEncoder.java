@@ -526,6 +526,8 @@ public class HQSixelEncoder implements SixelEncoder {
             final boolean allowTransparent) {
 
             assert (size >= 2);
+            assert (image.getWidth() > 0);
+            assert (image.getHeight() > 0);
 
             if (doTimings) {
                 timings = new Timings();
@@ -570,21 +572,32 @@ public class HQSixelEncoder implements SixelEncoder {
 
             sixelImageWidth = image.getWidth();
             sixelImageHeight = image.getHeight();
+            int totalPixels = sixelImageWidth * sixelImageHeight;
 
             if (verbosity >= 1) {
-                System.err.printf("Palette() image is %dx%d, bpp %d transparent %s allowed %s\n",
-                    sixelImageWidth, sixelImageHeight,
+                System.err.printf("Image: %dx%d (%d px)\n",
+                    sixelImageWidth, sixelImageHeight, totalPixels);
+                System.err.printf("       bpp %d transparent %s allowed %s\n",
                     image.getColorModel().getPixelSize(),
                     transparent, allowTransparent);
             }
 
-            // Perform population count on colors.
+            // Sample the colors.  We will be taking SAMPLE_SIZE'd pixel
+            // bands uniformly through the image data, with numColors bands.
+            final int SAMPLE_SIZE = 16;
+            int stride = Math.max(0, totalPixels / numColors);
+            if (verbosity >= 1) {
+                System.err.printf("Sampling %d pixels per color stride=%d\n",
+                    SAMPLE_SIZE, stride);
+            }
+
             int [] rgbArray = image.getRGB(0, 0,
                 sixelImageWidth, sixelImageHeight, null, 0, sixelImageWidth);
             sixelImage = rgbArray;
             colorMap = new HashMap<Integer, ColorIdx>(sixelImageWidth * sixelImageHeight);
             int transparent_count = 0;
 
+            int strideI = 0;
             for (int i = 0; i < rgbArray.length; i++) {
                 int colorRGB = rgbArray[i];
                 if (transparent) {
@@ -612,20 +625,36 @@ public class HQSixelEncoder implements SixelEncoder {
                 int sixelRGB = toSixelColor(colorRGB,
                     (quantizationType == 0 ? false : true));
                 rgbArray[i] = sixelRGB;
-                ColorIdx color = colorMap.get(sixelRGB & 0x00FFFFFF);
-                if (color == null) {
-                    color = new ColorIdx(sixelRGB & 0x00FFFFFF);
-                    colorMap.put(sixelRGB & 0x00FFFFFF, color);
-                } else {
-                    color.count++;
+                if ((stride == 0) || (strideI < SAMPLE_SIZE)) {
+                    ColorIdx color = colorMap.get(sixelRGB & 0x00FFFFFF);
+                    if (color == null) {
+                        color = new ColorIdx(sixelRGB & 0x00FFFFFF);
+                        colorMap.put(sixelRGB & 0x00FFFFFF, color);
+                    } else {
+                        color.count++;
+                    }
                 }
-            }
-            // At this point the image data is mapped to the 101^3 sixel
-            // color space, and any pixels with partial transparency below
-            // ALPHA_OPAQUE are fully transparent (and pink).
+                if (strideI >= stride) {
+                    strideI = 0;
+                } else {
+                    strideI++;
+                }
+            } // for (int i = 0; i < rgbArray.length; i++)
+
+            /*
+             * At this point:
+             *
+             * 1. The image data is mapped to the 101^3 sixel color space.
+             *
+             * 2. Any pixels with partial transparency below ALPHA_OPAQUE are
+             *    fully transparent (and pink).
+             *
+             * 3. The sampled color map is populated with up to SAMPLE_SIZE *
+             *    numColors samples.
+             */
 
             if (verbosity >= 1) {
-                System.err.printf("# colors in image: %d palette size %d\n",
+                System.err.printf("# colors in image (sampled): %d palette size %d\n",
                     colorMap.size(), paletteSize);
                 System.err.printf("# transparent pixels: %d (%3.1f%%)\n",
                     transparent_count,
@@ -646,13 +675,12 @@ public class HQSixelEncoder implements SixelEncoder {
              * Here we choose between several options:
              *
              * - If the palette size is big enough for the number of colors,
-             *   then just do a straight 1-1 mapping.
+             *   and we know that because we sampled every pixel (stride ==
+             *   0), then just do a straight 1-1 mapping.
              *
-             * - If the (number of colors:palette size) ratio is below 10,
-             *   use median cut.
+             * - Otherwise use median cut.
              */
-            if (false && (colorMap.size() <= numColors)) {
-                // DEBUG: For now all we have is median cut.
+            if ((stride == 0) && (colorMap.size() <= numColors)) {
                 quantizationType = 0;
                 directMap();
             } else if (true || (colorMap.size() <= numColors * 10)) {
