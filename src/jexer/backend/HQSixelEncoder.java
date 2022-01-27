@@ -141,24 +141,22 @@ public class HQSixelEncoder implements SixelEncoder {
             public int color;
 
             /**
-             * The palette index for this color.
-             */
-            public int index;
-
-            /**
              * The population count for this color.
              */
             public int count = 0;
 
             /**
+             * The palette index for this color, only used for directMap().
+             */
+            public int directMapIndex = 0;
+
+            /**
              * Public constructor.
              *
              * @param color the ~19.97-bit sixel color
-             * @param index the palette index for this color
              */
             public ColorIdx(final int color, final int index) {
                 this.color = color;
-                this.index = index;
                 this.count = 0;
             }
 
@@ -169,7 +167,6 @@ public class HQSixelEncoder implements SixelEncoder {
              */
             public ColorIdx(final int color) {
                 this.color = color;
-                this.index = -1;
                 this.count = 1;
             }
 
@@ -190,8 +187,7 @@ public class HQSixelEncoder implements SixelEncoder {
              */
             @Override
             public String toString() {
-                return String.format("color %06x index %d count %d",
-                    color, index, count);
+                return String.format("color %06x count %d", color, count);
             }
         }
 
@@ -200,10 +196,18 @@ public class HQSixelEncoder implements SixelEncoder {
          * weighted average color value.
          */
         private class Bucket {
+
             /**
              * The colors in this bucket.
              */
             private ArrayList<ColorIdx> colors;
+
+            /**
+             * The palette index for this bucket.  For now this points to a
+             * simple average of all the colors, or black if no colors are in
+             * this bucket.
+             */
+            public int index = 0;
 
             // The minimum and maximum, and "total" component values in this
             // bucket.
@@ -242,6 +246,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 minBlue     = 0xFF;
                 maxBlue     = 0;
                 lastAverage = -1;
+                index       = 0;
             }
 
             /**
@@ -251,10 +256,7 @@ public class HQSixelEncoder implements SixelEncoder {
              * @return the index
              */
             public int getIndex() {
-                if (colors.size() > 0) {
-                    return colors.get(0).index;
-                }
-                return 0;
+                return index;
             }
 
             /**
@@ -367,23 +369,26 @@ public class HQSixelEncoder implements SixelEncoder {
              * @return an averaged RGB value
              */
             public int average() {
+                if (lastAverage != -1) {
+                    return lastAverage;
+                }
+
                 if (quantizationDone) {
                     if (colors.size() == 0) {
                         lastAverage = 0xFF000000;
                         return lastAverage;
                     }
-                    int sixelColor = sixelColors.get(colors.get(0).index);
+                    int sixelColor = sixelColors.get(index);
                     if ((sixelColor == 0xFF000000)
                         || (sixelColor == 0xFF646464)
                     ) {
                         // This bucket is mapped to black or white.
                         lastAverage = sixelColor;
+                        return lastAverage;
                     }
                 }
-                if (lastAverage != -1) {
-                    return lastAverage;
-                }
 
+                // Compute the average color.
                 long totalRed = 0;
                 long totalGreen = 0;
                 long totalBlue = 0;
@@ -412,6 +417,16 @@ public class HQSixelEncoder implements SixelEncoder {
                 return lastAverage;
             }
 
+            /**
+             * Generate a human-readable string for this entry.
+             *
+             * @return a human-readable string
+             */
+            @Override
+            public String toString() {
+                return String.format("bucket %d colors avg RGB %06x index %d",
+                    colors.size(), average(), index);
+            }
         };
 
         /**
@@ -432,7 +447,7 @@ public class HQSixelEncoder implements SixelEncoder {
         /**
          * Type of color quantization used.
          *
-         * -1 = direct map indexed; 0 = direct map; 1 = median cut; 2 = octree.
+         * -1 = direct map indexed; 0 = direct map; 1 = median cut.
          */
         private int quantizationType = -1;
 
@@ -635,8 +650,6 @@ public class HQSixelEncoder implements SixelEncoder {
              *
              * - If the (number of colors:palette size) ratio is below 10,
              *   use median cut.
-             *
-             * - Otherwise use octree.
              */
             if (false && (colorMap.size() <= numColors)) {
                 // DEBUG: For now all we have is median cut.
@@ -646,9 +659,6 @@ public class HQSixelEncoder implements SixelEncoder {
                 // For now, direct map and median cut are all we get.
                 quantizationType = 1;
                 medianCut();
-            } else {
-                quantizationType = 2;
-                octree();
             }
         }
 
@@ -822,7 +832,7 @@ public class HQSixelEncoder implements SixelEncoder {
             }
             assert (sixelColors.size() == colorMap.size());
             for (int i = 0; i < sixelColors.size(); i++) {
-                colorMap.get(sixelColors.get(i)).index = i;
+                colorMap.get(sixelColors.get(i)).directMapIndex = i;
             }
 
             quantizationDone = true;
@@ -849,34 +859,7 @@ public class HQSixelEncoder implements SixelEncoder {
         public void medianCut() {
             assert (quantizationType == 1);
 
-            // Populate the "total" bucket, performing some stats along the
-            // way.
-
-            /*
-             * Persumably the final colors in the palette will roughly
-             * partition the colors in the source image to maximize
-             * variability.  Meaning that if there is a lot of distinct (say)
-             * red shades, then there will be a lot of distinct red colors in
-             * the final palette.  We can measure the variance of each
-             * channel as we are building the initial bucket, and assign bits
-             * to the search masks to proportionally match.
-             *
-             * This currently does not work great: there could be a neighbor
-             * nearer to a palette color in RGB space that is in a different
-             * search bucket and will not be checked.  Really I need a data
-             * structure that is guaranteed to find the closest color.  I can
-             * cheat a bit by making more search buckets (say 10-12 bit
-             * space), but that's really just putting it off.  Let's live
-             * with some noise for now.
-             */
-            double redMean = 0;
-            double redDeltaSum = 0;
-            double greenMean = 0;
-            double greenDeltaSum = 0;
-            double blueMean = 0;
-            double blueDeltaSum = 0;
-            int count = 0;
-
+            // Populate the "total" bucket.
             Bucket bucket = new Bucket(colorMap.size());
             for (ColorIdx color: colorMap.values()) {
                 bucket.add(color);
@@ -913,9 +896,9 @@ public class HQSixelEncoder implements SixelEncoder {
             }
             assert (buckets.size() == totalBuckets);
 
-            // Buckets are partitioned.  Now assign the colors in each to a
-            // sixelColor index.  The darkest and lightest colors are
-            // assigned to black and white, respectively.
+            // Buckets are partitioned.  Now assign them to the sixel
+            // palette, and also find the darkest and lightest buckets and
+            // assign them to black and white.
             int idx = 0;
             int darkest = Integer.MAX_VALUE;
             int lightest = 0;
@@ -923,32 +906,29 @@ public class HQSixelEncoder implements SixelEncoder {
             int lightestIdx = -1;
             final int diff = 1000;
             for (Bucket b: buckets) {
-                for (ColorIdx color: b.colors) {
-                    color.index = idx;
+                int rgb = b.average();
+                b.index = idx;
+                int red   = (rgb >>> 16) & 0xFF;
+                int green = (rgb >>>  8) & 0xFF;
+                int blue  =  rgb         & 0xFF;
+                int color2 = (red * red) + (green * green) + (blue * blue);
+                if (((red * red) + (green * green) + (blue * blue)) < diff) {
+                    // Black is a close match.
+                    if (color2 < darkest) {
+                        darkest = color2;
+                        darkestIdx = idx;
+                    }
+                } else if ((((100 - red) * (100 - red)) +
+                        ((100 - green) * (100 - green)) +
+                        ((100 - blue) * (100 - blue))) < diff) {
 
-                    int rgb = color.color;
-                    int red   = (rgb >>> 16) & 0xFF;
-                    int green = (rgb >>>  8) & 0xFF;
-                    int blue  =  rgb         & 0xFF;
-                    int color2 = (red * red) + (green * green) + (blue * blue);
-                    if (((red * red) + (green * green) + (blue * blue)) < diff) {
-                        // Black is a close match.
-                        if (color2 < darkest) {
-                            darkest = color2;
-                            darkestIdx = idx;
-                        }
-                    } else if ((((100 - red) * (100 - red)) +
-                            ((100 - green) * (100 - green)) +
-                            ((100 - blue) * (100 - blue))) < diff) {
-
-                        // White is a close match.
-                        if (color2 > lightest) {
-                            lightest = color2;
-                            lightestIdx = idx;
-                        }
+                    // White is a close match.
+                    if (color2 > lightest) {
+                        lightest = color2;
+                        lightestIdx = idx;
                     }
                 }
-                sixelColors.add(b.average());
+                sixelColors.add(rgb);
                 idx++;
             }
             if (darkestIdx != -1) {
@@ -971,14 +951,6 @@ public class HQSixelEncoder implements SixelEncoder {
             if (timings != null) {
                 timings.buildColorMapTime = System.nanoTime();
             }
-        }
-
-        /**
-         * Perform octree-based color quantization.
-         */
-        public void octree() {
-            // TODO: octree
-            assert (quantizationType == 2);
         }
 
         /**
@@ -1024,62 +996,48 @@ public class HQSixelEncoder implements SixelEncoder {
                         }
                     }
                 }
-                return colorIdx.index;
-            } else if (quantizationType == 1) {
-                ColorIdx colorIdx = colorMap.get(color);
-                if (verbosity >= 10) {
-                    System.err.printf("matchColor(): %08x %d colorIdx %s\n",
-                        color, color, colorIdx);
-                }
-                if (colorIdx != null) {
-                    return colorIdx.index;
-                }
-
-                // Due to dithering, we are close but not quite on a color in
-                // the index.  Do a search in the buckets to find the one
-                // that is closest to this color.
-                //
-                // TODO: Make this faster, it's a search through every
-                // bucket!  This is a HUGE bottleneck for median cut.  chafa
-                // has a very fast way to search through a palette, can that
-                // approach be adapted for use here?
-                //
-                // https://github.com/hpjansson/chafa/issues/27#issuecomment-647584817
-
-                // TODO: find a short list of buckets that are likely to have
-                // a very close match.
-                ArrayList<Bucket> bucketsToSearch = buckets;
-                int red   = (color >>> 16) & 0xFF;
-                int green = (color >>>  8) & 0xFF;
-                int blue  =  color         & 0xFF;
-                double diff = Double.MAX_VALUE;
-                int idx = -1;
-                int i = 0;
-                for (Bucket b: bucketsToSearch) {
-                    int rgbColor = b.average();
-                    double newDiff = 0;
-                    int red2   = (rgbColor >>> 16) & 0xFF;
-                    int green2 = (rgbColor >>>  8) & 0xFF;
-                    int blue2  =  rgbColor         & 0xFF;
-                    newDiff += Math.pow(red2 - red, 2);
-                    newDiff += Math.pow(green2 - green, 2);
-                    newDiff += Math.pow(blue2 - blue, 2);
-                    if (newDiff < diff) {
-                        idx = b.getIndex();
-                        diff = newDiff;
-                    }
-                }
-                assert (idx != -1);
-                if (verbosity >= 10) {
-                    System.err.printf("matchColor(): --> %08x idx %d %08x\n",
-                        color, idx, sixelColors.get(idx));
-                }
-                return idx;
-            } else {
-                // TODO: octree
-                return 0;
+                return colorIdx.directMapIndex;
             }
 
+            // Find the best-fit color in the palette.
+
+            // TODO: Make this faster, it's a search through every
+            // bucket!  This is a HUGE bottleneck for median cut.  chafa
+            // has a very fast way to search through a palette, can that
+            // approach be adapted for use here?
+            //
+            // https://github.com/hpjansson/chafa/issues/27#issuecomment-647584817
+
+            // TODO: find a short list of buckets that are likely to have
+            // a very close match and only search those.
+            ArrayList<Bucket> bucketsToSearch = buckets;
+
+            int red   = (color >>> 16) & 0xFF;
+            int green = (color >>>  8) & 0xFF;
+            int blue  =  color         & 0xFF;
+            double diff = Double.MAX_VALUE;
+            int idx = -1;
+            int i = 0;
+            for (Bucket b: bucketsToSearch) {
+                int rgbColor = b.average();
+                double newDiff = 0;
+                int red2   = (rgbColor >>> 16) & 0xFF;
+                int green2 = (rgbColor >>>  8) & 0xFF;
+                int blue2  =  rgbColor         & 0xFF;
+                newDiff += Math.pow(red2 - red, 2);
+                newDiff += Math.pow(green2 - green, 2);
+                newDiff += Math.pow(blue2 - blue, 2);
+                if (newDiff < diff) {
+                    idx = b.getIndex();
+                    diff = newDiff;
+                }
+            }
+            assert (idx != -1);
+            if (verbosity >= 10) {
+                System.err.printf("matchColor(): --> %08x idx %d %08x\n",
+                    color, idx, sixelColors.get(idx));
+            }
+            return idx;
         }
 
         /**
@@ -1090,11 +1048,6 @@ public class HQSixelEncoder implements SixelEncoder {
          * the palette.
          */
         public int [] ditherImage() {
-            if (quantizationType == 2) {
-                // TODO: octree
-                return null;
-            }
-
             int [] rgbArray = sixelImage;
             if (noDither) {
                 return rgbArray;
@@ -1411,21 +1364,19 @@ public class HQSixelEncoder implements SixelEncoder {
 
         // Render the entire row of cells.
         int width = bitmap.getWidth();
-        int [][] sixels = new int[width][6];
 
+        // TODO: sixels[][] shouldn't be necessary, and both of these loops
+        // should be able to be combined.
+        int [][] sixels = new int[width][6];
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
 
             // See which colors are actually used in this band of sixels.
             boolean [] usedColors = new boolean[palette.sixelColors.size()];
-
             for (int imageX = 0; imageX < width; imageX++) {
                 for (int imageY = 0;
                      (imageY < 6) && (imageY + currentRow < fullHeight);
                      imageY++) {
 
-                    // There is a small performance gain reading the array
-                    // all at once.
-                    // int colorIdx = image.getRGB(imageX, imageY + currentRow);
                     int colorIdx = rgbArray[imageX +
                         (width * (imageY + currentRow))];
 
