@@ -42,6 +42,8 @@ import java.util.HashMap;
 import java.util.List;
 import javax.imageio.ImageIO;
 
+import jexer.bits.MathUtils;
+
 /**
  * HQSixelEncoder turns a BufferedImage into String of sixel image data,
  * using several strategies to produce a reasonably high quality image within
@@ -484,25 +486,9 @@ public class HQSixelEncoder implements SixelEncoder {
         private ArrayList<Bucket> buckets;
 
         /**
-         * A fixed-size array of median cut bucket RGBs masked down to 8
-         * bits, each entry containing a list of buckets.
+         * The colors near the last search for a color.
          */
-        private ArrayList<ArrayList<Bucket>> searchBuckets;
-
-        /**
-         * The mask for bits for red in searchBuckets.  Default is 3.
-         */
-        private int redMask = 0xE00000;
-
-        /**
-         * The number of bits for green in searchBuckets.  Default is 3.
-         */
-        private int greenMask = 0xE000;
-
-        /**
-         * The number of bits for blue in searchBuckets.  Default is 2.
-         */
-        private int blueMask = 0xC0;
+        private ArrayList<Integer> neighborhood;
 
         /**
          * If true, quantization is done.
@@ -940,7 +926,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 int green = (rgb >>>  8) & 0xFF;
                 int blue  =  rgb         & 0xFF;
                 int color2 = (red * red) + (green * green) + (blue * blue);
-                if (((red * red) + (green * green) + (blue * blue)) < diff) {
+                if (color2 < diff) {
                     // Black is a close match.
                     if (color2 < darkest) {
                         darkest = color2;
@@ -976,9 +962,127 @@ public class HQSixelEncoder implements SixelEncoder {
                 }
             }
 
+            // Now that colors have been established, build the search
+            // structure for them.
+            buildSearchMap();
+
             if (timings != null) {
                 timings.buildColorMapTime = System.nanoTime();
             }
+        }
+
+        /**
+         * Sort the palette colors by principal component so that they can be
+         * located quickly in matchColor().  This approach was first brought
+         * to open-source by Hans Petter Jansson's chafa project:
+         * https://hpjansson.org/chafa/ .
+         */
+        private void buildSearchMap() {
+            neighborhood = new ArrayList<Integer>(16);
+
+            // Build the covariance matrix and find its eigenvalues.  These
+            // will be the principle components.
+            //
+            // (The computational chemist in me is SO HAPPY that we finally
+            // have an eigenvalue solver in Jexer. 💗)
+            double [][] A = new double[3][3];
+
+            double redMean   = 0;
+            double greenMean = 0;
+            double blueMean  = 0;
+            int n = sixelColors.size();
+            for (int rgbColor: sixelColors) {
+                redMean   += (rgbColor >>> 16) & 0xFF;
+                greenMean += (rgbColor >>>  8) & 0xFF;
+                blueMean  +=  rgbColor         & 0xFF;
+            }
+            redMean   /= n;
+            greenMean /= n;
+            blueMean  /= n;
+            double covRedRed     = 0;
+            double covRedGreen   = 0;
+            double covRedBlue    = 0;
+            double covGreenGreen = 0;
+            double covGreenBlue  = 0;
+            double covBlueBlue   = 0;
+            for (int rgbColor: sixelColors) {
+                int red   = (rgbColor >>> 16) & 0xFF;
+                int green = (rgbColor >>>  8) & 0xFF;
+                int blue  =  rgbColor         & 0xFF;
+
+                covRedRed     += (  red -   redMean) * (  red -   redMean);
+                covRedGreen   += (  red -   redMean) * (green - greenMean);
+                covRedBlue    += (  red -   redMean) * ( blue -  blueMean);
+                covGreenGreen += (green - greenMean) * (green - greenMean);
+                covGreenBlue  += (green - greenMean) * ( blue -  blueMean);
+                covBlueBlue   += ( blue -  blueMean) * ( blue -  blueMean);
+            }
+            covRedRed     /= (n - 1);
+            covRedGreen   /= (n - 1);
+            covRedBlue    /= (n - 1);
+            covGreenGreen /= (n - 1);
+            covGreenBlue  /= (n - 1);
+            covBlueBlue   /= (n - 1);
+
+            A[0][0] = covRedRed;
+            A[0][1] = covRedGreen;
+            A[0][2] = covRedBlue;
+            A[1][0] = covRedGreen;
+            A[1][1] = covGreenGreen;
+            A[1][2] = covGreenBlue;
+            A[2][0] = covRedGreen;
+            A[2][1] = covGreenBlue;
+            A[2][2] = covBlueBlue;
+
+            double [][] V = new double[3][3];
+            double [] d = new double[3];
+
+            MathUtils.eigen3(A, V, d);
+
+            if (verbosity >= 1) {
+                System.out.printf("PCA => eigenvalues: %8.4f %8.4f %8.4f\n",
+                    d[0], d[1], d[2]);
+
+                System.out.printf("PCA => [ %8.4f %8.4f %8.4f]\n       [ %8.4f %8.4f %8.4f]\n       [ %8.4f %8.4f %8.4f]\n",
+                    V[0][0], V[0][1], V[0][2],
+                    V[1][0], V[1][1], V[1][2],
+                    V[2][0], V[2][1], V[2][2]
+                );
+            }
+
+            // The principle components are in d[3] (first), d[2] (second),
+            // and d[1] (third).
+
+            // TODO: Sort sixelColors by first PCA.
+
+        }
+
+        /**
+         * Search through the palette and find the best possible candidate(s)
+         * to match a color RGB.  This particular approach was first done by
+         * Hans Petter Jansson's chafa project: https://hpjansson.org/chafa/
+         * .  The palette colors have been sorted by their principal
+         * component (see principal component analysis), such that a binary
+         * search can quickly find the region where the closest matching
+         * color resides.
+         *
+         * @param red the red component, from 0-100
+         * @param green the green component, from 0-100
+         * @param blue the blue component, from 0-100
+         * @return a list of indices into sixelColors that are close to this
+         * color
+         */
+        private List<Integer> findNearbyColors(final int red, final int green,
+            final int blue) {
+
+            neighborhood.clear();
+
+            // TODO: Search along sixelColors by first PCA.
+
+            for (Bucket b: buckets) {
+                neighborhood.add(b.index);
+            }
+            return neighborhood;
         }
 
         /**
@@ -1027,36 +1131,30 @@ public class HQSixelEncoder implements SixelEncoder {
                 return colorIdx.directMapIndex;
             }
 
-            // Find the best-fit color in the palette.
-
-            // TODO: Make this faster, it's a search through every
-            // bucket!  This is a HUGE bottleneck for median cut.  chafa
-            // has a very fast way to search through a palette, can that
-            // approach be adapted for use here?
-            //
-            // https://github.com/hpjansson/chafa/issues/27#issuecomment-647584817
-
-            // TODO: find a short list of buckets that are likely to have
-            // a very close match and only search those.
-            ArrayList<Bucket> bucketsToSearch = buckets;
-
+            // Find the best-fit color in the palette from a short list of
+            // buckets that are likely to have a very close match and only
+            // search those.
             int red   = (color >>> 16) & 0xFF;
             int green = (color >>>  8) & 0xFF;
             int blue  =  color         & 0xFF;
+            List<Integer> nearbyColors = findNearbyColors(red, green, blue);
+            if (nearbyColors.size() == 1) {
+                return nearbyColors.get(0);
+            }
+
             double diff = Double.MAX_VALUE;
             int idx = -1;
             int i = 0;
-            for (Bucket b: bucketsToSearch) {
-                int rgbColor = b.average();
-                double newDiff = 0;
+            for (Integer sixelIndex: nearbyColors) {
+                int rgbColor = sixelColors.get(sixelIndex);
                 int red2   = (rgbColor >>> 16) & 0xFF;
                 int green2 = (rgbColor >>>  8) & 0xFF;
                 int blue2  =  rgbColor         & 0xFF;
-                newDiff += Math.pow(red2 - red, 2);
-                newDiff += Math.pow(green2 - green, 2);
-                newDiff += Math.pow(blue2 - blue, 2);
+                double newDiff = (red2 - red) * (red2 - red)
+                               + (green2 - green) * (green2 - green)
+                               + (blue2 - blue) * (blue2 - blue);
                 if (newDiff < diff) {
-                    idx = b.getIndex();
+                    idx = sixelIndex;
                     diff = newDiff;
                 }
             }
