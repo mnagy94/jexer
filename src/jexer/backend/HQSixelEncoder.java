@@ -1220,54 +1220,6 @@ public class HQSixelEncoder implements SixelEncoder {
         }
 
         /**
-         * Find the first principal component value of an RGB color.
-         *
-         * @param red the red component, from 0-100
-         * @param green the green component, from 0-100
-         * @param blue the blue component, from 0-100
-         * @return the color's PCA1 coordinate in PCA space
-         */
-        private double firstPca(final int red, final int green,
-            final int blue) {
-
-            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
-            // principal component is the last column in the PCA matrix.
-            return (PCA[2][0] * red) + (PCA[2][1] * green) + (PCA[2][2] * blue);
-        }
-
-        /**
-         * Find the second principal component value of an RGB color.
-         *
-         * @param red the red component, from 0-100
-         * @param green the green component, from 0-100
-         * @param blue the blue component, from 0-100
-         * @return the color's PCA1 coordinate in PCA space
-         */
-        private double secondPca(final int red, final int green,
-            final int blue) {
-
-            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
-            // principal component is the last column in the PCA matrix.
-            return (PCA[1][0] * red) + (PCA[1][1] * green) + (PCA[1][2] * blue);
-        }
-
-        /**
-         * Find the third principal component value of an RGB color.
-         *
-         * @param red the red component, from 0-100
-         * @param green the green component, from 0-100
-         * @param blue the blue component, from 0-100
-         * @return the color's PCA1 coordinate in PCA space
-         */
-        private double thirdPca(final int red, final int green,
-            final int blue) {
-
-            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
-            // principal component is the last column in the PCA matrix.
-            return (PCA[0][0] * red) + (PCA[0][1] * green) + (PCA[0][2] * blue);
-        }
-
-        /**
          * Search through the palette and find the best possible candidate(s)
          * to match a color RGB.  This particular approach was first done by
          * Hans Petter Jansson's chafa project: https://hpjansson.org/chafa/
@@ -1286,8 +1238,9 @@ public class HQSixelEncoder implements SixelEncoder {
             neighborhood.clear();
 
             // Search pcaColors by first PCA.
-            // double pca1 = firstPca(red, green, blue);
-            double pca1 = (PCA[2][0] * red) + (PCA[2][1] * green) + (PCA[2][2] * blue);
+            double pca1 = (PCA[2][0] * red)
+                        + (PCA[2][1] * green)
+                        + (PCA[2][2] * blue);
 
             PcaColor lastPcaColor = pcaColors.get(lastPcaSearchIndex);
             PcaColor centerPca = null;
@@ -1332,10 +1285,12 @@ public class HQSixelEncoder implements SixelEncoder {
             // closer match in PCA space than the color found by binary
             // search.
 
-            // double pca2 = secondPca(red, green, blue);
-            double pca2 = (PCA[1][0] * red) + (PCA[1][1] * green) + (PCA[1][2] * blue);
-            // double pca3 = thirdPca(red, green, blue);
-            double pca3 = (PCA[0][0] * red) + (PCA[0][1] * green) + (PCA[0][2] * blue);
+            double pca2 = (PCA[1][0] * red)
+                        + (PCA[1][1] * green)
+                        + (PCA[1][2] * blue);
+            double pca3 = (PCA[0][0] * red)
+                        + (PCA[0][1] * green)
+                        + (PCA[0][2] * blue);
 
             // The distance between the search color and the best-fit color
             // in PCA space.
@@ -1662,9 +1617,9 @@ public class HQSixelEncoder implements SixelEncoder {
 
     /**
      * Number of colors in the sixel palette.  Xterm 335 defines the max as
-     * 1024.  For HQ encoder the default is 256.
+     * 1024.  For HQ encoder the default is 128.
      */
-    private int paletteSize = 256;
+    private int paletteSize = 128;
 
     /**
      * The palette used in the last image.
@@ -1701,10 +1656,10 @@ public class HQSixelEncoder implements SixelEncoder {
      */
     public void reloadOptions() {
         // Palette size
-        int paletteSize = 256;
+        int paletteSize = 128;
         try {
             paletteSize = Integer.parseInt(System.getProperty(
-                "jexer.ECMA48.sixelPaletteSize", "256"));
+                "jexer.ECMA48.sixelPaletteSize", "128"));
             switch (paletteSize) {
             case 2:
             case 4:

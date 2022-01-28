@@ -3507,8 +3507,21 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         // If the final image would be larger than 1000 pixels wide, break it
-        // up into smaller images.
+        // up into smaller images, but at least 8 cells wide.  Or if we are
+        // using the HQ encoder and will have more than some multiple of the
+        // palette size in total pixels.
         int maxChunkLength = 1000;
+        if ((sixelEncoder instanceof HQSixelEncoder)
+            && (sixelEncoder.getPaletteSize() > 64)
+        ) {
+            maxChunkLength = Math.max(8 * getTextWidth(),
+                Math.min(maxChunkLength,
+                    sixelEncoder.getPaletteSize() * 10 / getTextHeight()));
+            /*
+            System.err.printf("maxChunkLength: %d cache used size %d\n",
+                maxChunkLength, sixelCache.size());
+             */
+        }
         if (cells.size() * getTextWidth() > maxChunkLength) {
             StringBuilder chunkSb = new StringBuilder();
             int chunkStart = 0;
