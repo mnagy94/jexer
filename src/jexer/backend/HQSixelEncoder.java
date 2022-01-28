@@ -447,18 +447,35 @@ public class HQSixelEncoder implements SixelEncoder {
             private double firstPca = 0;
 
             /**
+             * The second principal component value.
+             */
+            private double secondPca = 0;
+
+            /**
+             * The third principal component value.
+             */
+            private double thirdPca = 0;
+
+            /**
              * Public constructor.
              *
              * @param sixelIndex the the index into sixelColors
              * @param firstPca the first principal component
+             * @param secondPca the second principal component
+             * @param thirdPca the third principal component
              */
-            public PcaColor(final int sixelIndex, final double firstPca) {
+            public PcaColor(final int sixelIndex, final double firstPca,
+                final double secondPca, final double thirdPca) {
+
                 this.sixelIndex = sixelIndex;
                 this.firstPca = firstPca;
+                this.secondPca = secondPca;
+                this.thirdPca = thirdPca;
             }
 
             /**
-             * Comparison operator.
+             * Comparison operator puts the natural ordering along the first
+             * principal component.
              *
              * @param that another PcaColor
              * @return difference between this.firstPca and that.firstPca
@@ -479,10 +496,20 @@ public class HQSixelEncoder implements SixelEncoder {
         private List<Integer> sixelColors = null;
 
         /**
-         * Color palette for sixel output, sorted low to high by the
+         * Color palette for sixel output, sorted low to high by the first
          * principal component.
          */
         private List<PcaColor> pcaColors = null;
+
+        /**
+         * Comparator used for the first principal component search.
+         */
+        private Comparator<PcaColor> nearby = new Comparator<PcaColor>(){
+            @Override
+            public int compare(PcaColor a, PcaColor b) {
+                return Double.compare(a.firstPca, b.firstPca);
+            }
+        };
 
         /**
          * The PCA change of basis matrix.
@@ -1088,10 +1115,15 @@ public class HQSixelEncoder implements SixelEncoder {
             MathUtils.eigen3(A, V, d);
 
             if (verbosity >= 1) {
-                System.out.printf("PCA => eigenvalues: %8.4f %8.4f %8.4f\n",
+                System.err.printf("PCA => eigenvalues: %8.4f %8.4f %8.4f\n",
                     d[0], d[1], d[2]);
+                double pcaSum = d[0] + d[1] + d[2];
+                System.err.printf("                   %7.2f%%  %7.2f%%  %7.2f%%\n",
+                    Math.abs((d[0] / pcaSum) * 100.0),
+                    Math.abs((d[1] / pcaSum) * 100.0),
+                    Math.abs((d[2] / pcaSum) * 100.0));
 
-                System.out.printf("PCA => [ %8.4f %8.4f %8.4f]\n       [ %8.4f %8.4f %8.4f]\n       [ %8.4f %8.4f %8.4f]\n",
+                System.err.printf("PCA => [ %8.4f %8.4f %8.4f]\n       [ %8.4f %8.4f %8.4f]\n       [ %8.4f %8.4f %8.4f]\n",
                     V[0][0], V[0][1], V[0][2],
                     V[1][0], V[1][1], V[1][2],
                     V[2][0], V[2][1], V[2][2]
@@ -1112,7 +1144,8 @@ public class HQSixelEncoder implements SixelEncoder {
             pcaColors = new ArrayList<PcaColor>(sixelColors.size());
             int idx = 0;
             for (int rgbColor: sixelColors) {
-                pcaColors.add(new PcaColor(idx, firstPca(rgbColor)));
+                pcaColors.add(new PcaColor(idx, firstPca(rgbColor),
+                        secondPca(rgbColor), thirdPca(rgbColor)));
                 idx++;
             }
             Collections.sort(pcaColors);
@@ -1135,6 +1168,38 @@ public class HQSixelEncoder implements SixelEncoder {
         }
 
         /**
+         * Find the second principal component value of an RGB color.
+         *
+         * @param color the RGB color
+         * @return the color's PCA1 coordinate in PCA space
+         */
+        private double secondPca(final int color) {
+            int red   = (color >>> 16) & 0xFF;
+            int green = (color >>>  8) & 0xFF;
+            int blue  =  color         & 0xFF;
+
+            // Due to how MathUtils.eigen3() sorts the eigenvalues, the second
+            // principal component is the middle column in the PCA matrix.
+            return (PCA[1][0] * red) + (PCA[1][1] * green) + (PCA[1][2] * blue);
+        }
+
+        /**
+         * Find the third principal component value of an RGB color.
+         *
+         * @param color the RGB color
+         * @return the color's PCA1 coordinate in PCA space
+         */
+        private double thirdPca(final int color) {
+            int red   = (color >>> 16) & 0xFF;
+            int green = (color >>>  8) & 0xFF;
+            int blue  =  color         & 0xFF;
+
+            // Due to how MathUtils.eigen3() sorts the eigenvalues, the third
+            // principal component is the first column in the PCA matrix.
+            return (PCA[0][0] * red) + (PCA[0][1] * green) + (PCA[0][2] * blue);
+        }
+
+        /**
          * Find the first principal component value of an RGB color.
          *
          * @param red the red component, from 0-100
@@ -1148,6 +1213,38 @@ public class HQSixelEncoder implements SixelEncoder {
             // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
             // principal component is the last column in the PCA matrix.
             return (PCA[2][0] * red) + (PCA[2][1] * green) + (PCA[2][2] * blue);
+        }
+
+        /**
+         * Find the second principal component value of an RGB color.
+         *
+         * @param red the red component, from 0-100
+         * @param green the green component, from 0-100
+         * @param blue the blue component, from 0-100
+         * @return the color's PCA1 coordinate in PCA space
+         */
+        private double secondPca(final int red, final int green,
+            final int blue) {
+
+            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
+            // principal component is the last column in the PCA matrix.
+            return (PCA[1][0] * red) + (PCA[1][1] * green) + (PCA[1][2] * blue);
+        }
+
+        /**
+         * Find the third principal component value of an RGB color.
+         *
+         * @param red the red component, from 0-100
+         * @param green the green component, from 0-100
+         * @param blue the blue component, from 0-100
+         * @return the color's PCA1 coordinate in PCA space
+         */
+        private double thirdPca(final int red, final int green,
+            final int blue) {
+
+            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
+            // principal component is the last column in the PCA matrix.
+            return (PCA[0][0] * red) + (PCA[0][1] * green) + (PCA[0][2] * blue);
         }
 
         /**
@@ -1171,32 +1268,107 @@ public class HQSixelEncoder implements SixelEncoder {
             neighborhood.clear();
 
             // Search pcaColors by first PCA.
-            PcaColor pcaKey = new PcaColor(0, firstPca(red, green, blue));
-            int pcaIndex = Collections.binarySearch(pcaColors, pcaKey,
-                new Comparator<PcaColor>(){
-                    @Override
-                    public int compare(PcaColor a, PcaColor b) {
-                        return Double.compare(a.firstPca, b.firstPca);
-                    }
-                });
-            if (pcaIndex < 0) {
-                // It wasn't found.
+            double pca1 = firstPca(red, green, blue);
+            PcaColor pcaKey = new PcaColor(0, pca1, 0, 0);
 
-                // TODO: Do the right thing.  For now, return whatever.
-                int idx = Math.max(0, Math.min(sixelColors.size() - 1,
-                        -pcaIndex));
-                neighborhood.add(pcaColors.get(idx).sixelIndex);
-                return neighborhood;
-            }
-            // TODO: search "around" this spot to find the best candidates.
-            neighborhood.add(pcaColors.get(pcaIndex).sixelIndex);
+            // pcaIndex will almost certainly come back negative, because
+            // doubles cannot exactly be equal in practice.
+            int pcaIndex = Math.abs(Collections.binarySearch(pcaColors, pcaKey,
+                    nearby));
+
+            // idx is near the center of the neighborhood.
+            int idx = Math.max(0, Math.min(sixelColors.size() - 1,
+                    pcaIndex));
+            neighborhood.add(pcaColors.get(idx).sixelIndex);
+
+            // Now search up and down along pcaColors until two colors are
+            // found that fully bracket the color to match.  The nearest
+            // color in RGB space will be somewhere in this list.
+            double pca2 = secondPca(red, green, blue);
+            double pca3 = thirdPca(red, green, blue);
+
+            // Manual tests on the color wheel suggest that for most colors
+            // we will be within +/- 4 indices of the nearest match, but for
+            // some the nearest could be as far as 16 indices away.
 
             /*
-            for (Bucket b: buckets) {
-                neighborhood.add(b.index);
+            // DEBUG: Add 8 colors in either direction.
+            for (int i = 0; i < 8; i++) {
+                if (idx + i < pcaColors.size() - 1) {
+                    neighborhood.add(pcaColors.get(idx + i).sixelIndex);
+                }
+                if (idx - i >= 0) {
+                    neighborhood.add(pcaColors.get(idx - i).sixelIndex);
+                }
             }
              */
-            return neighborhood;
+            int below = idx;
+            int above = idx;
+            int aboveIndex = 0;
+            int belowIndex = 0;
+            int aboveRgb = 0;
+            int belowRgb = 0;
+            while (true) {
+                if (above + 1 < pcaColors.size()) {
+                    above++;
+                    aboveIndex = pcaColors.get(above).sixelIndex;
+                    aboveRgb = sixelColors.get(aboveIndex);
+                    neighborhood.add(aboveIndex);
+                }
+                if (below > 0) {
+                    below--;
+                    belowIndex = pcaColors.get(above).sixelIndex;
+                    belowRgb = sixelColors.get(belowIndex);
+                    neighborhood.add(belowIndex);
+                }
+
+                double abovePca2 = secondPca(aboveRgb);
+                double abovePca3 = thirdPca(aboveRgb);
+                double belowPca2 = secondPca(belowRgb);
+                double belowPca3 = thirdPca(belowRgb);
+
+                // TODO: this isn't working, why?  I know the +/- 8 is
+                // typically enough to be fantastic.  Do I instead need to
+                // compute 3D distance?  For now add a bail-out at +/- 8.
+                if (((above - idx) > 8) || ((idx - below) > 8)) {
+                    return neighborhood;
+                }
+
+                /*
+                 * pca3
+                 * ^
+                 * |
+                 * |  (belowPca2, abovePca3)      (abovePca2, abovePca3)
+                 * |
+                 * |
+                 * |                  (pca2, pca3)
+                 * |
+                 * |
+                 * |
+                 * |  (belowPca2, belowPca3)      (abovePca2, belowPca3)
+                 * |
+                 *  -----------------------------------------------------> pca2
+                 */
+
+                if ((belowPca2 <= pca2) && (pca2 <= abovePca2)
+                    && (belowPca3 <= pca3) && (pca3 <= abovePca3)
+                ) {
+                    // Bracketed, done.
+                    /*
+                    System.err.printf("BRACKETED %d entries\n",
+                        neighborhood.size());
+                    */
+                    return neighborhood;
+                }
+                if ((above == pcaColors.size() - 1) && (below == 0)) {
+                    // I would hope this never happens.
+                    /*
+                    System.err.printf("FAILED! %d entries\n",
+                        neighborhood.size());
+                    */
+                    return neighborhood;
+                }
+            }
         }
 
         /**
@@ -1595,10 +1767,6 @@ public class HQSixelEncoder implements SixelEncoder {
             return result;
         }
 
-        // Collect the raster information
-        int rasterHeight = 0;
-        int rasterWidth = bitmap.getWidth();
-
         // Emit the palette.
         palette.emitPalette(sb);
 
@@ -1679,9 +1847,6 @@ public class HQSixelEncoder implements SixelEncoder {
                                 data += 32;
                                 break;
                             }
-                            if ((currentRow + j + 1) > rasterHeight) {
-                                rasterHeight = currentRow + j + 1;
-                            }
                         }
                     }
                     assert (data >= 0);
@@ -1728,7 +1893,8 @@ public class HQSixelEncoder implements SixelEncoder {
         sb.deleteCharAt(sb.length() - 1);
 
         // Add the raster information.
-        sb.insert(0, String.format("\"1;1;%d;%d", rasterWidth, rasterHeight));
+        sb.insert(0, String.format("\"1;1;%d;%d", bitmap.getWidth(),
+                bitmap.getHeight()));
 
         if (palette.timings != null) {
             palette.timings.emitSixelTime = System.nanoTime();
