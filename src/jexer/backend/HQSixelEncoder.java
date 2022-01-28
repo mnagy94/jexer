@@ -1355,55 +1355,54 @@ public class HQSixelEncoder implements SixelEncoder {
             int below = idx;
             int above = idx;
             int n = pcaColors.size();
-            while (true) {
-                if (above + 1 < n) {
-                    above++;
-                    final PcaColor abovePca = pcaColors.get(above);
-                    final double abovePca1 = abovePca.firstPca;
-                    final double abovePca2 = abovePca.secondPca;
-                    final double abovePca3 = abovePca.thirdPca;
-                    abovePcaDistance = (abovePca1 - pca1) * (abovePca1 - pca1)
-                                     + (abovePca2 - pca2) * (abovePca2 - pca2)
-                                     + (abovePca3 - pca3) * (abovePca3 - pca3);
-                    if (abovePcaDistance <= pcaDistance) {
-                        // This is a valid point to look at.
-                        neighborhood.add(abovePca.sixelIndex);
-                        pcaDistance = abovePcaDistance;
-                    }
-                    if ((abovePca.firstPca - pca1) > pcaDistance) {
-                        // There are no closer points in that direction.
-                        above = n - 1;
-                    }
 
+            // Search up
+            while (above + 1 < n) {
+                above++;
+                final PcaColor abovePca = pcaColors.get(above);
+                final double abovePca1 = abovePca.firstPca;
+                final double abovePca2 = abovePca.secondPca;
+                final double abovePca3 = abovePca.thirdPca;
+                abovePcaDistance = (abovePca1 - pca1) * (abovePca1 - pca1)
+                                 + (abovePca2 - pca2) * (abovePca2 - pca2)
+                                 + (abovePca3 - pca3) * (abovePca3 - pca3);
+                if (abovePcaDistance <= pcaDistance) {
+                    // This is a valid point to look at.
+                    neighborhood.add(abovePca.sixelIndex);
+                    pcaDistance = abovePcaDistance;
                 }
-                if (below > 0) {
-                    below--;
-                    final PcaColor belowPca = pcaColors.get(below);
-                    final double belowPca1 = belowPca.firstPca;
-                    final double belowPca2 = belowPca.secondPca;
-                    final double belowPca3 = belowPca.thirdPca;
-                    belowPcaDistance = (belowPca1 - pca1) * (belowPca1 - pca1)
-                                     + (belowPca2 - pca2) * (belowPca2 - pca2)
-                                     + (belowPca3 - pca3) * (belowPca3 - pca3);
-                    if (belowPcaDistance <= pcaDistance) {
-                        // This is a valid point to look at.
-                        neighborhood.add(belowPca.sixelIndex);
-                        pcaDistance = belowPcaDistance;
-                    }
-                    if ((pca1 - belowPca.firstPca) > pcaDistance) {
-                        // There are no closer points in that direction.
-                        below = 0;
-                    }
-                }
-                if ((below == 0) && (above == n - 1)) {
-                    // No more valid points in the neighborhood.
-                    if (verbosity >= 5) {
-                        System.err.printf("neighborhood scan: %d colors\n",
-                            neighborhood.size());
-                    }
-                    return;
+                if ((abovePca.firstPca - pca1) > pcaDistance) {
+                    // There are no closer points in that direction.
+                    break;
                 }
             }
+
+            // Search down
+            while (below > 0) {
+                below--;
+                final PcaColor belowPca = pcaColors.get(below);
+                final double belowPca1 = belowPca.firstPca;
+                final double belowPca2 = belowPca.secondPca;
+                final double belowPca3 = belowPca.thirdPca;
+                belowPcaDistance = (belowPca1 - pca1) * (belowPca1 - pca1)
+                                 + (belowPca2 - pca2) * (belowPca2 - pca2)
+                                 + (belowPca3 - pca3) * (belowPca3 - pca3);
+                if (belowPcaDistance <= pcaDistance) {
+                    // This is a valid point to look at.
+                    neighborhood.add(belowPca.sixelIndex);
+                    pcaDistance = belowPcaDistance;
+                }
+                if ((pca1 - belowPca.firstPca) > pcaDistance) {
+                    // There are no closer points in that direction.
+                    break;
+                }
+            }
+            // No more valid points in the neighborhood.
+            if (verbosity >= 5) {
+                System.err.printf("neighborhood scan: %d colors\n",
+                    neighborhood.size());
+            }
+            return;
         }
 
         /**
