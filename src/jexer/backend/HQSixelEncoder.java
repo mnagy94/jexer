@@ -432,6 +432,43 @@ public class HQSixelEncoder implements SixelEncoder {
         };
 
         /**
+         * A mapping of sixel color index to its first principal component.
+         */
+        private class PcaColor implements Comparable<PcaColor> {
+
+            /**
+             * Index into sixelColors.
+             */
+            private int sixelIndex = 0;
+
+            /**
+             * The first principal component value.
+             */
+            private double firstPca = 0;
+
+            /**
+             * Public constructor.
+             *
+             * @param sixelIndex the the index into sixelColors
+             * @param firstPca the first principal component
+             */
+            public PcaColor(final int sixelIndex, final double firstPca) {
+                this.sixelIndex = sixelIndex;
+                this.firstPca = firstPca;
+            }
+
+            /**
+             * Comparison operator.
+             *
+             * @param that another PcaColor
+             * @return difference between this.firstPca and that.firstPca
+             */
+            public int compareTo(final PcaColor that) {
+                return Double.compare(this.firstPca, that.firstPca);
+            }
+        };
+
+        /**
          * Number of colors in this palette.
          */
         private int paletteSize = 0;
@@ -440,6 +477,17 @@ public class HQSixelEncoder implements SixelEncoder {
          * Color palette for sixel output, sorted low to high.
          */
         private List<Integer> sixelColors = null;
+
+        /**
+         * Color palette for sixel output, sorted low to high by the
+         * principal component.
+         */
+        private List<PcaColor> pcaColors = null;
+
+        /**
+         * The PCA change of basis matrix.
+         */
+        private double [][] PCA;
 
         /**
          * Map of colors used in the image by RGB.
@@ -981,7 +1029,7 @@ public class HQSixelEncoder implements SixelEncoder {
             neighborhood = new ArrayList<Integer>(16);
 
             // Build the covariance matrix and find its eigenvalues.  These
-            // will be the principle components.
+            // will be the principal components.
             //
             // (The computational chemist in me is SO HAPPY that we finally
             // have an eigenvalue solver in Jexer. 💗)
@@ -1050,11 +1098,56 @@ public class HQSixelEncoder implements SixelEncoder {
                 );
             }
 
-            // The principle components are in d[3] (first), d[2] (second),
-            // and d[1] (third).
+            // The principal component scalars are in d[3] (first), d[2]
+            // (second), and d[1] (third).
 
-            // TODO: Sort sixelColors by first PCA.
+            // Now sort sixelColors by first PCA.
 
+            // This involves creation of a "change of basis matrix from RGB
+            // to PCA".  If I am reading page 3 of
+            // http://www.math.lsa.umich.edu/~kesmith/CoordinateChange.pdf
+            // correctly, then V _is_ the change of basis matrix because we
+            // know that all of its vectors are orthogonal.
+            PCA = V;
+            pcaColors = new ArrayList<PcaColor>(sixelColors.size());
+            int idx = 0;
+            for (int rgbColor: sixelColors) {
+                pcaColors.add(new PcaColor(idx, firstPca(rgbColor)));
+                idx++;
+            }
+            Collections.sort(pcaColors);
+        }
+
+        /**
+         * Find the first principal component value of an RGB color.
+         *
+         * @param color the RGB color
+         * @return the color's PCA1 coordinate in PCA space
+         */
+        private double firstPca(final int color) {
+            int red   = (color >>> 16) & 0xFF;
+            int green = (color >>>  8) & 0xFF;
+            int blue  =  color         & 0xFF;
+
+            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
+            // principal component is the last column in the PCA matrix.
+            return (PCA[2][0] * red) + (PCA[2][1] * green) + (PCA[2][2] * blue);
+        }
+
+        /**
+         * Find the first principal component value of an RGB color.
+         *
+         * @param red the red component, from 0-100
+         * @param green the green component, from 0-100
+         * @param blue the blue component, from 0-100
+         * @return the color's PCA1 coordinate in PCA space
+         */
+        private double firstPca(final int red, final int green,
+            final int blue) {
+
+            // Due to how MathUtils.eigen3() sorts the eigenvalues, the first
+            // principal component is the last column in the PCA matrix.
+            return (PCA[2][0] * red) + (PCA[2][1] * green) + (PCA[2][2] * blue);
         }
 
         /**
@@ -1077,11 +1170,32 @@ public class HQSixelEncoder implements SixelEncoder {
 
             neighborhood.clear();
 
-            // TODO: Search along sixelColors by first PCA.
+            // Search pcaColors by first PCA.
+            PcaColor pcaKey = new PcaColor(0, firstPca(red, green, blue));
+            int pcaIndex = Collections.binarySearch(pcaColors, pcaKey,
+                new Comparator<PcaColor>(){
+                    @Override
+                    public int compare(PcaColor a, PcaColor b) {
+                        return Double.compare(a.firstPca, b.firstPca);
+                    }
+                });
+            if (pcaIndex < 0) {
+                // It wasn't found.
 
+                // TODO: Do the right thing.  For now, return whatever.
+                int idx = Math.max(0, Math.min(sixelColors.size() - 1,
+                        -pcaIndex));
+                neighborhood.add(pcaColors.get(idx).sixelIndex);
+                return neighborhood;
+            }
+            // TODO: search "around" this spot to find the best candidates.
+            neighborhood.add(pcaColors.get(pcaIndex).sixelIndex);
+
+            /*
             for (Bucket b: buckets) {
                 neighborhood.add(b.index);
             }
+             */
             return neighborhood;
         }
 
