@@ -1291,81 +1291,79 @@ public class HQSixelEncoder implements SixelEncoder {
             // we will be within +/- 4 indices of the nearest match, but for
             // some the nearest could be as far as 16 indices away.
 
-            /*
-            // DEBUG: Add 8 colors in either direction.
-            for (int i = 0; i < 8; i++) {
-                if (idx + i < pcaColors.size() - 1) {
-                    neighborhood.add(pcaColors.get(idx + i).sixelIndex);
+
+            if (false) {
+                // DEBUG: Add 8 colors in either direction.
+                for (int i = 0; i < 8; i++) {
+                    if (idx + i < pcaColors.size() - 1) {
+                        neighborhood.add(pcaColors.get(idx + i).sixelIndex);
+                    }
+                    if (idx - i >= 0) {
+                        neighborhood.add(pcaColors.get(idx - i).sixelIndex);
+                    }
                 }
-                if (idx - i >= 0) {
-                    neighborhood.add(pcaColors.get(idx - i).sixelIndex);
-                }
+                return neighborhood;
             }
-             */
+
             int below = idx;
             int above = idx;
             int aboveIndex = 0;
             int belowIndex = 0;
             int aboveRgb = 0;
             int belowRgb = 0;
+            double abovePca1 = 0;
+            double abovePca2 = 0;
+            double abovePca3 = 0;
+            double belowPca1 = 0;
+            double belowPca2 = 0;
+            double belowPca3 = 0;
+            double above1Distance = 0;
+            double above23Distance = 0;
+            double below1Distance = 0;
+            double below23Distance = 0;
+
             while (true) {
                 if (above + 1 < pcaColors.size()) {
                     above++;
                     aboveIndex = pcaColors.get(above).sixelIndex;
                     aboveRgb = sixelColors.get(aboveIndex);
-                    neighborhood.add(aboveIndex);
+                    abovePca1 = firstPca(aboveRgb);
+                    abovePca2 = secondPca(aboveRgb);
+                    abovePca3 = thirdPca(aboveRgb);
+                    above1Distance = Math.abs(abovePca1 - pca1);
+                    above23Distance = Math.sqrt((abovePca2 - pca2) * (abovePca2 - pca2)
+                        + (abovePca3 - pca3) * (abovePca3 - pca3));
                 }
                 if (below > 0) {
                     below--;
                     belowIndex = pcaColors.get(above).sixelIndex;
                     belowRgb = sixelColors.get(belowIndex);
+                    belowPca1 = firstPca(belowRgb);
+                    belowPca2 = secondPca(belowRgb);
+                    belowPca3 = thirdPca(belowRgb);
+                    below1Distance = Math.abs(belowPca1 - pca1);
+                    below23Distance = Math.sqrt((belowPca2 - pca2) * (belowPca2 - pca2)
+                        + (belowPca3 - pca3) * (belowPca3 - pca3));
+                }
+
+                if (above1Distance > above23Distance) {
+                    // There are no closer points above, stop looking there.
+                    above = pcaColors.size() - 1;
+                } else {
+                    neighborhood.add(aboveIndex);
+                }
+                if (below1Distance > below23Distance) {
+                    // There are no closer points below, stop looking there.
+                    below = 0;
+                } else {
                     neighborhood.add(belowIndex);
                 }
-
-                double abovePca2 = secondPca(aboveRgb);
-                double abovePca3 = thirdPca(aboveRgb);
-                double belowPca2 = secondPca(belowRgb);
-                double belowPca3 = thirdPca(belowRgb);
-
-                // TODO: this isn't working, why?  I know the +/- 8 is
-                // typically enough to be fantastic.  Do I instead need to
-                // compute 3D distance?  For now add a bail-out at +/- 8.
-                if (((above - idx) > 8) || ((idx - below) > 8)) {
+                if ((below == 0) && (above == pcaColors.size() - 1)) {
                     return neighborhood;
                 }
 
-                /*
-                 * pca3
-                 * ^
-                 * |
-                 * |  (belowPca2, abovePca3)      (abovePca2, abovePca3)
-                 * |
-                 * |
-                 * |                  (pca2, pca3)
-                 * |
-                 * |
-                 * |
-                 * |  (belowPca2, belowPca3)      (abovePca2, belowPca3)
-                 * |
-                 *  -----------------------------------------------------> pca2
-                 */
-
-                if ((belowPca2 <= pca2) && (pca2 <= abovePca2)
-                    && (belowPca3 <= pca3) && (pca3 <= abovePca3)
-                ) {
-                    // Bracketed, done.
-                    /*
-                    System.err.printf("BRACKETED %d entries\n",
-                        neighborhood.size());
-                    */
-                    return neighborhood;
-                }
-                if ((above == pcaColors.size() - 1) && (below == 0)) {
-                    // I would hope this never happens.
-                    /*
-                    System.err.printf("FAILED! %d entries\n",
-                        neighborhood.size());
-                    */
+                // Last resort: bail out at 16 indices away.
+                if (((above - idx) > 16) || ((idx - below) > 16)) {
                     return neighborhood;
                 }
             }
