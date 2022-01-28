@@ -1247,6 +1247,8 @@ public class HQSixelEncoder implements SixelEncoder {
             return (PCA[0][0] * red) + (PCA[0][1] * green) + (PCA[0][2] * blue);
         }
 
+        PcaColor pcaKey = new PcaColor(0, 0, 0, 0);
+
         /**
          * Search through the palette and find the best possible candidate(s)
          * to match a color RGB.  This particular approach was first done by
@@ -1269,7 +1271,7 @@ public class HQSixelEncoder implements SixelEncoder {
 
             // Search pcaColors by first PCA.
             double pca1 = firstPca(red, green, blue);
-            PcaColor pcaKey = new PcaColor(0, pca1, 0, 0);
+            pcaKey.firstPca = pca1;
 
             // pcaIndex will almost certainly come back negative, because
             // doubles cannot exactly be equal in practice.
@@ -1281,17 +1283,9 @@ public class HQSixelEncoder implements SixelEncoder {
                     pcaIndex));
             neighborhood.add(pcaColors.get(idx).sixelIndex);
 
-            // Now search up and down along pcaColors until two colors are
-            // found that fully bracket the color to match.  The nearest
-            // color in RGB space will be somewhere in this list.
-            double pca2 = secondPca(red, green, blue);
-            double pca3 = thirdPca(red, green, blue);
-
             // Manual tests on the color wheel suggest that for most colors
             // we will be within +/- 4 indices of the nearest match, but for
             // some the nearest could be as far as 16 indices away.
-
-
             if (false) {
                 // DEBUG: Add 8 colors in either direction.
                 for (int i = 0; i < 8; i++) {
@@ -1305,65 +1299,93 @@ public class HQSixelEncoder implements SixelEncoder {
                 return neighborhood;
             }
 
+            // Now search up and down along pca1 finding colors that closer
+            // than the color found by binary search.
+            double pca2 = secondPca(red, green, blue);
+            double pca3 = thirdPca(red, green, blue);
+
+            // The distance between the search color and the best-fit color
+            // in PCA space.
+            int color = sixelColors.get(pcaColors.get(idx).sixelIndex);
+            int red2   = (color >>> 16) & 0xFF;
+            int green2 = (color >>>  8) & 0xFF;
+            int blue2  =  color         & 0xFF;
+            double centerPca1 = firstPca(red2, green2, blue2);
+            double centerPca2 = secondPca(red2, green2, blue2);
+            double centerPca3 = thirdPca(red2, green2, blue2);
+            double pcaDistance = (centerPca1 - pca1) * (centerPca1 - pca1)
+                               + (centerPca2 - pca2) * (centerPca2 - pca2)
+                               + (centerPca3 - pca3) * (centerPca3 - pca3);
+
+            // The distance between the search color and the colors being
+            // looked at above/below in PCA space.
+            double abovePcaDistance = 0;
+            double belowPcaDistance = 0;
+
+            // The starting point.
             int below = idx;
             int above = idx;
-            int aboveIndex = 0;
-            int belowIndex = 0;
-            int aboveRgb = 0;
-            int belowRgb = 0;
-            double abovePca1 = 0;
-            double abovePca2 = 0;
-            double abovePca3 = 0;
-            double belowPca1 = 0;
-            double belowPca2 = 0;
-            double belowPca3 = 0;
-            double above1Distance = 0;
-            double above23Distance = 0;
-            double below1Distance = 0;
-            double below23Distance = 0;
-
+            int n = pcaColors.size();
             while (true) {
-                if (above + 1 < pcaColors.size()) {
+                if (above + 1 < n) {
                     above++;
-                    aboveIndex = pcaColors.get(above).sixelIndex;
-                    aboveRgb = sixelColors.get(aboveIndex);
-                    abovePca1 = firstPca(aboveRgb);
-                    abovePca2 = secondPca(aboveRgb);
-                    abovePca3 = thirdPca(aboveRgb);
-                    above1Distance = Math.abs(abovePca1 - pca1);
-                    above23Distance = Math.sqrt((abovePca2 - pca2) * (abovePca2 - pca2)
-                        + (abovePca3 - pca3) * (abovePca3 - pca3));
+                    PcaColor abovePca = pcaColors.get(above);
+                    int aboveIndex = abovePca.sixelIndex;
+                    color = sixelColors.get(aboveIndex);
+                    red2   = (color >>> 16) & 0xFF;
+                    green2 = (color >>>  8) & 0xFF;
+                    blue2  =  color         & 0xFF;
+                    double abovePca1 = firstPca(red2, green2, blue2);
+                    double abovePca2 = secondPca(red2, green2, blue2);
+                    double abovePca3 = thirdPca(red2, green2, blue2);
+                    abovePcaDistance = (abovePca1 - pca1) * (abovePca1 - pca1)
+                                     + (abovePca2 - pca2) * (abovePca2 - pca2)
+                                     + (abovePca3 - pca3) * (abovePca3 - pca3);
+                    if (abovePcaDistance <= pcaDistance) {
+                        // This is a valid point to look at.
+                        neighborhood.add(aboveIndex);
+                        pcaDistance = abovePcaDistance;
+                    }
+                    if (Math.abs(abovePca.firstPca - abovePca1) >
+                        Math.abs(abovePca1 - pca1)
+                    ) {
+                        // There are no closer points in that direction.
+                        above = n - 1;
+                    }
+
                 }
                 if (below > 0) {
                     below--;
-                    belowIndex = pcaColors.get(above).sixelIndex;
-                    belowRgb = sixelColors.get(belowIndex);
-                    belowPca1 = firstPca(belowRgb);
-                    belowPca2 = secondPca(belowRgb);
-                    belowPca3 = thirdPca(belowRgb);
-                    below1Distance = Math.abs(belowPca1 - pca1);
-                    below23Distance = Math.sqrt((belowPca2 - pca2) * (belowPca2 - pca2)
-                        + (belowPca3 - pca3) * (belowPca3 - pca3));
+                    PcaColor belowPca = pcaColors.get(below);
+                    int belowIndex = belowPca.sixelIndex;
+                    color = sixelColors.get(belowIndex);
+                    red2   = (color >>> 16) & 0xFF;
+                    green2 = (color >>>  8) & 0xFF;
+                    blue2  =  color         & 0xFF;
+                    double belowPca1 = firstPca(red2, green2, blue2);
+                    double belowPca2 = secondPca(red2, green2, blue2);
+                    double belowPca3 = thirdPca(red2, green2, blue2);
+                    belowPcaDistance = (belowPca1 - pca1) * (belowPca1 - pca1)
+                                     + (belowPca2 - pca2) * (belowPca2 - pca2)
+                                     + (belowPca3 - pca3) * (belowPca3 - pca3);
+                    if (belowPcaDistance <= pcaDistance) {
+                        // This is a valid point to look at.
+                        neighborhood.add(belowIndex);
+                        pcaDistance = belowPcaDistance;
+                    }
+                    if (Math.abs(belowPca.firstPca - belowPca1) >
+                        Math.abs(belowPca1 - pca1)
+                    ) {
+                        // There are no closer points in that direction.
+                        below = 0;
+                    }
                 }
-
-                if (above1Distance > above23Distance) {
-                    // There are no closer points above, stop looking there.
-                    above = pcaColors.size() - 1;
-                } else {
-                    neighborhood.add(aboveIndex);
-                }
-                if (below1Distance > below23Distance) {
-                    // There are no closer points below, stop looking there.
-                    below = 0;
-                } else {
-                    neighborhood.add(belowIndex);
-                }
-                if ((below == 0) && (above == pcaColors.size() - 1)) {
-                    return neighborhood;
-                }
-
-                // Last resort: bail out at 16 indices away.
-                if (((above - idx) > 16) || ((idx - below) > 16)) {
+                if ((below == 0) && (above == n - 1)) {
+                    // No more valid points in the neighborhood.
+                    if (verbosity >= 5) {
+                        System.err.printf("neighborhood scan: %d colors\n",
+                            neighborhood.size());
+                    }
                     return neighborhood;
                 }
             }
