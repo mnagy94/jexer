@@ -1319,8 +1319,10 @@ public class HQSixelEncoder implements SixelEncoder {
             // be deemed in the same neighborhood.
             pcaThreshold = ((pcaColors.get(idx - 1).firstPca - pcaColors.get(0).firstPca) / idx) * 8.0;
 
-            // Allow up the last 8192 colors to be re-used.
-            recentColorMatch = new ColorMatchCache(8192);
+            // Allow up the last 8192 colors to be re-used, or 10% of the
+            // image size.
+            recentColorMatch = new ColorMatchCache(Math.min(
+                sixelImageWidth * sixelImageHeight / 10, 8192));
         }
 
         /**
