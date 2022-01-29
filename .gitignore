@@ -8,6 +8,8 @@ build/**
 autumn.bash*
 run_swing.bash
 run_xterm.bash
+hq_test.bash
+legacy_test.bash
 err*
 
 # Mobile Tools for Java (J2ME)
