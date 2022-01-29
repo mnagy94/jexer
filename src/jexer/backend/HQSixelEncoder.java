@@ -1936,6 +1936,34 @@ public class HQSixelEncoder implements SixelEncoder {
                     continue;
                 }
 
+                /*
+                 * We want to avoid tons of memory access, so for each color:
+                 *
+                 * 1. Create an array for the full width to collect the sum.
+                 *
+                 * 2. Go down the full row, adding up on the sums.  You have
+                 *    to do this up to six times.
+                 *
+                 * 3. Go one last time down the array and emit the sums.
+                 *
+                 * It doesn't look that much more complicated than the naive
+                 * sum, but should be faster as many cells are captured on
+                 * one memory access.
+                 */
+                int [] row = new int[width];
+                for (int j = 0;
+                     (j < 6) && (currentRow + j < fullHeight);
+                     j++) {
+
+                    int base = width * (currentRow + j);
+                    for (int imageX = 0; imageX < width; imageX++) {
+                        // Is there was a way to do this without the if?
+                        if (rgbArray[base + imageX] == i) {
+                            row[imageX] += 1 << j;
+                        }
+                    }
+                }
+
                 // Set to the beginning of scan line for the next set of
                 // colored pixels, and select the color.
                 sb.append("$#");
@@ -1944,39 +1972,8 @@ public class HQSixelEncoder implements SixelEncoder {
                 int oldData = -1;
                 int oldDataCount = 0;
                 for (int imageX = 0; imageX < width; imageX++) {
+                    int data = row[imageX];
 
-                    // Add up all the pixels that match this color.
-
-                    // TODO: Make this scan horizontally first to build the
-                    // row, so as to reduce all the random access.
-                    int data = 0;
-                    for (int j = 0;
-                         (j < 6) && (currentRow + j < fullHeight);
-                         j++) {
-
-                        if (rgbArray[imageX + (width * (currentRow + j))] == i) {
-                            switch (j) {
-                            case 0:
-                                data += 1;
-                                break;
-                            case 1:
-                                data += 2;
-                                break;
-                            case 2:
-                                data += 4;
-                                break;
-                            case 3:
-                                data += 8;
-                                break;
-                            case 4:
-                                data += 16;
-                                break;
-                            case 5:
-                                data += 32;
-                                break;
-                            }
-                        }
-                    }
                     assert (data >= 0);
                     assert (data < 64);
                     data += 63;
