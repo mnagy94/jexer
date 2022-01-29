@@ -80,7 +80,7 @@ public class HQSixelEncoder implements SixelEncoder {
      * When fastAndDirty is set, the effective palette size for non-indexed
      * images.
      */
-    private static final int FAST_AND_DIRTY = 16;
+    private static final int FAST_AND_DIRTY = 64;
 
     /**
      * When run from the command line, we need both the image, and to know if
@@ -1010,7 +1010,9 @@ public class HQSixelEncoder implements SixelEncoder {
                 throw new RuntimeException("Transfer type " +
                     transferType + " unsupported");
             }
+            SixelRow sixelRow;
             for (int y = 0; y < sixelImageHeight; y++) {
+                sixelRow = sixelRows[y / 6];
                 for (int x = 0; x < sixelImageWidth; x++) {
                     pixel = raster.getDataElements(x, y, pixel);
                     byte [] indexedPixel = (byte []) pixel;
@@ -1022,6 +1024,7 @@ public class HQSixelEncoder implements SixelEncoder {
                         sixelImage[x + (y * sixelImageWidth)] = -1;
                     } else {
                         // System.err.printf("(%d, %d) --> %d\n", x, y, idx);
+                        sixelRow.colors.set(idx);
                         sixelImage[x + (y * sixelImageWidth)] = idx;
                         maxColorIdx = Math.max(idx, maxColorIdx);
                     }
@@ -1208,8 +1211,8 @@ public class HQSixelEncoder implements SixelEncoder {
 
         /**
          * Sort the palette colors by principal component so that they can be
-         * located quickly in matchColor().  This approach was first brought
-         * to open-source by Hans Petter Jansson's chafa project:
+         * located quickly in dither().  This approach was first brought to
+         * open-source by Hans Petter Jansson's chafa project:
          * https://hpjansson.org/chafa/ .
          */
         private void buildSearchMap() {
@@ -1396,6 +1399,9 @@ public class HQSixelEncoder implements SixelEncoder {
                 // Skip the binary search, we are already close.
                 centerPca = lastPcaColor;
             } else {
+
+                // This version uses standard Java binary search.  It's
+                // faster than my first attempt, so it can stay.
                 pcaKey.firstPca = pca1;
 
                 // pcaIndex will almost certainly come back negative, because
@@ -1528,65 +1534,6 @@ public class HQSixelEncoder implements SixelEncoder {
         }
 
         /**
-         * Find the nearest match for a color in the palette.
-         *
-         * @param color the sixel color
-         * @return the color in the palette that is closest to color
-         */
-        public int matchColor(final int color) {
-
-            assert (color >= 0);
-
-            assert ((quantizationType == 0)
-                || (quantizationType == 1)
-                || (quantizationType == 2));
-
-            if (quantizationType == 0) {
-                ColorIdx colorIdx = colorMap.get(color);
-                if (verbosity >= 10) {
-                    System.err.printf("matchColor(): %08x %d colorIdx %s\n",
-                        color, color, colorIdx);
-                }
-                if (colorIdx == null) {
-                    if (verbosity >= 5) {
-                        // This should not be possible.  What happened?
-                        System.err.println("FAILED TO MATCH ON DIRECT?!");
-                        System.err.printf("   Color: %08x\n", color);
-                        System.err.printf("COLOR MAP: %d entries\n",
-                            sixelColors.size());
-                        for (int i = 0; i < sixelColors.size(); i++) {
-                            System.err.printf("   %03d %08x\n", i,
-                                sixelColors.get(i));
-                        }
-                    }
-                }
-                return colorIdx.directMapIndex;
-            }
-
-            // See if this entry has been seen before recently.
-            int idx = recentColorMatch.get(color);
-            if (idx >= 0) {
-                return idx;
-            }
-
-            // Find the best-fit color in the palette from a short list of
-            // nearby colors.  As tempting as it is to use the
-            // nearest-neighbor in PCA space, that is not necessarily the
-            // same as the RGB space nearest neighbor.
-            int red   = (color >>> 16) & 0xFF;
-            int green = (color >>>  8) & 0xFF;
-            int blue  =  color         & 0xFF;
-            idx = findNearestColor(red, green, blue);
-            assert (idx != -1);
-            if (verbosity >= 10) {
-                System.err.printf("matchColor(): --> %08x idx %d %08x\n",
-                    color, idx, sixelColors.get(idx));
-            }
-            recentColorMatch.put(color, idx);
-            return idx;
-        }
-
-        /**
          * Dither an image to a paletteSize palette.  The dithered
          * image cells will contain indexes into the palette.
          *
@@ -1619,7 +1566,23 @@ public class HQSixelEncoder implements SixelEncoder {
                         System.err.printf("opaque oldPixel(%d, %d) %08x\n",
                             imageX, imageY, oldPixel);
                     }
-                    int colorIdx = matchColor(oldPixel & 0x00FFFFFF);
+                    int colorIdx = 0;
+                    int color = oldPixel & 0x00FFFFFF;
+                    if (quantizationType == 0) {
+                        colorIdx = colorMap.get(color).directMapIndex;
+                    } else {
+                        // See if this entry has been seen before recently.
+                        colorIdx = recentColorMatch.get(color);
+                        if (colorIdx < 0) {
+                            // We need to search for it.
+                            int red   = (color >>> 16) & 0xFF;
+                            int green = (color >>>  8) & 0xFF;
+                            int blue  =  color         & 0xFF;
+                            colorIdx = findNearestColor(red, green, blue);
+                            recentColorMatch.put(color, colorIdx);
+                        }
+                    }
+
                     assert (colorIdx >= 0);
                     assert (colorIdx < sixelColors.size());
                     int newPixel = sixelColors.get(colorIdx);
