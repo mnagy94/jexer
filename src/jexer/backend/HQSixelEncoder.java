@@ -41,6 +41,7 @@ import java.awt.image.DataBuffer;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.io.FileInputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
@@ -520,6 +521,103 @@ public class HQSixelEncoder implements SixelEncoder {
         }
 
         /**
+         * ColorMatchCache is a FIFO cache that hangs on to the matched
+         * palette index color for a RGB color.
+         */
+        private class ColorMatchCache {
+
+            /**
+             * Maximum size of the cache.
+             */
+            private int maxSize = 1024;
+
+            /**
+             * The entries stored in the cache.
+             */
+            private HashMap<Integer, CacheEntry> cache = null;
+
+            /**
+             * The order of entries added.
+             */
+            private ArrayDeque<Integer> cacheEntries = null;
+
+            /**
+             * CacheEntry is one entry in the cache.
+             */
+            private class CacheEntry {
+                /**
+                 * The cache key.
+                 */
+                public int key;
+
+                /**
+                 * The cache data.
+                 */
+                public int data;
+
+                /**
+                 * Public constructor.
+                 *
+                 * @param key the cache entry key
+                 * @param data the cache entry data
+                 */
+                public CacheEntry(final int key, final int data) {
+                    this.key = key;
+                    this.data = data;
+                }
+            }
+
+            /**
+             * Public constructor.
+             *
+             * @param maxSize the maximum size of the cache
+             */
+            public ColorMatchCache(final int maxSize) {
+                this.maxSize = maxSize;
+                cache = new HashMap<Integer, CacheEntry>(maxSize);
+                cacheEntries = new ArrayDeque<Integer>(maxSize);
+            }
+
+            /**
+             * Get an entry from the cache.
+             *
+             * @param color the RGB color
+             * @return the palette index, or -1 if this RGB color is not in
+             * the cache
+             */
+            public int get(final int color) {
+                CacheEntry entry = cache.get(color);
+                if (entry == null) {
+                    return -1;
+                }
+                return entry.data;
+            }
+
+            /**
+             * Put an entry into the cache.
+             *
+             * @param color the RGB color
+             * @param data the palette index
+             */
+            public void put(final int color, final int data) {
+
+                assert (cache.size() <= maxSize);
+                if (cache.size() == maxSize) {
+                    // Cache is at limit, evict oldest entry.
+                    int keyToRemove = cacheEntries.removeFirst();
+                    assert (keyToRemove != -1);
+                    cache.remove(keyToRemove);
+                }
+                assert (cache.size() <= maxSize);
+                CacheEntry entry = new CacheEntry(color, data);
+                assert (color == entry.key);
+                cache.put(color, entry);
+                cacheEntries.addLast(color);
+            }
+
+        }
+
+        /**
          * Number of colors in this palette.
          */
         private int paletteSize = 0;
@@ -549,6 +647,11 @@ public class HQSixelEncoder implements SixelEncoder {
          * The colors near the last search for a color.
          */
         private ArrayList<Integer> neighborhood;
+
+        /**
+         * A map of recent matching colors.
+         */
+        private ColorMatchCache recentColorMatch;
 
         /**
          * The key used for binary search.
@@ -1215,6 +1318,9 @@ public class HQSixelEncoder implements SixelEncoder {
             // A first principal component difference within 8 indices will
             // be deemed in the same neighborhood.
             pcaThreshold = ((pcaColors.get(idx - 1).firstPca - pcaColors.get(0).firstPca) / idx) * 8.0;
+
+            // Allow up the last 8192 colors to be re-used.
+            recentColorMatch = new ColorMatchCache(8192);
         }
 
         /**
@@ -1453,6 +1559,12 @@ public class HQSixelEncoder implements SixelEncoder {
                 return colorIdx.directMapIndex;
             }
 
+            // See if this entry has been seen before recently.
+            int idx = recentColorMatch.get(color);
+            if (idx >= 0) {
+                return idx;
+            }
+
             // Find the best-fit color in the palette from a short list of
             // nearby colors.  As tempting as it is to use the
             // nearest-neighbor in PCA space, that is not necessarily the
@@ -1462,11 +1574,13 @@ public class HQSixelEncoder implements SixelEncoder {
             int blue  =  color         & 0xFF;
             findNearbyColors(red, green, blue);
             if (neighborhood.size() == 1) {
-                return neighborhood.get(0);
+                idx = neighborhood.get(0);
+                recentColorMatch.put(color, idx);
+                return idx;
             }
 
             double diff = Double.MAX_VALUE;
-            int idx = -1;
+            idx = -1;
             int i = 0;
             for (Integer sixelIndex: neighborhood) {
                 int rgbColor = sixelColors.get(sixelIndex);
@@ -1486,6 +1600,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 System.err.printf("matchColor(): --> %08x idx %d %08x\n",
                     color, idx, sixelColors.get(idx));
             }
+            recentColorMatch.put(color, idx);
             return idx;
         }
 

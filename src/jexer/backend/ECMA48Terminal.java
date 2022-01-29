@@ -512,7 +512,7 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         /**
-         * Get th number of entries in the cache.
+         * Get the number of entries in the cache.
          *
          * @return the number of entries
          */
