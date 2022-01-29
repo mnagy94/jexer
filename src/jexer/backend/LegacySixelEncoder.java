@@ -901,10 +901,11 @@ public class LegacySixelEncoder implements SixelEncoder {
                      j++) {
 
                     int base = width * (currentRow + j);
+                    int value = 1 << j;
                     for (int imageX = 0; imageX < width; imageX++) {
                         // Is there was a way to do this without the if?
                         if (rgbArray[base + imageX] == i) {
-                            row[imageX] += 1 << j;
+                            row[imageX] += value;
                         }
                     }
                 }
