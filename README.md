@@ -28,9 +28,11 @@ stock xterm, with a custom mouse icon, and SGR-Pixel mode active:
 ![Xterm SGR-Pixel Mouse](/screenshots/xterm_pixel_mouse.gif?raw=true "Xterm SGR-Pixel Mouse")
 
 A new sixel encoder is in the works for Xterm, which should look a lot
-better:
+better.  This encoder is inspired in part by
+[chafa's](https://hpjansson.org/chafa/) high-performance principal
+component analysis based sixel encoder.
 
-![Xterm Snake Image](/screenshots/snake_xterm_hq.png?raw=true "Xterm Snake Image - HQ Encoder")
+![PCA color matching with 128-color palette and translucent windows](/screenshots/pca_match.png?raw=true "PCA color matching with 128-color palette and translucent windows")
 
 Jexer can be run inside its own terminal window, with support for all
 of its features including images and mouse, and more terminals:

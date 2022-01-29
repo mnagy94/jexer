@@ -25,6 +25,12 @@
  *
  * @author Autumn Lamonte ⚧ Trans Liberation Now
  * @version 1
+ *
+ * Portions of this encoder were inspired / influenced by Hans Petter
+ * Jansson's chafa project: https://hpjansson.org/chafa/ .  Please refer to
+ * chafa's high-performance sixel encoder for far more advanced
+ * implementations of principal component analysis color mapping, and sixel
+ * row encoding.
  */
 package jexer.backend;
 
@@ -36,6 +42,7 @@ import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -48,6 +55,14 @@ import jexer.bits.MathUtils;
  * HQSixelEncoder turns a BufferedImage into String of sixel image data,
  * using several strategies to produce a reasonably high quality image within
  * sixel's ~19.97 bit (101^3) color depth.
+ *
+ * <p>
+ * Portions of this encoder were inspired / influenced by Hans Petter
+ * Jansson's chafa project: https://hpjansson.org/chafa/ .  Please refer to
+ * chafa's high-performance sixel encoder for far more advanced
+ * implementations of principal component analysis color mapping, and sixel
+ * row encoding.
+ * </p>
  */
 public class HQSixelEncoder implements SixelEncoder {
 
@@ -486,6 +501,25 @@ public class HQSixelEncoder implements SixelEncoder {
         };
 
         /**
+         * Metadata regarding one sixel row.
+         */
+        private class SixelRow {
+
+            /**
+             * A set of colors that are present in this row.
+             */
+            private BitSet colors;
+
+            /**
+             * Public constructor.
+             */
+            public SixelRow() {
+                colors = new BitSet(sixelColors.size());
+            }
+
+        }
+
+        /**
          * Number of colors in this palette.
          */
         private int paletteSize = 0;
@@ -582,6 +616,11 @@ public class HQSixelEncoder implements SixelEncoder {
         private ArrayList<Bucket> buckets;
 
         /**
+         * The sixel rows of this image.
+         */
+        private SixelRow [] sixelRows;
+
+        /**
          * If true, quantization is done.
          */
         private boolean quantizationDone = false;
@@ -620,6 +659,10 @@ public class HQSixelEncoder implements SixelEncoder {
                 numColors = Math.min(paletteSize, FAST_AND_DIRTY);
             }
             sixelColors = new ArrayList<Integer>(numColors);
+            sixelRows = new SixelRow[(image.getHeight() / 6) + 1];
+            for (int i = 0; i < sixelRows.length; i++) {
+                sixelRows[i] = new SixelRow();
+            }
 
             if (image.getTransparency() == Transparency.TRANSLUCENT) {
                 // PNG like images where transparency is carried in alpha.
@@ -1226,7 +1269,8 @@ public class HQSixelEncoder implements SixelEncoder {
          * .  The palette colors have been sorted by their principal
          * component (see principal component analysis), such that a binary
          * search can quickly find the region where the closest matching
-         * color resides.
+         * color resides.  One can then search forward and backward to find
+         * all nearby colors.
          *
          * @param red the red component, from 0-100
          * @param green the green component, from 0-100
@@ -1457,7 +1501,9 @@ public class HQSixelEncoder implements SixelEncoder {
 
             int height = sixelImageHeight;
             int width = sixelImageWidth;
+            SixelRow sixelRow;
             for (int imageY = 0; imageY < height; imageY++) {
+                sixelRow = sixelRows[imageY / 6];
                 for (int imageX = 0; imageX < width; imageX++) {
                     int oldPixel = rgbArray[imageX + (width * imageY)];
                     if ((oldPixel & 0xFF000000) != 0xFF000000) {
@@ -1478,6 +1524,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     assert (colorIdx < sixelColors.size());
                     int newPixel = sixelColors.get(colorIdx);
                     rgbArray[imageX + (width * imageY)] = colorIdx;
+                    sixelRow.colors.set(colorIdx);
 
                     if (quantizationType == 0) {
                         // For direct map, every possible color is already in
@@ -1763,41 +1810,11 @@ public class HQSixelEncoder implements SixelEncoder {
         // Render the entire row of cells.
         int width = bitmap.getWidth();
 
-        // TODO: sixels[][] shouldn't be necessary, and both of these loops
-        // should be able to be combined.
-        int [][] sixels = new int[width][6];
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
+            Palette.SixelRow sixelRow = palette.sixelRows[currentRow / 6];
 
-            // See which colors are actually used in this band of sixels.
-            boolean [] usedColors = new boolean[palette.sixelColors.size()];
-            for (int imageX = 0; imageX < width; imageX++) {
-                for (int imageY = 0;
-                     (imageY < 6) && (imageY + currentRow < fullHeight);
-                     imageY++) {
-
-                    int colorIdx = rgbArray[imageX +
-                        (width * (imageY + currentRow))];
-
-                    if (allowTransparent && (colorIdx == -1)) {
-                        sixels[imageX][imageY] = colorIdx;
-                        continue;
-                    }
-                    /*
-                    if (!palette.noDither) {
-                        assert (colorIdx >= 0);
-                        assert (colorIdx < palette.sixelColors.size());
-                    }
-                    if (!allowTransparent) {
-                        assert (colorIdx != -1);
-                    }
-                     */
-                    sixels[imageX][imageY] = colorIdx;
-                    usedColors[colorIdx] = true;
-                }
-            }
-
-            for (int i = 0; i < usedColors.length; i++) {
-                if (!usedColors[i]) {
+            for (int i = 0; i < paletteSize; i++) {
+                if (!sixelRow.colors.get(i)) {
                     continue;
                 }
 
@@ -1811,12 +1828,15 @@ public class HQSixelEncoder implements SixelEncoder {
                 for (int imageX = 0; imageX < width; imageX++) {
 
                     // Add up all the pixels that match this color.
+
+                    // TODO: Make this scan horizontally first to build the
+                    // row, so as to reduce all the random access.
                     int data = 0;
                     for (int j = 0;
                          (j < 6) && (currentRow + j < fullHeight);
                          j++) {
 
-                        if (sixels[imageX][j] == i) {
+                        if (rgbArray[imageX + (width * (currentRow + j))] == i) {
                             switch (j) {
                             case 0:
                                 data += 1;
