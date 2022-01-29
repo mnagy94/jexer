@@ -267,6 +267,11 @@ public class ECMA48Terminal extends LogicalScreen
     private ImageCache jexerCache = null;
 
     /**
+     * The number of threads for image rendering.
+     */
+    private int imageThreadCount = 2;
+
+    /**
      * If true, then we changed System.in and need to change it back.
      */
     private boolean setRawMode = false;
@@ -1097,6 +1102,18 @@ public class ECMA48Terminal extends LogicalScreen
             imagesOverText = false;
         }
 
+        // Image thread count.
+        imageThreadCount = 2;
+        try {
+            imageThreadCount = Integer.parseInt(System.getProperty(
+                "jexer.ECMA48.imageThreadCount", "2"));
+            if (imageThreadCount < 1) {
+                imageThreadCount = 1;
+            }
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
+
         // Set custom colors
         setCustomSystemColors();
     }
@@ -1705,14 +1722,11 @@ public class ECMA48Terminal extends LogicalScreen
          * gotoxy(), it doesn't matter in what order they are delivered to
          * the terminal.
          */
-        // TODO: find a good number of threads
-        final int threadCount = 1;
-
         ExecutorService imageExecutor = null;
         List<Future<String>> imageResults = null;
 
-        if (threadCount > 1) {
-            imageExecutor = Executors.newFixedThreadPool(threadCount);
+        if (imageThreadCount > 1) {
+            imageExecutor = Executors.newFixedThreadPool(imageThreadCount);
             imageResults = new ArrayList<Future<String>>();
         }
 
@@ -1787,7 +1801,7 @@ public class ECMA48Terminal extends LogicalScreen
                         }
                     }
 
-                    if (threadCount == 1) {
+                    if (imageThreadCount == 1) {
                         // Single-threaded
                         if (iterm2Images) {
                             sb.append(toIterm2Image(x, y, cellsToDraw));
@@ -1823,7 +1837,7 @@ public class ECMA48Terminal extends LogicalScreen
             }
         }
 
-        if (threadCount > 1) {
+        if (imageThreadCount > 1) {
             // Collect all the encoded images.
             while (imageResults.size() > 0) {
                 try {
