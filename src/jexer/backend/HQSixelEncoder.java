@@ -644,11 +644,6 @@ public class HQSixelEncoder implements SixelEncoder {
         };
 
         /**
-         * The colors near the last search for a color.
-         */
-        private ArrayList<Integer> neighborhood;
-
-        /**
          * A map of recent matching colors.
          */
         private ColorMatchCache recentColorMatch;
@@ -1218,8 +1213,6 @@ public class HQSixelEncoder implements SixelEncoder {
          * https://hpjansson.org/chafa/ .
          */
         private void buildSearchMap() {
-            neighborhood = new ArrayList<Integer>(256);
-
             // Build the covariance matrix and find its eigenvalues.  These
             // will be the principal components.
             //
@@ -1374,23 +1367,22 @@ public class HQSixelEncoder implements SixelEncoder {
         }
 
         /**
-         * Search through the palette and find the best possible candidate(s)
-         * to match a color RGB.  This particular approach was first done by
-         * Hans Petter Jansson's chafa project: https://hpjansson.org/chafa/
-         * .  The palette colors have been sorted by their principal
-         * component (see principal component analysis), such that a binary
-         * search can quickly find the region where the closest matching
-         * color resides.  One can then search forward and backward to find
-         * all nearby colors.
+         * Search through the palette and find the best RGB match in the
+         * sixel palette.  This particular approach was first done by Hans
+         * Petter Jansson's chafa project: https://hpjansson.org/chafa/ .
+         * The palette colors have been sorted by their principal component
+         * (see principal component analysis), such that a binary search can
+         * quickly find the region where the closest matching color resides.
+         * One can then search forward and backward to find all nearby
+         * colors.
          *
          * @param red the red component, from 0-100
          * @param green the green component, from 0-100
          * @param blue the blue component, from 0-100
+         * @return the palette index of the nearest color in RGB space
          */
-        private void findNearbyColors(final int red, final int green,
+        private int findNearestColor(final int red, final int green,
             final int blue) {
-
-            neighborhood.clear();
 
             // Search pcaColors by first PCA.
             double pca1 = (PCA[2][0] * red)
@@ -1417,23 +1409,17 @@ public class HQSixelEncoder implements SixelEncoder {
                 centerPca = pcaColors.get(idx);
             }
 
-            // Add the starting point.
-            neighborhood.add(centerPca.sixelIndex);
-
-            // Manual tests on the color wheel suggest that for most colors
-            // we will be within +/- 4 indices of the nearest match, but for
-            // some the nearest could be as far as 16 indices away.
-            if (false) {
-                // DEBUG: Add 8 colors in either direction.
-                for (int i = 0; i < 8; i++) {
-                    if (idx + i < pcaColors.size() - 1) {
-                        neighborhood.add(pcaColors.get(idx + i).sixelIndex);
-                    }
-                    if (idx - i >= 0) {
-                        neighborhood.add(pcaColors.get(idx - i).sixelIndex);
-                    }
-                }
-                return;
+            // Begin at the starting point.
+            int result = centerPca.sixelIndex;
+            int bestRgbDistance = 0;
+            {
+                int sixelRgb = sixelColors.get(centerPca.sixelIndex);
+                int red2   = (sixelRgb >>> 16) & 0xFF;
+                int green2 = (sixelRgb >>>  8) & 0xFF;
+                int blue2  =  sixelRgb         & 0xFF;
+                bestRgbDistance = (red2 - red) * (red2 - red)
+                                + (green2 - green) * (green2 - green)
+                                + (blue2 - blue) * (blue2 - blue);
             }
 
             // Now search up and down along pca1 finding colors that are a
@@ -1478,7 +1464,17 @@ public class HQSixelEncoder implements SixelEncoder {
                                  + (abovePca3 - pca3) * (abovePca3 - pca3);
                 if (abovePcaDistance <= pcaDistance) {
                     // This is a valid point to look at.
-                    neighborhood.add(abovePca.sixelIndex);
+                    int sixelRgb = sixelColors.get(abovePca.sixelIndex);
+                    int red2   = (sixelRgb >>> 16) & 0xFF;
+                    int green2 = (sixelRgb >>>  8) & 0xFF;
+                    int blue2  =  sixelRgb         & 0xFF;
+                    int rgbDistance = (red2 - red) * (red2 - red)
+                                    + (green2 - green) * (green2 - green)
+                                    + (blue2 - blue) * (blue2 - blue);
+                    if (rgbDistance < bestRgbDistance) {
+                        result = abovePca.sixelIndex;
+                        bestRgbDistance = rgbDistance;
+                    }
                     pcaDistance = abovePcaDistance;
                 }
                 if ((abovePca.firstPca - pca1) > pcaDistance) {
@@ -1499,7 +1495,17 @@ public class HQSixelEncoder implements SixelEncoder {
                                  + (belowPca3 - pca3) * (belowPca3 - pca3);
                 if (belowPcaDistance <= pcaDistance) {
                     // This is a valid point to look at.
-                    neighborhood.add(belowPca.sixelIndex);
+                    int sixelRgb = sixelColors.get(belowPca.sixelIndex);
+                    int red2   = (sixelRgb >>> 16) & 0xFF;
+                    int green2 = (sixelRgb >>>  8) & 0xFF;
+                    int blue2  =  sixelRgb         & 0xFF;
+                    int rgbDistance = (red2 - red) * (red2 - red)
+                                    + (green2 - green) * (green2 - green)
+                                    + (blue2 - blue) * (blue2 - blue);
+                    if (rgbDistance < bestRgbDistance) {
+                        result = belowPca.sixelIndex;
+                        bestRgbDistance = rgbDistance;
+                    }
                     pcaDistance = belowPcaDistance;
                 }
                 if ((pca1 - belowPca.firstPca) > pcaDistance) {
@@ -1508,11 +1514,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 }
             }
             // No more valid points in the neighborhood.
-            if (verbosity >= 5) {
-                System.err.printf("neighborhood scan: %d colors\n",
-                    neighborhood.size());
-            }
-            return;
+            return result;
         }
 
         /**
@@ -1574,29 +1576,7 @@ public class HQSixelEncoder implements SixelEncoder {
             int red   = (color >>> 16) & 0xFF;
             int green = (color >>>  8) & 0xFF;
             int blue  =  color         & 0xFF;
-            findNearbyColors(red, green, blue);
-            if (neighborhood.size() == 1) {
-                idx = neighborhood.get(0);
-                recentColorMatch.put(color, idx);
-                return idx;
-            }
-
-            double diff = Double.MAX_VALUE;
-            idx = -1;
-            int i = 0;
-            for (Integer sixelIndex: neighborhood) {
-                int rgbColor = sixelColors.get(sixelIndex);
-                int red2   = (rgbColor >>> 16) & 0xFF;
-                int green2 = (rgbColor >>>  8) & 0xFF;
-                int blue2  =  rgbColor         & 0xFF;
-                double newDiff = (red2 - red) * (red2 - red)
-                               + (green2 - green) * (green2 - green)
-                               + (blue2 - blue) * (blue2 - blue);
-                if (newDiff < diff) {
-                    idx = sixelIndex;
-                    diff = newDiff;
-                }
-            }
+            idx = findNearestColor(red, green, blue);
             assert (idx != -1);
             if (verbosity >= 10) {
                 System.err.printf("matchColor(): --> %08x idx %d %08x\n",
