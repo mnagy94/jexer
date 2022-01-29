@@ -31,6 +31,7 @@ package jexer.backend;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -100,6 +101,11 @@ public class LegacySixelEncoder implements SixelEncoder {
         private int hsl[] = new int[3];
 
         /**
+         * The sixel rows of this image.
+         */
+        private SixelRow [] sixelRows;
+
+        /**
          * ColorIdx records a RGB color and its palette index.
          */
         private class ColorIdx {
@@ -123,6 +129,25 @@ public class LegacySixelEncoder implements SixelEncoder {
                 this.color = color;
                 this.index = index;
             }
+        }
+
+        /**
+         * Metadata regarding one sixel row.
+         */
+        private class SixelRow {
+
+            /**
+             * A set of colors that are present in this row.
+             */
+            private BitSet colors;
+
+            /**
+             * Public constructor.
+             */
+            public SixelRow() {
+                colors = new BitSet(paletteSize);
+            }
+
         }
 
         /**
@@ -218,13 +243,12 @@ public class LegacySixelEncoder implements SixelEncoder {
                     // True 3D colorspace match for the remaining values
                     for (ColorIdx c: lums) {
                         int rgbColor = c.color;
-                        double newDiff = 0;
                         int red2   = (rgbColor >>> 16) & 0xFF;
                         int green2 = (rgbColor >>>  8) & 0xFF;
                         int blue2  =  rgbColor         & 0xFF;
-                        newDiff += Math.pow(red2 - red, 2);
-                        newDiff += Math.pow(green2 - green, 2);
-                        newDiff += Math.pow(blue2 - blue, 2);
+                        double newDiff = (red2 - red) * (red2 - red)
+                                       + (green2 - green) * (green2 - green)
+                                       + (blue2 - blue) * (blue2 - blue);
                         if (newDiff < diff) {
                             idx = rgbSortedIndex[c.index];
                             diff = newDiff;
@@ -267,12 +291,19 @@ public class LegacySixelEncoder implements SixelEncoder {
          */
         public int [] ditherImage(final BufferedImage image) {
 
+            sixelRows = new SixelRow[(image.getHeight() / 6) + 1];
+            for (int i = 0; i < sixelRows.length; i++) {
+                sixelRows[i] = new SixelRow();
+            }
+
             int [] rgbArray = image.getRGB(0, 0, image.getWidth(),
                 image.getHeight(), null, 0, image.getWidth());
 
             int height = image.getHeight();
             int width = image.getWidth();
+            SixelRow sixelRow;
             for (int imageY = 0; imageY < height; imageY++) {
+                sixelRow = sixelRows[imageY / 6];
                 for (int imageX = 0; imageX < width; imageX++) {
                     int oldPixel = rgbArray[imageX + (width * imageY)]
                         & 0xFFFFFF;
@@ -281,6 +312,7 @@ public class LegacySixelEncoder implements SixelEncoder {
                     assert (colorIdx < paletteSize);
                     int newPixel = rgbColors.get(colorIdx);
                     rgbArray[imageX + (width * imageY)] = colorIdx;
+                    sixelRow.colors.set(colorIdx);
 
                     int oldRed   = (oldPixel >>> 16) & 0xFF;
                     int oldGreen = (oldPixel >>>  8) & 0xFF;
@@ -825,7 +857,7 @@ public class LegacySixelEncoder implements SixelEncoder {
         }
 
         // Collect the raster information
-        int rasterHeight = 0;
+        int rasterHeight = fullHeight;
         int rasterWidth = width;
 
         if (sharedPalette == false) {
@@ -841,36 +873,40 @@ public class LegacySixelEncoder implements SixelEncoder {
         }
 
         // Render the entire row of cells.
-        int [][] sixels = new int[width][6];
-
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
+            Palette.SixelRow sixelRow = palette.sixelRows[currentRow / 6];
 
-            // See which colors are actually used in this band of sixels.
-            boolean [] usedColors = new boolean[paletteSize];
-
-            for (int imageX = 0; imageX < width; imageX++) {
-                for (int imageY = 0;
-                     (imageY < 6) && (imageY + currentRow < fullHeight);
-                     imageY++) {
-
-                    int colorIdx = rgbArray[imageX +
-                        (width * (imageY + currentRow))];
-                    if (colorIdx == -1) {
-                        continue;
-                    }
-                    /*
-                    assert (colorIdx >= 0);
-                    assert (colorIdx < paletteSize);
-                     */
-
-                    sixels[imageX][imageY] = colorIdx;
-                    usedColors[colorIdx] = true;
-                }
-            }
-
-            for (int i = 0; i < usedColors.length; i++) {
-                if (!usedColors[i]) {
+            for (int i = 0; i < paletteSize; i++) {
+                if (!sixelRow.colors.get(i)) {
                     continue;
+                }
+
+                /*
+                 * We want to avoid tons of memory access, so for each color:
+                 *
+                 * 1. Create an array for the full width to collect the sum.
+                 *
+                 * 2. Go down the full row, adding up on the sums.  You have
+                 *    to do this up to six times.
+                 *
+                 * 3. Go one last time down the array and emit the sums.
+                 *
+                 * It doesn't look that much more complicated than the naive
+                 * sum, but should be faster as many cells are captured on
+                 * one memory access.
+                 */
+                int [] row = new int[width];
+                for (int j = 0;
+                     (j < 6) && (currentRow + j < fullHeight);
+                     j++) {
+
+                    int base = width * (currentRow + j);
+                    for (int imageX = 0; imageX < width; imageX++) {
+                        // Is there was a way to do this without the if?
+                        if (rgbArray[base + imageX] == i) {
+                            row[imageX] += 1 << j;
+                        }
+                    }
                 }
 
                 // Set to the beginning of scan line for the next set of
@@ -881,39 +917,8 @@ public class LegacySixelEncoder implements SixelEncoder {
                 int oldData = -1;
                 int oldDataCount = 0;
                 for (int imageX = 0; imageX < width; imageX++) {
+                    int data = row[imageX];
 
-                    // Add up all the pixels that match this color.
-                    int data = 0;
-                    for (int j = 0;
-                         (j < 6) && (currentRow + j < fullHeight);
-                         j++) {
-
-                        if (sixels[imageX][j] == i) {
-                            switch (j) {
-                            case 0:
-                                data += 1;
-                                break;
-                            case 1:
-                                data += 2;
-                                break;
-                            case 2:
-                                data += 4;
-                                break;
-                            case 3:
-                                data += 8;
-                                break;
-                            case 4:
-                                data += 16;
-                                break;
-                            case 5:
-                                data += 32;
-                                break;
-                            }
-                            if ((currentRow + j + 1) > rasterHeight) {
-                                rasterHeight = currentRow + j + 1;
-                            }
-                        }
-                    }
                     assert (data >= 0);
                     assert (data < 64);
                     data += 63;
