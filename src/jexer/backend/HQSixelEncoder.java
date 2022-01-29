@@ -705,7 +705,10 @@ public class HQSixelEncoder implements SixelEncoder {
             // Sample the colors.  We will be taking SAMPLE_SIZE'd pixel
             // bands uniformly through the image data, with numColors bands.
             final int SAMPLE_SIZE = 16;
-            int stride = Math.max(0, totalPixels / numColors);
+            int stride = 0;
+            if (totalPixels > SAMPLE_SIZE * numColors) {
+                stride = Math.max(0, totalPixels / numColors);
+            }
             if (verbosity >= 1) {
                 System.err.printf("Sampling %d pixels per color stride=%d\n",
                     SAMPLE_SIZE, stride);
