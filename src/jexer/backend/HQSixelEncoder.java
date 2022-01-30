@@ -1873,10 +1873,11 @@ public class HQSixelEncoder implements SixelEncoder {
         // Render the entire row of cells.
         int width = bitmap.getWidth();
 
+        int colorsN = palette.sixelColors.size();
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
             Palette.SixelRow sixelRow = palette.sixelRows[currentRow / 6];
 
-            for (int i = 0; i < paletteSize; i++) {
+            for (int i = 0; i < colorsN; i++) {
                 if (!sixelRow.colors.get(i)) {
                     continue;
                 }
