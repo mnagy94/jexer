@@ -111,7 +111,10 @@ public class MultiBackend implements Backend {
      * screen to the physical device.
      */
     public void flushScreen() {
-        for (Backend backend: backends) {
+        multiScreen.flushPhysical();
+        int n = backends.size();
+        for (int i = 0; i < n; i++) {
+            Backend backend = backends.get(Math.min(i, backends.size()));
             backend.flushScreen();
         }
     }

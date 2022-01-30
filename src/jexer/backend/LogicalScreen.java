@@ -706,7 +706,7 @@ public class LogicalScreen implements Screen {
      *
      * @param width new screen width
      */
-    public final synchronized void setWidth(final int width) {
+    public synchronized void setWidth(final int width) {
         reallocate(width, this.height);
     }
 
@@ -716,7 +716,7 @@ public class LogicalScreen implements Screen {
      *
      * @param height new screen height
      */
-    public final synchronized void setHeight(final int height) {
+    public synchronized void setHeight(final int height) {
         reallocate(this.width, height);
     }
 
@@ -727,7 +727,7 @@ public class LogicalScreen implements Screen {
      * @param width new screen width
      * @param height new screen height
      */
-    public final void setDimensions(final int width, final int height) {
+    public void setDimensions(final int width, final int height) {
         reallocate(width, height);
         resizeToScreen();
     }
@@ -1035,7 +1035,7 @@ public class LogicalScreen implements Screen {
     /**
      * Clear the physical screen.
      */
-    public synchronized final void clearPhysical() {
+    public synchronized void clearPhysical() {
         for (int row = 0; row < height; row++) {
             for (int col = 0; col < width; col++) {
                 physical[col][row].unset();
