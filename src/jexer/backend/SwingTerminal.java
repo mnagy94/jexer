@@ -499,6 +499,10 @@ public class SwingTerminal extends LogicalScreen
         eventQueue       = new ArrayList<TInputEvent>();
 
         // Add listeners to Swing.
+        if (swing == null) {
+            // Swing isn't running.  Quite a few things might break...
+            return;
+        }
         swing.addKeyListener(this);
         swing.addWindowListener(this);
         swing.addComponentListener(this);
@@ -617,6 +621,10 @@ public class SwingTerminal extends LogicalScreen
         eventQueue       = new ArrayList<TInputEvent>();
 
         // Add listeners to Swing.
+        if (swing == null) {
+            // Swing isn't running.  Quite a few things might break...
+            return;
+        }
         swing.addKeyListener(this);
         swing.addWindowListener(this);
         swing.addComponentListener(this);
