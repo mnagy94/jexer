@@ -1402,7 +1402,9 @@ public class SwingTerminal extends LogicalScreen
         if (resizeComponent) {
             swing.setDimensions(textWidth * width, textHeight * height);
         }
-        clearPhysical();
+        synchronized (this) {
+            clearPhysical();
+        }
     }
 
     /**
