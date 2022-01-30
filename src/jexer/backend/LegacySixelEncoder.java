@@ -259,7 +259,7 @@ public class LegacySixelEncoder implements SixelEncoder {
 
             if (((red * red) + (green * green) + (blue * blue)) < diff) {
                 // Black is a closer match.
-                idx = 0;
+                idx = 1;
             } else if ((((255 - red) * (255 - red)) +
                     ((255 - green) * (255 - green)) +
                     ((255 - blue) * (255 - blue))) < diff) {
@@ -519,9 +519,9 @@ public class LegacySixelEncoder implements SixelEncoder {
             // We build a palette using the Hue-Saturation-Luminence model,
             // with 5+ bits for Hue, 2+ bits for Saturation, and 1+ bit for
             // Luminance.  We convert these colors to 24-bit RGB, sort them
-            // ascending, and steal the first index for pure black and the
-            // last for pure white.  The 8-bit final palette favors bright
-            // colors, somewhere between pastel and classic television
+            // ascending, and steal the first two indexes for pure black and
+            // the last for pure white.  The 8-bit final palette favors
+            // bright colors, somewhere between pastel and classic television
             // technicolor.  9- and 10-bit palettes are more uniform.
 
             // Default at 256 colors.
@@ -655,9 +655,11 @@ public class LegacySixelEncoder implements SixelEncoder {
                 }
             }
 
-            // Set the dimmest color as true black, and the brightest as true
-            // white.
+            // Set the dimmest two colors as true black, and the brightest as
+            // true white.  Color 0 should in general never be written to
+            // (and won't by this encoder), so we have color 1 for black.
             rgbColors.set(0, 0);
+            rgbColors.set(1, 0);
             rgbColors.set(paletteSize - 1, 0xFFFFFF);
 
             /*
@@ -683,7 +685,9 @@ public class LegacySixelEncoder implements SixelEncoder {
         public String emitPalette(final StringBuilder sb,
             final boolean [] used) {
 
-            for (int i = 0; i < paletteSize; i++) {
+            // Start the count at 1 so that color 0 remains untouched on the
+            // terminal.
+            for (int i = 1; i < paletteSize; i++) {
                 if ((used == null) || ((used != null) && (used[i] == true))) {
                     int rgbColor = rgbColors.get(i);
                     sb.append(String.format("#%d;2;%d;%d;%d", i,
@@ -876,7 +880,9 @@ public class LegacySixelEncoder implements SixelEncoder {
         for (int currentRow = 0; currentRow < fullHeight; currentRow += 6) {
             Palette.SixelRow sixelRow = palette.sixelRows[currentRow / 6];
 
-            for (int i = 0; i < paletteSize; i++) {
+            // Color 0 should in general never be written to (and won't by
+            // this encoder).
+            for (int i = 1; i < paletteSize; i++) {
                 if (!sixelRow.colors.get(i)) {
                     continue;
                 }
