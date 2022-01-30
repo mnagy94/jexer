@@ -861,15 +861,12 @@ public class ECMA48 implements Runnable {
                     }
                     // Permit my enclosing UI to know that I updated.
                     if (displayListener != null) {
-                        // Don't step on UI events
-                        synchronized (this) {
-                            if (screenIsDirty) {
-                                displayListener.displayChanged(false);
-                                screenIsDirty = false;
-                            } else {
-                                displayListener.displayChanged(true);
-                                screenIsDirty = false;
-                            }
+                        if (screenIsDirty) {
+                            displayListener.displayChanged(false);
+                            screenIsDirty = false;
+                        } else {
+                            displayListener.displayChanged(true);
+                            screenIsDirty = false;
                         }
                     }
                 }
@@ -3652,6 +3649,7 @@ public class ECMA48 implements Runnable {
                              * https://github.com/hackerb9/lsix/issues/41
                              */
                             sixelScrolling = false;
+                            // System.err.println("DECSDM activated");
                         } else {
                             // Reset DECSDM: Enable sixel scrolling (default).
                             sixelScrolling = true;

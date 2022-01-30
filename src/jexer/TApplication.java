@@ -1019,17 +1019,18 @@ public class TApplication implements Runnable {
             synchronized (fillEventQueue) {
                 // Pull any pending I/O events
                 backend.getEvents(fillEventQueue);
+            }
 
-                // Dispatch each event to the appropriate handler, one at a
-                // time.
-                for (;;) {
-                    TInputEvent event = null;
+            // Dispatch each event to the appropriate handler, one at a time.
+            for (;;) {
+                TInputEvent event = null;
+                synchronized (fillEventQueue) {
                     if (fillEventQueue.size() == 0) {
                         break;
                     }
                     event = fillEventQueue.remove(0);
-                    metaHandleEvent(event);
                 }
+                metaHandleEvent(event);
             }
 
             // Wake a consumer thread if we have any pending events.
@@ -1411,51 +1412,51 @@ public class TApplication implements Runnable {
             }
         }
 
-        synchronized (drainEventQueue) {
-            // Screen resize
-            if (event instanceof TResizeEvent) {
-                TResizeEvent resize = (TResizeEvent) event;
-                assert (resize.getType() == TResizeEvent.Type.SCREEN);
+        // Screen resize
+        if (event instanceof TResizeEvent) {
+            TResizeEvent resize = (TResizeEvent) event;
+            assert (resize.getType() == TResizeEvent.Type.SCREEN);
 
-                synchronized (getScreen()) {
-                    if ((System.currentTimeMillis() - screenResizeTime >= 15)
-                        || (resize.getWidth() < getScreen().getWidth())
-                        || (resize.getHeight() < getScreen().getHeight())
-                    ) {
-                        getScreen().setDimensions(resize.getWidth(),
-                            resize.getHeight());
-                        screenResizeTime = System.currentTimeMillis();
-                    }
-                    desktopBottom = getScreen().getHeight() - 1;
-                    if (hideStatusBar) {
-                        desktopBottom++;
-                    }
-                    mouseX = 0;
-                    mouseY = 0;
+            synchronized (getScreen()) {
+                if ((System.currentTimeMillis() - screenResizeTime >= 15)
+                    || (resize.getWidth() < getScreen().getWidth())
+                    || (resize.getHeight() < getScreen().getHeight())
+                ) {
+                    getScreen().setDimensions(resize.getWidth(),
+                        resize.getHeight());
+                    screenResizeTime = System.currentTimeMillis();
+                }
+                desktopBottom = getScreen().getHeight() - 1;
+                if (hideStatusBar) {
+                    desktopBottom++;
+                }
+                mouseX = 0;
+                mouseY = 0;
 
-                    if (desktop != null) {
-                        desktop.setDimensions(0, desktopTop, resize.getWidth(),
-                            (desktopBottom - desktopTop));
-                        desktop.onResize(resize);
-                    }
-                    for (TWindow window: windows) {
-                        window.onResize(resize);
-                    }
-
-                    // Change menu edges if needed.
-                    recomputeMenuX();
+                if (desktop != null) {
+                    desktop.setDimensions(0, desktopTop, resize.getWidth(),
+                        (desktopBottom - desktopTop));
+                    desktop.onResize(resize);
+                }
+                for (TWindow window: windows) {
+                    window.onResize(resize);
                 }
 
-                // We are dirty, redraw the screen.
-                doRepaint();
-
-                /*
-                System.err.println("New screen: " + resize.getWidth() +
-                    " x " + resize.getHeight());
-                */
-                return;
+                // Change menu edges if needed.
+                recomputeMenuX();
             }
 
+            // We are dirty, redraw the screen.
+            doRepaint();
+
+            /*
+             System.err.println("New screen: " + resize.getWidth() +
+                 " x " + resize.getHeight());
+             */
+            return;
+        }
+
+        synchronized (drainEventQueue) {
             // Put into the main queue
             drainEventQueue.add(event);
         }
@@ -2046,6 +2047,7 @@ public class TApplication implements Runnable {
      */
     public void doRepaint() {
         repaint = true;
+        boolean wakeAndReturn = false;
         synchronized (drainEventQueue) {
             if (fillEventQueue.size() > 0) {
                 // User input is waiting, that will update the screen.  Wake
@@ -2053,11 +2055,14 @@ public class TApplication implements Runnable {
                 if (debugEvents) {
                     System.err.printf("Drop: input waiting in backend\n");
                 }
-                synchronized (this) {
-                    this.notify();
-                }
-                return;
+                wakeAndReturn = true;
             }
+        }
+        if (wakeAndReturn) {
+            synchronized (this) {
+                this.notify();
+            }
+            return;
         }
         if (screenHandler != null) {
             long now = System.currentTimeMillis();

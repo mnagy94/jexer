@@ -854,10 +854,8 @@ public class TScreenOptionsWindow extends TWindow {
                         ecmaTerminal.setRgbColor(rgbColor.isChecked());
                     }
                     if (terminal != null) {
-                        synchronized (terminal) {
-                            terminal.setTripleBuffer(tripleBuffer.isChecked());
-                            terminal.setFont(terminal.getFont());
-                        }
+                        terminal.setTripleBuffer(tripleBuffer.isChecked());
+                        terminal.setFont(terminal.getFont());
                     }
 
                     // Close window.
@@ -871,17 +869,15 @@ public class TScreenOptionsWindow extends TWindow {
                 public void DO() {
                     // Restore old values, then close the window.
                     if (terminal != null) {
-                        synchronized (terminal) {
-                            terminal.setFont(oldFont);
-                            terminal.setFontSize(oldFontSize);
-                            terminal.setTextAdjustX(oldTextAdjustX);
-                            terminal.setTextAdjustY(oldTextAdjustY);
-                            terminal.setTextAdjustHeight(oldTextAdjustHeight);
-                            terminal.setTextAdjustWidth(oldTextAdjustWidth);
-                            terminal.setTripleBuffer(oldTripleBuffer);
-                            terminal.setCursorStyle(oldCursorStyle);
-                            terminal.setMouseStyle(oldMouseStyle);
-                        }
+                        terminal.setFont(oldFont);
+                        terminal.setFontSize(oldFontSize);
+                        terminal.setTextAdjustX(oldTextAdjustX);
+                        terminal.setTextAdjustY(oldTextAdjustY);
+                        terminal.setTextAdjustHeight(oldTextAdjustHeight);
+                        terminal.setTextAdjustWidth(oldTextAdjustWidth);
+                        terminal.setTripleBuffer(oldTripleBuffer);
+                        terminal.setCursorStyle(oldCursorStyle);
+                        terminal.setMouseStyle(oldMouseStyle);
                     }
                     if (ecmaTerminal != null) {
                         ecmaTerminal.setHasSixel(oldSixel);
@@ -914,17 +910,15 @@ public class TScreenOptionsWindow extends TWindow {
         if (keypress.equals(kbEsc)) {
             // Restore old values, then close the window.
             if (terminal != null) {
-                synchronized (terminal) {
-                    terminal.setFont(oldFont);
-                    terminal.setFontSize(oldFontSize);
-                    terminal.setTextAdjustX(oldTextAdjustX);
-                    terminal.setTextAdjustY(oldTextAdjustY);
-                    terminal.setTextAdjustHeight(oldTextAdjustHeight);
-                    terminal.setTextAdjustWidth(oldTextAdjustWidth);
-                    terminal.setTripleBuffer(oldTripleBuffer);
-                    terminal.setCursorStyle(oldCursorStyle);
-                    terminal.setMouseStyle(oldMouseStyle);
-                }
+                terminal.setFont(oldFont);
+                terminal.setFontSize(oldFontSize);
+                terminal.setTextAdjustX(oldTextAdjustX);
+                terminal.setTextAdjustY(oldTextAdjustY);
+                terminal.setTextAdjustHeight(oldTextAdjustHeight);
+                terminal.setTextAdjustWidth(oldTextAdjustWidth);
+                terminal.setTripleBuffer(oldTripleBuffer);
+                terminal.setCursorStyle(oldCursorStyle);
+                terminal.setMouseStyle(oldMouseStyle);
             }
             if (ecmaTerminal != null) {
                 ecmaTerminal.setHasSixel(oldSixel);
