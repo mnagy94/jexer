@@ -1419,7 +1419,7 @@ public class TTerminalWidget extends TScrollableWidget
             if (emulator.isReading()) {
                 currentDisplay = emulator.getVisibleDisplay(getHeight(),
                     -getVerticalValue());
-                assert (display.size() == getHeight());
+                assert (currentDisplay.size() == getHeight());
             }
             width = emulator.getWidth();
         }
