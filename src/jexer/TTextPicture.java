@@ -278,13 +278,32 @@ public class TTextPicture extends TScrollableWidget
     // ------------------------------------------------------------------------
 
     /**
-     * Called by emulator when fresh data has come in.
+     * Called by emulator when fresh data has come in (request poll).
      *
      * @param cursorOnly if true, the screen has not changed but the cursor
      * may be on a different location.
      */
     public void displayChanged(final boolean cursorOnly) {
         // Do nothing
+    }
+
+    /**
+     * Called by emulator when fresh data has come in (push).
+     *
+     * @param display the updated display
+     */
+    public void updateDisplay(final List<DisplayLine> display) {
+        // Do nothing
+    }
+
+    /**
+     * Function to call to obtain the number of rows from the bottom to
+     * scroll back when sending updates via updateDisplay().
+     *
+     * @return the number of rows from the bottom to scroll back
+     */
+    public int getScrollBottom() {
+        return -getVerticalValue();
     }
 
     /**

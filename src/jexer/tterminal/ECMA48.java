@@ -267,6 +267,12 @@ public class ECMA48 implements Runnable {
     private boolean screenIsDirty = true;
 
     /**
+     * When true, synchronized update has already pushed a screen to the
+     * display, so run() should not do it again.
+     */
+    private boolean doNotUpdateDisplay = false;
+
+    /**
      * When true, the reader thread is expected to exit.
      */
     private volatile boolean stopReaderThread = false;
@@ -860,15 +866,17 @@ public class ECMA48 implements Runnable {
                         }
                     }
                     // Permit my enclosing UI to know that I updated.
-                    if (displayListener != null) {
+                    if ((displayListener != null) && !doNotUpdateDisplay) {
                         if (screenIsDirty) {
-                            displayListener.displayChanged(false);
+                            displayListener.updateDisplay(getVisibleDisplay(
+                                height, displayListener.getScrollBottom()));
                             screenIsDirty = false;
                         } else {
                             displayListener.displayChanged(true);
                             screenIsDirty = false;
                         }
                     }
+                    doNotUpdateDisplay = false;
                 }
                 // System.err.println("end while loop"); System.err.flush();
             } catch (IOException e) {
@@ -2288,7 +2296,8 @@ public class ECMA48 implements Runnable {
                 printCharacter(keypress.getChar());
             }
             if (displayListener != null) {
-                displayListener.displayChanged(false);
+                displayListener.updateDisplay(getVisibleDisplay(
+                    height, displayListener.getScrollBottom()));
                 screenIsDirty = false;
             }
         }
@@ -3804,7 +3813,8 @@ public class ECMA48 implements Runnable {
                             withinSynchronizedUpdate = false;
                             // Permit my enclosing UI to know that I updated.
                             if (displayListener != null) {
-                                displayListener.displayChanged(false);
+                                displayListener.updateDisplay(lastVisibleDisplay);
+                                doNotUpdateDisplay = true;
                             }
                         }
                     }

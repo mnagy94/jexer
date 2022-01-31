@@ -28,6 +28,8 @@
  */
 package jexer.tterminal;
 
+import java.util.List;
+
 /**
  * DisplayListener is used to callback into external UI when data has come in
  * from the remote side.
@@ -35,12 +37,27 @@ package jexer.tterminal;
 public interface DisplayListener {
 
     /**
-     * Function to call when the display needs to be updated.
+     * Function to call when the display needs to be updated (request poll).
      *
      * @param cursorOnly if true, the screen has not changed but the cursor
      * may be on a different location.
      */
     public void displayChanged(final boolean cursorOnly);
+
+    /**
+     * Function to call when the display has updated (push).
+     *
+     * @param display the updated display
+     */
+    public void updateDisplay(final List<DisplayLine> display);
+
+    /**
+     * Function to call to obtain the number of rows from the bottom to
+     * scroll back when sending updates via updateDisplay().
+     *
+     * @return the number of rows from the bottom to scroll back
+     */
+    public int getScrollBottom();
 
     /**
      * Function to call to obtain the display width.
