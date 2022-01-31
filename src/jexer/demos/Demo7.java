@@ -54,6 +54,7 @@ public class Demo7 {
      * Main entry point.
      *
      * @param args Command line arguments
+     * @throws Exception on error
      */
     public static void main(final String [] args) throws Exception {
         // This demo will build everything "from the outside".

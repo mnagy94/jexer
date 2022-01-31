@@ -36,11 +36,15 @@ public interface Pointer {
 
     /**
      * Get the hotspot X location relative to the X location of the icon.
+     *
+     * @return the X location
      */
     public int getHotspotX();
 
     /**
      * Get the hotspot Y location relative to the Y location of the icon.
+     *
+     * @return the Y location
      */
     public int getHotspotY();
 

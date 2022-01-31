@@ -92,6 +92,7 @@ public class ImageUtils {
     /**
      * Check if any pixels in an image have not-0% alpha value.
      *
+     * @param image the image to check
      * @return true if every pixel is fully transparent
      */
     public static boolean isFullyTransparent(final BufferedImage image) {
@@ -119,6 +120,7 @@ public class ImageUtils {
     /**
      * Check if any pixels in an image have not-100% alpha value.
      *
+     * @param image the image to check
      * @return true if every pixel is fully transparent
      */
     public static boolean isFullyOpaque(final BufferedImage image) {
@@ -152,6 +154,7 @@ public class ImageUtils {
      * @param height the height in pixels for the destination image
      * @param scale the scaling type
      * @param backColor the background color to use for Scale.SCALE
+     * @return the scaled image
      */
     public static BufferedImage scaleImage(final BufferedImage image,
         final int width, final int height,

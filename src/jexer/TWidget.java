@@ -1362,8 +1362,6 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @param mouseStyle the pointer style string, one of: "default", "none",
      * "hand", "text", "move", or "crosshair"
-     *
-     * @see #setCustomMousePointer(final MousePointer pointer)
      */
     public final void setMouseStyle(final String mouseStyle) {
         String styleLower = mouseStyle.toLowerCase();
@@ -2437,6 +2435,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param y row relative to parent
      * @param width width of group
      * @param label label to display on the group box
+     * @return the new radio button group
      */
     public final TRadioGroup addRadioGroup(final int x, final int y,
         final int width, final String label) {
@@ -2944,6 +2943,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * item with arrow/page keys
      * @param singleClickAction action to perform when the user clicks on an
      * item
+     * @return the new list
      */
     public TList addList(final List<String> strings, final int x,
         final int y, final int width, final int height,
@@ -2964,6 +2964,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param image the image to display
      * @param left left column of the image.  0 is the left-most column.
      * @param top top row of the image.  0 is the top-most row.
+     * @return the new image
      */
     public final TImage addImage(final int x, final int y,
         final int width, final int height, final BufferedImage image,
@@ -2983,6 +2984,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param left left column of the image.  0 is the left-most column.
      * @param top top row of the image.  0 is the top-most row.
      * @param clickAction function to call when mouse is pressed
+     * @return the new image
      */
     public final TImage addImage(final int x, final int y,
         final int width, final int height, final BufferedImage image,
@@ -3002,6 +3004,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param animation the animation to display
      * @param left left column of the image.  0 is the left-most column.
      * @param top top row of the image.  0 is the top-most row.
+     * @return the new image
      */
     public final TImage addImage(final int x, final int y,
         final int width, final int height, final Animation animation,
@@ -3021,6 +3024,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param left left column of the image.  0 is the left-most column.
      * @param top top row of the image.  0 is the top-most row.
      * @param clickAction function to call when mouse is pressed
+     * @return the new image
      */
     public final TImage addImage(final int x, final int y,
         final int width, final int height, final Animation animation,
@@ -3038,6 +3042,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param y row relative to parent
      * @param width width of widget
      * @param height height of widget
+     * @return the new table
      */
     public TTableWidget addTable(final int x, final int y, final int width,
         final int height) {
@@ -3055,6 +3060,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      * @param height height of widget
      * @param gridColumns number of columns in grid
      * @param gridRows number of rows in grid
+     * @return the new table
      */
     public TTableWidget addTable(final int x, final int y, final int width,
         final int height, final int gridColumns, final int gridRows) {

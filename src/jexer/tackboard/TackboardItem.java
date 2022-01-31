@@ -181,7 +181,7 @@ public class TackboardItem implements Comparable<TackboardItem> {
     /**
      * Set the tackboard this item is on.
      *
-     * @param tackboard
+     * @param tackboard the tackboard
      */
     public final void setTackboard(final Tackboard tackboard) {
         this.tackboard = tackboard;
