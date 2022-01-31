@@ -352,7 +352,7 @@ public class TText extends TScrollableWidget {
     }
 
     /**
-     * Convenience method used by TWindowLoggerOutput.
+     * Add one line.
      *
      * @param line new line to add
      */
@@ -443,6 +443,16 @@ public class TText extends TScrollableWidget {
      */
     public void unJustify() {
         justification = Justification.NONE;
+        reflowData();
+    }
+
+    /**
+     * Set the number of lines between each paragraph.
+     *
+     * @param lineSpacing the number of blank lines between paragraphs
+     */
+    public void setLineSpacing(final int lineSpacing) {
+        this.lineSpacing = lineSpacing;
         reflowData();
     }
 
