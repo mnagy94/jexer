@@ -2128,10 +2128,11 @@ public class TApplication implements Runnable {
         }
         this.desktop = desktop;
 
+        desktopTop = (hideMenuBar ? 0 : 1);
+        desktopBottom = getScreen().getHeight() - 1 + (hideStatusBar ?
+            1 : 0);
+
         if (desktop != null) {
-            desktopTop = (hideMenuBar ? 0 : 1);
-            desktopBottom = getScreen().getHeight() - 1 + (hideStatusBar ?
-                1 : 0);
             desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
                 (desktopBottom - desktopTop));
             TResizeEvent resize = new TResizeEvent(null,
@@ -2204,8 +2205,8 @@ public class TApplication implements Runnable {
      */
     public void setHideMenuBar(final boolean hideMenuBar) {
         this.hideMenuBar = hideMenuBar;
+        desktopTop = (hideMenuBar ? 0 : 1);
         if (desktop != null) {
-            desktopTop = (hideMenuBar ? 0 : 1);
             desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
                 (desktopBottom - desktopTop));
             TResizeEvent resize = new TResizeEvent(null,
@@ -2231,9 +2232,9 @@ public class TApplication implements Runnable {
      */
     public void setHideStatusBar(final boolean hideStatusBar) {
         this.hideStatusBar = hideStatusBar;
+        desktopBottom = getScreen().getHeight() - 1 + (hideStatusBar ?
+            1 : 0);
         if (desktop != null) {
-            desktopBottom = getScreen().getHeight() - 1 + (hideStatusBar ?
-                1 : 0);
             desktop.setDimensions(0, desktopTop, getScreen().getWidth(),
                 (desktopBottom - desktopTop));
             TResizeEvent resize = new TResizeEvent(null,
