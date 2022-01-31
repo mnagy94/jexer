@@ -337,6 +337,21 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean hasSynchronizedOutput = false;
 
     /**
+     * The time we last flushed output in flushPhysical().
+     */
+    private long lastFlushTime;
+
+    /**
+     * The bytes being written in this second.
+     */
+    private int bytesPerSecond;
+
+    /**
+     * The bytes per second for the last second.
+     */
+    private int lastBytesPerSecond;
+
+    /**
      * The terminal's input.  If an InputStream is not specified in the
      * constructor, then this InputStreamReader will be bound to System.in
      * with UTF-8 encoding.
@@ -882,6 +897,15 @@ public class ECMA48Terminal extends LogicalScreen
                 }
             }
             output.flush();
+
+            long now = System.currentTimeMillis();
+            if ((int) (now / 1000) == (int) (lastFlushTime / 1000)) {
+                bytesPerSecond += sb.length();
+            } else {
+                lastBytesPerSecond = sb.length();
+                bytesPerSecond = 0;
+            }
+            lastFlushTime = now;
         }
     }
 
@@ -1295,6 +1319,15 @@ public class ECMA48Terminal extends LogicalScreen
     // ------------------------------------------------------------------------
     // ECMA48Terminal ---------------------------------------------------------
     // ------------------------------------------------------------------------
+
+    /**
+     * Get the bytes per second from the last second.
+     *
+     * @return the bytes per second
+     */
+    public int getBytesPerSecond() {
+        return lastBytesPerSecond;
+    }
 
     /**
      * Get the width of a character cell in pixels.

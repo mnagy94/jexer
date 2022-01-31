@@ -45,6 +45,7 @@ import jexer.TEditorWindow;
 import jexer.TWidget;
 import jexer.TWindow;
 import jexer.bits.BorderStyle;
+import jexer.backend.ECMA48Terminal;
 import jexer.event.TMenuEvent;
 import jexer.menu.TMenu;
 import jexer.menu.TMenuItem;
@@ -302,7 +303,27 @@ public class DemoApplication extends TApplication {
      */
     @Override
     protected void onPreDraw() {
-        menuTrayText = String.format("FPS %d", getFramesPerSecond());
+        if (getScreen() instanceof ECMA48Terminal) {
+            ECMA48Terminal terminal = (ECMA48Terminal) getScreen();
+            int bytes = terminal.getBytesPerSecond();
+            String bps = "";
+            if (bytes > 1024 * 1024 * 1024) {
+                bps = String.format("%4.2f GB/s",
+                    ((double) bytes / (1024 * 1024 * 1024)));
+            } else if (bytes > 1024 * 1024) {
+                bps = String.format("%4.2f MB/s",
+                    ((double) bytes / (1024 * 1024)));
+            } else if (bytes > 1024) {
+                bps = String.format("%4.2f KB/s",
+                    ((double) bytes / 1024));
+            } else {
+                bps = String.format("%d bytes/s", bytes);
+            }
+            menuTrayText = String.format("%s FPS %d", bps,
+                getFramesPerSecond());
+        } else {
+            menuTrayText = String.format("FPS %d", getFramesPerSecond());
+        }
     }
 
     // ------------------------------------------------------------------------
