@@ -59,6 +59,7 @@ import javax.imageio.ImageIO;
 import jexer.bits.Cell;
 import jexer.bits.CellAttributes;
 import jexer.bits.Color;
+import jexer.bits.ImageUtils;
 import jexer.bits.StringUtils;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
@@ -3629,8 +3630,8 @@ public class ECMA48Terminal extends LogicalScreen
 
         // The final image will be 1000 x 1000 or less.
         BufferedImage cellsImage = cellsToImage(cells);
-        BufferedImage fullImage = new BufferedImage(maxPixelX,
-            maxPixelY, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage fullImage = ImageUtils.createImage(cellsImage,
+            maxPixelX, maxPixelY);
         Graphics gr = fullImage.getGraphics();
         gr.drawImage(cellsImage, pixelX, pixelY, null);
         gr.dispose();
@@ -3673,8 +3674,8 @@ public class ECMA48Terminal extends LogicalScreen
             totalWidth += cells.get(i).getImage().getWidth();
         }
 
-        BufferedImage image = new BufferedImage(fullWidth,
-            fullHeight, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = ImageUtils.createImage(cells.get(0).getImage(),
+            fullWidth, fullHeight);
 
         int [] rgbArray;
         for (int i = 0; i < cells.size() - 1; i++) {
@@ -3780,8 +3781,8 @@ public class ECMA48Terminal extends LogicalScreen
         ) {
             // Rescale the image to fit the text cells it is going into.
             BufferedImage newImage;
-            newImage = new BufferedImage(cells.size() * getTextWidth(),
-                getTextHeight(), BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image,
+                cells.size() * getTextWidth(), getTextHeight());
 
             Graphics gr = newImage.getGraphics();
             if (gr instanceof Graphics2D) {

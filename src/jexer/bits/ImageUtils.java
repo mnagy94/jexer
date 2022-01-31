@@ -30,6 +30,10 @@ package jexer.bits;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+// import java.awt.image.DataBuffer;
+import java.awt.image.IndexColorModel;
+// import java.awt.image.Raster;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -507,6 +511,33 @@ public class ImageUtils {
         rgbBlue  = Math.min(Math.max( rgbBlue, 0), 255);
 
         return (rgbRed << 16) | (rgbGreen << 8) | rgbBlue;
+    }
+
+    /**
+     * Create a BufferedImage using the same color model as another image.
+     *
+     * @param image the original image
+     * @param width the width of the new image
+     * @param height the height of the new image
+     * @return the new image
+     */
+    public static BufferedImage createImage(final BufferedImage image,
+        final int width, final int height) {
+
+        if (image.getType() == BufferedImage.TYPE_INT_ARGB) {
+            return new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+        }
+
+        ColorModel colorModel = image.getColorModel();
+        if (colorModel instanceof IndexColorModel) {
+            IndexColorModel indexModel = (IndexColorModel) colorModel;
+            return new BufferedImage(width, height, image.getType(),
+                indexModel);
+        }
+
+        // Fallback: ARGB
+        return new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
     }
 
 }

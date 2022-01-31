@@ -29,6 +29,7 @@
 package jexer.bits;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 import jexer.backend.Backend;
 import jexer.backend.GlyphMaker;
 import jexer.backend.SwingTerminal;
@@ -227,8 +228,8 @@ public class Cell extends CellAttributes {
 
         int textWidth = image.getWidth();
         int textHeight = image.getHeight();
-        BufferedImage newImage = new BufferedImage(textWidth,
-            textHeight, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage newImage = ImageUtils.createImage(image, textWidth,
+            textHeight);
         java.awt.Graphics gr = newImage.getGraphics();
         if (invertedImage != null) {
             assert (image != null);
@@ -315,8 +316,12 @@ public class Cell extends CellAttributes {
 
         int textWidth = image.getWidth();
         int textHeight = image.getHeight();
+        /*
         BufferedImage newImage = new BufferedImage(textWidth,
             textHeight, BufferedImage.TYPE_INT_ARGB);
+         */
+        BufferedImage newImage = ImageUtils.createImage(image,
+            textWidth, textHeight);
         java.awt.Graphics gr = newImage.getGraphics();
         if (backend != null) {
             gr.setColor(backend.attrToBackgroundColor(this));
@@ -356,8 +361,12 @@ public class Cell extends CellAttributes {
 
         int textWidth = image.getWidth();
         int textHeight = image.getHeight();
+        /*
         BufferedImage newImage = new BufferedImage(textWidth,
             textHeight, BufferedImage.TYPE_INT_ARGB);
+         */
+        BufferedImage newImage = ImageUtils.createImage(image,
+            textWidth, textHeight);
         java.awt.Graphics gr = newImage.getGraphics();
         gr.setColor(background);
 
@@ -688,6 +697,15 @@ public class Cell extends CellAttributes {
                 return false;
             }
             if ((invertedImage != null) && (that.invertedImage == null)) {
+                return false;
+            }
+            if (image.getType() != that.image.getType()) {
+                return false;
+            }
+            if ((image.getColorModel() instanceof IndexColorModel)
+                && (that.image.getColorModel() instanceof IndexColorModel)
+                && image.getColorModel() != that.image.getColorModel()
+            ) {
                 return false;
             }
             // Either both objects have their image inverted, or neither do.

@@ -100,6 +100,11 @@ public class TImage extends TWidget implements EditMenuUser {
     private BufferedImage image;
 
     /**
+     * If false, the image is fully opaque.
+     */
+    private boolean maybeTransparent = true;
+
+    /**
      * The original image from construction time.
      */
     private BufferedImage originalImage;
@@ -463,6 +468,7 @@ public class TImage extends TWidget implements EditMenuUser {
      * @param always if true, always resize the cells
      */
     private void sizeToImage(final boolean always) {
+
         scaleBackColor = getApplication().getBackend().attrToBackgroundColor(getWindow().getBackground());
 
         int textWidth = getScreen().getTextWidth();
@@ -513,20 +519,22 @@ public class TImage extends TWidget implements EditMenuUser {
                     cell.setTo(getWindow().getBackground());
 
                     // Render over a full-cell-size image.
-                    BufferedImage newImage = new BufferedImage(textWidth,
-                        textHeight, BufferedImage.TYPE_INT_ARGB);
+                    BufferedImage newImage = ImageUtils.createImage(image,
+                        textWidth, textHeight);
                     Graphics gr = newImage.getGraphics();
                     BufferedImage subImage = image.getSubimage(x * textWidth,
                         y * textHeight, width, height);
                     gr.drawImage(subImage, 0, 0, null, null);
                     gr.dispose();
 
-                    if (!ImageUtils.isFullyTransparent(newImage)) {
-                        cell.setImage(newImage);
+                    cell.setImage(newImage);
+                    if (!maybeTransparent) {
+                        cell.setOpaqueImage();
+                    } else if (!ImageUtils.isFullyTransparent(newImage)) {
                         cell.flattenImage(false, getApplication().getBackend());
-                        imageId++;
-                        cell.setImageId(imageId & 0x7FFFFFFF);
                     }
+                    imageId++;
+                    cell.setImageId(imageId & 0x7FFFFFFF);
                     cells[x][y] = cell;
                 }
             }
@@ -649,7 +657,20 @@ public class TImage extends TWidget implements EditMenuUser {
      * @param image the new image
      */
     public void setImage(final BufferedImage image) {
+        setImage(image, true);
+    }
+
+    /**
+     * Set the raw image, and reprocess to make the visible image.
+     *
+     * @param image the new image
+     * @param maybeTransparent if false, the image is fully opaque
+     */
+    public void setImage(final BufferedImage image,
+        final boolean maybeTransparent) {
+
         this.originalImage = image;
+        this.maybeTransparent = maybeTransparent;
         this.image = null;
         sizeToImage(true);
         if (animation != null) {
@@ -807,14 +828,13 @@ public class TImage extends TWidget implements EditMenuUser {
         case NONE:
             destWidth = (int) (image.getWidth() * factor);
             destHeight = (int) (image.getHeight() * factor);
-            newImage = new BufferedImage(Math.max(1, destWidth),
-                Math.max(1, destHeight), BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image,
+                Math.max(1, destWidth), Math.max(1, destHeight));
             break;
         case STRETCH:
             destWidth = Math.max(1, width) * textWidth;
             destHeight = Math.max(1, height) * textHeight;
-            newImage = new BufferedImage(destWidth, destHeight,
-                BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image, destWidth, destHeight);
             break;
         case SCALE:
             double a = (double) image.getWidth() / image.getHeight();
@@ -851,8 +871,9 @@ public class TImage extends TWidget implements EditMenuUser {
                     "x" + destHeight + ", X offset " + x);
                  */
             }
-            newImage = new BufferedImage(Math.max(1, width) * textWidth,
-                Math.max(1, height) * textHeight, BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image,
+                Math.max(1, width) * textWidth,
+                Math.max(1, height) * textHeight);
             break;
         }
 
@@ -896,8 +917,8 @@ public class TImage extends TWidget implements EditMenuUser {
 
         if (clockwise % 4 == 1) {
             // 90 degrees clockwise
-            newImage = new BufferedImage(image.getHeight(), image.getWidth(),
-                BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image,
+                image.getHeight(), image.getWidth());
             for (int x = 0; x < image.getWidth(); x++) {
                 for (int y = 0; y < image.getHeight(); y++) {
                     newImage.setRGB(y, x,
@@ -906,8 +927,8 @@ public class TImage extends TWidget implements EditMenuUser {
             }
         } else if (clockwise % 4 == 2) {
             // 180 degrees clockwise
-            newImage = new BufferedImage(image.getWidth(), image.getHeight(),
-                BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image,
+                image.getWidth(), image.getHeight());
             for (int x = 0; x < image.getWidth(); x++) {
                 for (int y = 0; y < image.getHeight(); y++) {
                     newImage.setRGB(x, y,
@@ -917,8 +938,8 @@ public class TImage extends TWidget implements EditMenuUser {
             }
         } else if (clockwise % 4 == 3) {
             // 270 degrees clockwise
-            newImage = new BufferedImage(image.getHeight(), image.getWidth(),
-                BufferedImage.TYPE_INT_ARGB);
+            newImage = ImageUtils.createImage(image,
+                image.getHeight(), image.getWidth());
             for (int x = 0; x < image.getWidth(); x++) {
                 for (int y = 0; y < image.getHeight(); y++) {
                     newImage.setRGB(y, x,

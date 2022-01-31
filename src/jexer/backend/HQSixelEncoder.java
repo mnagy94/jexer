@@ -1702,17 +1702,23 @@ public class HQSixelEncoder implements SixelEncoder {
          * Emit the sixel palette.
          *
          * @param sb the StringBuilder to append to
-         * @return the string to emit to an ANSI / ECMA-style terminal
          */
-        public String emitPalette(final StringBuilder sb) {
+        public void emitPalette(final StringBuilder sb) {
             for (int i = 0; i < sixelColors.size(); i++) {
                 int sixelColor = sixelColors.get(i);
-                sb.append(String.format("#%d;2;%d;%d;%d", i,
-                        ((sixelColor >>> 16) & 0xFF),
-                        ((sixelColor >>>  8) & 0xFF),
-                        ( sixelColor         & 0xFF)));
+                int red   = ((sixelColor >>> 16) & 0xFF);
+                int green = ((sixelColor >>>  8) & 0xFF);
+                int blue  = ( sixelColor         & 0xFF);
+
+                sb.append("#");
+                sb.append(Integer.toString(i));
+                sb.append(";2;");
+                sb.append(Integer.toString(red));
+                sb.append(";");
+                sb.append(Integer.toString(green));
+                sb.append(";");
+                sb.append(Integer.toString(blue));
             }
-            return sb.toString();
         }
     }
 
