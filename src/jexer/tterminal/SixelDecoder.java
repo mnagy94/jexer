@@ -349,7 +349,15 @@ public class SixelDecoder {
         }
 
         int rgb = color.getRGB();
-        int rep = (repeatCount == -1 ? 1 : repeatCount);
+        // As per jerch who has read STD 070 much more than I have, the
+        // repeat counter may not exceed 2^15 - 1; and a value of 0 means 1
+        // pixel wide.  CVE-2022-24130 shows how to exceed memory / crash if
+        // this value is not checked.
+        int rep = Math.min(Math.max(1, (repeatCount == -1 ? 1 : repeatCount)),
+            32767);
+        // Also clamp to the maximum allowed image width, like foot terminal
+        // does.
+        rep = Math.min(rep, MAX_WIDTH);
 
         if (DEBUG) {
             System.err.println("addSixel() rep " + rep + " char " +
