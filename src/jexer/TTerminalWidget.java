@@ -1492,7 +1492,10 @@ public class TTerminalWidget extends TScrollableWidget
         synchronized (dirtyQueue) {
             dirtyQueue.add(display);
         }
-        getApplication().doRepaint();
+        TApplication app = getApplication();
+        if (app != null) {
+            app.doRepaint();
+        }
     }
 
     /**
@@ -1502,8 +1505,11 @@ public class TTerminalWidget extends TScrollableWidget
      * may be on a different location.
      */
     public void displayChanged(final boolean cursorOnly) {
+        TApplication app = getApplication();
         if (cursorOnly) {
-            getApplication().doRepaint();
+            if (app != null) {
+                app.doRepaint();
+            }
             return;
         }
 
@@ -1516,7 +1522,9 @@ public class TTerminalWidget extends TScrollableWidget
         if (readDisplay) {
             readEmulatorDisplay();
         }
-        getApplication().doRepaint();
+        if (app != null) {
+            app.doRepaint();
+        }
     }
 
     /**
