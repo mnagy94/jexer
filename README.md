@@ -6,19 +6,21 @@ reminiscent of Borland's [Turbo
 Vision](http://en.wikipedia.org/wiki/Turbo_Vision) system.  It looks
 like this:
 
-![Terminal, Image, Table](/screenshots/new_demo1.png?raw=true "Terminal, Image, Table")
+![WezTerm, translucent images](/screenshots/wezterm_translucent_images.png?raw=true "WezTerm, translucent images")
 
 ...or this:
 
-![WezTerm, translucent images](/screenshots/wezterm_translucent_images.png?raw=true "WezTerm, translucent images")
+![Terminal, Image, Table](/screenshots/new_demo1.png?raw=true "Terminal, Image, Table")
 
-...or anything in between.  Translucent windows -- including images --
-are a work in progress and will be included in the next release.
+...or anything in between.  Translucent windows -- including layered
+images -- are supported and generally look like as one would expect in
+a modern graphical environment...but it's mostly text.  Translucent
+windows were inspired in part by
+[notcurses](https://github.com/dankamongmen/notcurses).
 
 Jexer works on both Xterm-like terminals and Swing, and supports
 images in both Xterm and Swing.  On Swing, images are true color; on
-Xterm, images are rendered as sixel (256-1024 colors typically),
-iTerm2, or Jexer images.
+Xterm, images are rendered as sixel, iTerm2, or Jexer images.
 
 Support for pixel-based operations was introduced in version 1.5.0.
 If the terminal supports mouse mode 1016 (SGR-Pixel), one can now get
@@ -27,8 +29,8 @@ stock xterm, with a custom mouse icon, and SGR-Pixel mode active:
 
 ![Xterm SGR-Pixel Mouse](/screenshots/xterm_pixel_mouse.gif?raw=true "Xterm SGR-Pixel Mouse")
 
-A new sixel encoder is in the works for Xterm, which should look a lot
-better.  This encoder is inspired in part by
+A new sixel encoder was introduced in version 1.6.0, and looks and
+performs much better.  This encoder was inspired in part by
 [chafa's](https://hpjansson.org/chafa/) high-performance principal
 component analysis based sixel encoder.
 
@@ -40,16 +42,13 @@ of its features including images and mouse, and more terminals:
 ![Yo Dawg...](/screenshots/jexer_sixel_in_sixel.png?raw=true "Yo Dawg, I heard you like text windowing systems, so I ran a text windowing system inside your text windowing system so you can have a terminal in your terminal.")
 
 
+
 How...?  What...?
 -----------------
 
 Wondering how I did it?  [Here you
 go.](https://jexer.sourceforge.io/evolution.html)
 
-(And if you like this kind of stuff, then you need to go check out
-[notcurses](https://github.com/dankamongmen/notcurses) poste haste.
-It's _very_ fast, it's in C, under active development, and has great
-ties into the wider open-source ecosystem.)
 
 
 License
@@ -69,7 +68,7 @@ Jexer is available on Maven Central:
 <dependency>
   <groupId>com.gitlab.klamonte</groupId>
   <artifactId>jexer</artifactId>
-  <version>1.5.0</version>
+  <version>1.6.0</version>
 </dependency>
 ```
 
@@ -93,7 +92,7 @@ Documentation
 
 * [Porting Guide](https://gitlab.com/klamonte/jexer/wikis/porting) -
   If you don't like writing Java, here is your map to where the key
-  features are so you can implement them in a different
+  features are so that you can implement them in a different
   system/language.
 
 
@@ -143,7 +142,8 @@ controls.  The demos can be run as follows:
   * 'java -cp jexer.jar jexer.demos.Demo3' .  This will use
     System.in/out with Xterm-like sequences.  One can see in the code
     how to pass a different InputReader and OutputReader to
-    TApplication, permitting a different encoding than UTF-8.
+    TApplication, permitting a different encoding than UTF-8; in this
+    case, code page 437.
 
   * 'java -cp jexer.jar jexer.demos.Demo4' .  This demonstrates hidden
     windows and a custom TDesktop.
@@ -158,6 +158,10 @@ controls.  The demos can be run as follows:
   * 'java -cp jexer.jar jexer.demos.Demo7' .  This demonstrates the
     BoxLayoutManager, achieving a similar result as the
     javax.swing.BoxLayout apidocs example.
+
+  * 'java -cp jexer.jar jexer.demos.Demo8 PORT' (where PORT is a
+    number to run the TCP daemon on).  This will use the Xterm backend
+    on a telnet server to share one screen to many terminals.
 
 
 
@@ -180,6 +184,7 @@ the terminals last tested against Jexer:
 | mintty         | Windows            | yes         | yes          | yes    |
 | mlterm         | X11                | yes         | yes          | yes    |
 | RLogin         | Windows            | yes         | yes          | yes    |
+| xterm.js(8)    | Web                | yes         | yes          | yes    |
 | alacritty(3b)  | X11                | yes         | yes          | yes    |
 | gnome-terminal | X11                | yes         | yes          | no     |
 | iTerm2         | Mac                | yes         | yes          | no(5)  |
@@ -218,6 +223,7 @@ the terminals last tested against Jexer:
 
 7 - Both sixel and iTerm2 images.
 
+8 - Using jerch's xterm-addon-image.
 
 
 See Also
@@ -228,6 +234,13 @@ See Also
   with draggable resizing, cascading terminal windows, and a plugin
   system for adding functionality.  Add LCXterm and one can have a
   mouse-supporting X11-like text-based "GUI" on the raw Linux console.
+
+* [XtermDOOM](https://gitlab.com/klamonte/xtermdoom) is an effort to
+  make [MochaDoom](https://github.com/jendave/mochadoom) run smoothly
+  under Xterm.  The game is not yet playable, but it can show off
+  Jexer's multiplexing and multihead image capabilities.  For
+  ramblings about the game, terminal resources, etc. see
+  [/r/xtermdoom](https://reddit.com/r/xtermdoom).
 
 * [LCXterm](https://lcxterm.sourceforge.io) is a curses-based terminal
   emulator that allows one to use Jexer with full support on the raw
@@ -248,3 +261,17 @@ Acknowledgements
 
 Jexer makes use of the Terminus TrueType font [made available
 here](http://files.ax86.net/terminus-ttf/) .
+
+Jexer incorporates some ideas done first, or better implemented,
+elsewhere.  If you like what you see here, please take a look at these
+projects too:
+
+* [notcurses](https://github.com/dankamongmen/notcurses)
+
+* [chafa](https://hpjansson.org/chafa/)
+
+* [wezterm](https://wezfurlong.org/wezterm/)
+
+* [vtm](https://github.com/netxs-group/vtm)
+
+💖
