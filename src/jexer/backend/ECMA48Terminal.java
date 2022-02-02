@@ -3230,6 +3230,12 @@ public class ECMA48Terminal extends LogicalScreen
                 resetParser();
                 return;
             }
+            if (ch == 0x07) {
+                // This is BEL, end of the line.
+                oscResponse(oscResponse.toString());
+                resetParser();
+                return;
+            }
 
             // Continue collecting until we see ST.
             oscResponse.append(ch);
