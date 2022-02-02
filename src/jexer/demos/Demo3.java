@@ -45,8 +45,8 @@ public class Demo3 {
     public static void main(final String [] args) {
         try {
             DemoApplication app = new DemoApplication(System.in,
-                new InputStreamReader(System.in, "UTF-8"),
-                new PrintWriter(new OutputStreamWriter(System.out, "UTF-8")),
+                new InputStreamReader(System.in, "IBM437"),
+                new PrintWriter(new OutputStreamWriter(System.out, "IBM437")),
                 true);
             (new Thread(app)).start();
         } catch (Exception e) {
