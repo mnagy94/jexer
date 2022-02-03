@@ -5,7 +5,7 @@
   <packaging>jar</packaging>
   <name>Jexer</name>
   <description>Java Text User Interface library that resembles Turbo Vision</description>
-  <version>1.6.0</version>
+  <version>1.6.1-SNAPSHOT</version>
   <url>https://gitlab.com/klamonte/jexer</url>
 
   <licenses>
@@ -25,7 +25,7 @@
     <connection>scm:git:https://gitlab.com/klamonte/jexer.git</connection>
     <developerConnection>scm:git:https://gitlab.com/klamonte/jexer.git</developerConnection>
     <url>https://gitlab.com/klamonte/jexer</url>
-    <tag>jexer-1.6.0</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
