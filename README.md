@@ -188,7 +188,7 @@ the terminals last tested against Jexer:
 | alacritty(3b)  | X11                | yes         | yes          | yes    |
 | gnome-terminal | X11                | yes         | yes          | no     |
 | iTerm2         | Mac                | yes         | yes          | no(5)  |
-| kitty(3)       | X11                | yes         | yes          | no     |
+| kitty(3)       | X11                | yes         | yes          | no(2)  |
 | lcxterm        | CLI, Linux console | yes         | yes          | no     |
 | rxvt-unicode   | X11                | yes         | yes          | no(2)  |
 | xfce4-terminal | X11                | yes         | yes          | no     |
