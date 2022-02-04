@@ -628,6 +628,11 @@ public class HQSixelEncoder implements SixelEncoder {
         private List<Integer> sixelColors = null;
 
         /**
+         * The colors actually used in the image.
+         */
+        private BitSet usedColors = null;
+
+        /**
          * Color palette for sixel output, sorted low to high by the first
          * principal component.
          */
@@ -757,6 +762,7 @@ public class HQSixelEncoder implements SixelEncoder {
                 numColors = Math.min(paletteSize, FAST_AND_DIRTY);
             }
             sixelColors = new ArrayList<Integer>(numColors);
+            usedColors = new BitSet(numColors);
             sixelRows = new SixelRow[(image.getHeight() / 6) + 1];
             for (int i = 0; i < sixelRows.length; i++) {
                 sixelRows[i] = new SixelRow();
@@ -1076,6 +1082,7 @@ public class HQSixelEncoder implements SixelEncoder {
             // don't _need_ an ordering, but it does make it nicer to look at
             // the generated output and understand what's going on.
             sixelColors = new ArrayList<Integer>(colorMap.size());
+            usedColors = new BitSet(colorMap.size());
             for (ColorIdx color: colorMap.values()) {
                 sixelColors.add(color.color);
             }
@@ -1588,6 +1595,7 @@ public class HQSixelEncoder implements SixelEncoder {
                     int newPixel = sixelColors.get(colorIdx);
                     rgbArray[imageX + (width * imageY)] = colorIdx;
                     sixelRow.colors.set(colorIdx);
+                    usedColors.set(colorIdx);
 
                     if (quantizationType == 0) {
                         // For direct map, every possible color is already in
@@ -1705,6 +1713,9 @@ public class HQSixelEncoder implements SixelEncoder {
          */
         public void emitPalette(final StringBuilder sb) {
             for (int i = 0; i < sixelColors.size(); i++) {
+                if (!usedColors.get(i)) {
+                    continue;
+                }
                 int sixelColor = sixelColors.get(i);
                 int red   = ((sixelColor >>> 16) & 0xFF);
                 int green = ((sixelColor >>>  8) & 0xFF);
