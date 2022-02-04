@@ -1749,7 +1749,8 @@ public class ECMA48Terminal extends LogicalScreen
                 // does not overwrite images.
                 if (kittyImages
                     && ((lCell.isImage() != pCell.isImage())
-                        || reallyCleared)
+                        || reallyCleared
+                        || (lCell.isImage() && !lCell.equals(pCell)))
                 ) {
                     // Alas, Kitty erases the entire image even if you ask
                     // for a single cell to be erased, and I've no idea if it
