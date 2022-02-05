@@ -512,6 +512,20 @@ public interface Screen {
     public Screen snapshot();
 
     /**
+     * Obtain a snapshot copy of a rectangular portion of the screen of the
+     * PHYSICAL screen - what was LAST emitted.
+     *
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @return a copy of the screen's data from this rectangle.  Any cells
+     * outside the actual screen dimensions will be blank.
+     */
+    public Screen snapshotPhysical(final int x, final int y, final int width,
+        final int height);
+
+    /**
      * Obtain a snapshot copy of a rectangular portion of the screen.
      *
      * @param x left column of rectangle.  0 is the left-most column.

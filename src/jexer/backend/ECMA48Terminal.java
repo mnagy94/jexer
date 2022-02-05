@@ -1931,10 +1931,9 @@ public class ECMA48Terminal extends LogicalScreen
         if (imageThreadCount > 1) {
             // Collect all the encoded images.
             while (imageResults.size() > 0) {
+                Future<String> image = imageResults.get(0);
                 try {
-                    Future<String> image = imageResults.get(0);
                     sb.append(image.get());
-                    imageResults.remove(0);
                 } catch (InterruptedException e) {
                     // SQUASH
                     // e.printStackTrace();
@@ -1942,6 +1941,7 @@ public class ECMA48Terminal extends LogicalScreen
                     // SQUASH
                     // e.printStackTrace();
                 }
+                imageResults.remove(0);
             }
             imageExecutor.shutdown();
         }

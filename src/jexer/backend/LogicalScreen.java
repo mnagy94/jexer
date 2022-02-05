@@ -1355,6 +1355,38 @@ public class LogicalScreen implements Screen {
     }
 
     /**
+     * Obtain a snapshot copy of a rectangular portion of the screen of the
+     * PHYSICAL screen - what was LAST emitted.
+     *
+     * @param x left column of rectangle.  0 is the left-most column.
+     * @param y top row of the rectangle.  0 is the top-most row.
+     * @param width number of columns to copy
+     * @param height number of rows to copy
+     * @return a copy of the screen's data from this rectangle.  Any cells
+     * outside the actual screen dimensions will be blank.
+     */
+    public Screen snapshotPhysical(final int x, final int y, final int width,
+        final int height) {
+
+        LogicalScreen other = null;
+        synchronized (this) {
+            other = new LogicalScreen(width, height);
+            for (int row = y; (row < y + height) && (row < this.height); row++) {
+                if (row < 0) {
+                    continue;
+                }
+                for (int col = x; (col < x + width) && (col < this.width); col++) {
+                    if (col < 0) {
+                        continue;
+                    }
+                    other.logical[col - x][row - y] = new Cell(physical[col][row]);
+                }
+            }
+        }
+        return other;
+    }
+
+    /**
      * Copy all of screen's data to this screen.
      *
      * @param other the other screen
@@ -1468,6 +1500,8 @@ public class LogicalScreen implements Screen {
             return;
         }
 
+        long now = System.currentTimeMillis();
+
         /*
          * We need to blend the background colors of other's cells over the
          * cells of this screen (foreground and background), honoring our
@@ -1479,6 +1513,8 @@ public class LogicalScreen implements Screen {
             BufferedImage thisForeground = new BufferedImage(width, height,
                 BufferedImage.TYPE_INT_ARGB);
             BufferedImage thisBackground = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+            BufferedImage overForeground = new BufferedImage(width, height,
                 BufferedImage.TYPE_INT_ARGB);
             BufferedImage overBackground = new BufferedImage(width, height,
                 BufferedImage.TYPE_INT_ARGB);
@@ -1515,6 +1551,16 @@ public class LogicalScreen implements Screen {
                     }
 
                     Cell over = otherScreen.getCharXY(col - x, row - y);
+                    int overFg = over.getForeColorRGB();
+                    if (over.isPulse()) {
+                        overFg = over.getForeColorPulseRGB(backend, now);
+                    } else if (overFg < 0) {
+                        if (backend != null) {
+                            overFg = backend.attrToForegroundColor(over).getRGB();
+                        } else {
+                            overFg = SwingTerminal.attrToForegroundColor(over).getRGB();
+                        }
+                    }
                     int overBg = over.getBackColorRGB();
                     if (overBg < 0) {
                         if (backend != null) {
@@ -1526,18 +1572,23 @@ public class LogicalScreen implements Screen {
                     thisFg |= OPAQUE;
                     thisBg |= OPAQUE;
                     overBg |= OPAQUE;
+                    overFg |= OPAQUE;
 
                     thisForeground.setRGB(col - x, row - y, thisFg);
                     thisBackground.setRGB(col - x, row - y, thisBg);
                     thisOldBackground.setRGB(col - x, row - y, thisBg);
+                    overForeground.setRGB(col - x, row - y, overFg);
                     overBackground.setRGB(col - x, row - y, overBg);
                 }
             }
 
-            // The three bitmaps are ready.  We have skipped over
-            // cells/pixels that cannot overlap.  Now blit overBackground
-            // over both thisForeground and thisBackground, and then assign
-            // cell colors and cell chars/images.
+            // The four bitmaps are ready.  We have skipped over cells/pixels
+            // that cannot overlap.  Now blit overBackground over both
+            // thisForeground and thisBackground, and then assign cell colors
+            // and cell chars/images.
+            //
+            // Also blit overForeground over thisBackground to handle the new
+            // layer's glyph opacity.
             float fAlpha = (float) (alpha / 255.0);
             Graphics2D g2d = thisForeground.createGraphics();
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
@@ -1549,6 +1600,15 @@ public class LogicalScreen implements Screen {
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
                     fAlpha));
             g2d.drawImage(overBackground, 0, 0, null);
+            g2d.dispose();
+
+            BufferedImage glyphForeground = new BufferedImage(width, height,
+                BufferedImage.TYPE_INT_ARGB);
+            g2d = glyphForeground.createGraphics();
+            g2d.drawImage(thisBackground, 0, 0, null);
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+                    fAlpha));
+            g2d.drawImage(overForeground, 0, 0, null);
             g2d.dispose();
 
             for (int row = y; (row < y + height) && (row < this.height); row++) {
@@ -1565,6 +1625,7 @@ public class LogicalScreen implements Screen {
                     int thisBg = thisBackground.getRGB(col - x, row - y);
                     int thisOldBg = thisOldBackground.getRGB(col - x, row - y);
                     int overBg = overBackground.getRGB(col - x, row - y);
+                    int overFg = glyphForeground.getRGB(col - x, row - y);
 
                     thisCell.setBackColorRGB(thisBg | OPAQUE);
                     thisCell.setForeColorRGB(thisFg | OPAQUE);
@@ -1595,6 +1656,7 @@ public class LogicalScreen implements Screen {
                             if (imageId > 0) {
                                 thisCell.setImage(newImage, imageId);
                                 thisCell.mixImageId(overBg);
+                                thisCell.mixImageId(alpha);
                             } else {
                                 thisCell.setImage(newImage);
                             }
@@ -1632,17 +1694,13 @@ public class LogicalScreen implements Screen {
 
                     // The overlaying cell has a character, use it.
                     thisCell.setChar(overCell.getChar());
-                    int fg = overCell.getForeColorRGB();
-                    if (fg < 0) {
-                        thisCell.setForeColor(overCell.getForeColor());
-                    } else {
-                        thisCell.setForeColorRGB(fg);
-                    }
+                    thisCell.setForeColorRGB(overFg);
                     thisCell.setBold(overCell.isBold());
                     thisCell.setBlink(overCell.isBlink());
                     thisCell.setUnderline(overCell.isUnderline());
                     thisCell.setProtect(overCell.isProtect());
                     thisCell.setAnimations(overCell.getAnimations());
+                    thisCell.setPulse(false, false, 0);
 
                     if (!overCell.isImage()) {
                         // If we had an image, destroy it.  Text ALWAYS
@@ -1678,6 +1736,7 @@ public class LogicalScreen implements Screen {
                         if (imageId > 0) {
                             thisCell.setImage(newImage, imageId);
                             thisCell.mixImageId(thisOldBg);
+                            thisCell.mixImageId(alpha);
                         } else {
                             thisCell.setImage(newImage);
                         }
@@ -1713,6 +1772,7 @@ public class LogicalScreen implements Screen {
                         if (imageId > 0) {
                             thisCell.setImage(newImage, imageId);
                             thisCell.mixImageId(overCell);
+                            thisCell.mixImageId(alpha);
                         } else {
                             thisCell.setImage(newImage);
                         }
@@ -1747,6 +1807,7 @@ public class LogicalScreen implements Screen {
                             thisCell.setImage(newImage, imageId);
                             thisCell.mixImageId(overCell);
                             thisCell.mixImageId(overBg);
+                            thisCell.mixImageId(alpha);
                         } else {
                             thisCell.setImage(newImage);
                         }
@@ -1782,6 +1843,7 @@ public class LogicalScreen implements Screen {
                             thisCell.setImage(newImage, imageId);
                             thisCell.mixImageId(overBg);
                             thisCell.mixImageId(thisOldBg);
+                            thisCell.mixImageId(alpha);
                         } else {
                             thisCell.setImage(newImage);
                         }

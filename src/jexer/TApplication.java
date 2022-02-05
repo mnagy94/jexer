@@ -51,6 +51,9 @@ import jexer.bits.CellAttributes;
 import jexer.bits.Clipboard;
 import jexer.bits.ColorTheme;
 import jexer.bits.StringUtils;
+import jexer.effect.Effect;
+import jexer.effect.WindowFadeInEffect;
+import jexer.effect.WindowFadeOutEffect;
 import jexer.event.TCommandEvent;
 import jexer.event.TInputEvent;
 import jexer.event.TKeypressEvent;
@@ -406,6 +409,11 @@ public class TApplication implements Runnable {
      * If true. enable translucency.
      */
     protected boolean translucence = true;
+
+    /**
+     * The list of desktop/window effects to run.
+     */
+    private List<Effect> effects = new LinkedList<Effect>();
 
     /**
      * WidgetEventHandler is the main event consumer loop.  There are at most
@@ -905,7 +913,7 @@ public class TApplication implements Runnable {
                 addTimer(millis, true,
                     new TAction() {
                         public void DO() {
-                            TApplication.this.doRepaint();
+                            doRepaint();
                         }
                     }
                 );
@@ -919,9 +927,9 @@ public class TApplication implements Runnable {
                 addTimer(millis, true,
                     new TAction() {
                         public void DO() {
-                            TApplication.this.doRepaint();
+                            doRepaint();
                             // Update idle checks.
-                            TApplication.this.getBackend().hasEvents();
+                            getBackend().hasEvents();
                         }
                     }
                 );
@@ -932,6 +940,7 @@ public class TApplication implements Runnable {
             TTimer animationTimer = addTimer(1000 / ANIMATION_FPS, true,
                 new TAction() {
                     public void DO() {
+                        runEffects();
                         doRepaint();
                     }
                 }
@@ -1825,6 +1834,38 @@ public class TApplication implements Runnable {
     }
 
     /**
+     * Run the desktop and window effects.
+     */
+    private void runEffects() {
+        // System.err.println("runEffects() enter");
+        synchronized (effects) {
+            if (effects.size() == 0) {
+                // System.err.println("runEffects() NOP");
+                return;
+            }
+        }
+        List<Effect> effectsToRun = new ArrayList<Effect>();
+        List<Effect> effectsToRemove = new ArrayList<Effect>();
+        synchronized (effects) {
+            effectsToRun.addAll(effects);
+        }
+
+        while (effectsToRun.size() > 0) {
+            Effect effect = effectsToRun.remove(0);
+            if (effect.isCompleted()) {
+                effectsToRemove.add(effect);
+            }
+            effect.update();
+        }
+        if (effectsToRemove.size() > 0) {
+            synchronized (effects) {
+                effects.removeAll(effectsToRemove);
+            }
+        }
+        // System.err.println("runEffects() exit");
+    }
+
+    /**
      * Do stuff when there is no user input.
      */
     private void doIdle() {
@@ -1859,6 +1900,11 @@ public class TApplication implements Runnable {
             timers.addAll(keepTimers);
         }
 
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " doIdle() 3\n");
+        }
+
         // Call onIdle's
         for (TWindow window: windows) {
             window.onIdle();
@@ -1878,6 +1924,11 @@ public class TApplication implements Runnable {
             invoke.run();
         }
         doRepaint();
+
+        if (debugThreads) {
+            System.err.printf(System.currentTimeMillis() + " " +
+                Thread.currentThread() + " doIdle() - exit\n");
+        }
 
     }
 
@@ -2597,7 +2648,7 @@ public class TApplication implements Runnable {
         // Recreate the shadow effect by blending a black rectangle over just
         // the shadow region.
         final int shadowOpacity = 30;
-        final int shadowAlpha = shadowOpacity * 255 / 100;
+        final int shadowAlpha = shadowOpacity * window.getAlpha() / 100;
         screen.blendRectangle(windowX + windowWidth, windowY + 1,
             2, windowHeight - 1, 0x000000, shadowAlpha);
         screen.blendRectangle(windowX + 2, windowY + windowHeight,
@@ -3190,6 +3241,18 @@ public class TApplication implements Runnable {
         // visible on screen.
         window.onPreClose();
 
+        // If the window has a close effect, kick that off.
+        if (!window.disableCloseEffect()) {
+            String windowCloseEffect = System.getProperty("jexer.effect.windowClose",
+                "none").toLowerCase();
+
+            if (windowCloseEffect.equals("fade")) {
+                synchronized (effects) {
+                    effects.add(new WindowFadeOutEffect(window));
+                }
+            }
+        }
+
         synchronized (windows) {
 
             window.stopMovements();
@@ -3380,6 +3443,15 @@ public class TApplication implements Runnable {
             desktop.setActive(false);
         }
 
+        // If the window has an open effect, kick that off.
+        String windowOpenEffect = System.getProperty("jexer.effect.windowOpen",
+            "none").toLowerCase();
+
+        if (windowOpenEffect.equals("fade")) {
+            synchronized (effects) {
+                effects.add(new WindowFadeInEffect(window));
+            }
+        }
     }
 
     /**

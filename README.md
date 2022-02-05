@@ -13,8 +13,8 @@ like this:
 ![Terminal, Image, Table](/screenshots/new_demo1.png?raw=true "Terminal, Image, Table")
 
 ...or anything in between.  Translucent windows -- including layered
-images -- are supported and generally look like as one would expect in
-a modern graphical environment...but it's mostly text.  Translucent
+images -- are supported and generally look as one would expect in a
+modern graphical environment...but it's mostly text.  Translucent
 windows were inspired in part by
 [notcurses](https://github.com/dankamongmen/notcurses).
 

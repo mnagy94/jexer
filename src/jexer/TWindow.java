@@ -252,6 +252,11 @@ public class TWindow extends TWidget {
      */
     private int alpha = 255;
 
+    /**
+     * The window open effect timer.
+     */
+    private TTimer openEffectTimer = null;
+
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -339,9 +344,6 @@ public class TWindow extends TWidget {
         // Center window if specified
         center();
 
-        // Add me to the application
-        application.addWindowToApplication(this);
-
         // Set default borders
         setBorderStyleForeground(null);
         setBorderStyleInactive(null);
@@ -358,6 +360,9 @@ public class TWindow extends TWidget {
             // SQUASH
         }
         setAlpha(opacity * 255 / 100);
+
+        // Add me to the application
+        application.addWindowToApplication(this);
     }
 
     // ------------------------------------------------------------------------
@@ -1858,6 +1863,17 @@ public class TWindow extends TWidget {
      */
     public int getAlpha() {
         return alpha;
+    }
+
+    /**
+     * If true, disable any window closing effect.  This is used by the
+     * window closing effects themselves so that they can be closed when
+     * finished.
+     *
+     * @return true if the window close effect should be disabled
+     */
+    public boolean disableCloseEffect() {
+        return false;
     }
 
 }
