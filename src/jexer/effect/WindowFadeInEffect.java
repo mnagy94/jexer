@@ -31,8 +31,7 @@ package jexer.effect;
 import jexer.TWindow;
 
 /**
- * A desktop or window effect does a blingy transformation before the screen
- * is sent to the device.
+ * Make the window fade in.
  */
 public class WindowFadeInEffect implements Effect {
 

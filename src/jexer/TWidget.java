@@ -1553,15 +1553,20 @@ public abstract class TWidget implements Comparable<TWidget> {
         // The TWindow overlay has to be here so that it can cover drawn
         // widgets.
         if (this instanceof TWindow) {
+            screen.setClipRight(overlayClipRight);
+            screen.setClipBottom(overlayClipBottom);
+            screen.setOffsetX(overlayOffsetX);
+            screen.setOffsetY(overlayOffsetY);
+
+            // Let the overlay draw.
             Tackboard overlay = ((TWindow) this).overlay;
             if (overlay != null) {
-                screen.setClipRight(overlayClipRight);
-                screen.setClipBottom(overlayClipBottom);
-                screen.setOffsetX(overlayOffsetX);
-                screen.setOffsetY(overlayOffsetY);
                 overlay.draw(getScreen(),
                     getApplication().getBackend().isImagesOverText());
             }
+
+            // Now let a custom window effect draw.
+            ((TWindow) this).onPostDraw();
         }
     }
 

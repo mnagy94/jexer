@@ -52,6 +52,7 @@ import jexer.bits.Clipboard;
 import jexer.bits.ColorTheme;
 import jexer.bits.StringUtils;
 import jexer.effect.Effect;
+import jexer.effect.WindowBurnInEffect;
 import jexer.effect.WindowFadeInEffect;
 import jexer.effect.WindowFadeOutEffect;
 import jexer.event.TCommandEvent;
@@ -3443,13 +3444,20 @@ public class TApplication implements Runnable {
             desktop.setActive(false);
         }
 
-        // If the window has an open effect, kick that off.
-        String windowOpenEffect = System.getProperty("jexer.effect.windowOpen",
-            "none").toLowerCase();
+        if (!window.disableOpenEffect()) {
+            // If the window has an open effect, kick that off.
+            String windowOpenEffect = System.getProperty(
+                "jexer.effect.windowOpen", "none").toLowerCase();
 
-        if (windowOpenEffect.equals("fade")) {
-            synchronized (effects) {
-                effects.add(new WindowFadeInEffect(window));
+            if (windowOpenEffect.equals("fade")) {
+                synchronized (effects) {
+                    effects.add(new WindowFadeInEffect(window));
+                }
+            }
+            if (windowOpenEffect.equals("burn")) {
+                synchronized (effects) {
+                    effects.add(new WindowBurnInEffect(window));
+                }
             }
         }
     }

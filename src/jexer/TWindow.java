@@ -1081,6 +1081,15 @@ public class TWindow extends TWidget {
 
     }
 
+    /**
+     * Function called immediately after the windo is drawn.  This can be
+     * used by subclasses of TWindow to alter the final post-rendered window
+     * screen area.
+     */
+    protected void onPostDraw() {
+        // Default does nothing
+    }
+
     // ------------------------------------------------------------------------
     // TWindow ----------------------------------------------------------------
     // ------------------------------------------------------------------------
@@ -1863,6 +1872,17 @@ public class TWindow extends TWidget {
      */
     public int getAlpha() {
         return alpha;
+    }
+
+    /**
+     * If true, disable any window opening effect.  This is used by the
+     * window closing effects themselves so that they are not themselves
+     * opened.
+     *
+     * @return true if the window open effect should be disabled
+     */
+    public boolean disableOpenEffect() {
+        return false;
     }
 
     /**

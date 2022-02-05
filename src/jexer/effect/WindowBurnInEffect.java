@@ -28,14 +28,18 @@
  */
 package jexer.effect;
 
+import java.awt.image.BufferedImage;
+
+import jexer.TApplication;
 import jexer.TWindow;
 import jexer.backend.Screen;
 import jexer.event.TInputEvent;
+import jexer.tackboard.Bitmap;
 
 /**
- * Make the window fade out.
+ * Make the window look like it was was burned in with plasma fire.
  */
-public class WindowFadeOutEffect implements Effect {
+public class WindowBurnInEffect implements Effect {
 
     // ------------------------------------------------------------------------
     // Constants --------------------------------------------------------------
@@ -46,19 +50,24 @@ public class WindowFadeOutEffect implements Effect {
     // ------------------------------------------------------------------------
 
     /**
-     * The fake window to fade out.
+     * The window to burn in.
+     */
+    private TWindow window;
+
+    /**
+     * The fake window with the plasma effect.
      */
     private TWindow fakeWindow;
 
     /**
-     * The region of the screen the window last rendered to.
+     * The bitmap for the plasma effect.
      */
-    private Screen oldScreen;
+    private Bitmap plasma;
 
     /**
-     * The alpha value to set fakeWindow to.
+     * The burn alpha.
      */
-    private int alpha;
+    private int alpha = 0;
 
     // ------------------------------------------------------------------------
     // Constructors -----------------------------------------------------------
@@ -67,20 +76,23 @@ public class WindowFadeOutEffect implements Effect {
     /**
      * Public contructor.
      *
-     * @param window the window to fade out
+     * @param window the window to burn in
      */
-    public WindowFadeOutEffect(final TWindow window) {
-        final Screen oldScreen = window.getScreen().snapshotPhysical(
-            window.getX(), window.getY(),
-            window.getWidth(), window.getHeight());
+    public WindowBurnInEffect(final TWindow window) {
+        this.window = window;
 
-        alpha = window.getAlpha();
+        alpha = 220;
 
         final int x = window.getX();
         final int y = window.getY();
+        final TApplication app = window.getApplication();
 
-        window.getApplication().invokeLater(new Runnable() {
+        app.invokeLater(new Runnable() {
             public void run() {
+                if (app.isModalThreadRunning()) {
+                    return;
+                }
+
                 fakeWindow = new TWindow(window.getApplication(), "",
                     window.getX(), window.getY(),
                     window.getWidth(), window.getHeight(),
@@ -92,14 +104,10 @@ public class WindowFadeOutEffect implements Effect {
                         // NOP
                     }
 
-                    // Draw the old screen.
                     @Override
                     public void draw() {
-                        for (int y = 0; y < getHeight(); y++) {
-                            for (int x = 0; x < getWidth(); x++) {
-                                putCharXY(x, y, oldScreen.getCharXY(x, y));
-                            }
-                        }
+                        // Draw nothing.  TWidget.drawChildren() will draw
+                        // the overlay, which contains the plasma.
                     }
 
                     @Override
@@ -115,6 +123,39 @@ public class WindowFadeOutEffect implements Effect {
                 fakeWindow.setX(x);
                 fakeWindow.setY(y);
                 fakeWindow.setAlpha(alpha);
+
+                // Generate the plasma.
+                Screen screen = fakeWindow.getScreen();
+                int width = fakeWindow.getWidth() * screen.getTextWidth();
+                int height = fakeWindow.getHeight() * screen.getTextHeight();
+                BufferedImage burn = new BufferedImage(width, height,
+                    BufferedImage.TYPE_INT_ARGB);
+
+                // https://lodev.org/cgtutor/plasma.html has the general
+                // idea.  I just played around and it's alright for a start.
+                int w = width;
+                int h = height;
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        int red = (int) (128.0 + 2 * (Math.sin((x + y) / 2.0) +
+                                Math.sin(x * x + y)) * 128.0);
+                        int green = (int) (128.0 + (Math.sin(y / 7.0) +
+                                Math.cos(Math.log(y * y / 6))) * 128.0);
+                        int blue = (int) (128.0 + Math.cos(Math.sqrt(x * x + y * y) / 3.0) * 128.0);
+                        red = Math.max(0, Math.min(red, 255));
+                        green = Math.max(0, Math.min(green, 255));
+                        blue = Math.max(0, Math.min(blue, 255));
+                        int rgb = ( 0xFF << 24)
+                                    | (  red << 16)
+                                    | (green <<  8)
+                                    |  blue;
+                        burn.setRGB(x, y, rgb);
+                    }
+                }
+
+                plasma = new Bitmap(0, 0, 0, burn);
+
+                fakeWindow.addOverlay(plasma);
             }
         });
 
@@ -144,11 +185,11 @@ public class WindowFadeOutEffect implements Effect {
      * @return true if this effect is finished
      */
     public boolean isCompleted() {
-        if (fakeWindow != null) {
-            if (alpha == 0) {
+        if (alpha == 0) {
+            if (fakeWindow != null) {
                 fakeWindow.close();
-                return true;
             }
+            return true;
         }
         return false;
     }
