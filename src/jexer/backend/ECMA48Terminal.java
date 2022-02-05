@@ -273,6 +273,11 @@ public class ECMA48Terminal extends LogicalScreen
     private boolean kittyImages = false;
 
     /**
+     * The Kitty post-rendered string cache.
+     */
+    private ImageCache kittyCache = null;
+
+    /**
      * The number of threads for image rendering.
      */
     private int imageThreadCount = 2;
@@ -1872,6 +1877,10 @@ public class ECMA48Terminal extends LogicalScreen
                     } else if (jexerImageOption != JexerImageOption.DISABLED) {
                         if (jexerCache == null) {
                             jexerCache = new ImageCache(height * width * 10);
+                        }
+                    } else if (kittyImages) {
+                        if (kittyCache == null) {
+                            kittyCache = new ImageCache(height * width * 10);
                         }
                     } else {
                         if (sixelCache == null) {
@@ -4240,7 +4249,28 @@ public class ECMA48Terminal extends LogicalScreen
         assert (cells.size() > 0);
         assert (cells.get(0).getImage() != null);
 
-        // We don't cache Kitty images at this time.
+        // Save and get rows to/from the cache that do NOT have inverted
+        // cells.
+        boolean saveInCache = true;
+        for (Cell cell: cells) {
+            if (cell.isInvertedImage()) {
+                saveInCache = false;
+                break;
+            }
+            // Compute the hashcode so that the cell image hash is available
+            // for looking up in the image cache.
+            cell.hashCode();
+        }
+        if (saveInCache) {
+            String cachedResult = kittyCache.get(cells);
+            if (cachedResult != null) {
+                // System.err.println("CACHE HIT");
+                sb.append(gotoXY(x, y));
+                sb.append(cachedResult);
+                return sb.toString();
+            }
+            // System.err.println("CACHE MISS");
+        }
 
         BufferedImage image = cellsToImage(cells);
         int fullHeight = image.getHeight();
@@ -4287,6 +4317,11 @@ public class ECMA48Terminal extends LogicalScreen
             if (!last) {
                 sb.append("\033_G");
             }
+        }
+
+        if (saveInCache) {
+            // This row is OK to save into the cache.
+            kittyCache.put(cells, sb.toString());
         }
 
         return (gotoXY(x, y) + sb.toString());
