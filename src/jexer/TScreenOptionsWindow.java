@@ -317,8 +317,15 @@ public class TScreenOptionsWindow extends TWindow {
             });
 
         // Window opacity
+        int alpha = getAlpha();
+        try {
+            alpha = Integer.parseInt(System.getProperty(
+                "jexer.TWindow.opacity", "95")) * 255 / 100;
+        } catch (NumberFormatException e) {
+            // SQUASH
+        }
         windowOpacity = addField(31, 0, 4, true,
-            Integer.toString(getAlpha() * 100 / 255),
+            Integer.toString(alpha * 100 / 255),
             new TAction() {
                 public void DO() {
                     int currentOpacity = getAlpha() * 100 / 255;
