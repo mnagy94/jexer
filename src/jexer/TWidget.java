@@ -1041,7 +1041,7 @@ public abstract class TWidget implements Comparable<TWidget> {
      *
      * @param enabled if true, this widget can be tabbed to or receive events
      */
-    public final void setEnabled(final boolean enabled) {
+    public void setEnabled(final boolean enabled) {
         this.enabled = enabled;
         if (!enabled) {
             active = false;

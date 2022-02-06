@@ -307,6 +307,18 @@ public class TButton extends TWidget {
     // ------------------------------------------------------------------------
 
     /**
+     * Override TWidget.setActive() so that the button ends are redrawn.
+     *
+     * @param enabled if true, this widget can be tabbed to or receive events
+     */
+    @Override
+    public void setEnabled(final boolean enabled) {
+        super.setEnabled(enabled);
+        rightEdgeShadowCharBottom = null;
+        shadowColor = null;
+    }
+
+    /**
      * Override TWidget's width: we can only set width at construction time.
      *
      * @param width new widget width (ignored)
