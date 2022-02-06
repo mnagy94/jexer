@@ -993,6 +993,17 @@ public class TScreenOptionsWindow extends TWindow {
 
     }
 
+    /**
+     * This window will reset the physical screen, making closing effects not
+     * always work right.  Let's just disable that for now.
+     *
+     * @return true to disable close effects
+     */
+    @Override
+    public boolean disableCloseEffect() {
+        return true;
+    }
+
     // ------------------------------------------------------------------------
     // TScreenOptionsWindow ---------------------------------------------------
     // ------------------------------------------------------------------------
