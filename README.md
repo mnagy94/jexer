@@ -78,6 +78,11 @@ https://sourceforge.net/projects/jexer/files/jexer/
 The Jexer source code is hosted at: https://gitlab.com/klamonte/jexer
 
 
+Why I Do Not Post My Projects Anymore
+-------------------------------------
+
+[Why I Do Not Post My Projects Anymore](https://gitlab.com/klamonte/jexer/wikis/no-release-announcements)
+
 
 Documentation
 -------------
