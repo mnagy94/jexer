@@ -268,16 +268,6 @@ public class ECMA48Terminal extends LogicalScreen
     private ImageCache jexerCache = null;
 
     /**
-     * If true, emit image data via Kitty image protocol.
-     */
-    private boolean kittyImages = false;
-
-    /**
-     * The Kitty post-rendered string cache.
-     */
-    private ImageCache kittyCache = null;
-
-    /**
      * The number of threads for image rendering.
      */
     private int imageThreadCount = 2;
@@ -1114,17 +1104,6 @@ public class ECMA48Terminal extends LogicalScreen
                         iterm2Images = true;
                     }
                 }
-
-                str = System.getProperty("jexer.ECMA48.kittyImages");
-                // Default to not supporting Kitty images.
-                if (str != null) {
-                    if (str.equals("false")) {
-                        kittyImages = false;
-                    }
-                    if (str.equals("true")) {
-                        kittyImages = true;
-                    }
-                }
             }
 
             // Default to using JPG Jexer images if terminal supports it.
@@ -1743,30 +1722,13 @@ public class ECMA48Terminal extends LogicalScreen
         GlyphMaker glyphMaker = GlyphMaker.getInstance(getTextHeight());
         for (int y = 0; y < height; y++) {
             boolean unsetRow = false;
-            boolean unsetKittyRow = false;
             for (int x = 0; x < width; x++) {
                 // If physical had non-image data that is now image data, the
                 // entire row must be redrawn.
                 Cell lCell = logical[x][y];
                 Cell pCell = physical[x][y];
 
-                // Check if we need to erase images for Kitty, since text
-                // does not overwrite images.
-                if (kittyImages
-                    && ((lCell.isImage() != pCell.isImage())
-                        || reallyCleared
-                        || (lCell.isImage() && !lCell.equals(pCell)))
-                ) {
-                    // Alas, Kitty erases the entire image even if you ask
-                    // for a single cell to be erased, and I've no idea if it
-                    // will also alpha blend on repeats or not.
-                    //
-                    // It is a bit much to figure out which image was emitted
-                    // last frame and break it up on this frame, so just
-                    // redraw the entire row.
-                    unsetKittyRow = true;
-                }
-                if (!kittyImages && lCell.isImage() && !pCell.isImage()) {
+                if (lCell.isImage() && !pCell.isImage()) {
                     unsetRow = true;
                 }
                 int ch = lCell.getChar();
@@ -1781,15 +1743,7 @@ public class ECMA48Terminal extends LogicalScreen
                         getTextWidth(), getTextHeight(), getBackend());
                     lCell.setImage(newImage);
                     unsetRow = true;
-                    unsetKittyRow = true;
                 }
-            }
-
-            if (unsetKittyRow) {
-                // There are no images, or different images, on this row, so
-                // erase whatever might have been here before.
-                sb.append(String.format("\033_Ga=d,d=Y,y=%d\033\\", y + 1));
-                unsetImageRow(y);
             }
 
             if (unsetRow) {
@@ -1866,8 +1820,7 @@ public class ECMA48Terminal extends LogicalScreen
                 if (cellsToDraw.size() > 0) {
                     if (debugToStderr && reallyDebug) {
                         System.err.println("images to render: iTerm2: " +
-                            iterm2Images + " Jexer: " + jexerImageOption +
-                            " Kitty: " + kittyImages);
+                            iterm2Images + " Jexer: " + jexerImageOption);
                     }
 
                     if (iterm2Images) {
@@ -1877,10 +1830,6 @@ public class ECMA48Terminal extends LogicalScreen
                     } else if (jexerImageOption != JexerImageOption.DISABLED) {
                         if (jexerCache == null) {
                             jexerCache = new ImageCache(height * width * 10);
-                        }
-                    } else if (kittyImages) {
-                        if (kittyCache == null) {
-                            kittyCache = new ImageCache(height * width * 10);
                         }
                     } else {
                         if (sixelCache == null) {
@@ -1894,8 +1843,6 @@ public class ECMA48Terminal extends LogicalScreen
                             sb.append(toIterm2Image(x, y, cellsToDraw));
                         } else if (jexerImageOption != JexerImageOption.DISABLED) {
                             sb.append(toJexerImage(x, y, cellsToDraw));
-                        } else if (kittyImages) {
-                            sb.append(toKittyImage(x, y, cellsToDraw));
                         } else {
                             sb.append(toSixel(x, y, cellsToDraw));
                         }
@@ -1914,8 +1861,6 @@ public class ECMA48Terminal extends LogicalScreen
                                     return toIterm2Image(callX, callY, callCells);
                                 } else if (jexerImageOption != JexerImageOption.DISABLED) {
                                     return toJexerImage(callX, callY, callCells);
-                                } else if (kittyImages) {
-                                    return toKittyImage(callX, callY, callCells);
                                 } else {
                                     return toSixel(callX, callY, callCells);
                                 }
@@ -2539,26 +2484,6 @@ public class ECMA48Terminal extends LogicalScreen
             // doNotMoveCursor.
             if (text.contains("WezTerm")) {
                 iterm2BottomRow = true;
-            }
-        }
-
-        // Kitty image support will be ASSUMED for the following terminals
-        // if kittyImages is not explicitly false.
-        if (text.contains("WezTerm")
-            || text.contains("kitty")
-        ) {
-            String str = System.getProperty("jexer.ECMA48.kittyImages");
-            if ((str != null) && (str.equals("false"))) {
-                if (debugToStderr) {
-                    System.err.println("  -- terminal supports Kitty, but " +
-                        "explicitly disabled in config");
-                }
-                kittyImages = false;
-            } else {
-                if (debugToStderr) {
-                    System.err.println("  -- enable Kitty images");
-                }
-                kittyImages = true;
             }
         }
     }
@@ -4225,119 +4150,6 @@ public class ECMA48Terminal extends LogicalScreen
 
     // ------------------------------------------------------------------------
     // End Jexer image output support -----------------------------------------
-    // ------------------------------------------------------------------------
-
-    // ------------------------------------------------------------------------
-    // Kitty image output support ---------------------------------------------
-    // ------------------------------------------------------------------------
-
-    /**
-     * Create a Kitty images string representing a row of several cells
-     * containing bitmap data.
-     *
-     * @param x column coordinate.  0 is the left-most column.
-     * @param y row coordinate.  0 is the top-most row.
-     * @param cells the cells containing the bitmap data
-     * @return the string to emit to an ANSI / ECMA-style terminal
-     */
-    private String toKittyImage(final int x, final int y,
-        final ArrayList<Cell> cells) {
-
-        StringBuilder sb = new StringBuilder();
-
-        assert (cells != null);
-        assert (cells.size() > 0);
-        assert (cells.get(0).getImage() != null);
-
-        // Save and get rows to/from the cache that do NOT have inverted
-        // cells.
-        boolean saveInCache = true;
-        for (Cell cell: cells) {
-            if (cell.isInvertedImage()) {
-                saveInCache = false;
-                break;
-            }
-            // Compute the hashcode so that the cell image hash is available
-            // for looking up in the image cache.
-            cell.hashCode();
-        }
-        if (saveInCache) {
-            String cachedResult = kittyCache.get(cells);
-            if (cachedResult != null) {
-                // System.err.println("CACHE HIT");
-                sb.append(gotoXY(x, y));
-                sb.append(cachedResult);
-                return sb.toString();
-            }
-            // System.err.println("CACHE MISS");
-        }
-
-        BufferedImage image = cellsToImage(cells);
-        int fullHeight = image.getHeight();
-
-        // Always encode as PNG
-        ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream(1024);
-        try {
-            if (!ImageIO.write(image.getSubimage(0, 0, image.getWidth(),
-                        Math.min(image.getHeight(), fullHeight)),
-                    "PNG", pngOutputStream)
-            ) {
-                // We failed to render image, bail out.
-                return "";
-            }
-        } catch (IOException e) {
-            // We failed to render image, bail out.
-            return "";
-        }
-
-        String data = StringUtils.toBase64(pngOutputStream.toByteArray());
-        // Kitty bug: "base64 data must have a length that is a multiple of
-        // 4".
-        data = data.replace("\r", "");
-        data = data.replace("\n", "");
-
-        sb.append("\033_Ga=T,f=100,C=1,");
-        while (data.length() > 0) {
-            // This chunking stuff is stupid.
-            String chunk = data.substring(0, Math.min(4096, data.length()));
-            boolean last = false;
-            if (chunk.length() == data.length()) {
-                last = true;
-                data = "";
-            } else {
-                data = data.substring(chunk.length());
-            }
-            if (last) {
-                sb.append("m=0;");
-            } else {
-                sb.append("m=1;");
-            }
-            sb.append(chunk);
-            sb.append("\033\\");
-            if (!last) {
-                sb.append("\033_G");
-            }
-        }
-
-        if (saveInCache) {
-            // This row is OK to save into the cache.
-            kittyCache.put(cells, sb.toString());
-        }
-
-        return (gotoXY(x, y) + sb.toString());
-    }
-
-    /**
-     * Get the Kitty images support flag.
-     *
-     * @return true if this terminal is emitting Jexer images
-     */
-    public boolean hasKittyImages() {
-        return kittyImages;
-    }
-
-    // ------------------------------------------------------------------------
-    // End Kitty image output support -----------------------------------------
     // ------------------------------------------------------------------------
 
     /**
