@@ -96,7 +96,7 @@ public class TTerminalWidget extends TScrollableWidget
     /**
      * If true, we are using the ptypipe utility to support dynamic window
      * resizing.  ptypipe is available at
-     * https://gitlab.com/klamonte/ptypipe .
+     * https://gitlab.com/AutumnMeowMeow/ptypipe .
      */
     private boolean ptypipe = false;
 

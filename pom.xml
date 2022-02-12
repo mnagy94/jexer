@@ -6,7 +6,7 @@
   <name>Jexer</name>
   <description>Java Text User Interface library that resembles Turbo Vision</description>
   <version>1.6.1-SNAPSHOT</version>
-  <url>https://gitlab.com/klamonte/jexer</url>
+  <url>https://gitlab.com/AutumnMeowMeow/jexer</url>
 
   <licenses>
     <license>
@@ -22,15 +22,15 @@
   </properties>
 
   <scm>
-    <connection>scm:git:https://gitlab.com/klamonte/jexer.git</connection>
-    <developerConnection>scm:git:https://gitlab.com/klamonte/jexer.git</developerConnection>
-    <url>https://gitlab.com/klamonte/jexer</url>
+    <connection>scm:git:https://gitlab.com/AutumnMeowMeow/jexer.git</connection>
+    <developerConnection>scm:git:https://gitlab.com/AutumnMeowMeow/jexer.git</developerConnection>
+    <url>https://gitlab.com/AutumnMeowMeow/jexer</url>
     <tag>HEAD</tag>
   </scm>
 
   <issueManagement>
     <system>gitlab</system>
-    <url>https://gitlab.com/klamonte/jexer/issues</url>
+    <url>https://gitlab.com/AutumnMeowMeow/jexer/issues</url>
   </issueManagement>
 
   <distributionManagement>
@@ -208,7 +208,8 @@
 
   <developers>
     <developer>
-      <id>klamonte</id>
+      <!-- Is this the old name for sonatype or the new name for GitLab? -->
+      <id>AutumnMeowMeow</id>
       <name>Autumn Lamonte</name>
       <email>AutumnWalksTheLake@gmail.com</email>
     </developer>

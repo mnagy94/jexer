@@ -75,27 +75,30 @@ Jexer is available on Maven Central:
 Binary releases are available on SourceForge:
 https://sourceforge.net/projects/jexer/files/jexer/
 
-The Jexer source code is hosted at: https://gitlab.com/klamonte/jexer
+The Jexer source code is hosted at:
+https://gitlab.com/AutumnMeowMeow/jexer
 
 
 Why I Do Not Post My Projects Anymore
 -------------------------------------
 
-[Why I Do Not Post My Projects Anymore](https://gitlab.com/klamonte/jexer/wikis/no-release-announcements)
+[Why I Do Not Post My Projects
+Anymore](https://gitlab.com/AutumnMeowMeow/jexer/wikis/no-release-announcements)
 
 
 Documentation
 -------------
 
-* [Wiki](https://gitlab.com/klamonte/jexer/wikis/home)
+* [Wiki](https://gitlab.com/AutumnMeowMeow/jexer/wikis/home)
 
 * [Jexer web page](https://jexer.sourceforge.io/)
 
 * [Java API Docs](https://jexer.sourceforge.io/apidocs/api/index.html)
 
-* [Development Standards](https://gitlab.com/klamonte/jexer/wikis/dev-standards)
+* [Development
+  Standards](https://gitlab.com/AutumnMeowMeow/jexer/wikis/dev-standards)
 
-* [Porting Guide](https://gitlab.com/klamonte/jexer/wikis/porting) -
+* [Porting Guide](https://gitlab.com/AutumnMeowMeow/jexer/wikis/porting) -
   If you don't like writing Java, here is your map to where the key
   features are so that you can implement them in a different
   system/language.
@@ -238,16 +241,17 @@ the terminals last tested against Jexer:
 See Also
 --------
 
-* [Xterm Window Manager](https://gitlab.com/klamonte/xtermwm) is a
-  text-based window manager.  It has virtual desktops, tiled terminals
-  with draggable resizing, cascading terminal windows, and a plugin
-  system for adding functionality.  Add LCXterm and one can have a
-  mouse-supporting X11-like text-based "GUI" on the raw Linux console.
+* [Xterm Window Manager](https://gitlab.com/AutumnMeowMeow/xtermwm) is
+  a text-based window manager.  It has virtual desktops, tiled
+  terminals with draggable resizing, cascading terminal windows, and a
+  plugin system for adding functionality.  Add LCXterm and one can
+  have a mouse-supporting X11-like text-based "GUI" on the raw Linux
+  console.
 
-* [XtermDOOM](https://gitlab.com/klamonte/xtermdoom) is an effort to
-  make [MochaDoom](https://github.com/jendave/mochadoom) run smoothly
-  under Xterm.  The game is not yet playable, but it can show off
-  Jexer's multiplexing and multihead image capabilities.  For
+* [XtermDOOM](https://gitlab.com/AutumnMeowMeow/xtermdoom) is an
+  effort to make [MochaDoom](https://github.com/jendave/mochadoom) run
+  smoothly under Xterm.  The game is not yet playable, but it can show
+  off Jexer's multiplexing and multihead image capabilities.  For
   ramblings about the game, terminal resources, etc. see
   [/r/xtermdoom](https://reddit.com/r/xtermdoom).
 
@@ -255,9 +259,9 @@ See Also
   emulator that allows one to use Jexer with full support on the raw
   Linux console.
 
-* [ptypipe](https://gitlab.com/klamonte/ptypipe) is a small C utility
-  that permits a Jexer TTerminalWindow to resize the running shell
-  when its window is resized.
+* [ptypipe](https://gitlab.com/AutumnMeowMeow/ptypipe) is a small C
+  utility that permits a Jexer TTerminalWindow to resize the running
+  shell when its window is resized.
 
 * [Tranquil Java IDE](https://tjide.sourceforge.io) is a TUI-based
   integrated development environment for the Java language that was
