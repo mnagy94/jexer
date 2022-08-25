@@ -1093,16 +1093,14 @@ public class ECMA48Terminal extends LogicalScreen
         }
 
         if (!daResponseSeen) {
-            if (xtversionQuery == false) {
-                String str = System.getProperty("jexer.ECMA48.iTerm2Images");
-                // Default to not supporting iTerm2 images.
-                if (str != null) {
-                    if (str.equals("false")) {
-                        iterm2Images = false;
-                    }
-                    if (str.equals("true")) {
-                        iterm2Images = true;
-                    }
+            String str = System.getProperty("jexer.ECMA48.iTerm2Images");
+            // Default to not supporting iTerm2 images.
+            if (str != null) {
+                if (str.equals("false")) {
+                    iterm2Images = false;
+                }
+                if (str.equals("true")) {
+                    iterm2Images = true;
                 }
             }
 
